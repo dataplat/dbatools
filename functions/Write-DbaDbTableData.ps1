@@ -450,34 +450,29 @@ function Write-DbaDbTableData {
             return
         }
 
-        if ($server.ServerType -eq 'SqlAzureDatabase') {
-            <#
-                For some reasons SMO wants an initial pull when talking to Azure Sql DB
-                This will throw and be caught, and then we can continue as normal.
-            #>
-            try {
-                $null = $server.Databases
-            } catch {
-                # here to avoid an empty catch
-                $null = 1
+        try {
+            $databaseObject = $server.Databases.Item($databaseName)
+            #endregion Connect to server and get database
+
+            #region Prepare database and bulk operations
+            if ($null -eq $databaseObject) {
+                Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
+                return
             }
-        }
-        $databaseObject = $server.Databases[$databaseName]
-        #endregion Connect to server and get database
 
-        #region Prepare database and bulk operations
-        if ($null -eq $databaseObject) {
-            Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
-            return
-        }
+            if (-not ($server.ServerType -eq 'SqlAzureDatabase')) {
+                write-warning sup
+                $databaseObject.Tables.Refresh()
+            }
+            if ($schemaName -notin $databaseObject.Schemas.Name) {
+                Stop-Function -Message "Schema does not exist."
+                return
+            }
 
-        $databaseObject.Tables.Refresh()
-        if ($schemaName -notin $databaseObject.Schemas.Name) {
-            Stop-Function -Message "Schema does not exist."
-            return
+            $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
+        } catch {
+            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
-
-        $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
 
         if ((-not $tableExists) -and (-not $AutoCreateTable)) {
             Stop-Function -Message "Table does not exist and automatic creation of the table has not been selected. Specify the '-AutoCreateTable'-parameter to generate a suitable table."

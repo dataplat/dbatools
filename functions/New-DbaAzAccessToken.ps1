@@ -114,7 +114,7 @@ function New-DbaAzAccessToken {
                         Headers = @{ Metadata = "true" }
                     }
                     $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
-                    ($response.Content | ConvertFrom-Json).access_token
+                    $token = ($response.Content | ConvertFrom-Json).access_token
                 }
                 ServicePrincipal {
                     if ((Get-CimInstance -ClassName Win32_OperatingSystem).Version -lt 8 -or $script:core) {
@@ -132,12 +132,19 @@ function New-DbaAzAccessToken {
                     $result = $context.AcquireTokenAsync("https://database.windows.net/", $cred)
 
                     if ($result.Result.AccessToken) {
-                        $result.Result.AccessToken
+                        $token = $result.Result.AccessToken
                     } else {
                         throw ($result.Exception | ConvertTo-Json | ConvertFrom-Json).InnerException.Message
                     }
                 }
             }
+            $script:aztokens += {
+                SqlInstance = $null
+                PSBoundParams = $PSBoundParameters
+                Token = $token
+            }
+
+            return $token
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
