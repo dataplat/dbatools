@@ -2,6 +2,8 @@
 
 Want to contribute to the project? We'd love to have you! Visit our [contributing.md](contributing.md) for a jump start.
 
+Want to say thanks? Click the star at the top of the page 🌟
+
 ## Key links for reference:
 
 - [dbatools Slack channel](https://sqlcommunity.slack.com/messages/C1M2WEASG/) for general discussion on the module and asking questions
