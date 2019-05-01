@@ -178,6 +178,25 @@ function Connect-DbaInstance {
 
         Connects with ReadOnly ApplicationIntent.
 
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance "myserver.public.cust123.database.windows.net,3342" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.
+
+        .EXAMPLE
+        PS C:\> $token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb
+        PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Generates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.
+        The connection is subsequently used to perform a sample query.
     #>
     [CmdletBinding()]
     param (
