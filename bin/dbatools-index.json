@@ -1652,7 +1652,7 @@
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So when you open up profiler or use extended events, you can search for \"my \r\nconnection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So when you open up profiler or use extended events, you can search for \"my \r\nconnection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\r\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nGenerates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.\r\nThe connection is subsequently used to perform a sample query.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -19752,7 +19752,7 @@
         "CommandName":  "Get-DbatoolsLog",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbatoolsLog",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsLog\nReturns all log entries currently in memory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Target \"a\" -Last 1 -Skip 1\nReturns all log entries that targeted the object \"a\" in the second last execution sent.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Tag \"fail\" -Last 5\nReturns all log entries within the last 5 executions that contained the tag \"fail\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsLog\nReturns all log entries currently in memory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatooolsLog -LastError\nReturns the last log entry type of error.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Target \"a\" -Last 1 -Skip 1\nReturns all log entries that targeted the object \"a\" in the second last execution sent.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbatoolsLog -Tag \"fail\" -Last 5\nReturns all log entries within the last 5 executions that contained the tag \"fail\"",
         "Params":  [
                        [
                            "FunctionName",
@@ -19772,7 +19772,7 @@
                        ],
                        [
                            "Target",
-                           "Only messags handling the specified target will be returned.",
+                           "Only messages handling the specified target will be returned.",
                            "",
                            false,
                            "false",
@@ -19795,6 +19795,14 @@
                            "0"
                        ],
                        [
+                           "LastError",
+                           "Only retrieves the last error message type written.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Skip",
                            "How many executions to skip when specifying \u0027-Last\u0027.\r\nHas no effect without the \u0027-Last\u0027 parameter.",
                            "",
@@ -19804,7 +19812,7 @@
                        ],
                        [
                            "Runspace",
-                           "The guid of the runspace to return messages from.\r\nBy default, messages from all runspaces are returned.\r\nRun the following line to see the list of guids:\nGet-Runspace | ft Id, Name, InstanceId -Autosize",
+                           "The guid of the runspace to return messages from.\r\nBy default, messages from all runspaces are returned.\r\nRun the following line to see the list of guids:\nGet-Runspace | ft Id, Name, InstanceId -AutoSize",
                            "",
                            false,
                            "false",
@@ -19835,7 +19843,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbatoolsLog [[-FunctionName] \u003cString\u003e] [[-ModuleName] \u003cString\u003e] [[-Target] \u003cObject\u003e] [[-Tag] \u003cString[]\u003e] [[-Last] \u003cInt32\u003e] [[-Skip] \u003cInt32\u003e] [[-Runspace] \u003cGuid\u003e] [[-Level] {Critical | Important | Output | Significant | VeryVerbose | Verbose | SomewhatVerbose | System | Debug | InternalComment | Warning}] [-Raw] [-Errors] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbatoolsLog [[-FunctionName] \u003cString\u003e] [[-ModuleName] \u003cString\u003e] [[-Target] \u003cObject\u003e] [[-Tag] \u003cString[]\u003e] [[-Last] \u003cInt32\u003e] [-LastError] [[-Skip] \u003cInt32\u003e] [[-Runspace] \u003cGuid\u003e] [[-Level] {Critical | Important | Output | Significant | VeryVerbose | Verbose | SomewhatVerbose | System | Debug | InternalComment | Warning}] [-Raw] [-Errors] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaTopResourceUsage",
@@ -28219,7 +28227,7 @@
     },
     {
         "Name":  "New-DbaAzAccessToken",
-        "Description":  "Generates an oauth2 access token.\n\nCurrently, only Azure Managed Identities are built-in.",
+        "Description":  "Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.",
         "Tags":  [
                      "Connect",
                      "Connection",
@@ -28231,23 +28239,23 @@
         "CommandName":  "New-DbaAzAccessToken",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAzAccessToken",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nReturns a plain-text token for Managed Identities for SQL Azure Db.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\nGenerates a token then uses it to connect to Azure SQL DB",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAzAccessToken -Type ManagedIdentity\nReturns a plain-text token for Managed Identities for SQL Azure Db.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\nGenerates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ServicePrincipal -Tenant whatup.onmicrosoft.com -Credential ee590f55-9b2b-55d4-8bca-38ab123db670\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nGenerates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.\r\nOnce the connection is made, it is used to perform a test query.",
         "Params":  [
                        [
                            "Type",
-                           "The type of request. Currently, only Managed Identities are built-in.",
+                           "The type of request: ManagedIdentity or ServicePrincipal.",
                            "",
-                           false,
+                           true,
                            "false",
                            ""
                        ],
                        [
                            "Subtype",
-                           "The subtype. Auto-complete\nThis allows you to use a Windows VM system-assigned managed identity to access Azure SQL.\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
+                           "The subtype. Auto-completes. Currently supports AzureSqlDb and Management.\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
                            "",
                            false,
                            "false",
-                           ""
+                           "AzureSqlDb"
                        ],
                        [
                            "Config",
@@ -28258,8 +28266,16 @@
                            ""
                        ],
                        [
-                           "Uri",
-                           "Plug-in a manual uri. If this is used, Type, Subtype and Config are ignored.",
+                           "Credential",
+                           "When using the ServicePrincipal type, a Credential is required. The username is the App ID and Password is the App Password\nhttps://docs.microsoft.com/en-us/azure/active-directory/user-help/multi-factor-authentication-end-user-app-passwords",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Tenant",
+                           "hen using the ServicePrincipal type, a tenant name or ID is required. This field works with both.",
                            "",
                            false,
                            "false",
@@ -28274,7 +28290,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "New-DbaAzAccessToken [[-Type] \u003cString\u003e] [[-Subtype] \u003cString\u003e] [[-Config] \u003cObject\u003e] [[-Uri] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAzAccessToken [-Type] \u003cString\u003e [[-Subtype] \u003cString\u003e] [[-Config] \u003cObject\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Tenant] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaClientAlias",
