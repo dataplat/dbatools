@@ -81,9 +81,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Replication',
-            'Microsoft.SqlServer.Rmo',
-            'Microsoft.IdentityModel.Clients.ActiveDirectory',
-            'Microsoft.IdentityModel.Clients.ActiveDirectory.Platform'
+            'Microsoft.SqlServer.Rmo'
         )
     }
     #endregion Names
@@ -95,9 +93,6 @@ $scriptBlock = {
         foreach ($name in $names) {
             Add-Type -Path (Resolve-Path -Path "$DllRoot\coreclr\$name.dll")
         }
-        Add-Type -Path (Resolve-Path -Path "$DllRoot\Microsoft.IdentityModel.Clients.ActiveDirectory.dll")
-
-        Add-Type -Path (Resolve-Path -Path "$DllRoot\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll")
     } else {
         foreach ($name in $names) {
             try {
