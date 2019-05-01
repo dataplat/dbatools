@@ -320,8 +320,8 @@ function Invoke-DbaAdvancedRestore {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                         $RestoreComplete = $False
                         $ExitError = $_.Exception.InnerException
-                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
-                        return
+                        Write-Message -Level Warning -Message "Failed to restore db $Database, skipping"
+                        continue
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server
