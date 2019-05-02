@@ -70,8 +70,8 @@ function Register-DbaMaintenanceTask {
     )
 
     #region Case: Task already registered
-    if ([Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks.ContainsKey($Name.ToLower())) {
-        $task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLower()]
+    if ([Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks.ContainsKey($Name.ToLowerInvariant())) {
+        $task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()]
         if ($task.ScriptBlock -ne $ScriptBlock) { $task.ScriptBlock = $ScriptBlock }
         if (Test-Bound -ParameterName Once) { $task.Once = $Once }
         if (Test-Bound -ParameterName Interval) {
@@ -86,7 +86,7 @@ function Register-DbaMaintenanceTask {
     #region New Task
     else {
         $task = New-Object Sqlcollaborative.Dbatools.Maintenance.MaintenanceTask
-        $task.Name = $Name.ToLower()
+        $task.Name = $Name.ToLowerInvariant()
         $task.ScriptBlock = $ScriptBlock
         if (Test-Bound -ParameterName Once) { $task.Once = $true }
         if (Test-Bound -ParameterName Interval) {
@@ -98,7 +98,7 @@ function Register-DbaMaintenanceTask {
         if (Test-Bound -ParameterName Delay) { $task.Delay = $Delay }
         $task.Priority = $Priority
         $task.Registered = Get-Date
-        [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLower()] = $task
+        [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()] = $task
     }
     #endregion New Task
 }

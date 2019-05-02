@@ -204,7 +204,7 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
 
-                $userBase = ($userName.Split("\")[0]).ToLower()
+                $userBase = ($userName.Split("\")[0]).ToLowerInvariant()
 
                 if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
                     if ($sourceServer.ComputerName -ne $destServer.ComputerName) {

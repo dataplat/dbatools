@@ -50,24 +50,24 @@ function Stop-DbaRunspace {
             # Ignore all output from Get-DbaRunspace - it'll be handled by the second loop
             if ($item -eq "Sqlcollaborative.Dbatools.Runspace.runspacecontainer") { continue }
 
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLower())) {
+            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLowerInvariant())) {
                 try {
-                    Write-Message -Level Verbose -Message "Stopping runspace: $($item.ToLower())" -Target $item.ToLower()
-                    [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLower()].Stop()
+                    Write-Message -Level Verbose -Message "Stopping runspace: $($item.ToLowerInvariant())" -Target $item.ToLowerInvariant()
+                    [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLowerInvariant()].Stop()
                 } catch {
-                    Stop-Function -Message "Failed to stop runspace: $($item.ToLower())" -EnableException $EnableException -Target $item.ToLower() -Continue
+                    Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to stop runspace: $($item.ToLower()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLower() -Continue
+                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
             }
         }
 
         foreach ($item in $Runspace) {
             try {
-                Write-Message -Level Verbose -Message "Stopping runspace: $($item.Name.ToLower())" -Target $item
+                Write-Message -Level Verbose -Message "Stopping runspace: $($item.Name.ToLowerInvariant())" -Target $item
                 $item.Stop()
             } catch {
-                Stop-Function -Message "Failed to stop runspace: $($item.Name.ToLower())" -EnableException $EnableException -Target $item -Continue
+                Stop-Function -Message "Failed to stop runspace: $($item.Name.ToLowerInvariant())" -EnableException $EnableException -Target $item -Continue
             }
         }
     }
