@@ -377,7 +377,7 @@ function Write-DbaDbTableData {
         #endregion Prepare type for bulk copy
 
         #region Resolve Full Qualified Table Name
-        $fqtnObj = Get-TableNameParts $Table
+        $fqtnObj = Get-ObjectNameParts -ObjectName $Table
 
         if ($fqtnObj.$parsed) {
             Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
@@ -410,7 +410,7 @@ function Write-DbaDbTableData {
             $schemaName = $Schema
         }
 
-        $tableName = $fqtnObj.Table
+        $tableName = $fqtnObj.Name
 
         $quotedFQTN = New-Object System.Text.StringBuilder
 
@@ -462,22 +462,26 @@ function Write-DbaDbTableData {
                 $null = 1
             }
         }
-        $databaseObject = $server.Databases[$databaseName]
-        #endregion Connect to server and get database
+        try {
+            $databaseObject = $server.Databases[$databaseName]
+            #endregion Connect to server and get database
 
-        #region Prepare database and bulk operations
-        if ($null -eq $databaseObject) {
-            Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
-            return
+            #region Prepare database and bulk operations
+            if ($null -eq $databaseObject) {
+                Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
+                return
+            }
+
+            $databaseObject.Tables.Refresh()
+            if ($schemaName -notin $databaseObject.Schemas.Name) {
+                Stop-Function -Message "Schema does not exist."
+                return
+            }
+
+            $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
+        } catch {
+            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
-
-        $databaseObject.Tables.Refresh()
-        if ($schemaName -notin $databaseObject.Schemas.Name) {
-            Stop-Function -Message "Schema does not exist."
-            return
-        }
-
-        $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
 
         if ((-not $tableExists) -and (-not $AutoCreateTable)) {
             Stop-Function -Message "Table does not exist and automatic creation of the table has not been selected. Specify the '-AutoCreateTable'-parameter to generate a suitable table."
@@ -525,43 +529,45 @@ function Write-DbaDbTableData {
 
         $PStoSQLTypes = @{
             #PS datatype      = SQL data type
-            'System.Int32'    = 'int';
-            'System.UInt32'   = 'bigint';
-            'System.Int16'    = 'smallint';
-            'System.UInt16'   = 'int';
-            'System.Int64'    = 'bigint';
-            'System.UInt64'   = 'decimal(20,0)';
-            'System.Decimal'  = 'decimal(38,5)';
-            'System.Single'   = 'bigint';
-            'System.Double'   = 'float';
-            'System.Byte'     = 'tinyint';
-            'System.SByte'    = 'smallint';
-            'System.TimeSpan' = 'nvarchar(30)';
-            'System.String'   = 'nvarchar(MAX)';
-            'System.Char'     = 'nvarchar(1)'
-            'System.DateTime' = 'datetime2';
-            'System.Boolean'  = 'bit';
-            'System.Guid'     = 'uniqueidentifier';
-            'Int32'           = 'int';
-            'UInt32'          = 'bigint';
-            'Int16'           = 'smallint';
-            'UInt16'          = 'int';
-            'Int64'           = 'bigint';
-            'UInt64'          = 'decimal(20,0)';
-            'Decimal'         = 'decimal(38,5)';
-            'Single'          = 'bigint';
-            'Double'          = 'float';
-            'Byte'            = 'tinyint';
-            'SByte'           = 'smallint';
-            'TimeSpan'        = 'nvarchar(30)';
-            'String'          = 'nvarchar(MAX)';
-            'Char'            = 'nvarchar(1)'
-            'DateTime'        = 'datetime2';
-            'Boolean'         = 'bit';
-            'Bool'            = 'bit';
-            'Guid'            = 'uniqueidentifier';
-            'int'             = 'int';
-            'long'            = 'bigint';
+            'System.Int32'          = 'int';
+            'System.UInt32'         = 'bigint';
+            'System.Int16'          = 'smallint';
+            'System.UInt16'         = 'int';
+            'System.Int64'          = 'bigint';
+            'System.UInt64'         = 'decimal(20,0)';
+            'System.Decimal'        = 'decimal(38,5)';
+            'System.Single'         = 'bigint';
+            'System.Double'         = 'float';
+            'System.Byte'           = 'tinyint';
+            'System.SByte'          = 'smallint';
+            'System.TimeSpan'       = 'nvarchar(30)';
+            'System.String'         = 'nvarchar(MAX)';
+            'System.Char'           = 'nvarchar(1)'
+            'System.DateTime'       = 'datetime2';
+            'System.DateTimeOffset' = 'datetimeoffset';
+            'System.Boolean'        = 'bit';
+            'System.Guid'           = 'uniqueidentifier';
+            'Int32'                 = 'int';
+            'UInt32'                = 'bigint';
+            'Int16'                 = 'smallint';
+            'UInt16'                = 'int';
+            'Int64'                 = 'bigint';
+            'UInt64'                = 'decimal(20,0)';
+            'Decimal'               = 'decimal(38,5)';
+            'Single'                = 'bigint';
+            'Double'                = 'float';
+            'Byte'                  = 'tinyint';
+            'SByte'                 = 'smallint';
+            'TimeSpan'              = 'nvarchar(30)';
+            'String'                = 'nvarchar(MAX)';
+            'Char'                  = 'nvarchar(1)'
+            'DateTime'              = 'datetime2';
+            'DateTimeOffset'        = 'datetimeoffset';
+            'Boolean'               = 'bit';
+            'Bool'                  = 'bit';
+            'Guid'                  = 'uniqueidentifier';
+            'int'                   = 'int';
+            'long'                  = 'bigint';
         }
 
         $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])

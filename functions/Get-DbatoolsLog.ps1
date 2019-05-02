@@ -15,7 +15,7 @@ function Get-DbatoolsLog {
         Only messages written by commands from similar modules will be returned.
 
     .PARAMETER Target
-        Only messags handling the specified target will be returned.
+        Only messages handling the specified target will be returned.
 
     .PARAMETER Tag
         Only messages containing one of these tags will be returned.
@@ -25,6 +25,9 @@ function Get-DbatoolsLog {
         Uses Get-History to determine execution. Ignores Get-message commands.
         By default, this will also include messages from other runspaces. If your command executes in parallel, that's useful.
         If it doesn't and you were offloading executions to other runspaces, consider also filtering by runspace using '-Runspace'
+
+    .PARAMETER LastError
+        Only retrieves the last error message type written.
 
     .PARAMETER Skip
         How many executions to skip when specifying '-Last'.
@@ -38,7 +41,7 @@ function Get-DbatoolsLog {
         By default, messages from all runspaces are returned.
         Run the following line to see the list of guids:
 
-        Get-Runspace | ft Id, Name, InstanceId -Autosize
+        Get-Runspace | ft Id, Name, InstanceId -AutoSize
 
     .PARAMETER Level
         Limit the message selection by level.
@@ -68,6 +71,11 @@ function Get-DbatoolsLog {
         Returns all log entries currently in memory.
 
     .EXAMPLE
+        PS C:\> Get-DbatooolsLog -LastError
+
+        Returns the last log entry type of error.
+
+    .EXAMPLE
         PS C:\> Get-DbatoolsLog -Target "a" -Last 1 -Skip 1
 
         Returns all log entries that targeted the object "a" in the second last execution sent.
@@ -86,6 +94,7 @@ function Get-DbatoolsLog {
         [object]$Target,
         [string[]]$Tag,
         [int]$Last,
+        [switch]$LastError,
         [int]$Skip = 0,
         [guid]$Runspace,
         [Sqlcollaborative.Dbatools.Message.MessageLevel[]]$Level,
@@ -101,6 +110,12 @@ function Get-DbatoolsLog {
             $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object {
                 ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
             }
+        }
+
+        if (Test-Bound -ParameterName LastError) {
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
+                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
+            } | Select-Object -Last 1
         }
 
         if (Test-Bound -ParameterName Target) {

@@ -4,7 +4,7 @@ function Update-SqlDbOwner {
         Internal function. Updates specified database dbowner.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -41,7 +41,7 @@ function Update-SqlDbOwner {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
-            
+
             if ($null -eq $dbowner -or $null -eq $destServer.logins[$dbowner]) {
                 try {
                     $dbowner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
@@ -50,21 +50,23 @@ function Update-SqlDbOwner {
                 }
             }
 
-            try {
-                if ($destdb.ReadOnly -eq $true) {
-                    $changeroback = $true
-                    Update-SqlDbReadOnly $destServer $DbName $false
-                }
+            if ($Pscmdlet.ShouldProcess($destdb.Parent.Name, "Setting $destdb owner to $dbowner")) {
+                try {
+                    if ($destdb.ReadOnly -eq $true) {
+                        $changeroback = $true
+                        Update-SqlDbReadOnly $destServer $DbName $false
+                    }
 
-                $destdb.SetOwner($dbowner)
-                Write-Output "Changed $DbName owner to $dbowner"
+                    $destdb.SetOwner($dbowner)
+                    Write-Output "Changed $DbName owner to $dbowner"
 
-                if ($changeroback) {
-                    Update-SqlDbReadOnly $destServer $DbName $true
-                    $changeroback = $null
+                    if ($changeroback) {
+                        Update-SqlDbReadOnly $destServer $DbName $true
+                        $changeroback = $null
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to update $DbName owner to $dbowner." -ErrorRecord $_
                 }
-            } catch {
-                Stop-Function -Message "Failed to update $DbName owner to $dbowner." -ErrorRecord $_
             }
         } else {
             Write-Message -Level Verbose -Message "Proper owner already set on $DbName"

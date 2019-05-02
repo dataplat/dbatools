@@ -67,7 +67,7 @@ function Write-ImportTime {
 
     if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
 
-    if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+    if ($null -eq ([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
     } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
@@ -443,10 +443,6 @@ $script:renames = @(
     @{
         "AliasName"  = "Reset-SqlSaPassword"
         "Definition" = "Reset-SqlAdmin"
-    },
-    @{
-        "AliasName"  = "Restore-SqlBackupFromDirectory"
-        "Definition" = "Restore-DbaBackupFromDirectory"
     },
     @{
         "AliasName"  = "Set-SqlMaxMemory"
@@ -1066,8 +1062,7 @@ $script:xplat = @(
     'Copy-DbaAgentProxy',
     'Copy-DbaAgentAlert',
     'Copy-DbaStartupProcedure',
-    'Get-DbaDetachedDatabaseInfo',
-    'Restore-DbaBackupFromDirectory',
+    'Get-DbaDbDetachedFileInfo',
     'Copy-DbaAgentJobCategory',
     'Test-DbaPath',
     'Export-DbaLogin',
@@ -1442,7 +1437,10 @@ $script:xplat = @(
     'Get-DbaRandomizedDatasetTemplate',
     'Get-DbaRandomizedDataset',
     'Get-DbaRandomizedType',
-    'Export-DbaDbTableData'
+    'Export-DbaDbTableData',
+    'Backup-DbaServiceMasterKey',
+    'Invoke-DbaDbPiiScan',
+    'New-DbaAzAccessToken'
 )
 
 $script:noncoresmo = @(
@@ -1669,6 +1667,10 @@ if (Get-Module -Name sqlserver, sqlps) {
         Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
         Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
+}
+
+if (-not $script:aztokens) {
+    $script:aztokens = @()
 }
 
 #endregion Post-Import Cleanup

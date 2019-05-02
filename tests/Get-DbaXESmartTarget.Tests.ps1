@@ -13,7 +13,5 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 <#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    ASync / Job based, no integration tests can be performed
 #>

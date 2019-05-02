@@ -12,8 +12,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Creates a smart object" {
+        It "returns the object with all of the correct properties" {
+            $results = New-DbaXESmartEmail -SmtpServer smtp.ad.local -Sender me@me.com -To you@you.net -Subject Test -Body Sup -Event abc
+            $results.SMTPServer | Should -Be 'smtp.ad.local'
+            $results.Sender | Should -Be 'me@me.com'
+            $results.To | Should -be 'you@you.net'
+            $results.Subject | Should -Be 'Test'
+            $results.Events | Should -Contain 'abc'
+            $results.HTMLFormat | SHould -Be $false
+        }
+    }
+}
