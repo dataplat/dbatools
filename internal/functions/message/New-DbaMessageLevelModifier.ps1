@@ -98,7 +98,7 @@ function New-DbaMessageLevelModifier {
     }
 
     $levelModifier = New-Object Sqlcollaborative.Dbatools.Message.MessageLevelModifier
-    $levelModifier.Name = $Name.ToLower()
+    $levelModifier.Name = $Name.ToLowerInvariant()
     $levelModifier.Modifier = $Modifier
 
     if (Test-Bound -ParameterName IncludeFunctionName) {

@@ -18,9 +18,8 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
-# sadly, shallow_clone is suddenly causing issues
-#shallow_clone: true
-clone_depth: 5
+shallow_clone: true
+#clone_depth: 100
 
 # Set build info
 environment:

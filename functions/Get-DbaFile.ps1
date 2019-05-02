@@ -158,7 +158,7 @@ function Get-DbaFile {
         }
 
         if ($FileType) {
-            $FileTypeComparison = $FileType | ForEach-Object { $_.ToLower() } | Where-Object { $_ } | Sort-Object | Get-Unique
+            $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
         }
     }
 
@@ -187,7 +187,7 @@ function Get-DbaFile {
             if ($FileTypeComparison) {
                 foreach ($row in $datatable) {
                     foreach ($type in $FileTypeComparison) {
-                        if ($row.filename.ToLower().EndsWith(".$type")) {
+                        if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
                             [pscustomobject]@{
                                 ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName

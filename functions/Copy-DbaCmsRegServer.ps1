@@ -160,12 +160,12 @@ function Copy-DbaCmsRegServer {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
+                if ($serverName.ToLowerInvariant() -eq $toCmStore.DomainInstanceName.ToLowerInvariant()) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
                         if ($SwitchServerName) {
                             $serverName = $fromCmStore.DomainInstanceName
                             $instanceName = $fromCmStore.DomainInstanceName
-                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
+                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
                         } else {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

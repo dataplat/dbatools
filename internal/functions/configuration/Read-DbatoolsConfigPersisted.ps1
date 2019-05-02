@@ -119,7 +119,7 @@ function Read-DbatoolsConfigPersisted
         if (-not $Hashtable) { $results = @{ } }
         else { $results = $Hashtable }
         
-        if ($Module) { $filename = "$($Module.ToLower())-$($ModuleVersion).json" }
+        if ($Module) { $filename = "$($Module.ToLowerInvariant())-$($ModuleVersion).json" }
         else { $filename = "psf_config.json" }
     }
     process

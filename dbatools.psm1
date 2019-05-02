@@ -445,10 +445,6 @@ $script:renames = @(
         "Definition" = "Reset-SqlAdmin"
     },
     @{
-        "AliasName"  = "Restore-SqlBackupFromDirectory"
-        "Definition" = "Restore-DbaBackupFromDirectory"
-    },
-    @{
         "AliasName"  = "Set-SqlMaxMemory"
         "Definition" = "Set-DbaMaxMemory"
     },
@@ -1066,8 +1062,7 @@ $script:xplat = @(
     'Copy-DbaAgentProxy',
     'Copy-DbaAgentAlert',
     'Copy-DbaStartupProcedure',
-    'Get-DbaDetachedDatabaseInfo',
-    'Restore-DbaBackupFromDirectory',
+    'Get-DbaDbDetachedFileInfo',
     'Copy-DbaAgentJobCategory',
     'Test-DbaPath',
     'Export-DbaLogin',
