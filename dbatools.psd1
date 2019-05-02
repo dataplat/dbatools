@@ -93,7 +93,7 @@
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
         'Copy-DbaStartupProcedure',
-        'Get-DbaDetachedDatabaseInfo',
+        'Get-DbaDbDetachedFileInfo',
         'Copy-DbaAgentJobCategory',
         'Test-DbaPath',
         'Export-DbaLogin',
