@@ -1062,7 +1062,7 @@ $script:xplat = @(
     'Copy-DbaAgentProxy',
     'Copy-DbaAgentAlert',
     'Copy-DbaStartupProcedure',
-    'Get-DbaDbDetachedFileInfo',
+    'Get-DbaDetachedDatabaseInfo',
     'Copy-DbaAgentJobCategory',
     'Test-DbaPath',
     'Export-DbaLogin',
