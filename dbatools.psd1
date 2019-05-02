@@ -94,7 +94,6 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaStartupProcedure',
         'Get-DbaDbDetachedFileInfo',
-        'Restore-DbaBackupFromDirectory',
         'Copy-DbaAgentJobCategory',
         'Test-DbaPath',
         'Export-DbaLogin',
