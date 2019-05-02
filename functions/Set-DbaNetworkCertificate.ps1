@@ -180,7 +180,7 @@ function Set-DbaNetworkCertificate {
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
-                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLower() # to make it compat with SQL config
+                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate"

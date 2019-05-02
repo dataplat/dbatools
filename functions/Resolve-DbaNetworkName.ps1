@@ -105,7 +105,7 @@ function Resolve-DbaNetworkName {
                 if ($ComputerName -match "\.") {
                     return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
                 } else {
-                    return "$env:USERDNSDOMAIN".ToLower()
+                    return "$env:USERDNSDOMAIN".ToLowerInvariant()
                 }
             } else {
                 return $fqdn.Substring($fqdn.IndexOf(".") + 1)

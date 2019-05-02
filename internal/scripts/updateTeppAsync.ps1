@@ -39,7 +39,7 @@ $scriptBlock = {
                     continue
                 }
 
-                $FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$instance.ConnectionObject.ConnectionString).FullSmoName.ToLower()
+                $FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$instance.ConnectionObject.ConnectionString).FullSmoName.ToLowerInvariant()
 
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
                     $scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
@@ -70,7 +70,7 @@ $scriptBlock = {
         #region Main Execution
         while ($true) {
             # This portion is critical to gracefully closing the script
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].State -notlike "Running") {
+            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
                 break
             }
 
@@ -84,7 +84,7 @@ $scriptBlock = {
     } catch {
         & $script:dbatools { Write-Message "General Failure" -ErrorRecord $_ -Level Debug }
     } finally {
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }
 
