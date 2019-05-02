@@ -345,11 +345,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord -->
+        <!-- Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.dbaSystemDbatoolsExceptionRecord</Name>
+            <Name>Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord</TypeName>
+                <TypeName>Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -389,11 +389,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.dbaSystem.LogEntry -->
+        <!-- Sqlcollaborative.Dbatools.Message.LogEntry -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.dbaSystem.LogEntry</Name>
+            <Name>Sqlcollaborative.Dbatools.Message.LogEntry</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.dbaSystem.LogEntry</TypeName>
+                <TypeName>Sqlcollaborative.Dbatools.Message.LogEntry</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>

@@ -88,11 +88,6 @@ function Copy-DbaCmsRegServer {
         [switch]$EnableException
     )
     begin {
-        if (-not $script:isWindows) {
-            Stop-Function -Message "Copy-DbaCmsRegServer does not support Linux - we're still waiting for the Core SMOs from Microsoft"
-            return
-        }
-        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaCentralManagementServer
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
@@ -165,12 +160,12 @@ function Copy-DbaCmsRegServer {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
+                if ($serverName.ToLowerInvariant() -eq $toCmStore.DomainInstanceName.ToLowerInvariant()) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
                         if ($SwitchServerName) {
                             $serverName = $fromCmStore.DomainInstanceName
                             $instanceName = $fromCmStore.DomainInstanceName
-                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
+                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
                         } else {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -213,7 +208,7 @@ function Copy-DbaCmsRegServer {
                     $newServer.Description = $instance.Description
 
                     if ($serverName -ne $fromCmStore.DomainInstanceName) {
-                        $newServer.SecureConnectionString = $instance.SecureConnectionString.ToString()
+                        $newServer.SecureConnectionString = $instance.SecureConnectionString
                         $newServer.ConnectionString = $instance.ConnectionString.ToString()
                     }
 
@@ -292,7 +287,7 @@ function Copy-DbaCmsRegServer {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
             $fromCmStore = Get-DbaCmsRegServerStore -SqlInstance $sourceServer
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
@@ -303,7 +298,7 @@ function Copy-DbaCmsRegServer {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
 

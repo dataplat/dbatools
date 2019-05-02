@@ -12,55 +12,44 @@ USE tempdb;
 
             /*
             Objects defined in this file:
-
             VIEW STIG.database_role_members
                 Based on the system view sys.database_role_members, this presents the list of
                 database role memberships using roles' and users' names rather than their id numbers.
                 Although membership in database roles is hierarchical, this view lists only the direct memberships.
-
             FUNCTION STIG.database_roles_of(@database_principal sysname)
                 Given the name of a database principal (user or role), this table-valued function returns
                 a list of all the roles it belongs to, both directly and indirectly.
-
             FUNCTION STIG.members_of_db_role(@database_role sysname)
                 Given the name of a database role, this table-valued function returns
                 a list of all the roles and users that belong to it, both directly and indirectly.
-
             VIEW STIG.database_permissions
                 Based on the system view sys.database_permissions, this provides additional, descriptive material.
                 The list includes only those permissions explicitly granted (or denied) to a database user or role;
                 it does not include permissions that are implicit or inherited from a higher-level role.
                 Securable items that exist but have no explicit permissions assigned are included in the
                 list, with the columns that describe the grantor and grantee left null.
-
             FUNCTION STIG.database_effective_permissions(@Grantee sysname)
-                Given the name of a database principal (user or role), this table-valued function 
+                Given the name of a database principal (user or role), this table-valued function
                 returns information about permissions granted (or denied) to that user or database role,
                 either directly or inherited from a higher-level role.
-
-
             VIEW STIG.server_role_members
                 Based on the system view sys.server_role_members, this presents the list of
                 server role memberships using roles' and users' names rather than their id numbers.
                 Although membership in server roles is hierarchical, this view lists only the direct memberships.
-
             FUNCTION STIG.server_roles_of(@server_principal sysname)
                 Given the name of a server principal (login or role), this table-valued function returns
                 a list of all the roles it belongs to, both directly and indirectly.
-
             FUNCTION STIG.members_of_server_role(@server_role sysname)
                 Given the name of a server role, this table-valued function returns
                 a list of all the roles and logins that belong to it, both directly and indirectly.
-
             VIEW STIG.server_permissions
                 Based on the system view sys.server_permissions, this provides additional, descriptive material.
                 The list includes only those permissions explicitly granted (or denied) to a server login or role;
                 it does not include permissions that are implicit or inherited from a higher-level role.
                 Securable items that exist but have no explicit permissions assigned are included in the
                 list, with columns describing the grantor and grantee left null.
-
             FUNCTION STIG.server_effective_permissions(@Grantee sysname)
-                Given the name of a server principal (login or server role), this table-valued function 
+                Given the name of a server principal (login or server role), this table-valued function
                 returns information about permissions granted (or denied) to that login or role,
                 either directly or inherited from a higher-level role.
             */
@@ -94,8 +83,8 @@ USE tempdb;
                 RETURNS @T TABLE
                     (
                     [Member]            sysname,
-                    [Role]              sysname, 
-                    [via Member]        sysname, 
+                    [Role]              sysname,
+                    [via Member]        sysname,
                     [Membership Chain]  nvarchar(max)
                     )
             AS BEGIN;
@@ -103,22 +92,22 @@ USE tempdb;
                 (
                 SELECT
                     [Member] AS [Member],
-                    [Role], 
-                    [Member] AS [via Member], 
+                    [Role],
+                    [Member] AS [via Member],
                     CAST([Member] AS varchar(max)) + ' < ' + CAST([Role] AS varchar(max)) AS [Membership Chain]
                 FROM
                     STIG.database_role_members
-                WHERE 
+                WHERE
                     [Member] = @database_principal
-    
+
                 UNION ALL
-    
+
                 SELECT
                     X.[Member],
                     R.[Role],
                     R.[Member] AS [via Member],
                     X.[Membership Chain] + ' < ' + CAST(R.[Role] AS varchar(max)) AS [Membership Chain]
-                FROM 
+                FROM
                     Membership X
                     INNER JOIN STIG.database_role_members R ON X.[Role] = R.[Member]
                 )
@@ -140,7 +129,7 @@ USE tempdb;
                     (
                     [Role]              sysname,
                     [Member]            sysname,
-                    [via Role]          sysname, 
+                    [via Role]          sysname,
                     [Membership Chain]  nvarchar(max)
                     )
             AS BEGIN;
@@ -148,12 +137,12 @@ USE tempdb;
                 (
                 SELECT
                     [Role] AS [Role],
-                    [Member], 
-                    [Role] AS [via Role], 
+                    [Member],
+                    [Role] AS [via Role],
                     CAST([Role] AS varchar(max)) + ' > ' + CAST([Member] AS varchar(max)) AS [Membership Chain]
                 FROM
                     STIG.database_role_members
-                WHERE 
+                WHERE
                     [Role] = @database_role
 
                 UNION ALL
@@ -163,7 +152,7 @@ USE tempdb;
                     R.[Member],
                     R.[Role] AS [via Role],
                     X.[Membership Chain] + ' > ' + CAST(R.[Member] AS varchar(max)) AS [Membership Chain]
-                FROM 
+                FROM
                     Membership X
                     INNER JOIN STIG.database_role_members R ON X.[Member] = R.[Role]
                 )
@@ -188,7 +177,7 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME        AS [Current Server],
                 @@SERVICENAME       AS [Current Instance],
-                '<TARGETDB>'        AS [Current DB],
+                '<QUOTETARGETDB>'             AS [Current DB],
                 SYSTEM_USER         AS [Current Login],
                 USER                AS [Current User],
 
@@ -211,7 +200,7 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'SYMMETRIC_KEY'
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'ASYMMETRIC_KEY'
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'CERTIFICATE'
-                    ELSE NULL 
+                    ELSE NULL
                 END                 AS [Securable Type or Class],
                 CASE
                     WHEN DP.class_desc = 'DATABASE'                     THEN PS.name
@@ -221,10 +210,10 @@ USE tempdb;
                     WHEN DP.class_desc = 'ASSEMBLY'                     THEN P4.name
                     WHEN DP.class_desc = 'TYPE'                         THEN schema_name(TP.schema_id)
                     WHEN DP.class_desc = 'XML_SCHEMA_COLLECTION'        THEN schema_name(XS.schema_id)
-                    WHEN DP.class_desc = 'MESSAGE_TYPE'                 THEN P5.name 
-                    WHEN DP.class_desc = 'SERVICE_CONTRACT'             THEN P6.name 
-                    WHEN DP.class_desc = 'SERVICE'                      THEN P7.name 
-                    WHEN DP.class_desc = 'REMOTE_SERVICE_BINDING'       THEN P8.name 
+                    WHEN DP.class_desc = 'MESSAGE_TYPE'                 THEN P5.name
+                    WHEN DP.class_desc = 'SERVICE_CONTRACT'             THEN P6.name
+                    WHEN DP.class_desc = 'SERVICE'                      THEN P7.name
+                    WHEN DP.class_desc = 'REMOTE_SERVICE_BINDING'       THEN P8.name
                     WHEN DP.class_desc = 'ROUTE'                        THEN P9.name
                     WHEN DP.class_desc = 'FULLTEXT_CATALOG'             THEN PA.name
                     WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN PB.name
@@ -246,7 +235,7 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN PB.name
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN PC.name
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN PD.name
-                    ELSE NULL 
+                    ELSE NULL
                 END                 AS [Schema/Owner],
                 CASE
                     WHEN DP.class_desc = 'DATABASE'                     THEN DB.name
@@ -265,7 +254,7 @@ USE tempdb;
                     WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN SK.name
                     WHEN DP.class_desc = 'ASYMMETRIC_KEY'               THEN AK.name
                     WHEN DP.class_desc = 'CERTIFICATE'                  THEN CT.name
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN DB.name 
+                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN DB.name
                     WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN OB.name
                     WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN SC.name
                     WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN PR.name
@@ -281,12 +270,12 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN SK.name
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN AK.name
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN CT.name
-                    ELSE NULL 
+                    ELSE NULL
                 END                 AS [Securable],
                 CM.name             AS [Column],
                 P1.type_desc        AS [Grantee Type],
                 P1.name             AS [Grantee],
-                DP.permission_name  AS [Permission],    
+                DP.permission_name  AS [Permission],
                 DP.state_desc       AS [State],
                 P2.name             AS [Grantor],
                 P2.type_desc        AS [Grantor Type],
@@ -307,7 +296,7 @@ USE tempdb;
                     WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN 'sys.symmetric_keys'
                     WHEN DP.class_desc = 'ASYMMETRIC_KEY'               THEN 'sys.asymmetric_keys'
                     WHEN DP.class_desc = 'CERTIFICATE'                  THEN 'sys.certificates'
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN 'sys.databases' 
+                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN 'sys.databases'
                     WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN 'sys.all_objects'
                     WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN 'sys.schemas'
                     WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN 'sys.database_principals'
@@ -323,7 +312,7 @@ USE tempdb;
                     WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'sys.symmetric_keys'
                     WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'sys.asymmetric_keys'
                     WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'sys.certificates'
-                    ELSE '<TARGETDB>.sys.database_permissions'
+                    ELSE '<QUOTETARGETDB>.sys.database_permissions'
                 END                 AS [Source View]
             FROM
                 <TARGETDB>.sys.database_permissions DP
@@ -423,7 +412,7 @@ USE tempdb;
                     ON  DP.major_id   = CT.certificate_id
                     AND DP.class_desc = 'CERTIFICATE'
                 LEFT OUTER JOIN <TARGETDB>.sys.database_principals PD
-                    ON  PD.principal_id = CT.principal_id    
+                    ON  PD.principal_id = CT.principal_id
             ;
             GO
 
@@ -433,7 +422,7 @@ USE tempdb;
             GO
 
             CREATE FUNCTION STIG.database_effective_permissions(@Grantee sysname)
-            --  Given the name of a database principal (user or role), this table-valued function 
+            --  Given the name of a database principal (user or role), this table-valued function
             --  returns information about permissions granted (or denied) to that user or database role,
             --  either directly or inherited from a higher-level role.
                 RETURNS @T TABLE
@@ -462,7 +451,7 @@ USE tempdb;
                 (
                 SELECT [Role] AS [Principal], [Membership Chain], len([Membership Chain]) AS [Membership Chain Length] FROM STIG.database_roles_of(@Grantee)
                 UNION ALL
-                SELECT @Grantee AS [Principal], @Grantee AS [Membership Chain], len(@Grantee) AS [Membership Chain Length]    
+                SELECT @Grantee AS [Principal], @Grantee AS [Membership Chain], len(@Grantee) AS [Membership Chain Length]
                 )
                 INSERT INTO @T
                     SELECT TOP 100000000
@@ -577,8 +566,8 @@ USE tempdb;
                 RETURNS @T TABLE
                     (
                     [Member]            sysname,
-                    [Role]              sysname, 
-                    [via Member]        sysname, 
+                    [Role]              sysname,
+                    [via Member]        sysname,
                     [Membership Chain]  nvarchar(max)
                     )
             AS BEGIN;
@@ -586,22 +575,22 @@ USE tempdb;
                 (
                 SELECT
                     [Member] AS [Member],
-                    [Role], 
-                    [Member] AS [via Member], 
+                    [Role],
+                    [Member] AS [via Member],
                     CAST([Member] AS varchar(max)) + ' < ' + CAST([Role] AS varchar(max)) AS [Membership Chain]
                 FROM
                     STIG.server_role_members
-                WHERE 
+                WHERE
                     [Member] = @server_principal
-    
+
                 UNION ALL
-    
+
                 SELECT
                     X.[Member],
                     R.[Role],
                     R.[Member] AS [via Member],
                     X.[Membership Chain] + ' < ' + CAST(R.[Role] AS varchar(max)) AS [Membership Chain]
-                FROM 
+                FROM
                     Membership X
                     INNER JOIN STIG.server_role_members R ON X.[Role] = R.[Member]
                 )
@@ -623,7 +612,7 @@ USE tempdb;
                     (
                     [Role]              sysname,
                     [Member]            sysname,
-                    [via Role]          sysname, 
+                    [via Role]          sysname,
                     [Membership Chain]  nvarchar(max)
                     )
             AS BEGIN;
@@ -631,12 +620,12 @@ USE tempdb;
                 (
                 SELECT
                     [Role] AS [Role],
-                    [Member], 
-                    [Role] AS [via Role], 
+                    [Member],
+                    [Role] AS [via Role],
                     CAST([Role] AS varchar(max)) + ' > ' + CAST([Member] AS varchar(max)) AS [Membership Chain]
                 FROM
                     STIG.server_role_members
-                WHERE 
+                WHERE
                     [Role] = @server_role
 
                 UNION ALL
@@ -646,7 +635,7 @@ USE tempdb;
                     R.[Member],
                     R.[Role] AS [via Role],
                     X.[Membership Chain] + ' > ' + CAST(R.[Member] AS varchar(max)) AS [Membership Chain]
-                FROM 
+                FROM
                     Membership X
                     INNER JOIN STIG.server_role_members R ON X.[Member] = R.[Role]
                 )
@@ -670,11 +659,11 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME          AS [Current Server],
                 @@SERVICENAME         AS [Current Instance],
-                '<TARGETDB>'             AS [Current DB],
+                '<QUOTETARGETDB>'     AS [Current DB],
                 SYSTEM_USER           AS [Current Login],
                 USER                  AS [Current User],
                 CASE
-                    WHEN SP.class_desc IS NOT NULL THEN 
+                    WHEN SP.class_desc IS NOT NULL THEN
                         CASE
                             WHEN SP.class_desc = 'SERVER' AND S.is_linked = 0 THEN 'SERVER'
                             WHEN SP.class_desc = 'SERVER' AND S.is_linked = 1 THEN 'SERVER (linked)'
@@ -684,13 +673,13 @@ USE tempdb;
                     WHEN S.name IS NOT NULL AND S.is_linked = 0 THEN 'SERVER'
                     WHEN S.name IS NOT NULL AND S.is_linked = 1 THEN 'SERVER (linked)'
                     WHEN P.name IS NOT NULL THEN 'SERVER_PRINCIPAL'
-                    ELSE '???' 
+                    ELSE '???'
                 END                    AS [Securable Class],
                 CASE
                     WHEN E.name IS NOT NULL THEN E.name
-                    WHEN S.name IS NOT NULL THEN S.name 
+                    WHEN S.name IS NOT NULL THEN S.name
                     WHEN P.name IS NOT NULL THEN P.name
-                    ELSE '???' 
+                    ELSE '???'
                 END                    AS [Securable],
                 P1.name                AS [Grantee],
                 P1.type_desc           AS [Grantee Type],
@@ -703,7 +692,7 @@ USE tempdb;
                     WHEN SP.class_desc = 'ENDPOINT'                     THEN 'sys.endpoints'
                     WHEN SP.class_desc = 'SERVER_PRINCIPAL'             THEN 'sys.server_principals'
                     WHEN SP.class_desc IS NULL AND S.name IS NOT NULL   THEN 'sys.servers'
-                    WHEN SP.class_desc IS NULL AND E.name IS NOT NULL   THEN 'sys.endpoints' 
+                    WHEN SP.class_desc IS NULL AND E.name IS NOT NULL   THEN 'sys.endpoints'
                     WHEN SP.class_desc IS NULL AND P.name IS NOT NULL   THEN 'sys.server_principals'
                     ELSE 'sys.server_permissions'
                 END                 AS [Source View]
@@ -723,7 +712,7 @@ USE tempdb;
                     AND E.endpoint_id = SP.major_id
 
                 FULL OUTER JOIN <TARGETDB>.sys.server_principals P
-                    ON  SP.class_desc = 'SERVER_PRINCIPAL'        
+                    ON  SP.class_desc = 'SERVER_PRINCIPAL'
                     AND P.principal_id = SP.major_id
             ;
             GO
@@ -733,7 +722,7 @@ USE tempdb;
             GO
 
             CREATE FUNCTION STIG.server_effective_permissions(@Grantee sysname)
-            --  Given the name of a server principal (login or server role), this table-valued function 
+            --  Given the name of a server principal (login or server role), this table-valued function
             --  returns information about permissions granted (or denied) to that login or role,
             --  either directly or inherited from a higher-level role.
                 RETURNS @T TABLE
@@ -760,7 +749,7 @@ USE tempdb;
                 (
                 SELECT [Role] AS [Principal], [Membership Chain], len([Membership Chain]) AS [Membership Chain Length] FROM STIG.server_roles_of(@Grantee)
                 UNION ALL
-                SELECT @Grantee AS [Principal], @Grantee AS [Membership Chain], len(@Grantee) AS [Membership Chain Length]    
+                SELECT @Grantee AS [Principal], @Grantee AS [Membership Chain], len(@Grantee) AS [Membership Chain Length]
                 )
                 INSERT INTO @T
                     SELECT TOP 100000000

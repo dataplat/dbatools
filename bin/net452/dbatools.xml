@@ -29,6 +29,21 @@
             A property to expand.
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Alias">
+            <summary>
+            Allow users to specify an alias property as part of the select
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ScriptProperty">
+            <summary>
+            Specify script properties at runtime as part of the select
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ScriptMethod">
+            <summary>
+            Specify script methods at runtime as part of the select
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Unique">
             <summary>
             Whether to exclude duplicates
@@ -3993,6 +4008,40 @@
             </summary>
             <param name="Hash">The hashtable to accept</param>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.ParameterClass">
+            <summary>
+            Base class of all parameter classes
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterClass.InputObject">
+            <summary>
+            The original item presented as input
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.ParameterClass._PropertyMapping">
+            <summary>
+            Contains the list of property mappings.
+            Types can be registered to it, allowing the parameter class to blindly interpret unknown types
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.ParameterClass.SetTypePropertyMapping(System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Assigns a property mapping for a given type, allowing the parameter class to handle unknown types
+            </summary>
+            <param name="Name">The name of the type. Use the FullName of the type</param>
+            <param name="PropertyName">The property names to register. When parsing input, it will move down this list until a valid property was found</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.ParameterClass.ToString">
+            <summary>
+            Returns the string representation of the parameter. Should be overridden by inheriting classes.
+            </summary>
+            <returns>The string representation of the object</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.ParameterClassAttribute">
+            <summary>
+            Attribute marking a class
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.ParameterContractAttribute">
             <summary>
             The attribute used to define the elements of a ParameterClass contract
@@ -4074,6 +4123,124 @@
             <summary>
             The contracted element is an operator, facilitating type conversion. Generally into a dedicated object type this parameterclass abstracts.
             </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter">
+            <summary>
+            A parameter class for binding specific alias property mappings
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter.Value">
+            <summary>
+            The aliases to map
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter.Aliases">
+            <summary>
+            The alias objects to use. Will be cached on first retrieval
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter.#ctor(System.Collections.Hashtable)">
+            <summary>
+            Convert hashtables to alias properties
+            </summary>
+            <param name="Hashtable">A hashtable mapping alias name to reference property</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter.#ctor(System.String)">
+            <summary>
+            Parses a string input into one or multiple alias expressions.
+            </summary>
+            <param name="StringValue">the string to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectAliasParameter.ToString">
+            <summary>
+            Builds the string display of the parameter class
+            </summary>
+            <returns>The string representation of the aliases to create</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter">
+            <summary>
+            Parameter class parsing various inputs for scriptmethod properties
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.Value">
+            <summary>
+            The name to script mappings that make up the script properties or methods
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.Methods">
+            <summary>
+            Retrieve a list of script methods. Results will be automatically cached on first retrieval
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.#ctor(System.Collections.Hashtable)">
+            <summary>
+            Convert hashtables to scriptmethod properties
+            </summary>
+            <param name="Hashtable">A hashtable mapping name to scriptblock</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.#ctor(System.String)">
+            <summary>
+            Parses a string input into one or multiple alias expressions.
+            </summary>
+            <param name="StringValue">the string to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.#ctor(System.Management.Automation.ScriptBlock)">
+            <summary>
+            Create a script method from a scriptblock. Scriptblock is processed as string!
+            </summary>
+            <param name="ScriptBlock">The scriptblock to evaluate</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.#ctor(System.Management.Automation.PSScriptMethod)">
+            <summary>
+            Create a scriptmethod from ... a scriptmethod!
+            </summary>
+            <param name="Method">The scriptmethod to integrate</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptMethodParameter.ToString">
+            <summary>
+            Returnd the string representation of the scriptmethod
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter">
+            <summary>
+            Parameter class that handles script property input
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.Value">
+            <summary>
+            The actual properties
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.#ctor(System.Management.Automation.PSScriptProperty)">
+            <summary>
+            Create a script property from a script property
+            </summary>
+            <param name="Property">The property to add</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.#ctor(System.String)">
+            <summary>
+            Create a script property from a string
+            </summary>
+            <param name="StringValue">The string to interpret into a scriptproperty</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.#ctor(System.Management.Automation.ScriptBlock)">
+            <summary>
+            Create a script property from a scriptblock. Scriptblock is processed as string!
+            </summary>
+            <param name="ScriptBlock">The scriptblock to evaluate</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.#ctor(System.Collections.Hashtable)">
+            <summary>
+            Create one or multiple script properties from hashtable
+            </summary>
+            <param name="Hashtable">The hashtable to build from</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.SelectScriptPropertyParameter.ToString">
+            <summary>
+            Print things to string
+            </summary>
+            <returns>The string representation of these properties</returns>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Runspace.DbaRunspaceState">
             <summary>
@@ -6125,7 +6292,17 @@
             The size object is styled as a byte number
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.B">
+            <summary>
+            The size object is styled as a byte number
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Kilobyte">
+            <summary>
+            The size object is styled as a kilobyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.KB">
             <summary>
             The size object is styled as a kilobyte number
             </summary>
@@ -6135,12 +6312,27 @@
             The size object is styled as a megabyte number
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.MB">
+            <summary>
+            The size object is styled as a megabyte number
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Gigabyte">
             <summary>
             The size object is styled as a Gigabyte number
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.GB">
+            <summary>
+            The size object is styled as a Gigabyte number
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Terabyte">
+            <summary>
+            The size object is styled as a Terabyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.TB">
             <summary>
             The size object is styled as a Terabyte number
             </summary>

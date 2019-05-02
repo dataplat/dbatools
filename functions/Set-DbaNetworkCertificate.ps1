@@ -71,10 +71,10 @@ function Set-DbaNetworkCertificate {
         [string]$Thumbprint,
         [switch]$EnableException
     )
-    
+
     process {
         # Registry access
-        
+
         if (Test-FunctionInterrupt) { return }
 
         if (-not $Certificate -and -not $Thumbprint) {
@@ -158,16 +158,29 @@ function Set-DbaNetworkCertificate {
                 $permission = $serviceaccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
-                $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
-                $keyFullPath = $keyPath + $keyName
+                if ($null -ne $cert.PrivateKey) {
+                    $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
+                    $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+                    $keyFullPath = $keyPath + $keyName
+                } else {
+                    $keyPath = $env:ProgramData + '\Microsoft\Crypto\Keys\'
+                    $rsaKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+                    $keyName = $rsaKey.Key.UniqueName
+                    $KeyFullPath = $keyPath + $keyName
+                }
+
+                if (-not (Test-Path $KeyFullPath -Type Leaf)) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
+                    Write-Warning "Read-only permissions could not be granted to certificate, unable to determine private key path."
+                    return
+                }
 
                 $acl = Get-Acl -Path $keyFullPath
                 $null = $acl.AddAccessRule($accessRule)
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
-                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLower() # to make it compat with SQL config
+                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate"

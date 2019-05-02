@@ -20,6 +20,15 @@ function Copy-DbaAgentSchedule {
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Schedule
+        Copy only specific schedules. Note that SQL Server allows multiple schedules with the same name. Use Id for more accurate schedule copies.
+
+    .PARAMETER Id
+        Copy only specific schedule.
+
+    .PARAMETER InputObject
+        Enables piping from Get-DbaAgentSchedule
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -57,43 +66,59 @@ function Copy-DbaAgentSchedule {
 
         Shows what would happen if the command were executed using force.
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaAgentSchedule -Destination sqlcluster
+
+        Gets a list of schedule, outputs to a gridview which can be selected from, then copies to SqlInstance
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [PSCredential]$DestinationSqlCredential,
+        [string[]]$Schedule,
+        [int[]]$Id,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.JobSchedule[]]$InputObject,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentSharedSchedule
-        try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
+        if ($Source) {
+            try {
+                $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
+            }
+
+            if (-not $InputObject) {
+                $InputObject = Get-DbaAgentSchedule -SqlInstance $sourceServer -Schedule $Schedule -Id $Id
+            }
         }
-        $serverSchedules = $sourceServer.JobServer.SharedSchedules
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
+        if (-not $PSBoundParameters.Source -and -not $PSBoundParameters.InputObject) {
+            Stop-Function -Message "You must specify either Source or pipe in results from Get-DbaAgentSchedule"
+            return
+        }
+
         foreach ($destinstance in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
-            $destSchedules = $destServer.JobServer.SharedSchedules
-            foreach ($schedule in $serverSchedules) {
-                $scheduleName = $schedule.Name
+            $destSchedules = Get-DbaAgentSchedule -SqlInstance $destServer -Schedule $Schedule
+
+            foreach ($currentschedule in $InputObject) {
+                $scheduleName = $currentschedule.Name
+                $sourceServer = $currentschedule.Parent.Parent
                 $copySharedScheduleStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -104,12 +129,8 @@ function Copy-DbaAgentSchedule {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
-                    continue
-                }
-
                 if ($destSchedules.Name -contains $scheduleName) {
-                    if ($force -eq $false) {
+                    if ($Force -ne $true) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
                             $copySharedScheduleStatus.Status = "Skipped"
                             $copySharedScheduleStatus.Notes = "Already exists on destination"
@@ -121,10 +142,11 @@ function Copy-DbaAgentSchedule {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
                             if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                                 $copySharedScheduleStatus.Status = "Skipped"
+                                $copySharedScheduleStatus.Notes = "Schedule has associated jobs"
                                 $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+                                continue
                             }
-                            continue
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
                                 try {
@@ -143,7 +165,7 @@ function Copy-DbaAgentSchedule {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating schedule $scheduleName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
-                        $sql = $schedule.Script() | Out-String
+                        $sql = $currentschedule.Script() | Out-String
 
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
@@ -160,6 +182,7 @@ function Copy-DbaAgentSchedule {
         }
     }
     end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentSharedSchedule
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSharedSchedule
     }
 }

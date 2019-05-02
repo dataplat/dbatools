@@ -125,6 +125,8 @@ function New-DbaDacProfile {
                 $instance = $builder['server']
             }
 
+            $instance = $instance.ToString().Replace('TCP:', '')
+            $instance = $instance.ToString().Replace('tcp:', '')
             return $instance.ToString().Replace('\', '--')
         }
     }
@@ -135,7 +137,7 @@ function New-DbaDacProfile {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $ConnectionString += $server.ConnectionContext.ConnectionString.Replace(';Application Name="dbatools PowerShell module - dbatools.io"', '')

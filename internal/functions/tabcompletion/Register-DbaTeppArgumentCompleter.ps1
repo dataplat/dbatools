@@ -64,9 +64,9 @@ function Register-DbaTeppArgumentCompleter {
         $lowername = $PSBoundParameters.Name
 
         if ($null -eq $lowername) {
-            $lowername = $p.ToLower()
+            $lowername = $p.ToLowerInvariant()
         } else {
-            $lowername = $lowername.ToLower()
+            $lowername = $lowername.ToLowerInvariant()
         }
 
         if ($All) { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername) }

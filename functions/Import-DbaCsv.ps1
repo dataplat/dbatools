@@ -61,6 +61,9 @@ function Import-DbaCsv {
     .PARAMETER ColumnMap
         By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
 
+    .PARAMETER KeepOrdinalOrder
+        By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.
+
     .PARAMETER AutoCreateTable
         Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
@@ -134,7 +137,7 @@ function Import-DbaCsv {
         Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
 
     .PARAMETER MaxQuotedFieldLength
-        The axmimum length (in bytes) for any quoted field.
+        The maxmimum length (in bytes) for any quoted field.
 
     .PARAMETER SkipEmptyLine
         Skip empty lines.
@@ -144,6 +147,9 @@ function Import-DbaCsv {
 
     .PARAMETER UseColumnDefault
         Use the column default values if the field is not in the record.
+
+    .PARAMETER NoTransaction
+        Do not use a transaction when performing the import.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -177,7 +183,7 @@ function Import-DbaCsv {
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -NoHeaderRow
 
-        Imports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
+        Imports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|"
@@ -239,6 +245,7 @@ function Import-DbaCsv {
         [switch]$KeepNulls,
         [string[]]$Column,
         [hashtable[]]$ColumnMap,
+        [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
@@ -257,6 +264,7 @@ function Import-DbaCsv {
         [switch]$SkipEmptyLine,
         [switch]$SupportsMultiline,
         [switch]$UseColumnDefault,
+        [switch]$NoTransaction,
         [switch]$EnableException
     )
     begin {
@@ -403,13 +411,15 @@ function Import-DbaCsv {
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
-                    # Everything will be contained within 1 transaction, even creating a new table if required
-                    # and truncating the table, if specified.
-                    $transaction = $sqlconn.BeginTransaction()
+                if (-not $NoTransaction) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
+                        # Everything will be contained within 1 transaction, even creating a new table if required
+                        # and truncating the table, if specified.
+                        $transaction = $sqlconn.BeginTransaction()
+                    }
                 }
 
                 # Ensure database exists
@@ -486,7 +496,7 @@ function Import-DbaCsv {
 
                 # Setup bulk copy options
                 [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
-                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
@@ -508,6 +518,18 @@ function Import-DbaCsv {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
+
+                        if (-not $KeepOrdinalOrder -and -not $AutoCreateTable) {
+                            if ($ColumnMap) {
+                                Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
+                            } else {
+                                $ColumnMap = New-Object -TypeName "System.Collections.Hashtable"
+
+                                $firstline -split $Delimiter | ForEach-Object {
+                                    $ColumnMap.Add($PSItem, $PSItem)
+                                }
+                            }
+                        }
 
                         if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
@@ -589,14 +611,18 @@ function Import-DbaCsv {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
-                if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        $null = $transaction.Commit()
+                        if (-not $NoTransaction) {
+                            $null = $transaction.Commit()
+                        }
                         if ($script:core) {
                             $rowscopied = "Unsupported in Core"
+                            $rps = $null
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
                         }
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
@@ -610,7 +636,7 @@ function Import-DbaCsv {
                             Schema        = $schema
                             RowsCopied    = $rowscopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                            RowsPerSecond = $rps
                             Path          = $file
                         }
                     } else {

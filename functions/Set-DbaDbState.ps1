@@ -243,7 +243,7 @@ function Set-DbaDbState {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 $all_dbs = $server.Databases
                 $dbs += $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
@@ -458,7 +458,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Get-Unique
+                $warn = $warn | Where {$_} | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null

@@ -78,7 +78,7 @@ function Get-DbaDbTable {
         The Table name, Schema name and Database name must be wrapped in square brackets [ ]
         Special charcters like " must be escaped by a ` charcter.
         In addition any actual instance of the ] character must be escaped by being duplicated.
-       #>
+    #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -98,7 +98,7 @@ function Get-DbaDbTable {
         if ($Table) {
             $fqtns = @()
             foreach ($t in $Table) {
-                $fqtn = Get-TableNameParts -Table $t
+                $fqtn = Get-ObjectNameParts -ObjectName $t
 
                 if (!$fqtn.Parsed) {
                     Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
@@ -108,7 +108,7 @@ function Get-DbaDbTable {
                 $fqtns += [PSCustomObject] @{
                     Database   = $fqtn.Database
                     Schema     = $fqtn.Schema
-                    Table      = $fqtn.Table
+                    Table      = $fqtn.Name
                     InputValue = $fqtn.InputValue
                 }
             }
@@ -123,7 +123,7 @@ function Get-DbaDbTable {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
@@ -163,7 +163,7 @@ function Get-DbaDbTable {
                         $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
                         if (-not $tbl) {
-                            Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
+                            Write-Message -Level Verbose -Message "Could not find table $($fqtn.Name) in $db on $server"
                         }
                         $tables += $tbl
                     }

@@ -117,7 +117,7 @@ function Export-DbaRepServerSetting {
             if ($Path) {
 
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $path -Encoding $encoding -Append
-                $out | Out-File -FilePath $path -Encoding $encoding -Append
+                $out | Out-File -FilePath $path -Encoding $encoding -Append:$Append
             }
         }
     }

@@ -61,6 +61,9 @@ function Get-DbaBackupHistory {
     .PARAMETER LastLsn
         Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
 
+    .PARAMETER IncludeMirror
+        By default mirrors of backups are not returned, this switch will cause them to be returned
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -167,6 +170,7 @@ function Get-DbaBackupHistory {
         [string[]]$DeviceType,
         [switch]$Raw,
         [bigint]$LastLsn,
+        [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
         [Alias('Silent')]
@@ -217,7 +221,7 @@ function Get-DbaBackupHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.VersionMajor -ge 10) {
@@ -280,9 +284,11 @@ function Get-DbaBackupHistory {
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
-                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
-                            foreach ($result in $results) {
-                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
+                                }
                             }
                             if ($null -eq $RecoveryFork) {
                                 $RecoveryFork = $results[-1].RecFork
@@ -354,16 +360,20 @@ function Get-DbaBackupHistory {
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
-                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
-                            foreach ($result in $results) {
-                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                }
                             }
-
                         }
                     }
                     $whereCopyOnly = $null
                     if ($true -ne $IncludeCopyOnly) {
                         $whereCopyOnly = " AND is_copy_only='0' "
+                    }
+                    if ($true -ne $IncludeMirror) {
+                        $whereMirror = " AND mediafamily.mirror='0' "
                     }
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
@@ -481,6 +491,7 @@ function Get-DbaBackupHistory {
                                 $devTypeFilterWhere
                                 $sinceSqlFilter
                                 $recoveryForkSqlFilter
+                                $whereMirror
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;

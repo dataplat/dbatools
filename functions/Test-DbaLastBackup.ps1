@@ -191,6 +191,27 @@ function Test-DbaLastBackup {
                 $DestinationCredential = $SqlCredential
             }
 
+            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                [pscustomobject]@{
+                    SourceServer   = $source
+                    TestServer     = $destination
+                    Database       = $db.name
+                    FileExists     = $false
+                    Size           = $null
+                    RestoreResult  = "Skipped"
+                    DbccResult     = "Skipped"
+                    RestoreStart   = $null
+                    RestoreEnd     = $null
+                    RestoreElapsed = $null
+                    DbccStart      = $null
+                    DbccEnd        = $null
+                    DbccElapsed    = $null
+                    BackupDates    = $null
+                    BackupFiles    = $null
+                }
+                continue
+            }
+
             try {
                 $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
             } catch {
@@ -348,7 +369,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                $totalsize = ($restorelist.BackupSize.Megabyte |Measure-Object -sum ).Sum
+                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
 
                 if ($MaxSize -and $MaxSize -lt $totalsize) {
                     $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
@@ -366,12 +387,15 @@ function Test-DbaLastBackup {
                     if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname.")) {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
-                        if ($verifyonly) {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                        } else {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
-
+                        try {
+                            if ($verifyonly) {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                            } else {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
+                            }
+                        } catch {
+                            $errormsg = Get-ErrorMessage -Record $_
                         }
 
                         $endRestore = Get-Date
@@ -382,7 +406,11 @@ function Test-DbaLastBackup {
                         if ($restoreresult.RestoreComplete -eq $true) {
                             $success = "Success"
                         } else {
-                            $success = "Failure"
+                            if ($errormsg) {
+                                $success = $errormsg
+                            } else {
+                                $success = "Failure"
+                            }
                         }
                     }
 
@@ -391,7 +419,10 @@ function Test-DbaLastBackup {
                     if (-not $NoCheck -and -not $VerifyOnly) {
                         # shouldprocess is taken care of in Start-DbccCheck
                         if ($ogdbname -eq "master") {
-                            $dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database."
+                            $dbccresult =
+                            "DBCC CHECKDB skipped for restored master ($dbname) database. `
+                             The master database cannot be copied off of a server and have a successful DBCC CHECKDB. `
+                             See https://www.itprotoday.com/my-master-database-really-corrupt for more information."
                         } else {
                             if ($success -eq "Success") {
                                 Write-Message -Level Verbose -Message "Starting DBCC."

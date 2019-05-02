@@ -128,7 +128,7 @@ function New-DbaDbSnapshot {
 
         function Resolve-SnapshotError($server) {
             $errhelp = ''
-            $CurrentEdition = $server.Edition.toLower()
+            $CurrentEdition = $server.Edition.ToLowerInvariant()
             $CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
             if ($server.Version.Major -lt 9) {
                 $errhelp = 'Not supported before 2005'
@@ -157,7 +157,7 @@ function New-DbaDbSnapshot {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #Checks for path existence, left the length test because test-bound wasn't working for some reason
             if ($Path.Length -gt 0) {

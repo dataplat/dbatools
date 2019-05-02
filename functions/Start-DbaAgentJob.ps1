@@ -108,7 +108,7 @@ function Start-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if all the jobs need to included
@@ -165,7 +165,7 @@ function Start-DbaAgentJob {
                 # Wait for the job
                 if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }
