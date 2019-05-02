@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterEach {
-        $null = $ag | Remove-DbaAgListener -Listener $listenerName
+        $null = Remove-DbaAgListener -SqlInstance $script:instance3 -Listener $listenerName -AvailabilityGroup $agname
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
