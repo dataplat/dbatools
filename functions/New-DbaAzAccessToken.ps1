@@ -8,12 +8,21 @@ function New-DbaAzAccessToken {
 
         SqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.
 
-        Want to know more about Access Tokens? This page is awesome: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
-    .PARAMETER Type
+        Want to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
+
+        .PARAMETER Type
         The type of request: ManagedIdentity or ServicePrincipal.
 
     .PARAMETER Subtype
-        The subtype. Auto-completes. Currently supports AzureSqlDb and ResourceManager.
+        The subtype. Options include:
+        AzureSqlDb (default)
+        ResourceManager
+        DataLake
+        EventHubs
+        KeyVault
+        ResourceManager
+        ServiceBus
+        Storage
 
         Read more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
 
@@ -166,6 +175,7 @@ function New-DbaAzAccessToken {
                 }
             }
 
+            # caching and reauth not supported yet but will in future version
             if ($token -notin $script:aztokens.Token) {
                 $script:aztokens += [pscustomobject]@{
                     SqlInstance   = $null
@@ -173,7 +183,6 @@ function New-DbaAzAccessToken {
                     Token         = $token
                 }
             }
-
             return $token
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
