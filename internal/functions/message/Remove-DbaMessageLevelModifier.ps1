@@ -48,8 +48,8 @@ function Remove-DbaMessageLevelModifier {
         foreach ($item in $Name) {
             if ($item -eq "Sqlcollaborative.Dbatools.Message.MessageLevelModifier") { continue }
 
-            if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLower())) {
-                [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLower())
+            if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLowerInvariant())) {
+                [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLowerInvariant())
             } else {
                 Stop-Function -Message "No message level modifier of name $item found!" -EnableException $EnableException -Category InvalidArgument -Continue
             }

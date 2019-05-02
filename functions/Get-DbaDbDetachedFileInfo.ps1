@@ -1,4 +1,4 @@
-function Get-DbaDetachedDatabaseInfo {
+function Get-DbaDbDetachedFileInfo {
     <#
     .SYNOPSIS
         Get detailed information about detached SQL Server database files.
@@ -21,6 +21,11 @@ function Get-DbaDetachedDatabaseInfo {
     .PARAMETER Path
         Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
 
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
         Tags: Database, Detach
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -30,55 +35,58 @@ function Get-DbaDetachedDatabaseInfo {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDetachedDatabaseInfo
+        https://dbatools.io/Get-DbaDbDetachedFileInfo
 
     .EXAMPLE
-        PS C:\> Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
+        PS C:\> Get-DbaDbDetachedFileInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
 
         Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
 
     #>
-
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory)]
-        [Alias("Mdf")]
-        [string]$Path,
-        [PSCredential]$SqlCredential
+        [PSCredential]$SqlCredential,
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("Mdf", "FilePath", "FullName")]
+        [string[]]$Path,
+        [switch]$EnableException
     )
-
     begin {
-        function Get-MdfFileInfo {
+        try {
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        $servername = $server.name
+        $serviceaccount = $server.ServiceAccount
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($filepath in $Path) {
             $datafiles = New-Object System.Collections.Specialized.StringCollection
             $logfiles = New-Object System.Collections.Specialized.StringCollection
 
-            $servername = $server.name
-            $serviceaccount = $server.ServiceAccount
-
-            $exists = Test-DbaPath -SqlInstance $server -Path $Path
-
-            if ($exists -eq $false) {
-                throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"
+            if (-not (Test-DbaPath -SqlInstance $server -Path $filepath)) {
+                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceaccount) have access to the path?" -Continue
             }
 
             try {
-                $detachedDatabaseInfo = $server.DetachedDatabaseInfo($path)
+                $detachedDatabaseInfo = $server.DetachedDatabaseInfo($filepath)
                 $dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
                 $exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
                 $collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
             } catch {
-                throw "$servername cannot read the file $path. Is the database detached?"
+                Stop-Function -Message "$servername cannot read the file $filepath. Is the database detached?" -Continue
             }
 
             switch ($exactdbversion) {
+                869 { $dbversion = "SQL Server 2017" }
                 852 { $dbversion = "SQL Server 2016" }
-                829 { $dbversion = "SQL Server 2016 Prerelease" }
                 782 { $dbversion = "SQL Server 2014" }
                 706 { $dbversion = "SQL Server 2012" }
-                684 { $dbversion = "SQL Server 2012 CTP1" }
                 661 { $dbversion = "SQL Server 2008 R2" }
                 660 { $dbversion = "SQL Server 2008 R2" }
                 655 { $dbversion = "SQL Server 2008 SP2+" }
@@ -99,21 +107,23 @@ function Get-DbaDetachedDatabaseInfo {
                 $collation = $collationid
             }
 
-            if ($collation.length -eq 0) { $collation = $collationid }
+            if (-not $collation) { $collation = $collationid }
 
             try {
-                foreach ($file in $server.EnumDetachedDatabaseFiles($path)) {
+                foreach ($file in $server.EnumDetachedDatabaseFiles($filepath)) {
                     $datafiles += $file
                 }
 
-                foreach ($file in $server.EnumDetachedLogFiles($path)) {
+                foreach ($file in $server.EnumDetachedLogFiles($filepath)) {
                     $logfiles += $file
                 }
             } catch {
-                throw "$servername unable to enumerate database or log structure information for $path"
+                Stop-Function -Message "$servername unable to enumerate database or log structure information for $filepath" -Continue
             }
-
-            $mdfinfo = [pscustomobject]@{
+            [pscustomobject]@{
+                ComputerName = $SqlInstance.ComputerName
+                InstanceName = $SqlInstance.InstanceName
+                SqlInstance  = $SqlInstance.InputObject
                 Name         = $dbname
                 Version      = $dbversion
                 ExactVersion = $exactdbversion
@@ -121,20 +131,6 @@ function Get-DbaDetachedDatabaseInfo {
                 DataFiles    = $datafiles
                 LogFiles     = $logfiles
             }
-
-            return $mdfinfo
         }
-    }
-
-    process {
-
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        $mdfinfo = Get-MdfFileInfo $server $path
-
-    }
-
-    end {
-        $server.ConnectionContext.Disconnect()
-        return $mdfinfo
     }
 }
