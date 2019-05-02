@@ -12,8 +12,97 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $null = New-DbaDatabase -SqlInstance $script:instance3 -Name 'dbatoolsci_rename1'
+        $date = (Get-Date).ToString('yyyyMMdd')
+    }
+    AfterAll {
+        $database = Get-DbaDatabase -SqlInstance $script:instance3 -UserDbOnly | Where-Object {$_.name -like '*dbatoolsci*'}
+        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -database $($database.name) -Confirm:$false
+    }
+
+    Context "Should preview a rename of a database" {
+        $variables = @{SqlInstance = $script:instance3
+                    Database = 'dbatoolsci_rename1'
+                    DatabaseName = 'dbatoolsci_rename2'
+                    Preview = $true
+                    }
+
+            $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have a preview DatabaseRenames" {
+            $results.DatabaseRenames | Should Be 'dbatoolsci_rename1 --> dbatoolsci_rename2'
+        }
+    }
+
+    Context "Should rename a database" {
+        $variables = @{SqlInstance = $script:instance3
+                    Database = 'dbatoolsci_rename1'
+                    DatabaseName = 'dbatoolsci_rename2'
+                    }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have a DatabaseRenames" {
+            $results.DatabaseRenames | Should Be 'dbatoolsci_rename1 --> dbatoolsci_rename2'
+        }
+        It "Should have renamed the database" {
+            $results.Database | Should Be '[dbatoolsci_rename2]'
+        }
+        It "Should have the previous database name" {
+            $results.DBN.Keys | Should Be 'dbatoolsci_rename1'
+        }
+    }
+
+    Context "Should rename a database with a prefix" {
+        $variables = @{SqlInstance = $script:instance3
+                    Database = 'dbatoolsci_rename2'
+                    DatabaseName = 'test_<DBN>'
+                    }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have a DatabaseRenames" {
+            $results.DatabaseRenames | Should Be 'dbatoolsci_rename2 --> test_dbatoolsci_rename2'
+        }
+        It "Should have renamed the database" {
+            $results.Database | Should Be '[test_dbatoolsci_rename2]'
+        }
+        It "Should have the previous database name" {
+            $results.DBN.Keys | Should Be 'dbatoolsci_rename2'
+        }
+    }
+
+    Context "Should rename a database with a date" {
+        $variables = @{SqlInstance = $script:instance3
+                    Database = 'test_dbatoolsci_rename2'
+                    DatabaseName = '<DBN>_<DATE>'
+                    }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have a DatabaseRenames" {
+            $results.DatabaseRenames | Should Be "test_dbatoolsci_rename2 --> test_dbatoolsci_rename2_$($date)"
+        }
+        It "Should have renamed the database" {
+            $results.Database | Should Be "[test_dbatoolsci_rename2_$($date)]"
+        }
+        It "Should have the previous database name" {
+            $results.DBN.Keys | Should Be 'test_dbatoolsci_rename2'
+        }
+    }
+}
