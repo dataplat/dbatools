@@ -104,8 +104,8 @@ function Register-DbaMessageTransform {
     )
 
     process {
-        if ($TargetType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms[$TargetType.ToLower()] = $ScriptBlock }
-        if ($ExceptionType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms[$ExceptionType.ToLower()] = $ScriptBlock }
+        if ($TargetType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms[$TargetType.ToLowerInvariant()] = $ScriptBlock }
+        if ($ExceptionType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms[$ExceptionType.ToLowerInvariant()] = $ScriptBlock }
 
         if ($TargetTypeFilter) {
             $condition = New-Object Sqlcollaborative.Dbatools.Message.TransformCondition($TargetTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Target")

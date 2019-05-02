@@ -137,7 +137,7 @@ function Get-DbaRandomizedValue {
             $RandomizerType = $randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
         }
 
-        if ($DataType -and $DataType.ToLower() -notin $supportedDataTypes) {
+        if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
             Stop-Function -Message "Unsupported sql data type" -Continue -Target $DataType
         }
 
@@ -172,7 +172,7 @@ function Get-DbaRandomizedValue {
 
         if ($DataType) {
 
-            switch ($DataType.ToLower()) {
+            switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
                     if ($Min -lt -9223372036854775808) {
                         $Min = -9223372036854775808
@@ -288,9 +288,9 @@ function Get-DbaRandomizedValue {
 
         } else {
 
-            $randSubType = $RandomizerSubType.ToLower()
+            $randSubType = $RandomizerSubType.ToLowerInvariant()
 
-            switch ($RandomizerType.ToLower()) {
+            switch ($RandomizerType.ToLowerInvariant()) {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
