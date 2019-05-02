@@ -20,7 +20,7 @@ cache:
 
 # sadly, shallow_clone is suddenly causing issues
 #shallow_clone: true
-clone_depth: 5
+clone_depth: 100
 
 # Set build info
 environment:
