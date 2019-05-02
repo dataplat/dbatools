@@ -6,11 +6,14 @@ function New-DbaAzAccessToken {
     .DESCRIPTION
         Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.
 
+        SqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.
+
+        Want to know more about Access Tokens? This page is awesome: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
     .PARAMETER Type
         The type of request: ManagedIdentity or ServicePrincipal.
 
     .PARAMETER Subtype
-        The subtype. Auto-completes. Currently supports AzureSqlDb and Management.
+        The subtype. Auto-completes. Currently supports AzureSqlDb and ResourceManager.
 
         Read more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql
 
@@ -66,9 +69,9 @@ function New-DbaAzAccessToken {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [ValidateSet('ManagedIdentity', 'ServicePrincipal')]
+        [ValidateSet("ManagedIdentity", "ServicePrincipal")]
         [string]$Type,
-        [ValidateSet('AzureSqlDb', 'Management')]
+        [ValidateSet("AzureSqlDb", "ResourceManager", "DataLake", "EventHubs", "KeyVault", "ResourceManager", "ServiceBus", "Storage")]
         [string]$Subtype = "AzureSqlDb",
         [object]$Config,
         [pscredential]$Credential,
@@ -83,19 +86,40 @@ function New-DbaAzAccessToken {
             }
         }
 
-        if ($Type -eq "ManagedIdentity") {
-            switch ($Subtype) {
-                AzureSqlDb {
-                    $Config = @{
-                        Version  = '2018-04-02'
-                        Resource = 'https://database.windows.net/'
-                    }
+        switch ($Subtype) {
+            AzureSqlDb {
+                $Config = @{
+                    Resource = "https://database.windows.net/"
                 }
-                Management {
-                    $Config = @{
-                        Version  = '2018-04-02'
-                        Resource = 'https://management.windows.net/'
-                    }
+            }
+            ResourceManager {
+                $Config = @{
+                    Resource = "https://management.azure.com/"
+                }
+            }
+            KeyVault {
+                $Config = @{
+                    Resource = "https://vault.azure.net/"
+                }
+            }
+            DataLake {
+                $Config = @{
+                    Resource = "https://datalake.azure.net/"
+                }
+            }
+            EventHubs {
+                $Config = @{
+                    Resource = "https://eventhubs.azure.net/"
+                }
+            }
+            ServiceBus {
+                $Config = @{
+                    Resource = "https://servicebus.azure.net/"
+                }
+            }
+            Storage {
+                $Config = @{
+                    Resource = "https://storage.azure.com/"
                 }
             }
         }
@@ -107,6 +131,9 @@ function New-DbaAzAccessToken {
             switch ($Type) {
                 ManagedIdentity {
                     $version = $Config.Version
+                    if (-not $version) {
+                        $version = "2018-04-02"
+                    }
                     $resource = $Config.Resource
                     $params = @{
                         Uri     = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=$version&resource=$resource"
@@ -114,11 +141,11 @@ function New-DbaAzAccessToken {
                         Headers = @{ Metadata = "true" }
                     }
                     $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
-                    ($response.Content | ConvertFrom-Json).access_token
+                    $token = ($response.Content | ConvertFrom-Json).access_token
                 }
                 ServicePrincipal {
-                    if ((Get-CimInstance -ClassName Win32_OperatingSystem).Version -lt 8 -or $script:core) {
-                        Stop-Function -Message "ServicePrincipal currently unsupported in Core and older versions of Windows"
+                    if ($script:core) {
+                        Stop-Function -Message "ServicePrincipal currently unsupported in Core"
                         return
                     }
 
@@ -129,15 +156,25 @@ function New-DbaAzAccessToken {
                     # https://blogs.msdn.microsoft.com/azuresqldbsupport/2018/05/10/lesson-learned-49-does-azure-sql-database-support-azure-active-directory-connections-using-service-principals/
                     $cred = [Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential]::New($Credential.UserName, $Credential.GetNetworkCredential().Password)
                     $context = [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext]::New("https://login.windows.net/$Tenant")
-                    $result = $context.AcquireTokenAsync("https://database.windows.net/", $cred)
+                    $result = $context.AcquireTokenAsync($Config.Resource, $cred)
 
                     if ($result.Result.AccessToken) {
-                        $result.Result.AccessToken
+                        $token = $result.Result.AccessToken
                     } else {
                         throw ($result.Exception | ConvertTo-Json | ConvertFrom-Json).InnerException.Message
                     }
                 }
             }
+
+            if ($token -notin $script:aztokens.Token) {
+                $script:aztokens += [pscustomobject]@{
+                    SqlInstance   = $null
+                    PSBoundParams = $PSBoundParameters
+                    Token         = $token
+                }
+            }
+
+            return $token
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }

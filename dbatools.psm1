@@ -1674,4 +1674,8 @@ if (Get-Module -Name sqlserver, sqlps) {
     }
 }
 
+if (-not $script:aztokens) {
+    $script:aztokens = @()
+}
+
 #endregion Post-Import Cleanup
