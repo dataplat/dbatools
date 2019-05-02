@@ -119,7 +119,7 @@ Function Invoke-DbaAdvancedUpdate {
             Stop-Function -Message $msg -ErrorRecord $_
             return $output
         }
-        $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($currentAction.KB)_Extract"
+        $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($currentAction.KB)_Extract_$([guid]::NewGuid().Guid.Replace('-',''))"
         $output.ExtractPath = $spExtractPath
         try {
             # Extract file

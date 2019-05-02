@@ -298,10 +298,8 @@ function New-DbaConnectionString {
                                     $server.ConnectionContext.set_SecurePassword($Credential.Password)
                                 }
                             } else {
-                                if ($AccessToken) {
-                                    $connstring = $connstring.Replace("Integrated Security=True;", "")
-                                } else {
-                                    $connstring = $connstring.Replace("Integrated Security=True;", "")
+                                $connstring = $connstring.Replace("Integrated Security=True;", "Persist Security Info=True;")
+                                if (-not $AccessToken) {
                                     $connstring = "$connstring;Authentication=`"Active Directory Integrated`""
                                 }
                             }
