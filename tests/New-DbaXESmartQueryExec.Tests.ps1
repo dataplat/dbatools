@@ -12,8 +12,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Creates a smart object" {
+        It "returns the object with all of the correct properties" {
+            $results = New-DbaXESmartQueryExec -SqlInstance $script:instance2 -Database dbadb -Query "update table set whatever = 1"
+            $results.TSQL | Should -Be 'update table set whatever = 1'
+            $results.ServerName | Should -Be $script:instance2
+            $results.DatabaseName | Should -be 'dbadb'
+            $results.Password | Should -Be $null
+        }
+    }
+}
