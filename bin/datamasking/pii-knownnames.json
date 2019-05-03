@@ -6,7 +6,8 @@
             "^.*(firstname|fname|lastname|lname|fullname|fname).*$",
             "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$",
             "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
-            "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$"
+            "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$",
+            "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam).*$"
         ]
     },
     {
@@ -15,7 +16,8 @@
         "Pattern": [
             "^.*address.*$",
             "^.*adresse.*$",
-            "^.*direccion.*$"
+            "^.*direccion.*$",
+            "^.*adres.*$"
         ]
     },
     {
@@ -25,7 +27,8 @@
             "^.*city.*$",
             "^.*stadt.*$",
             "^.*ville.*$",
-            "^.*ciudad.*$"
+            "^.*ciudad.*$",
+            "^.*stad.*$"
         ]
     },
     {
@@ -42,7 +45,8 @@
         "Pattern": [
             "^.*zip.*$",
             "^.*postal.*$",
-            "^.*postleitzahl.*$"
+            "^.*postleitzahl.*$",
+            "^.*postcode.*$"
         ]
     },
     {
@@ -83,10 +87,11 @@
         "Name": "Username",
         "Category": "Security",
         "Pattern": [
-            "^.*(userid|username).*$",
-            "^.*(nutzerid|nutzername).*$",
+            "^.*(userid|user|username).*$",
+            "^.*(nutzerid|nutzer|nutzername).*$",
             "^.*(nomutilisateur|utilisateur).*$",
-            "^.*(nombredeusuario|usuario).*$"
+            "^.*(nombredeusuario|usuario).*$",
+            "^.*(gebruikersid|gebruiker|gebruikersnaam).*$"
         ]
     },
     {
@@ -94,7 +99,8 @@
         "Category": "Communication",
         "Pattern": [
             "^.*pass.*$",
-            "^.*contrasena.*$"
+            "^.*contrasena.*$",
+            "^.*wachtwoord.*$"
         ]
     }
 ]
