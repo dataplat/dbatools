@@ -88,6 +88,7 @@ function Set-DbaNetworkCertificate {
         }
 
         foreach ($instance in $sqlinstance) {
+            $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
@@ -131,10 +132,10 @@ function Set-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-            Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regroot = $args[0]
