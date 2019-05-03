@@ -5,7 +5,8 @@
         "Pattern": [
             "^.*(firstname|fname|lastname|lname|fullname|fname).*$",
             "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$",
-            "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$"
+            "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
+            "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$"
         ]
     },
     {
@@ -13,7 +14,8 @@
         "Category": "Location",
         "Pattern": [
             "^.*address.*$",
-            "^.*adresse.*$"
+            "^.*adresse.*$",
+            "^.*direccion.*$"
         ]
     },
     {
@@ -22,7 +24,8 @@
         "Pattern": [
             "^.*city.*$",
             "^.*stadt.*$",
-            "^.*ville.*$"
+            "^.*ville.*$",
+            "^.*ciudad.*$"
         ]
     },
     {
@@ -30,8 +33,7 @@
         "Category": "Location",
         "Pattern": [
             "^.*state.*$",
-            "^.*provinz.*$",
-            "^.*province.*$"
+            "^.*provin.*$"
         ]
     },
     {
@@ -39,8 +41,8 @@
         "Category": "Location",
         "Pattern": [
             "^.*zip.*$",
-            "^.*postleitzahl.*$",
-            "^.*codepostal.*$"
+            "^.*postal.*$",
+            "^.*postleitzahl.*$"
         ]
     },
     {
@@ -49,7 +51,8 @@
         "Pattern": [
             "^.*county.*$",
             "^.*bezirk.*$",
-            "^.*comte.*$"
+            "^.*comte.*$",
+            "^.*condado.*$"
         ]
     },
     {
@@ -58,7 +61,8 @@
         "Pattern": [
             "^.*country.*$",
             "^.*land.*$",
-            "^.*pays.*$"
+            "^.*pays.*$",
+            "^.*pais.*$"
         ]
     },
     {
@@ -81,14 +85,16 @@
         "Pattern": [
             "^.*(userid|username).*$",
             "^.*(nutzerid|nutzername).*$",
-            "^.*(nomutilisateur|utilisateur).*$"
+            "^.*(nomutilisateur|utilisateur).*$",
+            "^.*(nombredeusuario|usuario).*$"
         ]
     },
     {
         "Name": "Password",
         "Category": "Communication",
         "Pattern": [
-            "^.*pass.*$"
+            "^.*pass.*$",
+            "^.*contrasena.*$"
         ]
     }
 ]
