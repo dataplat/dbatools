@@ -381,8 +381,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         $warnvar
         It "Should not warn or error" {
-            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'warnvar'}) -or '' -eq $warmvar | Should Be $True
-            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'errvar'}) | Should Be $True
+            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'warnvar'}) -or '' -eq $warnvar | Should Be $True
+            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'errvar'}) -or '' -eq $errvar | Should Be $True
         }
         It "Should have restored 4 files" {
             $results.count | Should be 4
