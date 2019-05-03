@@ -3,49 +3,56 @@
         "Name": "Name",
         "Category": "Personal",
         "Pattern": [
-            "^.*(firstname|fname|lastname|lname|fullname|fname).*$"
+            "^.*(firstname|fname|lastname|lname|fullname|fname).*$",
+            "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$"
         ]
     },
     {
         "Name": "Address",
         "Category": "Location",
         "Pattern": [
-            "^.*address.*$"
+            "^.*address.*$",
+            "^.*adresse.*$"
         ]
     },
     {
         "Name": "City",
         "Category": "Location",
         "Pattern": [
-            "^.*city.*$"
+            "^.*city.*$",
+            "^.*stadt.*$"
         ]
     },
     {
         "Name": "State",
         "Category": "Location",
         "Pattern": [
-            "^.*state.*$"
+            "^.*state.*$",
+            "^.*provinz.*$"
         ]
     },
     {
         "Name": "Zipcode",
         "Category": "Location",
         "Pattern": [
-            "^.*zip.*$"
+            "^.*zip.*$",
+            "^.*postleitzahl.*$"
         ]
     },
     {
         "Name": "County",
         "Category": "Location",
         "Pattern": [
-            "^.*county.*$"
+            "^.*county.*$",
+            "^.*bezirk.*$"
         ]
     },
     {
         "Name": "Country",
         "Category": "Location",
         "Pattern": [
-            "^.*country.*$"
+            "^.*country.*$",
+            "^.*land.*$"
         ]
     },
     {
@@ -66,7 +73,8 @@
         "Name": "Username",
         "Category": "Security",
         "Pattern": [
-            "^.*(userid|username).*$"
+            "^.*(userid|username).*$",
+            "^.*(nutzerid|nutzername).*$"
         ]
     },
     {
