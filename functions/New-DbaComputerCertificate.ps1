@@ -231,9 +231,10 @@ function New-DbaComputerCertificate {
         if (Test-FunctionInterrupt) { return }
 
         # uses dos command locally
-        
+
 
         foreach ($computer in $ComputerName) {
+            $stepCounter = 0
 
             if (!$secondaryNode) {
 
@@ -262,10 +263,10 @@ function New-DbaComputerCertificate {
                 $tempPfx = "$certDir\temp-$fqdn.pfx"
 
                 if (Test-Path($certDir)) {
-                    Write-Message -Level Output -Message "Deleting files from $certDir"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
                     $null = Remove-Item "$certDir\*.*"
                 } else {
-                    Write-Message -Level Output -Message "Creating $certDir"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
                     $null = New-Item -Path $certDir -ItemType Directory -Force
                 }
 
@@ -307,7 +308,7 @@ function New-DbaComputerCertificate {
 
 
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-Message -Level Output -Message "Running: certreq -new $certCfg $certCsr"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
                     $create = certreq -new $certCfg $certCsr
                 }
 
@@ -320,12 +321,12 @@ function New-DbaComputerCertificate {
                     }
                 } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
-                        Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
                         $submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certCsr $certCrt $certPfx
                     }
 
                     if ($submit -match "ssued") {
-                        Write-Message -Level Output -Message "certreq -accept -machine $certCrt"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -accept -machine $certCrt"
                         $null = certreq -accept -machine $certCrt
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                         $cert.Import($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
@@ -347,7 +348,7 @@ function New-DbaComputerCertificate {
 
                 if (!$secondaryNode) {
                     if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
-                        Write-Message -Level Output -Message "Exporting PFX with password to $tempPfx"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting PFX with password to $tempPfx"
                         $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
                     }
 
