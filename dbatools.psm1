@@ -445,10 +445,6 @@ $script:renames = @(
         "Definition" = "Reset-SqlAdmin"
     },
     @{
-        "AliasName"  = "Restore-SqlBackupFromDirectory"
-        "Definition" = "Restore-DbaBackupFromDirectory"
-    },
-    @{
         "AliasName"  = "Set-SqlMaxMemory"
         "Definition" = "Set-DbaMaxMemory"
     },
@@ -1066,8 +1062,7 @@ $script:xplat = @(
     'Copy-DbaAgentProxy',
     'Copy-DbaAgentAlert',
     'Copy-DbaStartupProcedure',
-    'Get-DbaDetachedDatabaseInfo',
-    'Restore-DbaBackupFromDirectory',
+    'Get-DbaDbDetachedFileInfo',
     'Copy-DbaAgentJobCategory',
     'Test-DbaPath',
     'Export-DbaLogin',
@@ -1672,6 +1667,10 @@ if (Get-Module -Name sqlserver, sqlps) {
         Write-Warning -Message 'SQLPS or SqlServer was previously imported during this session. If you encounter weird issues with dbatools, please restart PowerShell, then import dbatools without loading SQLPS or SqlServer first.'
         Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
+}
+
+if (-not $script:aztokens) {
+    $script:aztokens = @()
 }
 
 #endregion Post-Import Cleanup

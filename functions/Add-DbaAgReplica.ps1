@@ -105,7 +105,7 @@ function Add-DbaAgReplica {
         [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode = 'Automatic',
+        [string]$SeedingMode,
         [string]$Endpoint,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,

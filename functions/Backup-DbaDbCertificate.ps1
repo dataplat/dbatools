@@ -240,7 +240,7 @@ function Backup-DbaDbCertificate {
 
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
-                Write-Message -Level Output -Message "Skipping system cert $cert"
+                Write-Message -Level Verbose -Message "Skipping system cert $cert"
             } else {
                 export-cert $cert
             }

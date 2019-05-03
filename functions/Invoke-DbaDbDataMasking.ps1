@@ -433,7 +433,7 @@ function Invoke-DbaDbDataMasking {
 
                             $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
                             foreach ($item in $rowItems) {
-                                $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLower()
+                                $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLowerInvariant()
 
                                 if (($row.$($item)).GetType().Name -match 'DBNull') {
                                     $wheres += "[$item] IS NULL"

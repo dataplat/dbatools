@@ -339,7 +339,7 @@
                            "",
                            false,
                            "false",
-                           "Automatic"
+                           ""
                        ],
                        [
                            "Endpoint",
@@ -12291,6 +12291,56 @@
         "Syntax":  "Get-DbaDbDbccOpenTran [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbDetachedFileInfo",
+        "Description":  "Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.\n\n\"Data files\" and \"Log file\" report the structure of the data and log files as they were when the database was detached. \"Database version\" is the compatibility level.\n\nMDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.",
+        "Tags":  [
+                     "Database",
+                     "Detach"
+                 ],
+        "Synopsis":  "Get detailed information about detached SQL Server database files.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Get-DbaDbDetachedFileInfo",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbDetachedFileInfo",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbDetachedFileInfo -SqlInstance sql2016 -Path M:\\Archive\\mydb.mdf\nReturns information about the detached database file M:\\Archive\\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.\nThis function will not attach the database file, it will only use SQL Server to read its contents.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which \r\nthe SQL Server service account has access.",
+                           "Mdf,FilePath,FullName",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbDetachedFileInfo [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Path] \u003cString[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbEncryption",
         "Description":  "Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.",
         "Tags":  [
@@ -14854,48 +14904,6 @@
         "Syntax":  "Get-DbaDeprecatedFeature [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Get-DbaDetachedDatabaseInfo",
-        "Description":  "Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.\n\n\"Data files\" and \"Log file\" report the structure of the data and log files as they were when the database was detached. \"Database version\" is the compatibility level.\n\nMDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.",
-        "Tags":  [
-                     "Database",
-                     "Detach"
-                 ],
-        "Synopsis":  "Get detailed information about detached SQL Server database files.",
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Get-DbaDetachedDatabaseInfo",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaDetachedDatabaseInfo",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\\Archive\\mydb.mdf\nReturns information about the detached database file M:\\Archive\\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.\nThis function will not attach the database file, it will only use SQL Server to read its contents.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Path",
-                           "Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which \r\nthe SQL Server service account has access.",
-                           "Mdf",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Syntax":  "Get-DbaDetachedDatabaseInfo [-SqlInstance] \u003cDbaInstanceParameter\u003e [-Path] \u003cString\u003e [[-SqlCredential] \u003cPSCredential\u003e] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "Get-DbaDiskSpace",
         "Description":  "Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.\n\nBy default, this function only shows drives of types 2 and 3 (removable disk and local disk).\n\nRequires Windows administrator access on SQL Servers",
         "Tags":  [
@@ -16521,9 +16529,25 @@
                            false,
                            "true (ByValue)",
                            "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Alternative credential",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cString[]\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaNetworkActivity",
@@ -28227,7 +28251,7 @@
     },
     {
         "Name":  "New-DbaAzAccessToken",
-        "Description":  "Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.",
+        "Description":  "Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.\n\nSqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.\n\nWant to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re",
         "Tags":  [
                      "Connect",
                      "Connection",
@@ -28251,7 +28275,7 @@
                        ],
                        [
                            "Subtype",
-                           "The subtype. Auto-completes. Currently supports AzureSqlDb and Management.\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
+                           "The subtype. Options include:\r\nAzureSqlDb (default)\r\nResourceManager\r\nDataLake\r\nEventHubs\r\nKeyVault\r\nResourceManager\r\nServiceBus\r\nStorage\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
                            "",
                            false,
                            "false",
@@ -35554,73 +35578,6 @@
         "Syntax":  "Restart-DbaService [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-InstanceName \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-Timeout \u003cInt32\u003e] [-Credential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestart-DbaService [-InstanceName \u003cString[]\u003e] [-Type \u003cString[]\u003e] -InputObject \u003cObject[]\u003e [-Timeout \u003cInt32\u003e] [-Credential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Restore-DbaBackupFromDirectory",
-        "Description":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Synopsis":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
-        "Alias":  "Restore-SqlBackupFromDirectory",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Restore-DbaBackupFromDirectory",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the most recent full/differential/logs.\nRequires -Version 3.0",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The SQL Server instance to which you will be restoring the database.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Path",
-                           "Specifies the full path to the directory that contains the database backups. The SQL Server service must have read access to this path.",
-                           "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "NoRecovery",
-                           "If this switch is enabled, the database is left in the No Recovery state to enable further backups to be added.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "ReuseSourceFolderStructure",
-                           "If this switch is enabled, the folder structure used on the instance where the backup was made will be recreated. By default, the database files will be restored to the default data and log \r\ndirectories for the instance you\u0027re restoring onto.",
-                           "ReuseFolderStructure",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Force",
-                           "If this switch is enabled, any existing database matching the name of a database being restored will be overwritten.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Syntax":  "Restore-DbaBackupFromDirectory [-SqlInstance] \u003cDbaInstanceParameter\u003e [-Path] \u003cString\u003e [-NoRecovery] [-ReuseSourceFolderStructure] [[-SqlCredential] \u003cPSCredential\u003e] [-Force] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "Restore-DbaDatabase",
         "Description":  "Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server\nbackup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a\nfull restore chain to the point in time requested by the caller.\n\nThe function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.\nXpDirTree will be used to perform the file scans\n\nVarious means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder\npassed in.",
         "Tags":  [
@@ -40527,9 +40484,17 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Show-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Show-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Show-DbaServerFileSystem",
