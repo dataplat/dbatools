@@ -88,6 +88,22 @@
         "Description": ""
     },
     {
+        "Name": "Phone Number (Mobile)",
+        "Category": "Communication",
+        "Country": "Netherlands",
+        "CountryCode": "NL",
+        "Pattern": "^0[6]{1}(\\-)?[^0\\D]{1}\\d{7}$",
+        "Description": ""
+    },
+    {
+        "Name": "Phone Number",
+        "Category": "Communication",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$",
+        "Description": ""
+    },
+    {
         "Name": "IBAN Number",
         "Category": "Financial",
         "Country": "All",
@@ -397,14 +413,6 @@
         "Country": "United States of America",
         "CountryCode": "US",
         "Pattern": "^((\\d{5}-\\d{4})|(\\d{5})|([A-Z]\\d[A-Z]\\s\\d[A-Z]\\d))$",
-        "Description": ""
-    },
-    {
-        "Name": "Mobile Phone Number",
-        "Category": "Communication",
-        "Country": "Netherlands",
-        "CountryCode": "NL",
-        "Pattern": "^0[6]{1}(\\-)?[^0\\D]{1}\\d{7}$",
         "Description": ""
     }
 ]
