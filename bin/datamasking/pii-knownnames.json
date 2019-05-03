@@ -7,7 +7,7 @@
             "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$",
             "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
             "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$",
-            "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam).*$"
+            "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam|volnaam).*$"
         ]
     },
     {
