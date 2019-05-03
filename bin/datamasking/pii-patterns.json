@@ -402,6 +402,14 @@
     {
         "Name": "Zipcode",
         "Category": "Location",
+        "Country": "Germany",
+        "CountryCode": "DE",
+        "Pattern": "\\b((?:0[1-46-9]\\d{3})|(?:[1-357-9]\\d{4})|(?:[4][0-24-9]\\d{3})|(?:[6][013-9]\\d{3}))\b",
+        "Description": ""
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
         "Country": "United Kingdom",
         "CountryCode": "UK",
         "Pattern": "([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9][A-Za-z]?))))\\s?[0-9][A-Za-z]{2})",
