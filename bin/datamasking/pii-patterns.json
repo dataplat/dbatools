@@ -402,6 +402,14 @@
     {
         "Name": "Zipcode",
         "Category": "Location",
+        "Country": "Canada",
+        "CountryCode": "CA",
+        "Pattern": "^((\\d{5}-\\d{4})|(\\d{5})|([AaBbCcEeGgHhJjKkLlMmNnPpRrSsTtVvXxYy]\\d[A-Za-z]\\s?\\d[A-Za-z]\\d))$",
+        "Description": ""
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
         "Country": "Germany",
         "CountryCode": "DE",
         "Pattern": "\\b((?:0[1-46-9]\\d{3})|(?:[1-357-9]\\d{4})|(?:[4][0-24-9]\\d{3})|(?:[6][013-9]\\d{3}))\b",
