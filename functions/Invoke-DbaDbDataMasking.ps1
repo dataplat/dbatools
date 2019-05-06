@@ -418,18 +418,30 @@ function Invoke-DbaDbDataMasking {
 
                                 if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
                                     $updates += "[$($columnobject.Name)] = NULL"
-                                } elseif ($columnobject.ColumnType -eq 'xml') {
-                                    # nothing, unsure how i'll handle this
-                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -match 'int') {
-                                    $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
                                     if ($columnValue) {
                                         $updates += "[$($columnobject.Name)] = 1"
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                    $updates += "[$($columnobject.Name)] = $newValue"
+                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'datetime') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'datetime2') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -like 'date') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -like '*date*') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'xml') {
+                                    # nothing, unsure how i'll handle this
                                 } else {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -458,10 +470,10 @@ function Invoke-DbaDbDataMasking {
                                 } elseif ($itemColumnType -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
-                                } elseif ($itemColumnType -like 'datetime') {
+                                } elseif ($itemColumnType -eq 'datetime') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($itemColumnType -like 'datetime2') {
+                                } elseif ($itemColumnType -eq 'datetime2') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
                                     $wheres += "[$item] = '$oldValue'"
                                 } elseif ($itemColumnType -like 'date') {
