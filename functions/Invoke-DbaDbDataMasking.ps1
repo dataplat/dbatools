@@ -241,7 +241,7 @@ function Invoke-DbaDbDataMasking {
                                     if ($columnMaskInfo) {
                                         # Generate a new value
                                         try {
-                                            if ($columnMaskInfo.SubType -in $supportedDataTypes) {
+                                            if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                                 $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
@@ -394,8 +394,7 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if ($columnobject.SubType -in $supportedDataTypes) {
-                                            Write-Message -Level VeryVerbose -Message "`$newValue = Get-DbaRandomizedValue -DataType $($columnobject.ColumnType) -Min $min -Max $max -CharacterString $charstring -Locale $Locale"
+                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
