@@ -165,7 +165,7 @@ function Start-DbaAgentJob {
                 # Wait for the job
                 if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)", currently on Job Step $($currentjob.CurrentRunStep) / $($currentjob.JobSteps).Count, and has tried $($currentjob.CurrentRunRetryAttempt) / $($currentjob.RetryAttempts) retry attempts" }
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)", currently on Job Step $($currentjob.CurrentRunStep) / $($currentjob.JobSteps).Count, and has tried $($currentjob.CurrentRunRetryAttempt) / $($currentjob.RetryAttempts) retry attempts"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }
