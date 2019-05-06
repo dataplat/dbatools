@@ -341,15 +341,18 @@ function New-DbaDbMaskingConfig {
                                 $MaxValue = 2147483647
                             }
                             "date" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime2" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "decimal" {
