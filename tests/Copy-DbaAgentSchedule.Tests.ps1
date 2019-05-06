@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Copies Agent Schedule" {
-        $results = Copy-DbaAgentSchedule -Source $script:instance2 -Destination $script:instance3 -Schedule dbatoolsci_DailySchedule
+        $results = Copy-DbaAgentSchedule -Source $script:instance2 -Destination $script:instance3 -Schedule 'dbatoolsci_DailySchedule'
 
         It "returns one results" {
             $results.Count -eq 1
