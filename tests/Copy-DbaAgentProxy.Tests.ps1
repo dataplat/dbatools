@@ -23,6 +23,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
+        $server.Query($sql)
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
