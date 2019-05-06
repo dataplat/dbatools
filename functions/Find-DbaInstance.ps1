@@ -68,7 +68,7 @@ function Find-DbaInstance {
         See the '-ScanType' parameter documentation on affected scans.
 
     .PARAMETER ScanType
-    
+
         The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.
         This parameter is optional, by default all scans except for establishing an actual SQL connection are performed.
         Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.
@@ -77,42 +77,42 @@ function Find-DbaInstance {
          Browser
         - Tries discovering all instances via the browser service
         - This scan detects instances.
-    
+
         SQLService
         - Tries listing all SQL Services using CIM/WMI
         - This scan uses credentials specified in the '-Credential' parameter if any.
         - This scan detects instances.
         - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-    
+
         SPN
         - Tries looking up the Service Principal Names for each instance
         - Will use the nearest Domain Controller by default
         - Target a specific domain controller using the '-DomainController' parameter
         - If using the '-DomainController' parameter, use the '-Credential' parameter to specify the credentials used to connect
-    
+
         TCPPort
         - Tries connecting to the TCP Ports.
         - By default, port 1433 is connected to.
         - The parameter '-TCPPort' can be used to provide a list of port numbers to scan.
         - This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.
         - This scan is also used to validate found SPNs if both scans are used in combination
-   
+
         DNSResolve
         - Tries resolving the computername in DNS
-    
+
         Ping
         - Tries pinging the computer. Failure will NOT terminate scans.
-    
+
         SqlConnect
         - Tries to establish a SQL connection to the server
         - Uses windows credentials by default
         - Specify custom credentials using the '-SqlCredential' parameter
         - This scan is not used by default
         - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-    
+
         All
         - All of the above
-    
+
     .PARAMETER IpAddress
         This parameter can be used to override the defaults for the IPRange discovery.
         This parameter accepts a list of strings supporting any combination of:
@@ -163,7 +163,7 @@ function Find-DbaInstance {
         PS C:\> Find-DbaInstance -DiscoveryType Domain, DataSourceEnumeration
 
         Performs a network search for SQL Instances by:
-        - Looking up the Service Principal Names of computers in active directory
+        - Looking up the Service Principal Names of computers in Active Directory
         - Using the UDP broadcast based auto-discovery of SSMS
         After that it will extensively scan all hosts thus discovered for instances.
 
@@ -209,7 +209,7 @@ function Find-DbaInstance {
 
         Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -316,7 +316,7 @@ function Find-DbaInstance {
 
                     # $ports required for all scans
                     $ports = $TCPPort | Test-TcpPort -ComputerName $computer
-                    
+
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
@@ -473,7 +473,7 @@ function Find-DbaInstance {
                         $masterList += $object
                     }
                     #endregion Case: Port number found
-                    
+
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
                         $instanceHash = @{ }
                         $toDelete = @()
@@ -844,28 +844,32 @@ function Find-DbaInstance {
                         $cidr = [int]$parts[1]
 
                         if (($cidr -lt 8) -or ($cidr -gt 31)) {
-                            throw "$IpAddress does not contain a valid cidr mask!"
+                            Stop-Function -Message "$IpAddress does not contain a valid cidr mask"
+                            return
                         }
 
                         $mode = 'CIDR'
                     } else {
-                        throw "$IpAddress is not a valid IP Range!"
+                        Stop-Function -Message "$IpAddress is not a valid IP range"
                     }
                 } elseif ($IpAddress -like "*-*") {
                     $rangeStart = $IpAddress.Split("-")[0]
                     $rangeEnd = $IpAddress.Split("-")[1]
 
                     if ($rangeStart -notmatch ([dbargx]::IPv4)) {
-                        throw "$IpAddress is not a valid IP Range!"
+                        Stop-Function -Message "$IpAddress is not a valid IP range"
+                        return
                     }
                     if ($rangeEnd -notmatch ([dbargx]::IPv4)) {
-                        throw "$IpAddress is not a valid IP Range!"
+                        Stop-Function -Message "$IpAddress is not a valid IP range"
+                        return
                     }
 
                     $mode = 'Range'
                 } else {
                     if ($IpAddress -notmatch ([dbargx]::IPv4)) {
-                        throw "$IpAddress is not a valid IP Address!"
+                        Stop-Function -Message "$IpAddress is not a valid IP address"
+                        return
                     }
                     return $IpAddress
                 }
@@ -973,8 +977,12 @@ function Find-DbaInstance {
                 }
                 #endregion Discovery: IP Range
             }
+            "Default" {
+                Stop-Function -Message "Please specify DiscoveryType or ScanType. Try Get-Help Find-DbaInstance -Examples for working examples." -EnableException $EnableException
+                return
+            }
             default {
-                Stop-Function -Message "Invalid parameterset, some developer probably had a beer too much. Please file an issue so we can fix this" -EnableException $EnableException
+                Stop-Function -Message "Invalid parameterset, some developer probably had a beer too much. Please file an issue so we can fix this." -EnableException $EnableException
                 return
             }
         }
