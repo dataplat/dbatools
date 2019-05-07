@@ -239,15 +239,14 @@ function Invoke-DbaDbDataMasking {
                                     if (-not $dbTable.Columns[$indexColumn.Name].Identity) {
                                         # Get the column mask info
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
-                                        $indexColumn.Name
-                                        $columnMaskInfo
+
                                         if ($columnMaskInfo) {
                                             # Generate a new value
                                             try {
                                                 if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                    $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
+                                                    $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
                                                 } else {
-                                                    $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
+                                                    $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
                                                 }
 
                                             } catch {
@@ -301,10 +300,12 @@ function Invoke-DbaDbDataMasking {
 
                                 } #>
 
+                                # Add the row value to the array
+                                $uniqueValues += $rowValue
+
                             }
 
-                            # Add the row value to the array
-                            $uniqueValues += $rowValue
+
 
                         }
 
