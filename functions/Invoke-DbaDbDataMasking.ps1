@@ -261,7 +261,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-
+                                # Just keeping this in, in case we need it later on
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
                                 <# while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
