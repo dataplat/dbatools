@@ -190,9 +190,10 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    $maskingType = $min = $null
+                    $maskingType = $columnType = $min = $null
                     $columnLength = $columnobject.Datatype.MaximumLength
-                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
+                    #$columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
+                    #$columnType = $columnobject.DataType.Name.ToString().ToLowerInvariant()
 
                     if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                         $min = 2
@@ -398,6 +399,9 @@ function New-DbaDbMaskingConfig {
                                     $min = [int]($columnLength / 2)
                                     $MaxValue = $columnLength
                                 }
+                            }
+                            "uniqueidentifier" {
+                                $subType = "Guid"
                             }
                             default {
                                 $subType = "String2"
