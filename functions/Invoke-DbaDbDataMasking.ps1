@@ -263,7 +263,7 @@ function Invoke-DbaDbDataMasking {
 
                                 # Just keeping this in, in case we need it later on
                                 # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                <# while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
+                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
                                     $rowValue = New-Object PSCustomObject
 
@@ -278,9 +278,9 @@ function Invoke-DbaDbDataMasking {
                                                 # Generate a new value
                                                 try {
                                                     if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                        $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
+                                                        $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
                                                     } else {
-                                                        $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
+                                                        $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
                                                     }
 
                                                 } catch {
@@ -298,7 +298,7 @@ function Invoke-DbaDbDataMasking {
 
                                     }
 
-                                } #>
+                                }
 
                                 # Add the row value to the array
                                 $uniqueValues += $rowValue
