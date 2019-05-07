@@ -191,9 +191,12 @@ function New-DbaDbMaskingConfig {
                     }
 
                     $maskingType = $columnType = $min = $null
-                    $columnLength = $columnobject.Datatype.MaximumLength
-                    #$columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
-                    #$columnType = $columnobject.DataType.Name.ToString().ToLowerInvariant()
+
+                    if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
+                        $columnLength = $columnobject.Datatype.NumericScale
+                    } else {
+                        $columnLength = $columnobject.Datatype.MaximumLength
+                    }
 
                     if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                         $min = 2
@@ -381,6 +384,11 @@ function New-DbaDbMaskingConfig {
                             "text" {
                                 $subType = "String"
                                 $maxValue = 2147483647
+                            }
+                            "time" {
+                                $type = "Date"
+                                $subType = "Past"
+                                $MaxValue = $null
                             }
                             "tinyint" {
                                 $subType = "Number"
