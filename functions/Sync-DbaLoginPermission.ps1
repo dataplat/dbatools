@@ -111,7 +111,7 @@ function Sync-DbaLoginPermission {
                 }
 
                 $serverName = Resolve-NetBiosName $sourceServer
-                $userBase = ($username.Split("\")[0]).ToLower()
+                $userBase = ($username.Split("\")[0]).ToLowerInvariant()
 
                 if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
                     continue

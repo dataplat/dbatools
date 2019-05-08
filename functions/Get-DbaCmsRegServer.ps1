@@ -188,11 +188,11 @@ function Get-DbaCmsRegServer {
 
         if ($IncludeSelf -and $servers) {
             Write-Message -Level Verbose -Message "Adding CMS instance"
-            $self = $servers[0].PsObject.Copy()
+            $self = $servers[0].PsObject.Copy() | Select-Object -Property $defaults
             $self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force
             $self.ServerName = $instance
+            $self.Group = $null
             $self.Description = $null
-            $self.SecureConnectionString = $null
             Select-DefaultView -InputObject $self -Property $defaults
         }
     }

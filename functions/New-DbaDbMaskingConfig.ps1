@@ -185,21 +185,25 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
+                    if ($columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -eq 'xml') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
                     }
 
-                    $maskingType = $min = $null
-                    $columnLength = $columnobject.Datatype.MaximumLength
-                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+                    $maskingType = $columnType = $min = $null
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
+                    if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
+                        $columnLength = $columnobject.Datatype.NumericScale
+                    } else {
+                        $columnLength = $columnobject.Datatype.MaximumLength
+                    }
+
+                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                         $min = 2
                     }
 
                     if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLower()
+                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
 
                     # Get the masking type with the synonym
@@ -214,7 +218,7 @@ function New-DbaDbMaskingConfig {
                         $type = $null
                         $subtype = $null
 
-                        switch ($maskingType.ToLower()) {
+                        switch ($maskingType.ToLowerInvariant()) {
                             "address" {
                                 $type = "Address"
                                 $subtype = "StreetAddress"
@@ -341,15 +345,18 @@ function New-DbaDbMaskingConfig {
                                 $MaxValue = 2147483647
                             }
                             "date" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime2" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "decimal" {
@@ -378,6 +385,11 @@ function New-DbaDbMaskingConfig {
                                 $subType = "String"
                                 $maxValue = 2147483647
                             }
+                            "time" {
+                                $type = "Date"
+                                $subType = "Past"
+                                $MaxValue = $null
+                            }
                             "tinyint" {
                                 $subType = "Number"
                                 $MaxValue = 255
@@ -395,6 +407,9 @@ function New-DbaDbMaskingConfig {
                                     $min = [int]($columnLength / 2)
                                     $MaxValue = $columnLength
                                 }
+                            }
+                            "uniqueidentifier" {
+                                $subType = "Guid"
                             }
                             default {
                                 $subType = "String2"

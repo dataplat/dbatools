@@ -149,7 +149,7 @@ function Test-DbaSpn {
                     $spn.Cluster = ($services.advancedproperties | Where-Object Name -EQ 'Clustered').Value
 
                     if ($spn.Cluster) {
-                        $hostEntry = ($services.advancedproperties | Where-Object Name -EQ 'VSNAME').Value.ToLower()
+                        $hostEntry = ($services.advancedproperties | Where-Object Name -EQ 'VSNAME').Value.ToLowerInvariant()
                         <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Verbose "Found cluster $hostEntry"
                         $hostEntry = ([System.Net.Dns]::GetHostEntry($hostEntry)).HostName
