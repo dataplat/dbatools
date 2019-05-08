@@ -173,7 +173,7 @@ function Show-DbaDbList {
         [void]$stackpanel.Children.Add($textblock)
         $childitem.Header = $stackpanel
         #Variable marked as unused by PSScriptAnalyzer
-        #$databaseParent = $treeview.Items.Add($childitem)
+        $null = $treeview.Items.Add($childitem)
 
         try {
             $databases = $server.Databases.Name
