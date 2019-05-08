@@ -167,6 +167,10 @@ function Get-DbaMaintenanceSolutionLog {
                 Write-Message -Level Warning -Message "Parsing $logtype is not supported at the moment"
                 Continue
             }
+            if (!$instance.IsLocalHost -and $server.HostPlatform -ne "Windows") {
+                Write-Message -Level Warning -Message "The target instance is not Windows so logs cannot be fetched remotely"
+                Continue
+            }
             if ($Path) {
                 $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
             } else {
@@ -211,7 +215,7 @@ function Get-DbaMaintenanceSolutionLog {
                 Write-Message -Level Verbose -Message "Reading $file"
                 $text = New-Object System.IO.StreamReader -ArgumentList "$File"
                 $block = New-Object System.Collections.ArrayList
-                $remember = @{}
+                $remember = @{ }
                 while ($line = $text.ReadLine()) {
 
                     $real = $line.Trim()
