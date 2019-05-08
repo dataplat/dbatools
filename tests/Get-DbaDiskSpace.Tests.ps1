@@ -1,8 +1,19 @@
-﻿$commandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName','Credential','Unit','CheckForSql','SqlCredential','ExcludeDrive','CheckFragmentation','Force','EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Disks are properly retrieved" {
         $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
         It "returns at least the system drive" {
@@ -31,27 +42,27 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
             return $object
         }
 
-        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaSqlService' -ParameterFilter { $ComputerName.ComputerName -eq 'MadeUpServer' } -MockWith {
+        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaService' -ParameterFilter { $ComputerName.ComputerName -eq 'MadeUpServer' } -MockWith {
             return @(
                 @{
                     ComputerName = 'MadeUpServer'
-                    ServiceName = 'MSSQLSERVER'
-                    ServiceType = 'Engine'
+                    ServiceName  = 'MSSQLSERVER'
+                    ServiceType  = 'Engine'
                     InstanceName = 'MSSQLSERVER'
-                    DisplayName = 'SQL Server (MSSQLSERVER)'
-                    StartName = 'FAKEDOMAIN\FAKEUSER'
-                    State = 'Running'
-                    StartMode = 'Automatic'
+                    DisplayName  = 'SQL Server (MSSQLSERVER)'
+                    StartName    = 'FAKEDOMAIN\FAKEUSER'
+                    State        = 'Running'
+                    StartMode    = 'Automatic'
                 },
                 @{
                     ComputerName = 'MadeUpServer'
-                    ServiceName = 'MSSQLSERVER$MADEUPINSTANCE'
-                    ServiceType = 'Engine'
+                    ServiceName  = 'MSSQLSERVER$MADEUPINSTANCE'
+                    ServiceType  = 'Engine'
                     InstanceName = 'MadeUpInstance'
-                    DisplayName = 'SQL Server (MSSQLSERVER)'
-                    StartName = 'FAKEDOMAIN\FAKEUSER'
-                    State = 'Running'
-                    StartMode = 'Automatic'
+                    DisplayName  = 'SQL Server (MSSQLSERVER)'
+                    StartName    = 'FAKEDOMAIN\FAKEUSER'
+                    State        = 'Running'
+                    StartMode    = 'Automatic'
                 }
             )
         }
@@ -59,40 +70,75 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
         Mock -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -ParameterFilter { $ComputerName::InputObject -eq 'MadeUpServer' -and $Query -like '*Win32_Volume*' } -MockWith {
             return @(
                 @{
-                    Name = 'D:\Data\'
-                    Label = 'Log'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 65536
-                    FileSystem = 'NTFS'
-                    DriveType = 3
+                    Name        = 'D:\Data\'
+                    Label       = 'Log'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 65536
+                    FileSystem  = 'NTFS'
+                    DriveType   = 3
                     DriveLetter = ''
                 },
                 @{
-                    Name = 'C:\'
-                    Label = 'OS'
-                    Capacity = 32209043456
-                    Freespace = 11653545984
-                    BlockSize = 4096
-                    FileSystem = 'NTFS'
-                    DriveType = 2
+                    Name        = 'C:\'
+                    Label       = 'OS'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
                     DriveLetter = 'C:'
                 }
             )
         }
-        
+
         It -Skip "SQL Server drive is found in there somewhere" {
             $results = Get-DbaDiskSpace -ComputerName 'MadeUpServer' -CheckForSql -EnableException
             $true | Should -BeIn $results.IsSqlDisk
         }
 
         Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -Times 0
-        Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaSqlService' -Times 0
+        Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaService' -Times 0
         Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Connect-SqlInstance' -Times 0
     }
 
     Context "CheckForSql returns IsSqlDisk property with a value (likely false)" {
-        It -Skip "SQL Server drive is not found in there somewhere" {
+        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -ParameterFilter { $Query -like '*Win32_Volume*' } -MockWith {
+            return @(
+                @{
+                    Name        = 'D:\Data\'
+                    Label       = 'Log'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 65536
+                    FileSystem  = 'NTFS'
+                    DriveType   = 3
+                    DriveLetter = ''
+                },
+                @{
+                    Name        = 'C:\'
+                    Label       = 'OS'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
+                    DriveLetter = 'C:'
+                },
+                @{
+                    Name        = 'T:\'
+                    Label       = 'Data'
+                    Capacity    = 32209043456
+                    Freespace   = 11653545984
+                    BlockSize   = 4096
+                    FileSystem  = 'NTFS'
+                    DriveType   = 2
+                    DriveLetter = 'T:'
+                }
+            )
+        }
+
+        It "SQL Server drive is not found in there somewhere" {
             $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql -WarningAction SilentlyContinue
             $false | Should BeIn $results.IsSqlDisk
         }

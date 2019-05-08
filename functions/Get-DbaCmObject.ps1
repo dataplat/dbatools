@@ -1,84 +1,86 @@
 function Get-DbaCmObject {
     <#
-        .SYNOPSIS
-            Retrieves Wmi/Cim-Style information from computers.
+    .SYNOPSIS
+        Retrieves Wmi/Cim-Style information from computers.
 
-        .DESCRIPTION
-            This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.
-            It uses different protocols as available in this order:
-            - Cim over WinRM
-            - Cim over DCOM
-            - Wmi
-            - Wmi over PowerShell Remoting
-            It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
-            Much of its behavior can be configured using Test-DbaWmConnection.
+    .DESCRIPTION
+        This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.
+        It uses different protocols as available in this order:
+        - Cim over WinRM
+        - Cim over DCOM
+        - Wmi
+        - Wmi over PowerShell Remoting
+        It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
+        Much of its behavior can be configured using Test-DbaCmConnection.
 
-        .PARAMETER ClassName
-            The name of the class to retrieve.
+    .PARAMETER ClassName
+        The name of the class to retrieve.
 
-        .PARAMETER Query
-            The Wmi/Cim query tu run against the server.
+    .PARAMETER Query
+        The Wmi/Cim query tu run against the server.
 
-        .PARAMETER ComputerName
-            The computer(s) to connect to. Defaults to localhost.
+    .PARAMETER ComputerName
+        The computer(s) to connect to. Defaults to localhost.
 
-        .PARAMETER Credential
-            Credentials to use. Invalid credentials will be stored in a credentials cache and not be reused.
+    .PARAMETER Credential
+        Credentials to use. Invalid credentials will be stored in a credentials cache and not be reused.
 
-        .PARAMETER Namespace
-            The namespace of the class to use.
+    .PARAMETER Namespace
+        The namespace of the class to use.
 
-        .PARAMETER DoNotUse
-            Connection Protocols that should not be used.
+    .PARAMETER DoNotUse
+        Connection Protocols that should not be used.
 
-        .PARAMETER Force
-            Overrides some checks that might otherwise halt execution as a precaution
-            - Ignores timeout on bad connections
+    .PARAMETER Force
+        Overrides some checks that might otherwise halt execution as a precaution
+        - Ignores timeout on bad connections
 
-        .PARAMETER SilentlyContinue
-            Use in conjunction with the -EnableException switch.
-            By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
-            Setting this switch will cause it write a non-terminating exception and continue with the next computer.
+    .PARAMETER SilentlyContinue
+        Use in conjunction with the -EnableException switch.
+        By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
+        Setting this switch will cause it write a non-terminating exception and continue with the next computer.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ComputerManagement, CIM
-            Author: Fred Winmann (@FredWeinmann)
+    .NOTES
+        Tags: ComputerManagement, CIM
+        Author: Friedrich Weinmann (@FredWeinmann)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaCmObject
+    .LINK
+        https://dbatools.io/Get-DbaCmObject
 
-        .EXAMPLE
-            Get-DbaCmObject win32_OperatingSystem
+    .EXAMPLE
+        PS C:\> Get-DbaCmObject win32_OperatingSystem
 
-            Retrieves the common operating system information from the local computer.
+        Retrieves the common operating system information from the local computer.
 
-        .EXAMPLE
-            Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
+    .EXAMPLE
+        PS C:\> Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
 
-            Retrieves the common operating system information from the server sql2014.
-            It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+        Retrieves the common operating system information from the server sql2014.
+        It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Class")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
         [string]
         $ClassName,
 
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
@@ -101,7 +103,7 @@ function Get-DbaCmObject {
         [Alias('Silent')]$EnableException
     )
 
-    Begin {
+    begin {
         #region Configuration Values
         $disable_cache = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache
 
@@ -110,12 +112,13 @@ function Get-DbaCmObject {
 
         $ParSet = $PSCmdlet.ParameterSetName
     }
-    Process {
+    process {
+        # uses cim commands
         :main foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
             # Since all connection caching runs using lower-case strings, making it lowercase here simplifies things.
-            $computer = $connectionObject.Connection.ComputerName.ToLower()
+            $computer = $connectionObject.Connection.ComputerName.ToLowerInvariant()
 
             Write-Message -Message "[$computer] Retrieving Management Information" -Level VeryVerbose -Target $computer
 
@@ -162,59 +165,106 @@ function Get-DbaCmObject {
                             if ($ParSet -eq "Class") { $connection.GetCimRMInstance($cred, $ClassName, $Namespace) }
                             else { $connection.QueryCimRMInstance($cred, $Query, "WQL", $Namespace) }
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success"
                             $connection.ReportSuccess('CimRM')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
-                        }
-                        catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Failed!"
+                        } catch {
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Failed"
+                            $errorItem = $_
 
-                            # 1 = Generic runtime error
-                            if ($_.Exception.InnerException.StatusCode -eq 1) {
-                                # 0x8007052e, 0x80070005 : Authentication error, bad credential
-                                if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
-                                    # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
-                                    # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
-                                    $connection.AddBadCredential($cred)
-                                    if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-                                    Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                            switch ($_.Exception.InnerException.StatusCode) {
+                                # Code Reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
+                                #region 1 = Generic runtime error
+                                1 {
+                                    # 0x8007052e, 0x80070005 : Authentication error, bad credential
+                                    if (($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x8007052e") -or ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80070005")) {
+                                        # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
+                                        # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
+                                        $connection.AddBadCredential($cred)
+                                        if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                                        Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                                    } elseif ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
+                                        if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
+                                        else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
+                                    } else {
+                                        $connection.ReportFailure('CimRM')
+                                        $excluded += "CimRM"
+                                        continue sub
+                                    }
                                 }
-                                elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
-                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
-                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                #endregion 1 = Generic runtime error
+                                #region 2 = Access to specific resource denied
+                                2 { Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 2 = Access to specific resource denied
+                                #region 3 = Invalid Namespace
+                                3 { Stop-Function -Message "[$computer] Invalid namespace: $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 3 = Invalid Namespace
+                                #region 4 - Invalid Parameter
+                                4 { Stop-Function -Message "[$computer] Invalid parameters were specified" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 4 - Invalid Parameter
+                                #region 5 = Invalid Class
+                                5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 5 = Invalid Class
+                                #region 6 = Object not Found
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 6 = Object not Found
+                                #region 7 = Operation not Supported
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 7 = Operation not Supported
+                                #region 8 = Class has children
+                                8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 8 = Class has children
+                                #region 9 = Class has instances
+                                9 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 9 = Class has instances
+                                #region 10 = Invalid Superclass
+                                10 { Stop-Function -Message "[$computer] The operation against class $ClassName cannot be carried out since the specified superclass does not exist." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 10 = Invalid Superclass
+                                #region 11 = Already Exists
+                                11 { Stop-Function -Message "[$computer] The specified object in $ClassName already exists." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 11 = Already Exists
+                                #region 12 = No Such Property
+                                12 { Stop-Function -Message "[$computer] The specified property does not exist on $ClassName." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 12 = No Such Property
+                                #region 13 = Type Mismatch
+                                13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 13 = Type Mismatch
+                                #region 14 = Query Language not supported
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 14 = Query Language not supported
+                                #region 15 = Invalid Query
+                                15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 15 = Invalid Query
+                                #region 16 = Method not available
+                                16 { Stop-Function -Message "[$computer] The specified method on $ClassName is not available." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #region 16 = Method not available
+                                #region 17 = Method not found
+                                17 { Stop-Function -Message "[$computer] The specified method on $ClassName does not exist." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 17 = Method not found
+                                #region 18 = Unexpected Response
+                                18 { Stop-Function -Message "[$computer] An unexpected response has happened in this request" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 18 = Unexpected Response
+                                #region 19 = Invalid Response Destination
+                                19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 19 = Invalid Response Destination
+                                #region 20 = Namespace not empty
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 20 = Namespace not empty
+
+                                #region 0 = Non-CIM Issue not covered by the framework
+                                0 {
+                                    # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
+                                    if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
+                                        Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
+                                    } else {
+                                        $connection.ReportFailure('CimRM')
+                                        $excluded += "CimRM"
+                                        continue sub
+                                    }
                                 }
-                                else {
-                                    $connection.ReportFailure('CimRM')
-                                    $excluded += "CimRM"
-                                    continue sub
-                                }
-                            }
-
-                            # 2 = Access to specific resource denied
-                            elseif ($_.Exception.InnerException.StatusCode -eq 2) {
-                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-
-                            # 3 = Invalid Namespace
-                            elseif ($_.Exception.InnerException.StatusCode -eq 3) {
-                                Stop-Function -Message "[$computer] Invalid namespace: $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-                            # 5 = Invalid Class
-                            # See here for code reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
-                            elseif ($_.Exception.InnerException.StatusCode -eq 5) {
-                                Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-
-                            # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
-                            elseif (($_.Exception.InnerException.StatusCode -eq 0) -and ($_.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus")) {
-                                Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
-                            }
-                            else {
-                                $connection.ReportFailure('CimRM')
-                                $excluded += "CimRM"
-                                continue sub
+                                #endregion 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -227,61 +277,106 @@ function Get-DbaCmObject {
                             if ($ParSet -eq "Class") { $connection.GetCimDCOMInstance($cred, $ClassName, $Namespace) }
                             else { $connection.QueryCimDCOMInstance($cred, $Query, "WQL", $Namespace) }
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success"
                             $connection.ReportSuccess('CimDCOM')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
-                        }
-                        catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Failed!"
+                        } catch {
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Failed"
+                            $errorItem = $_
 
-                            # 1 = Generic runtime error
-                            if ($_.Exception.InnerException.StatusCode -eq 1) {
-                                # 0x8007052e, 0x80070005 : Authentication error, bad credential
-                                if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
-                                    # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
-                                    # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
-                                    $connection.AddBadCredential($cred)
-                                    if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-                                    Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                            switch ($_.Exception.InnerException.StatusCode) {
+                                # Code Reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
+                                #region 1 = Generic runtime error
+                                1 {
+                                    # 0x8007052e, 0x80070005 : Authentication error, bad credential
+                                    if (($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x8007052e") -or ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80070005")) {
+                                        # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
+                                        # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
+                                        $connection.AddBadCredential($cred)
+                                        if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                                        Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                                    } elseif ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
+                                        if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
+                                        else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
+                                    } else {
+                                        $connection.ReportFailure('CimDCOM')
+                                        $excluded += "CimDCOM"
+                                        continue sub
+                                    }
                                 }
-                                elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
-                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
-                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                #endregion 1 = Generic runtime error
+                                #region 2 = Access to specific resource denied
+                                2 { Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 2 = Access to specific resource denied
+                                #region 3 = Invalid Namespace
+                                3 { Stop-Function -Message "[$computer] Invalid namespace: $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 3 = Invalid Namespace
+                                #region 4 - Invalid Parameter
+                                4 { Stop-Function -Message "[$computer] Invalid parameters were specified" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 4 - Invalid Parameter
+                                #region 5 = Invalid Class
+                                5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 5 = Invalid Class
+                                #region 6 = Object not Found
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 6 = Object not Found
+                                #region 7 = Operation not Supported
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 7 = Operation not Supported
+                                #region 8 = Class has children
+                                8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 8 = Class has children
+                                #region 9 = Class has instances
+                                9 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 9 = Class has instances
+                                #region 10 = Invalid Superclass
+                                10 { Stop-Function -Message "[$computer] The operation against class $ClassName cannot be carried out since the specified superclass does not exist." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 10 = Invalid Superclass
+                                #region 11 = Already Exists
+                                11 { Stop-Function -Message "[$computer] The specified object in $ClassName already exists." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 11 = Already Exists
+                                #region 12 = No Such Property
+                                12 { Stop-Function -Message "[$computer] The specified property does not exist on $ClassName." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 12 = No Such Property
+                                #region 13 = Type Mismatch
+                                13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 13 = Type Mismatch
+                                #region 14 = Query Language not supported
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 14 = Query Language not supported
+                                #region 15 = Invalid Query
+                                15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 15 = Invalid Query
+                                #region 16 = Method not available
+                                16 { Stop-Function -Message "[$computer] The specified method on $ClassName is not available." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #region 16 = Method not available
+                                #region 17 = Method not found
+                                17 { Stop-Function -Message "[$computer] The specified method on $ClassName does not exist." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 17 = Method not found
+                                #region 18 = Unexpected Response
+                                18 { Stop-Function -Message "[$computer] An unexpected response has happened in this request" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 18 = Unexpected Response
+                                #region 19 = Invalid Response Destination
+                                19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 19 = Invalid Response Destination
+                                #region 20 = Namespace not empty
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                #endregion 20 = Namespace not empty
+
+                                #region 0 = Non-CIM Issue not covered by the framework
+                                0 {
+                                    # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
+                                    if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
+                                        Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
+                                    } else {
+                                        $connection.ReportFailure('CimDCOM')
+                                        $excluded += "CimDCOM"
+                                        continue sub
+                                    }
                                 }
-                                else {
-                                    $connection.ReportFailure('CimDCOM')
-                                    $excluded += "CimDCOM"
-                                    continue sub
-                                }
-                            }
-
-                            # 2 = Access to specific resource denied
-                            elseif ($_.Exception.InnerException.StatusCode -eq 2) {
-                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-
-                            # 3 = Invalid Namespace
-                            elseif ($_.Exception.InnerException.StatusCode -eq 3) {
-                                Stop-Function -Message "[$computer] Invalid namespace: $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-
-                            # 5 = Invalid Class
-                            # See here for code reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
-                            elseif ($_.Exception.InnerException.StatusCode -eq 5) {
-                                Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
-                            }
-
-                            # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
-                            elseif (($_.Exception.InnerException.StatusCode -eq 0) -and ($_.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus")) {
-                                Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
-                            }
-
-                            else {
-                                $connection.ReportFailure('CimDCOM')
-                                $excluded += "CimDCOM"
-                                continue sub
+                                #endregion 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -315,14 +410,13 @@ function Get-DbaCmObject {
 
                             Get-WmiObject @parameters
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success"
                             $connection.ReportSuccess('Wmi')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
-                        }
-                        catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed!" -ErrorRecord $_
+                        } catch {
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed" -ErrorRecord $_
 
                             if ($_.CategoryInfo.Reason -eq "UnauthorizedAccessException") {
                                 # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
@@ -330,14 +424,11 @@ function Get-DbaCmObject {
                                 $connection.AddBadCredential($cred)
                                 if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                                 Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
-                            }
-                            elseif ($_.CategoryInfo.Category -eq "InvalidType") {
+                            } elseif ($_.CategoryInfo.Category -eq "InvalidType") {
                                 Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
-                            }
-                            elseif ($_.Exception.ErrorCode -eq "ProviderLoadFailure") {
+                            } elseif ($_.Exception.ErrorCode -eq "ProviderLoadFailure") {
                                 Stop-Function -Message "[$computer] Failed to access: $ClassName, in namespace: $Namespace - There was a provider error. This indicates a potential issue with WMI on the server side." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
-                            }
-                            else {
+                            } else {
                                 $connection.ReportFailure('Wmi')
                                 $excluded += "Wmi"
                                 continue sub
@@ -361,13 +452,12 @@ function Get-DbaCmObject {
                             if ($Credential) { $parameters["Credential"] = $Credential }
                             Invoke-Command @parameters
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success"
                             $connection.ReportSuccess('PowerShellRemoting')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
-                        }
-                        catch {
+                        } catch {
                             # Will always consider authenticated, since any call with credentials to a server that doesn't exist will also carry invalid credentials error.
                             # There simply is no way to differentiate between actual authentication errors and server not reached
                             $connection.ReportFailure('PowerShellRemoting')
@@ -379,8 +469,5 @@ function Get-DbaCmObject {
                 }
             }
         }
-    }
-    End {
-
     }
 }

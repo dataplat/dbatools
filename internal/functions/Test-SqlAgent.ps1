@@ -2,10 +2,10 @@ function Test-SqlAgent {
     <#
     .SYNOPSIS
         Internal function. Checks to see if SQL Server Agent is running on a server.
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,

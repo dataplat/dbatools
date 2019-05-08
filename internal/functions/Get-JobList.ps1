@@ -51,12 +51,12 @@ function Get-JobList {
         Author: Shawn Melton (@wsmelton)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-    #>
+       #>
     [cmdletbinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$JobFilter,
@@ -73,26 +73,21 @@ function Get-JobList {
             if ($JobFilter.Count -gt 1) {
                 if ($Not) {
                     $jobs | Where-Object Name -NotIn $JobFilter
-                }
-                else {
+                } else {
                     $jobs | Where-Object Name -In $JobFilter
                 }
-            }
-            else {
+            } else {
                 foreach ($job in $jobs) {
                     if ($JobFilter -match '`*') {
                         if ($Not) {
                             $job | Where-Object Name -NotLike $JobFilter
-                        }
-                        else {
+                        } else {
                             $job | Where-Object Name -Like $JobFilter
                         }
-                    }
-                    else {
+                    } else {
                         if ($Not) {
                             $job | Where-Object Name -NE $JobFilter
-                        }
-                        else {
+                        } else {
                             $job | Where-Object Name -EQ $JobFilter
                         }
                     }
@@ -102,36 +97,31 @@ function Get-JobList {
                             if ($stepFound.Count -gt 0) {
                                 $job
                             }
-                        }
-                        else {
+                        } else {
                             $stepFound = $job.JobSteps | Where-Object Name -Like $StepFilter
                             if ($stepFound.Count -gt 0) {
                                 $job
                             }
                         }
-                    }
-                    elseif ($StepName.Count -gt 1) {
+                    } elseif ($StepName.Count -gt 1) {
                         if ($Not) {
                             $stepFound = $job.JobSteps | Where-Object Name -NotIn $StepName
                             if ($stepFound.Count -gt 0) {
                                 $job
                             }
-                        }
-                        else {
+                        } else {
                             $stepFound = $job.JobSteps | Where-Object Name -In $StepName
                             if ($stepFound.Count -gt 0) {
                                 $job
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if ($Not) {
                             $stepFound = $job.JobSteps | Where-Object Name -NE $StepName
                             if ($stepFound.Count -gt 0) {
                                 $job
                             }
-                        }
-                        else {
+                        } else {
                             $stepFound = $job.JobSteps | Where-Object Name -EQ $StepName
                             if ($stepFound.Count -gt 0) {
                                 $job
@@ -140,8 +130,7 @@ function Get-JobList {
                     }
                 }
             }
-        }
-        else {
+        } else {
             $jobs
         }
     }

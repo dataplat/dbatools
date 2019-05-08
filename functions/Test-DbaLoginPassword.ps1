@@ -1,74 +1,77 @@
 function Test-DbaLoginPassword {
     <#
-        .SYNOPSIS
-            Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
+    .SYNOPSIS
+        Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
 
-        .DESCRIPTION
-            The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.
-            By default it will test for empty password and the same password as username.
+    .DESCRIPTION
+        The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.
+        By default it will test for empty password and the same password as username.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-            To connect as a different Windows user, run PowerShell as that user.
+        To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Dictionary
-            Specifies a list of passwords to include in the test for weak passwords.
+    .PARAMETER Dictionary
+        Specifies a list of passwords to include in the test for weak passwords.
 
-        .PARAMETER Login
-            The login(s) to process.
-    
-        .PARAMETER InputObject
-            Allows piping from Get-DbaLogin.
-    
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Login
+        The login(s) to process.
 
-        .NOTES
-            Author: Peter Samuelsson
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER InputObject
+        Allows piping from Get-DbaLogin.
 
-        .LINK
-            https://dbatools.io/Test-DbaLoginPassword
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Test-DbaLoginPassword -SqlInstance Dev01
+    .NOTES
+        Tags: Login, Security
+        Author: Peter Samuelsson
 
-            Test all SQL logins that the password is null or same as username on SQL server instance Dev01
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Test-DbaLoginPassword -SqlInstance Dev01 -Login sqladmin
+    .LINK
+        https://dbatools.io/Test-DbaLoginPassword
 
-            Test the 'sqladmin' SQL login that the password is null or same as username on SQL server instance Dev01
+    .EXAMPLE
+        PS C:\> Test-DbaLoginPassword -SqlInstance Dev01
 
-        .EXAMPLE
-            Test-DbaLoginPassword -SqlInstance Dev01 -Dictionary Test1,test2
+        Test all SQL logins that the password is null or same as username on SQL server instance Dev01
 
-            Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
+    .EXAMPLE
+        PS C:\> Test-DbaLoginPassword -SqlInstance Dev01 -Login sqladmin
 
-        .EXAMPLE
-            Get-DbaLogin -SqlInstance "sql2017","sql2016" | Test-DbaLoginPassword
+        Test the 'sqladmin' SQL login that the password is null or same as username on SQL server instance Dev01
 
-            Test all logins on sql2017 and sql2016
+    .EXAMPLE
+        PS C:\> Test-DbaLoginPassword -SqlInstance Dev01 -Dictionary Test1,test2
 
-        .EXAMPLE
-            $servers | Get-DbaLogin | Out-GridView -Passthru | Test-DbaLoginPassword
+        Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
 
-            Test selected logins on all servers in the $servers variable
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance "sql2017","sql2016" | Test-DbaLoginPassword
+
+        Test all logins on sql2017 and sql2016
+
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaLogin | Out-GridView -PassThru | Test-DbaLoginPassword
+
+        Test selected logins on all servers in the $servers variable
+
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -88,8 +91,7 @@ function Test-DbaLoginPassword {
         foreach ($CheckPass in $CheckPasses) {
             if ($CheckPasses.IndexOf($CheckPass) -eq 0) {
                 $checks = "SELECT " + $CheckPass
-            }
-            else {
+            } else {
                 $checks += "
         UNION SELECT " + $CheckPass
             }
@@ -120,9 +122,8 @@ function Test-DbaLoginPassword {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
                 Write-Message -Message "Connected to: $instance." -Level Verbose
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login
         }
@@ -139,8 +140,7 @@ function Test-DbaLoginPassword {
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
             try {
                 $serverinstance.Query("$sql") | Where-Object SqlLogin -in $names
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $serverinstance -Continue
             }
         }

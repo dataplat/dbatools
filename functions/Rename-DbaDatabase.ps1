@@ -1,198 +1,202 @@
 function Rename-DbaDatabase {
     <#
-        .SYNOPSIS
-            Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.
+    .SYNOPSIS
+        Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.
 
-        .DESCRIPTION
-            Can change every database metadata that can be renamed.
-            The ultimate goal is choosing to have a default template to enforce in your environment
-            so your naming convention for every bit can be put in place in no time.
-            The process is as follows (it follows the hierarchy of the entities):
-                - database name is changed (optionally, forcing users out)
-                - filegroup name(s) are changed accordingly
-                - logical name(s) are changed accordingly
-                - physical file(s) are changed accordingly
-                    - if Move is specified, the database will be taken offline and the move will initiate, then it will be taken online
-                    - if Move is not specified, the database remains online (unless SetOffline), and you are in charge of moving files
-            If any of the above fails, the process stops.
-            Please take a backup of your databases BEFORE using this, and remember to backup AFTER (also a FULL backup of master)
+    .DESCRIPTION
+        Can change every database metadata that can be renamed.
+        The ultimate goal is choosing to have a default template to enforce in your environment
+        so your naming convention for every bit can be put in place in no time.
+        The process is as follows (it follows the hierarchy of the entities):
+        - database name is changed (optionally, forcing users out)
+        - filegroup name(s) are changed accordingly
+        - logical name(s) are changed accordingly
+        - physical file(s) are changed accordingly
+        - if Move is specified, the database will be taken offline and the move will initiate, then it will be taken online
+        - if Move is not specified, the database remains online (unless SetOffline), and you are in charge of moving files
+        If any of the above fails, the process stops.
+        Please take a backup of your databases BEFORE using this, and remember to backup AFTER (also a FULL backup of master)
 
-            It returns an object for each database with all the renames done, plus hidden properties showing a "human" representation of them.
+        It returns an object for each database with all the renames done, plus hidden properties showing a "human" representation of them.
 
-            It's better you store the resulting object in a variable so you can inspect it in case of issues, e.g. "$result = Rename-DbaDatabase ....."
+        It's better you store the resulting object in a variable so you can inspect it in case of issues, e.g. "$result = Rename-DbaDatabase ....."
 
-            To get a grasp without worrying of what would happen under the hood, use "Rename-DbaDatabase .... -Preview | Select-Object *"
+        To get a grasp without worrying of what would happen under the hood, use "Rename-DbaDatabase .... -Preview | Select-Object *"
 
-        .PARAMETER SqlInstance
-            Target any number of instances, in order to return their build state.
+    .PARAMETER SqlInstance
+        Target any number of instances, in order to return their build state.
 
-        .PARAMETER SqlCredential
-            When connecting to an instance, use the credentials specified.
+    .PARAMETER SqlCredential
+        When connecting to an instance, use the credentials specified.
 
-        .PARAMETER Database
-            Targets only specified databases
+    .PARAMETER Database
+        Targets only specified databases
 
-        .PARAMETER ExcludeDatabase
-            Excludes only specified databases
+    .PARAMETER ExcludeDatabase
+        Excludes only specified databases
 
-        .PARAMETER AllDatabases
-            If you want to apply the naming convention system wide, you need to pass this parameter
+    .PARAMETER AllDatabases
+        If you want to apply the naming convention system wide, you need to pass this parameter
 
-        .PARAMETER DatabaseName
-            Pass a template to rename the database name. Valid placeholders are:
-                - <DBN> current database name
-                - <DATE> date (yyyyMMdd)
+    .PARAMETER DatabaseName
+        Pass a template to rename the database name. Valid placeholders are:
+        - <DBN> current database name
+        - <DATE> date (yyyyMMdd)
 
-        .PARAMETER FileGroupName
-            Pass a template to rename file group name. Valid placeholders are:
-                - <FGN> current filegroup name
-                - <DBN> current database name
-                - <DATE> date (yyyyMMdd)
-            If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+    .PARAMETER FileGroupName
+        Pass a template to rename file group name. Valid placeholders are:
+        - <FGN> current filegroup name
+        - <DBN> current database name
+        - <DATE> date (yyyyMMdd)
+        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
 
-        .PARAMETER LogicalName
-            Pass a template to rename logical name. Valid placeholders are:
-                - <FT> file type (ROWS, LOG)
-                - <LGN> current logical name
-                - <FGN> current filegroup name
-                - <DBN> current database name
-                - <DATE> date (yyyyMMdd)
-            If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+    .PARAMETER LogicalName
+        Pass a template to rename logical name. Valid placeholders are:
+        - <FT> file type (ROWS, LOG)
+        - <LGN> current logical name
+        - <FGN> current filegroup name
+        - <DBN> current database name
+        - <DATE> date (yyyyMMdd)
+        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
 
-        .PARAMETER FileName
-            Pass a template to rename file name. Valid placeholders are:
-                - <FNN> current file name (the basename, without directory nor extension)
-                - <FT> file type (ROWS, LOG, MMO, FS)
-                - <LGN> current logical name
-                - <FGN> current filegroup name
-                - <DBN> current database name
-                - <DATE> date (yyyyMMdd)
-            If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
+    .PARAMETER FileName
+        Pass a template to rename file name. Valid placeholders are:
+        - <FNN> current file name (the basename, without directory nor extension)
+        - <FT> file type (ROWS, LOG, MMO, FS)
+        - <LGN> current logical name
+        - <FGN> current filegroup name
+        - <DBN> current database name
+        - <DATE> date (yyyyMMdd)
+        If distinct names cannot be generated, a counter will be appended (0001, 0002, 0003, etc)
 
-        .PARAMETER ReplaceBefore
-            If you pass this switch, all upper level "current names" will be inspected and replaced BEFORE doing the
-            rename according to the template in the current level (remember the hierarchy):
-            Let's say you have a database named "dbatools_HR", composed by 3 files
-                - dbatools_HR_Data.mdf
-                - dbatools_HR_Index.ndf
-                - dbatools_HR_log.ldf
-            Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>'
-            would end up with this logic:
-            - database --> no placeholders specified
-                - dbatools_HR to dbatools_HRARCHIVE
-                    - filenames placeholders specified
-                        <DBN><FNN> --> current database name + current filename"
-                            - dbatools_HR_Data.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
-                            - dbatools_HR_Index.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
-                            - dbatools_HR_log.ldf to dbatools_HRARCHIVEdbatools_HR_log.ldf
-            Passing this switch, instead, e.g.
-            Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>' -ReplaceBefore
-            end up with this logic instead:
-            - database --> no placeholders specified
-                - dbatools_HR to dbatools_HRARCHIVE
-                    - filenames placeholders specified,
-                        <DBN><FNN>, plus -ReplaceBefore --> current database name + replace OLD "upper level" names inside the current filename
-                        - dbatools_HR_Data.mdf to dbatools_HRARCHIVE_Data.mdf
-                        - dbatools_HR_Index.mdf to dbatools_HRARCHIVE_Data.mdf
-                        - dbatools_HR_log.ldf to dbatools_HRARCHIVE_log.ldf
+    .PARAMETER ReplaceBefore
+        If you pass this switch, all upper level "current names" will be inspected and replaced BEFORE doing the
+        rename according to the template in the current level (remember the hierarchy):
+        Let's say you have a database named "dbatools_HR", composed by 3 files
+        - dbatools_HR_Data.mdf
+        - dbatools_HR_Index.ndf
+        - dbatools_HR_log.ldf
+        Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>'
+        would end up with this logic:
+        - database --> no placeholders specified
+        - dbatools_HR to dbatools_HRARCHIVE
+        - filenames placeholders specified
+        <DBN><FNN> --> current database name + current filename"
+        - dbatools_HR_Data.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
+        - dbatools_HR_Index.mdf to dbatools_HRARCHIVEdbatools_HR_Data.mdf
+        - dbatools_HR_log.ldf to dbatools_HRARCHIVEdbatools_HR_log.ldf
+        Passing this switch, instead, e.g.
+        Rename-DbaDatabase .... -Database "dbatools_HR" -DatabaseName "dbatools_HRARCHIVE" -FileName '<DBN><FNN>' -ReplaceBefore
+        end up with this logic instead:
+        - database --> no placeholders specified
+        - dbatools_HR to dbatools_HRARCHIVE
+        - filenames placeholders specified,
+        <DBN><FNN>, plus -ReplaceBefore --> current database name + replace OLD "upper level" names inside the current filename
+        - dbatools_HR_Data.mdf to dbatools_HRARCHIVE_Data.mdf
+        - dbatools_HR_Index.mdf to dbatools_HRARCHIVE_Data.mdf
+        - dbatools_HR_log.ldf to dbatools_HRARCHIVE_log.ldf
 
-        .PARAMETER Force
-            Kills any open session to be able to do renames.
+    .PARAMETER Force
+        Kills any open session to be able to do renames.
 
-        .PARAMETER SetOffline
-            Kills any open session and sets the database offline to be able to move files
+    .PARAMETER SetOffline
+        Kills any open session and sets the database offline to be able to move files
 
-        .PARAMETER Move
-            If you want this function to move files, else you're the one in charge of it.
-            This enables the same functionality as SetOffline, killing open transactions and putting the database
-            offline, then do the actual rename and setting it online again afterwards
+    .PARAMETER Move
+        If you want this function to move files, else you're the one in charge of it.
+        This enables the same functionality as SetOffline, killing open transactions and putting the database
+        offline, then do the actual rename and setting it online again afterwards
 
-        .PARAMETER Preview
-            Shows the renames without performing any operation (recommended to find your way around this function parameters ;-) )
+    .PARAMETER Preview
+        Shows the renames without performing any operation (recommended to find your way around this function parameters ;-) )
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER InputObject
-            Accepts piped database objects
+    .PARAMETER InputObject
+        Accepts piped database objects
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Rename
-            Author: niphlod
+    .NOTES
+        Tags: Database, Rename
+        Author: Simone Bizzotto (@niphold)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Rename-DbaDatabase
+    .LINK
+        https://dbatools.io/Rename-DbaDatabase
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 | select *
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | Select-Object *
 
-            Shows the detailed resultset you'll get renaming the HR database to HR2 without doing anything
+        Shows the detailed result set you'll get renaming the HR database to HR2 without doing anything
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2
 
-            Renames the HR database to HR2
+        Renames the HR database to HR2
 
-        .EXAMPLE
-            Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Rename-DbaDatabase -DatabaseName HR2
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Rename-DbaDatabase -DatabaseName HR2
 
-            Same as before, but with a piped database (renames the HR database to HR2)
+        Same as before, but with a piped database (renames the HR database to HR2)
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>"
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>"
 
-            Renames the HR database to dbatools_HR
+        Renames the HR database to dbatools_HR
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>_<DATE>"
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>_<DATE>"
 
-            Renames the HR database to dbatools_HR_20170807 (if today is 07th Aug 2017)
+        Renames the HR database to dbatools_HR_20170807 (if today is 07th Aug 2017)
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName "dbatools_<FGN>"
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName "dbatools_<FGN>"
 
-            Renames every FileGroup within HR to "dbatools_[the original FileGroup name]"
+        Renames every FileGroup within HR to "dbatools_[the original FileGroup name]"
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileGroupName "<DBN>_<FGN>"
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileGroupName "<DBN>_<FGN>"
 
-            Renames the HR database to "dbatools_HR", then renames every FileGroup within to "dbatools_HR_[the original FileGroup name]"
-            Note the "default recursive behaviour" here: for all intents and purposes the result of the former can be obtained with two distinct calls:
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName "dbatools_<DBN>_<FGN>"
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>"
+        Renames the HR database to "dbatools_HR", then renames every FileGroup within to "dbatools_HR_[the original FileGroup name]"
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>"
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileGroupName "dbatools_<DBN>_<FGN>"
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>"
 
-            Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
-            The db stays online (watch out!). You can then proceed manually to move/copy files by hand, set the db offline and then online again to finish the rename process
+        Renames the HR database to "dbatools_HR", then renames every FileGroup within to "dbatools_HR_[the original FileGroup name]"
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>" -SetOffline
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>"
 
-            Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
-            The db is then set offline (watch out!). You can then proceed manually to move/copy files by hand and then set it online again to finish the rename process
+        Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
+        The db stays online (watch out!). You can then proceed manually to move/copy files by hand, set the db offline and then online again to finish the rename process
 
-        .EXAMPLE
-            Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>" -Move
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>" -SetOffline
 
-            Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
-            The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
+        Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
+        The db is then set offline (watch out!). You can then proceed manually to move/copy files by hand and then set it online again to finish the rename process
+
+    .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>" -Move
+
+        Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
+        The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -268,15 +272,12 @@ function Rename-DbaDatabase {
                 # comes from Get-DbaDatabase
                 $dbs += $InputObject
             }
-        }
-        else {
+        } else {
             foreach ($instance in $SqlInstance) {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
-                }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 $all_dbs = $server.Databases | Where-Object IsAccessible
                 $dbs += $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
@@ -338,13 +339,11 @@ function Rename-DbaDatabase {
                 $NewDBName = $DatabaseName.Replace('<DBN>', $Orig_DBName).Replace('<DATE>', $CurrentDate)
                 if ($Orig_DBName -eq $NewDBName) {
                     Write-Message -Level VeryVerbose -Message "Database name unchanged, skipping"
-                }
-                else {
+                } else {
                     if ($InstanceDbs[$Server_Id].ContainsKey($NewDBName)) {
                         Write-Message -Level Warning -Message "Database $NewDBName exists already, skipping this rename"
                         $failed = $true
-                    }
-                    else {
+                    } else {
                         if ($PSCmdlet.ShouldProcess($db, "Renaming Database $db to $NewDBName")) {
                             if ($Force) {
                                 $server.KillAllProcesses($Orig_DBName)
@@ -357,8 +356,7 @@ function Rename-DbaDatabase {
                                 $InstanceDbs[$Server_Id][$NewDBName] = 1
                                 $Entities_Before['DBN'][$Orig_DBName] = $NewDBName
                                 #$db.Refresh()
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to rename Database : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -397,8 +395,7 @@ function Rename-DbaDatabase {
                         if ($FinalFGName -in $New_FGNames.Keys) {
                             $FGCounter += 1
                             $FinalFGName = "$NewFGName$($FGCounter.ToString('000'))"
-                        }
-                        else {
+                        } else {
                             break
                         }
                     }
@@ -414,8 +411,7 @@ function Rename-DbaDatabase {
                             $New_FGNames.Remove($Orig_FGName)
                             $New_FGNames[$FinalFGName] = 1
                             $Entities_Before['FGN'][$Orig_FGName] = $FinalFGName
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failed to rename FileGroup : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                             # stop any further renames
                             $failed = $true
@@ -469,8 +465,7 @@ function Rename-DbaDatabase {
                             if ($FinalLGName -in $New_LogicalNames.Keys) {
                                 $LNCounter += 1
                                 $FinalLGName = "$NewLGName$($LNCounter.ToString('000'))"
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -486,8 +481,7 @@ function Rename-DbaDatabase {
                                 $New_LogicalNames.Remove($Orig_LGName)
                                 $New_LogicalNames[$FinalLGName] = 1
                                 $Entities_Before['LGN'][$Orig_LGName] = $FinalLGName
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -519,8 +513,7 @@ function Rename-DbaDatabase {
                             if ($FinalLGName -in $New_LogicalNames.Keys) {
                                 $LNCounter += 1
                                 $FinalLGName = "$NewLGName$($LNCounter.ToString('000'))"
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -536,8 +529,7 @@ function Rename-DbaDatabase {
                                 $New_LogicalNames.Remove($Orig_LGName)
                                 $New_LogicalNames[$FinalLGName] = 1
                                 $Entities_Before['LGN'][$Orig_LGName] = $FinalLGName
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -579,8 +571,7 @@ function Rename-DbaDatabase {
                         $InstanceFiles[$Server_Id][$dirname] = @{}
                         try {
                             $dirfiles = Get-DbaFile -SqlInstance $server -Path $dirname -EnableException
-                        }
-                        catch {
+                        } catch {
                             Write-Message -Level Warning -Message "Failed to enumerate existing files at $dirname, move could go wrong"
                         }
                         foreach ($f in $dirfiles) {
@@ -617,8 +608,7 @@ function Rename-DbaDatabase {
                                 $FNCounter += 1
                                 $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$($FNCounter.ToString('000'))$([IO.Path]::GetExtension($FNName))"
                                 )
-                            }
-                            else {
+                            } else {
                                 break
                             }
                         }
@@ -639,8 +629,7 @@ function Rename-DbaDatabase {
                                     Source      = $FNName
                                     Destination = $FinalFNName
                                 }
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                 # stop any further renames
                                 $failed = $true
@@ -668,8 +657,7 @@ function Rename-DbaDatabase {
                                 if ($InstanceFiles[$Server_Id][$FNNameDir].ContainsKey($FinalFNName)) {
                                     $FNCounter += 1
                                     $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$($FNCounter.ToString('000'))$([IO.Path]::GetExtension($FNName))")
-                                }
-                                else {
+                                } else {
                                     break
                                 }
                             }
@@ -691,8 +679,7 @@ function Rename-DbaDatabase {
                                         Source      = $FNName
                                         Destination = $FinalFNName
                                     }
-                                }
-                                catch {
+                                } catch {
                                     Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                                     # stop any further renames
                                     $failed = $true
@@ -710,15 +697,13 @@ function Rename-DbaDatabase {
                 if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
                     # locally ran so we can just use rename-item
                     $ComputerName = $server.ComputerName
-                }
-                else {
+                } else {
                     # let's start checking if we can access .ComputerName
                     $testPS = $false
                     if ($SqlCredential) {
                         # why does Test-PSRemoting require a Credential param ? this is ugly...
                         $testPS = Test-PSRemoting -ComputerName $server.ComputerName -Credential $SqlCredential -ErrorAction Stop
-                    }
-                    else {
+                    } else {
                         $testPS = Test-PSRemoting -ComputerName $server.ComputerName -ErrorAction Stop
                     }
                     if (!($testPS)) {
@@ -726,15 +711,13 @@ function Rename-DbaDatabase {
                         $Resolved = (Resolve-DbaNetworkName -ComputerName $server.Name).FullComputerName
                         if ($SqlCredential) {
                             $testPS = Test-PSRemoting -ComputerName $Resolved -Credential $SqlCredential -ErrorAction Stop
-                        }
-                        else {
+                        } else {
                             $testPS = Test-PSRemoting -ComputerName $Resolved -ErrorAction Stop
                         }
                         if ($testPS) {
                             $ComputerName = $Resolved
                         }
-                    }
-                    else {
+                    } else {
                         $ComputerName = $server.ComputerName
                     }
                 }
@@ -745,8 +728,7 @@ function Rename-DbaDatabase {
                                 Destination  = $op.Destination
                                 ComputerName = $ComputerName
                             })
-                    }
-                    else {
+                    } else {
                         if ($null -eq $ComputerName) {
                             # if we don't have remote access ($ComputerName is null) we can fallback to admin shares if they're available
                             if (Test-Path (Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source)) {
@@ -755,8 +737,7 @@ function Rename-DbaDatabase {
                                         Destination  = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Destination
                                         ComputerName = $server.ComputerName
                                     })
-                            }
-                            else {
+                            } else {
                                 # flag the impossible rename ($ComputerName is $null)
                                 $null = $Final_Renames.Add([pscustomobject]@{
                                         Source       = $op.Source
@@ -764,8 +745,7 @@ function Rename-DbaDatabase {
                                         ComputerName = $ComputerName
                                     })
                             }
-                        }
-                        else {
+                        } else {
                             # we can do renames in a remote pssession
                             $null = $Final_Renames.Add([pscustomobject]@{
                                     Source       = $op.Source
@@ -781,23 +761,20 @@ function Rename-DbaDatabase {
                         Write-Message -Level VeryVerbose -Message "Setting the database offline. You are in charge of moving the files to the new location"
                         # because renames still need to be dealt with
                         $Status = 'PARTIAL'
-                    }
-                    else {
+                    } else {
                         if ($PSCmdlet.ShouldProcess($db, "File Rename required, setting db offline")) {
-                            $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Offline -Force
+                            $SetState = Set-DbaDbState -SqlInstance $server -Database $db.Name -Offline -Force
                             if ($SetState.Status -ne 'OFFLINE') {
                                 Write-Message -Level Warning -Message "Setting db offline failed, You are in charge of moving the files to the new location"
                                 # because it was impossible to set the database offline
                                 $Status = 'PARTIAL'
-                            }
-                            else {
+                            } else {
                                 try {
                                     while ($Final_Renames.Count -gt 0) {
                                         $op = $Final_Renames.Item(0)
                                         if ($null -eq $op.ComputerName) {
                                             Stop-Function -Message "No access to physical files for renames"
-                                        }
-                                        else {
+                                        } else {
                                             Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
                                             if (!$Preview) {
                                                 $scriptblock = {
@@ -809,8 +786,7 @@ function Rename-DbaDatabase {
                                         }
                                         $null = $Final_Renames.RemoveAt(0)
                                     }
-                                }
-                                catch {
+                                } catch {
                                     $failed = $true
                                     # because a rename operation failed
                                     $Status = 'PARTIAL'
@@ -818,13 +794,12 @@ function Rename-DbaDatabase {
                                 }
                                 if (!$failed) {
                                     if ($PSCmdlet.ShouldProcess($db, "Setting database online")) {
-                                        $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Online -Force
+                                        $SetState = Set-DbaDbState -SqlInstance $server -Database $db.Name -Online -Force
                                         if ($SetState.Status -ne 'ONLINE') {
                                             Write-Message -Level Warning -Message "Setting db online failed"
                                             # because renames were done, but the database didn't wake up
                                             $Status = 'PARTIAL'
-                                        }
-                                        else {
+                                        } else {
                                             $Status = 'FULL'
                                         }
                                     }
@@ -832,18 +807,15 @@ function Rename-DbaDatabase {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     # because of a previous error with renames to do
                     $Status = 'PARTIAL'
                 }
-            }
-            else {
+            } else {
                 if (!$failed) {
                     # because no previous error and not filename
                     $Status = 'FULL'
-                }
-                else {
+                } else {
                     # because previous errors and not filename
                     $Status = 'PARTIAL'
                 }

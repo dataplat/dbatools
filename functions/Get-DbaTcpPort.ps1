@@ -1,83 +1,91 @@
 function Get-DbaTcpPort {
     <#
-        .SYNOPSIS
-            Returns the TCP port used by the specified SQL Server.
+    .SYNOPSIS
+        Returns the TCP port used by the specified SQL Server.
 
-        .DESCRIPTION
-            By default, this function returns just the TCP port used by the specified SQL Server.
+    .DESCRIPTION
+        By default, this function returns just the TCP port used by the specified SQL Server.
 
-            If -Detailed is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.
+        If -All is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.
 
-            Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
+        Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Allows you to connect to servers using alternate Windows credentials
+    .PARAMETER SqlCredential
+        Allows you to connect to servers using alternate Windows credentials
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-        .PARAMETER Detailed
-            If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
+    .PARAMETER All
+        If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
-        .PARAMETER ExcludeIpv6
-            If this switch is enabled, IPv6 information is excluded from detailed output.
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release. Use All instead.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER ExcludeIpv6
+        If this switch is enabled, IPv6 information is excluded from All output.
 
-        .NOTES
-            Tags: SQLWMI, tcp
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: SQLWMI, tcp
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaTcpPort
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaTcpPort -SqlInstance sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaTcpPort
 
-            Returns just the port number for the default instance on sqlserver2014a.
+    .EXAMPLE
+        PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a
 
-        .EXAMPLE
-            Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
+        Returns just the port number for the default instance on sqlserver2014a.
 
-            Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
 
-        .EXAMPLE
-            Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed
+        Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.
 
-            Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -All
 
-            Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
+        Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.
 
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed
+        Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
-            Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -All
+
+        Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
+
+       #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
+        [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+    }
     process {
         foreach ($instance in $SqlInstance) {
-            if ($detailed -eq $true) {
+            if ($All) {
                 try {
                     $scriptblock = {
                         $instance = $args[0]
@@ -108,9 +116,10 @@ function Get-DbaTcpPort {
                                     Static       = $false
                                     Type         = "DAC"
                                 }
-                            }
-                            catch {
-                                # it's just not our day
+                            } catch {
+                                # Shouldn't have an empty catch block
+                                # Use write-verbose becaues it's remote and write-message may note exist
+                                Write-Verbose -Message "it's just not our day"
                             }
 
                             $tcp = $servername.ServerProtocols | Where-Object Name -eq Tcp
@@ -126,14 +135,11 @@ function Get-DbaTcpPort {
                                         $port = $prop.value
                                         if ($prop.name -eq 'TcpPort') {
                                             $static = $true
-                                        }
-                                        else {
+                                        } else {
                                             $static = $false
                                         }
-                                        break
                                     }
                                 }
-
                                 [PsCustomObject]@{
                                     ComputerName = $instance
                                     InstanceName = $instanceName
@@ -148,51 +154,52 @@ function Get-DbaTcpPort {
                     }
 
                     $computer = $instance.ComputerName
-                    $resolved = Resolve-DbaNetworkName -ComputerName $instance -Verbose:$false
+                    $resolved = Resolve-DbaNetworkName -ComputerName $instance
                     $computername = $resolved.FullComputerName
+                    $fqdn = $resolved.Fqdn
 
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
-                    }
-                    catch {
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
+                    } catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $fqdn -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
                     }
-                }
-                catch {
-                    Stop-Function -Message "Could not get detailed information." -Target $instance -ErrorRecord $_
+                } catch {
+                    Stop-Function -Message "Could not get all information." -Target $instance -ErrorRecord $_
                 }
 
-                $cleanedUp = $someIps | Sort-Object IPAddress
+                $results = $someIps | Sort-Object IPAddress
 
                 if ($ExcludeIpv6) {
                     $octet = '(?:0?0?[0-9]|0?[1-9][0-9]|1[0-9]{2}|2[0-5][0-5]|2[0-4][0-9])'
                     [regex]$ipv4 = "^(?:$octet\.){3}$octet$"
-                    $cleanedUp = $cleanedUp | Where-Object { $_.IPAddress -match $ipv4 }
+                    $results = $results | Where-Object { $_.IPAddress -match $ipv4 }
                 }
 
-                $cleanedUp
+                $results
             }
-
-            if ($Detailed -eq $false -or ($Detailed -eq $true -and $null -eq $someIps)) {
+            #Default Execution of Get-DbaTcpPort
+            if (-not $All -or ($All -and ($null -eq $someIps))) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
-                }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
                 }
 
                 # WmiComputer can be unreliable :( Use T-SQL
-                $sql = "SELECT local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
+                $sql = "SELECT local_net_address,local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
                 $port = $server.Query($sql)
 
-                [PSCustomObject]@{
+                [PsCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
+                    IPAddress    = $port.local_net_address
                     Port         = $port.local_tcp_port
-                }
+                    Static       = $true
+                    Type         = "Normal"
+                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, IPAddress, Port
             }
         }
     }

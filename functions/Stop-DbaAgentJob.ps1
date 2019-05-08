@@ -1,63 +1,65 @@
 function Stop-DbaAgentJob {
     <#
-        .SYNOPSIS
-            Stops a running SQL Server Agent Job.
+    .SYNOPSIS
+        Stops a running SQL Server Agent Job.
 
-        .DESCRIPTION
-            This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+    .DESCRIPTION
+        This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Job
-            The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+    .PARAMETER Job
+        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
-        .PARAMETER ExcludeJob
-            The job(s) to exclude - this list is auto-populated from the server.
+    .PARAMETER ExcludeJob
+        The job(s) to exclude - this list is auto-populated from the server.
 
-        .PARAMETER Wait
-            Wait for output until the job has completely stopped
+    .PARAMETER Wait
+        Wait for output until the job has completely stopped
 
-        .PARAMETER InputObject
-            Internal parameter that enables piping
+    .PARAMETER InputObject
+        Internal parameter that enables piping
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Job, Agent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Job, Agent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Stop-DbaAgentJob
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Stop-DbaAgentJob -SqlInstance localhost
+    .LINK
+        https://dbatools.io/Stop-DbaAgentJob
 
-            Stops all running SQL Agent Jobs on the local SQL Server instance
+    .EXAMPLE
+        PS C:\> Stop-DbaAgentJob -SqlInstance localhost
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob
+        Stops all running SQL Agent Jobs on the local SQL Server instance
 
-            Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob
 
-        .EXAMPLE
-            Stop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture
+        Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
 
-            Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
+    .EXAMPLE
+        PS C:\> Stop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture
+
+        Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
 
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
@@ -77,12 +79,10 @@ function Stop-DbaAgentJob {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $InputObject += $server.JobServer.Jobs
@@ -117,13 +117,12 @@ function Stop-DbaAgentJob {
 
                 if ($wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds 3
                         $currentjob.Refresh()
                     }
                     $currentjob
-                }
-                else {
+                } else {
                     $currentjob
                 }
             }

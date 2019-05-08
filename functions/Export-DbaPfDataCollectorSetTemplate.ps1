@@ -1,51 +1,55 @@
-﻿function Export-DbaPfDataCollectorSetTemplate {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Export-DbaPfDataCollectorSetTemplate {
     <#
-        .SYNOPSIS
-            Exports a new Data Collector Set XML Template.
+    .SYNOPSIS
+        Exports a new Data Collector Set XML Template.
 
-        .DESCRIPTION
-            Exports a Data Collector Set XML Template from Get-DbaPfDataCollectorSet. Exports to "$home\Documents\Performance Monitor Templates" by default.
+    .DESCRIPTION
+        Exports a Data Collector Set XML Template from Get-DbaPfDataCollectorSet. Exports to "$home\Documents\Performance Monitor Templates" by default.
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative credentials. To use:
 
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-        .PARAMETER CollectorSet
-            The name of the collector set(s) to export.
+    .PARAMETER CollectorSet
+        The name of the collector set(s) to export.
 
-        .PARAMETER Path
-            The path to export the file. Can be .xml or directory.
+    .PARAMETER Path
+        The path to export the file. Can be .xml or directory.
 
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaPfDataCollectorSetTemplate via the pipeline.
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaPfDataCollectorSetTemplate via the pipeline.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Performance, DataCollector
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Performance, DataCollector
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Export-DbaPfDataCollectorSetTemplate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf
+    .LINK
+        https://dbatools.io/Export-DbaPfDataCollectorSetTemplate
 
-            Exports all data collector sets from to the C:\temp\pf folder.
+    .EXAMPLE
+        PS C:\> Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet ComputerName sql2017 -CollectorSet 'System Correlation' | Export-DbaPfDataCollectorSetTemplate -Path C:\temp
+        Exports all data collector sets from to the C:\temp\pf folder.
 
-            Exports the 'System Correlation' data collector set from sql2017 to C:\temp.
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet ComputerName sql2017 -CollectorSet 'System Correlation' | Export-DbaPfDataCollectorSetTemplate -Path C:\temp
+
+        Exports the 'System Correlation' data collector set from sql2017 to C:\temp.
+
     #>
     [CmdletBinding()]
     param (
@@ -79,8 +83,7 @@
 
             if ($path.EndsWith(".xml")) {
                 $filename = $path
-            }
-            else {
+            } else {
                 $filename = "$path\$csname.xml"
                 if (-not (Test-Path -Path $path)) {
                     $null = New-Item -Type Directory -Path $path

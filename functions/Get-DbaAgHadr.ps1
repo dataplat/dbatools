@@ -1,56 +1,53 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgHadr {
     <#
-        .SYNOPSIS
-            Gets the Hadr service setting on the specified SQL Server instance.
+    .SYNOPSIS
+        Gets the Hadr service setting on the specified SQL Server instance.
 
-        .DESCRIPTION
-            Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.
+    .DESCRIPTION
+        Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL instance
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+    .NOTES
+        Tags: Hadr, HA, AG, AvailabilityGroup
+        Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaAgHadr
+    .LINK
+        https://dbatools.io/Get-DbaAgHadr
 
-        .EXAMPLE
-            Get-DbaAgHadr -SqlInstance sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaAgHadr -SqlInstance sql2016
 
-            Returns a status of the Hadr setting for sql2016 SQL Server instance.
+        Returns a status of the Hadr setting for sql2016 SQL Server instance.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.ComputerName

@@ -1,80 +1,81 @@
 function Test-DbaMigrationConstraint {
     <#
-        .SYNOPSIS
-            Show if you can migrate the database(s) between the servers.
+    .SYNOPSIS
+        Show if you can migrate the database(s) between the servers.
 
-        .DESCRIPTION
-            When you want to migrate from a higher edition to a lower one there are some features that can't be used.
-            This function will validate if you have any of this features in use and will report to you.
-            The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
+    .DESCRIPTION
+        When you want to migrate from a higher edition to a lower one there are some features that can't be used.
+        This function will validate if you have any of this features in use and will report to you.
+        The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
 
-            This function only validate SQL Server 2008 versions or higher.
-            The editions supported by this function are:
-                - Enterprise
-                - Developer
-                - Evaluation
-                - Standard
-                - Express
+        This function only validate SQL Server 2008 versions or higher.
+        The editions supported by this function are:
+        - Enterprise
+        - Developer
+        - Evaluation
+        - Standard
+        - Express
 
-            Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
+        Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-            The -Database parameter is auto-populated for command-line completion.
+        The -Database parameter is auto-populated for command-line completion.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude. Options for this list are auto-populated from the server.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration
+    .NOTES
+        Tags: Migration
+        Author: Claudio Silva (@ClaudioESSilva)
 
-            Author: Claudio Silva (@ClaudioESSilva)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaMigrationConstraint
+    .LINK
+        https://dbatools.io/Test-DbaMigrationConstraint
 
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
+    .EXAMPLE
+        PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 
-            All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
+        All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
 
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+    .EXAMPLE
+        PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-            All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014 and Windows Authentication is used for sqlcluster.
+        All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014a and Windows Authentication is used for sqlcluster.
 
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
+    .EXAMPLE
+        PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
 
-            Only db1 database will be verified for features in use that can't be supported on the destination server.
+        Only db1 database will be verified for features in use that can't be supported on the destination server.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "DbMigration")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstance]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [Alias("Databases")]
@@ -110,19 +111,15 @@ function Test-DbaMigrationConstraint {
     }
     process {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source."
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
         }
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Destination."
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
         }
 
         if (-Not $Database) {
@@ -165,8 +162,7 @@ function Test-DbaMigrationConstraint {
                     if ([string]::IsNullOrEmpty($db.Status)) {
                         $dbstatus = ($sourceServer.Databases | Where-Object Name -eq $db).Status.ToString()
                         $dbName = $db
-                    }
-                    else {
+                    } else {
                         $dbstatus = $db.Status.ToString()
                         $dbName = $db.Name
                     }
@@ -216,8 +212,7 @@ function Test-DbaMigrationConstraint {
 
                                 $dbFeatures = $dbFeatures.TrimStart(",")
                             }
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Issue collecting sku features." -ErrorRecord $_ -Target $sourceServer -Continue
                         }
 
@@ -238,8 +233,7 @@ function Test-DbaMigrationConstraint {
                                     IsMigratable        = $false
                                     Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
                                 }
-                            }
-                            else {
+                            } else {
                                 [pscustomobject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
@@ -284,20 +278,17 @@ function Test-DbaMigrationConstraint {
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Warning -Message "Database '$dbName' is offline or not accessible. Bring database online and re-run the command."
                     }
                 }
-            }
-            else {
+            } else {
                 #SQL Server 2005 or under
                 Write-Message -Level Warning -Message "This validation will not be made on versions lower than SQL Server 2008 (v10)."
                 Write-Message -Level Verbose -Message "Source server version: $($sourceServer.VersionMajor)."
                 Write-Message -Level Verbose -Message "Destination server version: $($destServer.VersionMajor)."
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "There are no databases to validate."
         }
     }

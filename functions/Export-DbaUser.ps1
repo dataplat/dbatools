@@ -1,116 +1,116 @@
 function Export-DbaUser {
     <#
-        .SYNOPSIS
-            Exports users creation and its permissions to a T-SQL file or host.
+    .SYNOPSIS
+        Exports users creation and its permissions to a T-SQL file or host.
 
-        .DESCRIPTION
-            Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
+    .DESCRIPTION
+        Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance name. SQL Server 2000 and above supported.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to servers using alternative credentials
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 
-            Windows Authentication will be used if SqlCredential is not specified
+        Windows Authentication will be used if SqlCredential is not specified
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER User
-            Export only the specified database user(s). If not specified will export all users from the database(s)
+    .PARAMETER User
+        Export only the specified database user(s). If not specified will export all users from the database(s)
 
-        .PARAMETER DestinationVersion
-            To say to which version the script should be generated. If not specified will use database compatibility level
+    .PARAMETER DestinationVersion
+        To say to which version the script should be generated. If not specified will use database compatibility level
 
-        .PARAMETER FilePath
-            The file to write to.
+    .PARAMETER Path
+        Specifies the full path of a file to write the script to.
 
-        .PARAMETER NoClobber
-            Do not overwrite file
+    .PARAMETER NoClobber
+        Do not overwrite file
 
-        .PARAMETER Append
-            Append to file
+    .PARAMETER Append
+        Append to file
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER ScriptingOptionsObject
-            A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
-            You can use the NEw-DbaScriptingOption to generate it.
+    .PARAMETER ScriptingOptionsObject
+        A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
+        You can use the NEw-DbaScriptingOption to generate it.
 
-        .PARAMETER ExcludeGoBatchSeparator
-            If specified, will NOT script the 'GO' batch separator.
+    .PARAMETER ExcludeGoBatchSeparator
+        If specified, will NOT script the 'GO' batch separator.
 
-        .NOTES
-            Tags: User, Export
-            Author: Claudio Silva (@ClaudioESSilva)
+    .NOTES
+        Tags: User, Export
+        Author: Claudio Silva (@ClaudioESSilva)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Export-DbaUser
+    .LINK
+        https://dbatools.io/Export-DbaUser
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sql2005 -Path C:\temp\sql2005-users.sql
 
-            Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
+        Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\temp\users.sql -Append
 
-            Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
+        Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
 
-            Exports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\temp\users.sql
+        Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
-            Exports user User1 fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
+        Exports user User1 from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
 
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
 
-        .EXAMPLE
-            $options = New-DbaScriptingOption
-            $options.ScriptDrops = $false
-            $options.WithDependencies = $true
+    .EXAMPLE
+        PS C:\> $options = New-DbaScriptingOption
+        PS C:\> $options.ScriptDrops = $false
+        PS C:\> $options.WithDependencies = $true
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ScriptingOptionsObject $options
 
-            Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ScriptingOptionsObject $options
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+        It will not script drops but will script dependencies.
 
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
-            It will not script drops but will script dependencies.
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ExcludeGoBatchSeparator
 
-        .EXAMPLE
-            Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ExcludeGoBatchSeparator
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -122,8 +122,8 @@ function Export-DbaUser {
         [object[]]$User,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
-        [Alias("OutFile", "Path", "FileName")]
-        [string]$FilePath,
+        [Alias("OutFile", "FilePath", "FileName")]
+        [string]$Path,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -134,9 +134,9 @@ function Export-DbaUser {
     )
 
     begin {
-        if ($FilePath) {
-            if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
-            $directory = Split-Path $FilePath
+        if ($Path) {
+            if ($Path -notlike "*\*") { $Path = ".\$Path" }
+            $directory = Split-Path $Path
             $exists = Test-Path $directory
 
             if ($exists -eq $false) {
@@ -172,22 +172,17 @@ function Export-DbaUser {
         if (Test-FunctionInterrupt) { return }
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         if (!$database) {
             $databases = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name -and $_.IsAccessible -eq $true }
-        }
-        else {
+        } else {
             if ($pipedatabase) {
-                $source = $pipedatabase[0].parent.name
                 $databases = $pipedatabase.name
-            }
-            else {
+            } else {
                 $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and ($database -contains $_.Name) }
             }
         }
@@ -203,8 +198,7 @@ function Export-DbaUser {
                 if ([string]::IsNullOrEmpty($destinationVersion)) {
                     #Get compatibility level for scripting the objects
                     $scriptVersion = $db.CompatibilityLevel
-                }
-                else {
+                } else {
                     $scriptVersion = $versions[$destinationVersion]
                 }
                 $versionNameDesc = $versionName[$scriptVersion.ToString()]
@@ -224,17 +218,14 @@ function Export-DbaUser {
 
                 if ($User.Count -eq 0) {
                     $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
-                }
-                else {
+                } else {
                     if ($pipedatabase) {
-                        $source = $pipedatabase[3].parent.name
                         $users = $pipedatabase.name
-                    }
-                    else {
+                    } else {
                         $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
                     }
                 }
-                # Store roles between users so if we hit the same one we dont create it again
+                # Store roles between users so if we hit the same one we don't create it again
                 $roles = @()
                 if ($users.Count -gt 0) {
                     foreach ($dbuser in $users) {
@@ -259,8 +250,7 @@ function Export-DbaUser {
                             foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
                                 if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
                                     $execute = "EXEC "
-                                }
-                                else {
+                                } else {
                                     $execute = ""
                                 }
                                 $outsql += "$execute$($dbUserPermissionScript.ToString())"
@@ -271,8 +261,7 @@ function Export-DbaUser {
                                 if ($databasePermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantDatabasePermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                                 }
@@ -427,8 +416,7 @@ function Export-DbaUser {
                                 if ($objectPermission.PermissionState -eq "GrantWithGrant") {
                                     $withGrant = " WITH GRANT OPTION"
                                     $grantObjectPermission = 'GRANT'
-                                }
-                                else {
+                                } else {
                                     $withGrant = " "
                                     $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                                 }
@@ -436,21 +424,18 @@ function Export-DbaUser {
                                 $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
                             }
 
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                         }
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Output -Message "No users found on database '$db'"
                 }
 
                 #reset collection
                 $users = $null
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "No users found on instance '$server'"
         }
     }
@@ -460,17 +445,15 @@ function Export-DbaUser {
 
         if ($ExcludeGoBatchSeparator) {
             $sql = $outsql
-        }
-        else {
+        } else {
             $sql = $outsql -join "`r`nGO`r`n"
             #add the final GO
             $sql += "`r`nGO"
         }
 
-        if ($FilePath) {
-            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-        }
-        else {
+        if ($Path) {
+            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
+        } else {
             $sql
         }
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser

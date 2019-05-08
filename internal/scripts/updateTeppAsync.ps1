@@ -1,5 +1,11 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $script:___ScriptName = 'dbatools-teppasynccache'
+
+    # Defer module import to avoid collisions and reduce CPU impact
+    Start-Sleep -Seconds 15
+    $dbatoolsPath = Join-Path -Path ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase) -ChildPath "dbatools.psd1"
+    Import-Module $dbatoolsPath
+    $script:dbatools = Get-Module dbatools
 
     #region Utility Functions
     function Get-PriorityServer {
@@ -12,15 +18,15 @@
 
     function Update-TeppCache {
         [CmdletBinding()]
-        Param (
-            [Parameter(ValueFromPipeline = $true)]
+        param (
+            [Parameter(ValueFromPipeline)]
             $ServerAccess
         )
 
         begin {
 
         }
-        Process {
+        process {
             if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
 
             foreach ($instance in $ServerAccess) {
@@ -28,21 +34,25 @@
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.ConnectionObject)
                 try {
                     $server.ConnectionContext.Connect()
-                }
-                catch {
+                } catch {
+                    & $script:dbatools { Write-Message "Failed to connect to $instance" -ErrorRecord $_ -Level Debug }
                     continue
                 }
 
-                $FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$server).FullSmoName.ToLower()
+                $FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$instance.ConnectionObject.ConnectionString).FullSmoName.ToLowerInvariant()
 
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                    $scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
                     # Workaround to avoid stupid issue with scriptblock from different runspace
-                    [ScriptBlock]::Create($scriptBlock).Invoke()
+                    try { [ScriptBlock]::Create($scriptBlock).Invoke() }
+                    catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
                 }
 
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow)) {
+                    $scriptName = ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts.Values | Where-Object ScriptBlock -EQ $scriptBlock).Name
                     # Workaround to avoid stupid issue with scriptblock from different runspace
-                    [ScriptBlock]::Create($scriptBlock).Invoke()
+                    try { [ScriptBlock]::Create($scriptBlock).Invoke() }
+                    catch { & $script:dbatools { Write-Message "Failed to execute TEPP $scriptName against $FullSmoName" -ErrorRecord $_ -Level Debug } }
                 }
 
                 $server.ConnectionContext.Disconnect()
@@ -60,7 +70,7 @@
         #region Main Execution
         while ($true) {
             # This portion is critical to gracefully closing the script
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].State -notlike "Running") {
+            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
                 break
             }
 
@@ -71,10 +81,10 @@
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution
-    }
-    catch { }
-    finally {
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
+    } catch {
+        & $script:dbatools { Write-Message "General Failure" -ErrorRecord $_ -Level Debug }
+    } finally {
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }
 

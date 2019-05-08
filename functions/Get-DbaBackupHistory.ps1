@@ -1,136 +1,150 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupHistory {
     <#
-        .SYNOPSIS
-            Returns backup history details for databases on a SQL Server.
+    .SYNOPSIS
+        Returns backup history details for databases on a SQL Server.
 
-        .DESCRIPTION
-            Returns backup history details for some or all databases on a SQL Server.
+    .DESCRIPTION
+        Returns backup history details for some or all databases on a SQL Server.
 
-            You can even get detailed information (including file path) for latest full, differential and log files.
+        You can even get detailed information (including file path) for latest full, differential and log files.
 
-            Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
+        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
 
-            Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
+        Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-        .PARAMETER Database
-            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies one or more database(s) to exclude from processing.
+    .PARAMETER ExcludeDatabase
+        Specifies one or more database(s) to exclude from processing.
 
-        .PARAMETER IncludeCopyOnly
-            By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
+    .PARAMETER IncludeCopyOnly
+        By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 
-        .PARAMETER Force
-            If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
+    .PARAMETER Force
+        If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
 
-        .PARAMETER Since
-            Specifies a DateTime object to use as the starting point for the search for backups.
+    .PARAMETER Since
+        Specifies a DateTime object to use as the starting point for the search for backups.
 
-        .PARAMETER Last
-            If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
+    .PARAMETER RecoveryFork
+        Specifies the Recovery Fork you want backup history for
 
-        .PARAMETER LastFull
-            If this switch is enabled, the most recent full backup set is returned.
+    .PARAMETER Last
+        If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
 
-        .PARAMETER LastDiff
-            If this switch is enabled, the most recent differential backup set is returned.
+    .PARAMETER LastFull
+        If this switch is enabled, the most recent full backup set is returned.
 
-        .PARAMETER LastLog
-            If this switch is enabled, the most recent log backup is returned.
+    .PARAMETER LastDiff
+        If this switch is enabled, the most recent differential backup set is returned.
 
-        .PARAMETER DeviceType
-            Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
+    .PARAMETER LastLog
+        If this switch is enabled, the most recent log backup is returned.
 
-        .PARAMETER Raw
-            If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
+    .PARAMETER DeviceType
+        Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
 
-        .PARAMETER Type
-            Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
+    .PARAMETER Raw
+        If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
 
-        .PARAMETER LastLsn
-            Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
+    .PARAMETER Type
+        Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER LastLsn
+        Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
 
-        .NOTES
-            Tags: DisasterRecovery, Backup
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER IncludeMirror
+        By default mirrors of backups are not returned, this switch will cause them to be returned
 
-        .LINK
-            https://dbatools.io/Get-DbaBackupHistory
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a
+    .NOTES
+        Tags: DisasterRecovery, Backup
+        Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)
 
-            Returns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
+    .LINK
+        https://dbatools.io/Get-DbaBackupHistory
 
-            Does the same as above but logs in as SQL user "sqladmin"
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
+        Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
 
-            Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
+        Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
 
-            Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+        Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 
-            Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+        Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
 
-            Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
 
-            Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
+        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
 
-            Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
 
-            Returns information about all Full backups for AdventureWorks2014 on sql2014.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
 
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory
+        Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
 
-            Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
 
-        .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+        Returns information about all Full backups for AdventureWorks2014 on sql2014.
 
-            Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
+
+        Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
+
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+
+        Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
+
+    .EXAMPLE
+        PS C:\> Get-DbaBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
+
+        If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
@@ -142,8 +156,9 @@ function Get-DbaBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [Parameter(ParameterSetName = "NoLast")]
-        [DateTime]$Since,
+        [DateTime]$Since = (Get-Date '01/01/1970'),
+        [ValidateScript( {($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_)})]
+        [string]$RecoveryFork,
         [Parameter(ParameterSetName = "Last")]
         [switch]$Last,
         [Parameter(ParameterSetName = "Last")]
@@ -155,6 +170,7 @@ function Get-DbaBackupHistory {
         [string[]]$DeviceType,
         [switch]$Raw,
         [bigint]$LastLsn,
+        [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
         [Alias('Silent')]
@@ -179,8 +195,7 @@ function Get-DbaBackupHistory {
         foreach ($devType in $DeviceType) {
             if ($devType -in $deviceTypeMapping.Keys) {
                 $deviceTypeFilter += $deviceTypeMapping[$devType]
-            }
-            else {
+            } else {
                 $deviceTypeFilter += $devType
             }
         }
@@ -204,11 +219,9 @@ function Get-DbaBackupHistory {
         foreach ($instance in $SqlInstance) {
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance." -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.VersionMajor -ge 10) {
@@ -217,8 +230,7 @@ function Get-DbaBackupHistory {
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize"
-            }
-            else {
+            } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
@@ -230,8 +242,7 @@ function Get-DbaBackupHistory {
                 foreach ($db in $Database) {
                     $databases += [PSCustomObject]@{name = $db}
                 }
-            }
-            else {
+            } else {
                 $databases = $server.Databases
             }
             if ($ExcludeDatabase) {
@@ -247,26 +258,61 @@ function Get-DbaBackupHistory {
 
             if ($last) {
                 foreach ($db in $databases) {
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
+                    if ($RecoveryFork) {
+                        $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
+                    }
+                    if ($null -eq (Get-PsCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PsCallStack)[1].Command) {
+                        $forkCheckSql = "
+                                SELECT
+                                    database_name,
+                                    MIN(database_backup_lsn) as 'FirstLsn',
+                                    MAX(database_backup_lsn) as 'FinalLsn',
+                                    MIN(backup_start_date) as 'MinDate',
+                                    MAX(backup_finish_date) as 'MaxDate',
+                                    last_recovery_fork_guid 'RecFork',
+                                    count(1) as 'backupcount'
+                                FROM msdb.dbo.backupset
+                                WHERE database_name='$($db.name)'
+                                $sinceSqlFilter
+                                $recoveryForkSqlFilter
+                                GROUP by database_name, last_recovery_fork_guid
+                                ORDER by MaxDate Asc
+                                "
 
+                        $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
+                        if ($results.count -gt 1) {
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
+                                }
+                            }
+                            if ($null -eq $RecoveryFork) {
+                                $RecoveryFork = $results[-1].RecFork
+                                Write-Message -Message "Defaulting to last Recovery Fork, ID - $RecoveryFork"
+                            }
+                        }
+                    }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
-                    $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
+                    $allBackups += $fullDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $diffDb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
                         $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "No Diff found"
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                        }
-                        catch {
+                        } catch {
                             continue
                         }
                     }
-                    $allBackups += Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly | Where-Object {
+                    $allBackups += Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object {
                         $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid
                     }
                     #This line does the output for -Last!!!
@@ -289,12 +335,51 @@ function Get-DbaBackupHistory {
                 $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    }
+                    if ($RecoveryFork) {
+                        $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
+                    }
+                    if ((Get-PsCallStack)[1].Command -notlike 'Get-DbaBackupHistory*') {
+                        $forkCheckSql = "
+                            SELECT
+                                database_name,
+                                MIN(database_backup_lsn) as 'FirstLsn',
+                                MAX(database_backup_lsn) as 'FinalLsn',
+                                MIN(backup_start_date) as 'MinDate',
+                                MAX(backup_finish_date) as 'MaxDate',
+                                last_recovery_fork_guid 'RecFork',
+                                count(1) as 'backupcount'
+                            FROM msdb.dbo.backupset
+                            WHERE database_name='$($db.name)'
+                            $sinceSqlFilter
+                            $recoveryForkSqlFilter
+                            GROUP by database_name, last_recovery_fork_guid
+                        "
+
+                        $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
+                        if ($results.count -gt 1) {
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                }
+                            }
+                        }
+                    }
                     $whereCopyOnly = $null
                     if ($true -ne $IncludeCopyOnly) {
                         $whereCopyOnly = " AND is_copy_only='0' "
                     }
+                    if ($true -ne $IncludeMirror) {
+                        $whereMirror = " AND mediafamily.mirror='0' "
+                    }
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
+                    }
+                    if ($since) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
                     }
                     # recap for future editors (as this has been discussed over and over):
                     #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
@@ -335,7 +420,8 @@ function Get-DbaBackupHistory {
                                     a.software_major_version,
                                     a.DeviceType,
                                     a.is_copy_only,
-                                    a.last_recovery_fork_guid
+                                    a.last_recovery_fork_guid,
+                                    a.recovery_model
                                 FROM (SELECT
                                   RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                                   backupset.database_name AS [Database],
@@ -403,18 +489,19 @@ function Get-DbaBackupHistory {
                                 WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
                                 AND (type = '$first' OR type = '$second')
                                 $devTypeFilterWhere
+                                $sinceSqlFilter
+                                $recoveryForkSqlFilter
+                                $whereMirror
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;
                                 "
                 }
                 $sql = $sql -join "; "
-            }
-            else {
+            } else {
                 if ($Force -eq $true) {
                     $select = "SELECT * "
-                }
-                else {
+                } else {
                     $select = "
                             SELECT
                               backupset.database_name AS [Database],
@@ -468,14 +555,14 @@ function Get-DbaBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                              INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
+                if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
                 $whereArray = @()
 
-                if ($Database.length -gt 0) {
-                    $dbList = $Database -join "','"
+                if ($Database.length -gt 0 -or $ExcludeDatabase.length -gt 0) {
+                    $dbList = $databases.Name -join "','"
                     $whereArray += "database_name IN ('$dbList')"
                 }
 
@@ -518,8 +605,7 @@ function Get-DbaBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
                 $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
                 Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
-            }
-            else {
+            } else {
                 Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
                 $groupedResults = $results | Group-Object -Property BackupsetId
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
@@ -532,8 +618,7 @@ function Get-DbaBackupHistory {
                                    FROM msdb..backupfile WHERE $backupSetIdsWhere"
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
-                }
-                else {
+                } else {
                     $fileListResults = @()
                 }
                 $fileListHash = @{}
@@ -550,8 +635,7 @@ function Get-DbaBackupHistory {
                         $start = $commonFields.Start
                         $end = $commonFields.End
                         $duration = New-TimeSpan -Seconds $commonFields.Duration
-                    }
-                    else {
+                    } else {
                         $start = ($group.Group.Start | Measure-Object -Minimum).Minimum
                         $end = ($group.Group.End | Measure-Object -Maximum).Maximum
                         $duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
@@ -559,8 +643,7 @@ function Get-DbaBackupHistory {
                     $compressedBackupSize = $commonFields.CompressedBackupSize
                     if ($compressedFlag -eq $true) {
                         $ratio = [Math]::Round(($commonFields.TotalSize) / ($compressedBackupSize), 2)
-                    }
-                    else {
+                    } else {
                         $compressedBackupSize = $null
                         $ratio = 1
                     }
@@ -591,7 +674,7 @@ function Get-DbaBackupHistory {
                     $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
-                    $historyObject.RecoveryModel = $commonFields.Recovery_Model
+                    $historyObject.RecoveryModel = $commonFields.recovery_model
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type

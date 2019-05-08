@@ -8,7 +8,7 @@ function Remove-DbaDbSnapshot {
         Removes (drops) database snapshots from the server
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -44,55 +44,56 @@ function Remove-DbaDbSnapshot {
 
     .NOTES
         Tags: Snapshot, Database
-        Author: niphlod
+        Author: Simone Bizzotto (@niphold)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Remove-DbaDbSnapshot
+        https://dbatools.io/Remove-DbaDbSnapshot
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101
+        PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101
 
         Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
+        PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
 
         Removes all database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting | Remove-DbaDbSnapshot
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting | Remove-DbaDbSnapshot
 
         Removes all database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snapshot, Accounting_snapshot
+        PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snapshot, Accounting_snapshot
 
         Removes HR_snapshot and Accounting_snapshot
 
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDbSnapshot
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sql2016 | Where-Object SnapshotOf -like '*dumpsterfire*' | Remove-DbaDbSnapshot
 
         Removes all snapshots associated with databases that have dumpsterfire in the name
 
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot
 
         Allows the selection of snapshots on sql2016 to remove
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots
+        PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots
 
         Removes all database snapshots from sql2014
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots -Confirm
+        PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots -Confirm
 
         Removes all database snapshots from sql2014 and prompts for each database
-#>
+
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -121,12 +122,10 @@ function Remove-DbaDbSnapshot {
 
         # if piped value either doesn't exist or is not the proper type
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $InputObject += Get-DbaDbSnapshot -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -Snapshot $Snapshot
@@ -141,31 +140,29 @@ function Remove-DbaDbSnapshot {
 
             if ($Force) {
                 $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
-            }
-            else {
+            } else {
                 try {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
                         $db.Drop()
                         $server.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Database       = $db.name
-                            Status         = "Dropped"
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.name
+                            Status       = "Dropped"
                         } | Select-DefaultView -Property $defaultprops
                     }
-                }
-                catch {
+                } catch {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                     [pscustomobject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Database       = $db.name
-                        Status         = (Get-ErrorMessage -Record $_)
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.name
+                        Status       = (Get-ErrorMessage -Record $_)
                     } | Select-DefaultView -Property $defaultprops
                 }
             }

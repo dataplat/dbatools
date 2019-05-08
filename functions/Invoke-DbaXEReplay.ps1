@@ -1,62 +1,70 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaXeReplay {
     <#
-        .SYNOPSIS
-            This command replays events from Read-DbaXEFile on one or more target servers
+    .SYNOPSIS
+        This command replays events from Read-DbaXEFile on one or more target servers
 
-        .DESCRIPTION
-            This command replays events from Read-DbaXEFile. It is simplistic in its approach.
+    .DESCRIPTION
+        This command replays events from Read-DbaXEFile. It is simplistic in its approach.
 
-            - Writes all queries to a temp sql file
-            - Executes temp file using . $sqlcmd so that batches are executed properly
-            - Deletes temp file
+        - Writes all queries to a temp sql file
+        - Executes temp file using . $sqlcmd so that batches are executed properly
+        - Deletes temp file
 
-        .PARAMETER SqlInstance
-            Target SQL Server(s)
+    .PARAMETER SqlInstance
+        Target SQL Server(s)
 
-        .PARAMETER SqlCredential
-            Used to provide alternative credentials.
+    .PARAMETER SqlCredential
+        Used to provide alternative credentials.
 
-        .PARAMETER Database
-            The initial starting database.
+    .PARAMETER Database
+        The initial starting database.
 
-        .PARAMETER Event
-            Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+    .PARAMETER Event
+        Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
-        .PARAMETER Raw
-            By dafault, the results of . $sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
+    .PARAMETER Raw
+        By dafault, the results of . $sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
 
-        .PARAMETER InputObject
-            Accepts the object output of Read-DbaXESession.
+    .PARAMETER InputObject
+        Accepts the object output of Read-DbaXESession.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Runs all batch_text for sql_batch_completed against tempdb on sql2017.
+    .LINK
+        https://dbatools.io/Invoke-DbaXEReplay
 
-        .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
+    .EXAMPLE
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017
 
-            Sets the *initial* database to planning then runs only sql_batch_completed against sql2017.
+        Runs all batch_text for sql_batch_completed against tempdb on sql2017.
 
-        .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016
+    .EXAMPLE
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
 
-            Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
+        Sets the *initial* database to planning then runs only sql_batch_completed against sql2017.
+
+    .EXAMPLE
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016
+
+        Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
+
 
     #>
-    Param (
+    [Cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
+    param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
@@ -71,7 +79,8 @@ function Invoke-DbaXeReplay {
     )
 
     begin {
-        $querycolumns = 'statement', 'batch_text'
+        #Variable marked as unused by PSScriptAnalyzer
+        #$querycolumns = 'statement', 'batch_text'
         $timestamp = (Get-Date -Format yyyyMMddHHmm)
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $filename = "$temp\dbatools-replay-$timestamp.sql"
@@ -90,8 +99,7 @@ function Invoke-DbaXeReplay {
                 Add-Content -Path $filename -Value $InputObject.statement
                 Add-Content -Path $filename -Value "GO"
             }
-        }
-        else {
+        } else {
             if ($InputObject.batch_text -notmatch "ALTER EVENT SESSION") {
                 Add-Content -Path $filename -Value $InputObject.batch_text
                 Add-Content -Path $filename -Value "GO"
@@ -102,29 +110,27 @@ function Invoke-DbaXeReplay {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
 
 
             if ($Raw) {
+                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
                 if (Test-Bound -ParameterName SqlCredential) {
                     . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
                     continue
-                }
-                else {
+                } else {
                     . $sqlcmd -S $instance -i $filename
                     continue
                 }
             }
 
+            Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
             if (Test-Bound -ParameterName SqlCredential) {
                 $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
-            }
-            else {
+            } else {
                 $output = . $sqlcmd -S $instance -i $filename
             }
 

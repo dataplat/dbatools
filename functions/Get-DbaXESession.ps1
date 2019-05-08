@@ -1,55 +1,56 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESession {
     <#
-        .SYNOPSIS
-            Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
+    .SYNOPSIS
+        Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
 
-        .DESCRIPTION
-            Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
+    .DESCRIPTION
+        Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Session
-            Only return specific sessions. Options for this parameter are auto-populated from the server.
+    .PARAMETER Session
+        Only return specific sessions. Options for this parameter are auto-populated from the server.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaXESession
+    .LINK
+        https://dbatools.io/Get-DbaXESession
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance ServerA\sql987
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987
 
-            Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
+        Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
-            Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
+        Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
 
-        .EXAMPLE
-            'ServerA\sql987','ServerB' | Get-DbaXESession
+    .EXAMPLE
+        PS C:\> 'ServerA\sql987','ServerB' | Get-DbaXESession
 
-            Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
+        Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
 
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -67,18 +68,15 @@ function Get-DbaXESession {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11 -AzureUnsupported
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+                $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
-
             $xesessions = $XEStore.sessions
 
             if ($Session) {

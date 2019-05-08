@@ -1,42 +1,43 @@
 function Get-DbaAvailableCollation {
     <#
-        .SYNOPSIS
-            Function to get available collations for a given SQL Server
+    .SYNOPSIS
+        Function to get available collations for a given SQL Server
 
-        .DESCRIPTION
-            The Get-DbaAvailableCollation function returns the list of collations available on each SQL Server.
-            Only the connect permission is required to get this information.
+    .DESCRIPTION
+        The Get-DbaAvailableCollation function returns the list of collations available on each SQL Server.
+        Only the connect permission is required to get this information.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance, or instances. Only connect permission is required.
+    .PARAMETER SqlInstance
+        TThe target SQL Server instance or instances. Only connect permission is required.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Collation, Configuration
-            Author: Bryan Hamby (@galador)
+    .NOTES
+        Tags: Collation, Configuration
+        Author: Bryan Hamby (@galador)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaAvailableCollation
+    .LINK
+        https://dbatools.io/Get-DbaAvailableCollation
 
-        .EXAMPLE
-            Get-DbaAvailableCollation -SqlInstance sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaAvailableCollation -SqlInstance sql2016
 
-            Gets all the collations from server sql2016 using NT authentication
+        Gets all the collations from server sql2016 using NT authentication
+
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+    param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -57,12 +58,10 @@ function Get-DbaAvailableCollation {
         function Get-LocaleDescription ($LocaleId) {
             if ($locales.ContainsKey($LocaleId)) {
                 $localeName = $locales.Get_Item($LocaleId)
-            }
-            else {
+            } else {
                 try {
                     $localeName = (Get-Language $LocaleId).DisplayName
-                }
-                catch {
+                } catch {
                     $localeName = $null
                 }
                 $locales.Set_Item($LocaleId, $localeName)
@@ -73,12 +72,10 @@ function Get-DbaAvailableCollation {
         function Get-CodePageDescription ($codePageId) {
             if ($codePages.ContainsKey($codePageId)) {
                 $codePageName = $codePages.Get_Item($codePageId)
-            }
-            else {
+            } else {
                 try {
                     $codePageName = (Get-CodePage $codePageId).EncodingName
-                }
-                catch {
+                } catch {
                     $codePageName = $null
                 }
                 $codePages.Set_Item($codePageId, $codePageName)
@@ -90,11 +87,9 @@ function Get-DbaAvailableCollation {
     process {
         foreach ($Instance in $sqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $availableCollations = $server.EnumCollations()

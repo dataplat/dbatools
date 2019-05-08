@@ -1,146 +1,156 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
     <#
-.SYNOPSIS
-New-DbaAgentJobStep creates a new job step for a job
+    .SYNOPSIS
+        New-DbaAgentJobStep creates a new job step for a job
 
-.DESCRIPTION
-New-DbaAgentJobStep creates a new job in the SQL Server Agent for a specific job
+    .DESCRIPTION
+        New-DbaAgentJobStep creates a new job in the SQL Server Agent for a specific job
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Job
-The name of the job to which to add the step.
+    .PARAMETER Job
+        The name of the job to which to add the step.
 
-.PARAMETER StepId
-The sequence identification number for the job step. Step identification numbers start at 1 and increment without gaps.
+    .PARAMETER StepId
+        The sequence identification number for the job step. Step identification numbers start at 1 and increment without gaps.
 
-.PARAMETER StepName
-The name of the step.
+    .PARAMETER StepName
+        The name of the step.
 
-.PARAMETER SubSystem
-The subsystem used by the SQL Server Agent service to execute command.
-Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
-The default is 'TransactSql'
+    .PARAMETER SubSystem
+        The subsystem used by the SQL Server Agent service to execute command.
+        Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
+        The default is 'TransactSql'
 
-.PARAMETER Command
-The commands to be executed by SQLServerAgent service through subsystem.
+    .PARAMETER SubSystemServer
+        The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply
 
-.PARAMETER CmdExecSuccessCode
-The value returned by a CmdExec subsystem command to indicate that command executed successfully.
+    .PARAMETER Command
+        The commands to be executed by SQLServerAgent service through subsystem.
 
-.PARAMETER OnSuccessAction
-The action to perform if the step succeeds.
-Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER CmdExecSuccessCode
+        The value returned by a CmdExec subsystem command to indicate that command executed successfully.
 
-.PARAMETER OnSuccessStepId
-The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToStep".
+    .PARAMETER OnSuccessAction
+        The action to perform if the step succeeds.
+        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER OnFailAction
-The action to perform if the step fails.
-Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER OnSuccessStepId
+        The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToStep".
 
-.PARAMETER OnFailStepId
-The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
+    .PARAMETER OnFailAction
+        The action to perform if the step fails.
+        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER Database
-The name of the database in which to execute a Transact-SQL step. The default is 'master'.
+    .PARAMETER OnFailStepId
+        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToStep".
 
-.PARAMETER DatabaseUser
-The name of the user account to use when executing a Transact-SQL step.
+    .PARAMETER Database
+        The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
-.PARAMETER RetryAttempts
-The number of retry attempts to use if this step fails. The default is 0.
+    .PARAMETER DatabaseUser
+        The name of the user account to use when executing a Transact-SQL step.
 
-.PARAMETER RetryInterval
-The amount of time in minutes between retry attempts. The default is 0.
+    .PARAMETER RetryAttempts
+        The number of retry attempts to use if this step fails. The default is 0.
 
-.PARAMETER OutputFileName
-The name of the file in which the output of this step is saved.
+    .PARAMETER RetryInterval
+        The amount of time in minutes between retry attempts. The default is 0.
 
-.PARAMETER Flag
-Sets the flag(s) for the job step.
+    .PARAMETER OutputFileName
+        The name of the file in which the output of this step is saved.
 
-Flag                                    Description
-----------------------------------------------------------------------------
-AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
-AppendToJobHistory                      Job history is appended to the job history file.
-AppendToLogFile                         Job history is appended to the SQL Server log file.
-AppendToTableLog                        Job history is appended to a log table.
-LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
-None                                    Job history is not appended to a file.
-ProvideStopProcessEvent                 Job processing is stopped.
+    .PARAMETER Flag
+        Sets the flag(s) for the job step.
 
-.PARAMETER ProxyName
-The name of the proxy that the job step runs as.
+        Flag                                    Description
+        ----------------------------------------------------------------------------
+        AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
+        AppendToJobHistory                      Job history is appended to the job history file.
+        AppendToLogFile                         Job history is appended to the SQL Server log file.
+        AppendToTableLog                        Job history is appended to a log table.
+        LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
+        None                                    Job history is not appended to a file.
+        ProvideStopProcessEvent                 Job processing is stopped.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER ProxyName
+        The name of the proxy that the job step runs as.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Agent, Job, JobStep
-Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Tags: Agent, Job, JobStep
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/New-DbaAgentJobStep
+    .LINK
+        https://dbatools.io/New-DbaAgentJobStep
 
-.EXAMPLE
-New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
-Create a step in "Job1" with the name Step1 with the default subsystem TransactSql.
+    .EXAMPLE
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
 
-.EXAMPLE
-New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the msdb
+        Create a step in "Job1" with the name Step1 with the default subsystem TransactSql.
 
-.EXAMPLE
-New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers
+    .EXAMPLE
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 
-.EXAMPLE
-New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers for multiple jobs
+        Create a step in "Job1" with the name Step1 where the database will the msdb
 
-.EXAMPLE
-sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
-Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
-#>
+    .EXAMPLE
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+        Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers
+
+    .EXAMPLE
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
+
+        Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers for multiple jobs
+
+    .EXAMPLE
+        PS C:\> sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
+
+        Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
+
+    #>
+
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
         [int]$StepId,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem = 'TransactSql',
+        [string]$SubsystemServer,
         [string]$Command,
         [int]$CmdExecSuccessCode,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
@@ -148,7 +158,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [int]$OnSuccessStepId = 0,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
-        [int]$OnFailStepId,
+        [int]$OnFailStepId = 0,
         [object]$Database,
         [string]$DatabaseUser,
         [int]$RetryAttempts,
@@ -164,15 +174,22 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
     begin {
         # Check the parameter on success step id
-        if (($OnSuccessAction -in 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
+        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
 
-        # Check the parameter on success step id
-        if (($OnFailAction -in 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
+        # Check the parameter on fail step id
+        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
+        }
+
+        if ($Subsystem -in 'AnalysisScripting', 'AnalysisCommand', 'AnalysisQuery') {
+            if (-not $SubsystemServer) {
+                Stop-Function -Message "Please enter the server value using -SubSystemServer for subsystem $Subsystem." -Target $Subsystem
+                return
+            }
         }
     }
 
@@ -182,21 +199,18 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($j in $Job) {
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
-                }
-                else {
+                    Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
+                } else {
                     # Create the job step object
                     try {
                         # Get the job
@@ -207,8 +221,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
                         # Set the job where the job steps belongs to
                         $JobStep.Parent = $currentjob
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                     }
 
@@ -218,17 +231,15 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         # Check if the step already exists
                         if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
                             $JobStep.Name = $StepName
-                        }
-                        elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
+                        } elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the name job step object
                             $JobStep.Name = $StepName
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
                         }
                     }
@@ -239,24 +250,19 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         if ($Job.JobSteps.ID -notcontains $StepId) {
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
                             $JobStep.ID = $StepId
-                        }
-                        elseif ($Job.JobSteps.ID -contains $StepId) {
-                            if($Force){
-                                Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
+                        } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
+                            Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
-                                # Remove the existing job step
-                                $StepName = ($Server.JobServer.Jobs['Job2'].JobSteps | Where-Object {$_.ID -eq 1}).Name
-                                Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
-                            }
+                            # Remove the existing job step
+                            $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object {$_.ID -eq 1}).Name
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the ID job step object
                             $JobStep.ID = $StepId
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
                         }
-                    }
-                    else {
+                    } else {
                         # Get the job step count
                         $JobStep.ID = $Job.JobSteps.Count + 1
                     }
@@ -264,6 +270,11 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                     if ($Subsystem) {
                         Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
                         $JobStep.Subsystem = $Subsystem
+                    }
+
+                    if ($SubsystemServer) {
+                        Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
+                        $JobStep.Server = $SubsystemServer
                     }
 
                     if ($Command) {
@@ -301,8 +312,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         if ($Server.Databases.Name -contains $Database) {
                             Write-Message -Message "Setting job step database name to $Database" -Level Verbose
                             $JobStep.DatabaseName = $Database
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -313,8 +323,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
                             Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
                             $JobStep.DatabaseUserName = $DatabaseUser
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -339,8 +348,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                         if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
                             Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
                             $JobStep.ProxyName = $ProxyName
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
                     }
@@ -359,8 +367,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             # Create the job step
                             $JobStep.Create()
                             $currentjob.Alter()
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
                     }
@@ -377,4 +384,3 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         Write-Message -Message "Finished creating job step(s)" -Level Verbose
     }
 }
-

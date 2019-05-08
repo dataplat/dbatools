@@ -1,59 +1,60 @@
 function Get-DbaServerProtocol {
     <#
     .SYNOPSIS
-    Gets the SQL Server related server protocols on a computer.
+        Gets the SQL Server related server protocols on a computer.
 
     .DESCRIPTION
-    Gets the SQL Server related server protocols on one or more computers.
+        Gets the SQL Server related server protocols on one or more computers.
 
-    Requires Local Admin rights on destination computer(s).
-    The server protocols can be enabled and disabled when retrieved via WSMan.
+        Requires Local Admin rights on destination computer(s).
+        The server protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName
-    The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
-    Credential object used to connect to the computer as a different user.
+        Credential object used to connect to the computer as a different user.
 
-   .PARAMETER EnableException
-   By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-   This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-   Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-    Tags: Protocol
-    dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2016 Chrissy LeMaire
-    License: MIT https://opensource.org/licenses/MIT
+        Tags: Protocol
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Get-DbaServerProtocol
+        https://dbatools.io/Get-DbaServerProtocol
 
     .EXAMPLE
-    Get-DbaServerProtocol -ComputerName sqlserver2014a
+        PS C:\> Get-DbaServerProtocol -ComputerName sqlserver2014a
 
-    Gets the SQL Server related server protocols on computer sqlserver2014a.
-
-    .EXAMPLE
-    'sql1','sql2','sql3' | Get-DbaServerProtocol
-
-    Gets the SQL Server related server protocols on computers sql1, sql2 and sql3.
+        Gets the SQL Server related server protocols on computer sqlserver2014a.
 
     .EXAMPLE
-    Get-DbaServerProtocol -ComputerName sql1,sql2 | Out-Gridview
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaServerProtocol
 
-    Gets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.
+        Gets the SQL Server related server protocols on computers sql1, sql2 and sql3.
 
     .EXAMPLE
-    (Get-DbaServerProtocol -ComputerName sql1 | Where { $_.DisplayName = 'via' }).Disable()
+        PS C:\> Get-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView
 
-    Disables the VIA ServerNetworkProtocol on computer sql1.
-    If successful, returncode 0 is shown.
+        Gets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.
 
-#>
+    .EXAMPLE
+        PS C:\> (Get-DbaServerProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq 'Named Pipes' }).Disable()
+
+        Disables the VIA ServerNetworkProtocol on computer sql1.
+        If successful, return code 0 is shown.
+
+    #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -78,16 +79,13 @@ function Get-DbaServerProtocol {
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value { Invoke-CimMethod -MethodName SetEnable -InputObject $this }
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value { Invoke-CimMethod -MethodName SetDisable -InputObject $this }
                         foreach ($protocol in $prot) { Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'InstanceName', 'ProtocolDisplayName as DisplayName', 'ProtocolName as Name', 'MultiIpconfigurationSupport as MultiIP', 'Enabled as IsEnabled' }
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer"
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Failed to connect to $Computer"
             }
         }

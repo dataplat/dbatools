@@ -1,100 +1,139 @@
 function Export-DbaScript {
     <#
-        .SYNOPSIS
-            Exports scripts from SQL Management Objects (SMO)
+    .SYNOPSIS
+        Exports scripts from SQL Management Objects (SMO)
 
-        .DESCRIPTION
-            Exports scripts from SQL Management Objects
+    .DESCRIPTION
+        Exports scripts from SQL Management Objects
 
-        .PARAMETER InputObject
-            A SQL Managment Object such as the one returned from Get-DbaLogin
+    .PARAMETER InputObject
+        A SQL Management Object such as the one returned from Get-DbaLogin
 
-        .PARAMETER Path
-            The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
+    .PARAMETER Path
+        The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
 
-        .PARAMETER Encoding
-            Specifies the file encoding. The default is UTF8.
+    .PARAMETER Encoding
+        Specifies the file encoding. The default is UTF8.
 
-            Valid values are:
-            -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-            -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-            -- Byte: Encodes a set of characters into a sequence of bytes.
-            -- String: Uses the encoding type for a string.
-            -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-            -- UTF7: Encodes in UTF-7 format.
-            -- UTF8: Encodes in UTF-8 format.
-            -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+        Valid values are:
+        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
+        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+        -- Byte: Encodes a set of characters into a sequence of bytes.
+        -- String: Uses the encoding type for a string.
+        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
+        -- UTF7: Encodes in UTF-7 format.
+        -- UTF8: Encodes in UTF-8 format.
+        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
-        .PARAMETER Passthru
-            Output script to console
+    .PARAMETER Passthru
+        Output script to console
 
-        .PARAMETER ScriptingOptionsObject
-            An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
+    .PARAMETER ScriptingOptionsObject
+        An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed
+    .PARAMETER BatchSeparator
+        Specifies the Batch Separator to use. Default is None
 
-        .PARAMETER NoClobber
-            Do not overwrite file
+    .PARAMETER NoPrefix
+        Do not include a Prefix
 
-        .PARAMETER Append
-            Append to file
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command
+    .PARAMETER NoClobber
+        Do not overwrite file
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Append
+        Append to file
 
-        .NOTES
-            Tags: Migration, Backup, Export
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Export-DbaScript
+    .NOTES
+        Tags: Migration, Backup, Export
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
+    .LINK
+        https://dbatools.io/Export-DbaScript
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
 
-            Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
+        Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append
 
-            Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+        Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
+        Script does not include Batch Separator and will not compile
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaJob -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql
 
-            Exports jobs and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
+        Exports only script for 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
-        .EXAMPLE
-            $options = New-DbaScriptingOption
-            $options.ScriptDrops = $false
-            $options.WithDependencies = $true
-            Get-DbaTable -SqlInstance sql2017 -Database PerformanceStore | Export-DbaScript -ScriptingOptionsObject $options
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql -NoPrefix
 
-            Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.
+        Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+        Suppress the output of a Prefix
+
+    .EXAMPLE
+        PS C:\> $options = New-DbaScriptingOption
+        PS C:\> $options.ScriptSchema = $true
+        PS C:\> $options.IncludeDatabaseContext  = $true
+        PS C:\> $options.IncludeHeaders = $false
+        PS C:\> $Options.NoCommandTerminator = $false
+        PS C:\> $Options.ScriptBatchTerminator = $true
+        PS C:\> $Options.AnsiFile = $true
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
+
+        Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+        Appends a batch separator at end of each script.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
+
+        Exports jobs and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
+
+    .EXAMPLE
+        PS C:\> $options = New-DbaScriptingOption
+        PS C:\> $options.ScriptSchema = $true
+        PS C:\> $options.IncludeDatabaseContext  = $true
+        PS C:\> $options.IncludeHeaders = $false
+        PS C:\> $Options.NoCommandTerminator = $false
+        PS C:\> $Options.ScriptBatchTerminator = $true
+        PS C:\> $Options.AnsiFile = $true
+        PS C:\> $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb, tempdb
+        PS C:\> foreach ($db in $Databases) {
+        >>        Export-DbaScript -InputObject $db -Path C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
+        >> }
+
+        Exports Script for each database on sql2016 excluding system databases
+        Uses Scripting options to ensure Batch Terminator is set
+        Will append the output to the file C:\temp\export.sql if it already exists
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [Alias("ScriptingOptionObject")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
         [string]$Path,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
+        [string]$BatchSeparator = '',
+        [switch]$NoPrefix,
         [switch]$Passthru,
         [switch]$NoClobber,
         [switch]$Append,
@@ -116,8 +155,7 @@ function Export-DbaScript {
 
             if ($typename.StartsWith('Microsoft.SqlServer.')) {
                 $shortype = $typename.Split(".")[-1]
-            }
-            else {
+            } else {
                 Stop-Function -Message "InputObject is of type $typename which is not a SQL Management Object. Only SMO objects are supported." -Category InvalidData -Target $object -Continue
             }
 
@@ -141,12 +179,15 @@ function Export-DbaScript {
             }
             until (($parent.Urn.Type -eq "Server") -or (-not $parent))
 
-            if (-not $parent) {
+            if (-not $parent -and -not (Get-Member -InputObject $object -Name ScriptCreate) ) {
                 Stop-Function -Message "Failed to find valid SMO server object in input: $object." -Category InvalidData -Target $object -Continue
             }
 
             try {
                 $server = $parent
+                if (-not $server) {
+                    $server = $object.Parent
+                }
                 $serverName = $server.Name.Replace('\', '$')
 
                 if ($ScriptingOptionsObject) {
@@ -157,18 +198,20 @@ function Export-DbaScript {
                 if (!$passthru) {
                     if ($path) {
                         $actualPath = $path
-                    }
-                    else {
+                    } else {
                         $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
                     }
                 }
 
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                if ($NoPrefix) {
+                    $prefix = ""
+                } else {
+                    $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                }
 
                 if ($passthru) {
                     $prefix | Out-String
-                }
-                else {
+                } else {
                     if ($prefixArray -notcontains $actualPath) {
 
                         if ((Test-Path -Path $actualPath) -and $NoClobber) {
@@ -186,30 +229,58 @@ function Export-DbaScript {
                     if ($passthru) {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
+                                if ($BatchSeparator -ne "") {
+                                    $script = "$script`r`n$BatchSeparator`r`n"
+                                }
                                 $script | Out-String
                             }
-                        }
-                        else {
-                            $object.Script() | Out-String
-                        }
-                    }
-                    else {
-                        if ($ScriptingOptionsObject) {
-                            foreach ($script in $scripter.EnumScript($object)) {
-                                $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                        } else {
+                            if (Get-Member -Name ScriptCreate -InputObject $object) {
+                                $script = $object.ScriptCreate().GetScript()
+                            } else {
+                                $script = $object.Script()
                             }
+
+                            if ($BatchSeparator -ne "") {
+                                $script = "$script`r`n$BatchSeparator`r`n"
+                            }
+                            $script  | Out-String
                         }
-                        else {
-                            $object.Script() | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                    } else {
+                        if ($ScriptingOptionsObject) {
+                            if ($ScriptingOptionsObject.ScriptBatchTerminator) {
+                                $ScriptingOptionsObject.AppendToFile = $true
+                                $ScriptingOptionsObject.ToFileOnly = $true
+                                $ScriptingOptionsObject.FileName = $actualPath
+                                $object.Script($ScriptingOptionsObject)
+                            } else {
+                                foreach ($script in $scripter.EnumScript($object)) {
+                                    if ($BatchSeparator -ne "") {
+                                        $script = "$script`r`n$BatchSeparator`r`n"
+                                    }
+                                    $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                                }
+                            }
+
+                        } else {
+                            if (Get-Member -Name ScriptCreate -InputObject $object) {
+                                $script = $object.ScriptCreate().GetScript()
+                            } else {
+                                $script = $object.Script()
+                            }
+                            if ($BatchSeparator -ne "") {
+                                $script = "$script`r`n$BatchSeparator`r`n"
+                            }
+                            $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }
                     }
-                }
 
-                if (!$passthru) {
-                    Write-Message -Level Output -Message "Exported $object on $($server.Name) to $actualPath"
+                    if (-not $passthru) {
+                        Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $actualPath"
+                        Get-ChildItem -Path $actualPath
+                    }
                 }
-            }
-            catch {
+            } catch {
                 $message = $_.Exception.InnerException.InnerException.InnerException.Message
                 if (-not $message) {
                     $message = $_.Exception

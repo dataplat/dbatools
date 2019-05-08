@@ -1,42 +1,44 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXECsv {
     <#
-        .SYNOPSIS
-            Exports Extended Events to a CSV file.
+    .SYNOPSIS
+        Exports Extended Events to a CSV file.
 
-        .DESCRIPTION
-            Exports Extended Events to a CSV file.
+    .DESCRIPTION
+        Exports Extended Events to a CSV file.
 
-        .PARAMETER Path
-            Specifies the InputObject to the output CSV file
+    .PARAMETER Path
+        Specifies the InputObject to the output CSV file
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER InputObject
-            Allows Piping
+    .PARAMETER InputObject
+        Allows Piping
 
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Gianluca Sartori (@spaghettidba)
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Gianluca Sartori (@spaghettidba)
 
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-            SmartTarget: by Gianluca Sartori (@spaghettidba)
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Export-DbaXECsv
+    .LINK
+        https://dbatools.io/Export-DbaXECsv
 
-        .EXAMPLE
-            Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
+    .EXAMPLE
+        PS C:\> Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
 
-            Writes Extended Events data to the file "C:\temp\events.csv".
+        Writes Extended Events data to the file "C:\temp\events.csv".
 
-         .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
 
-            Writes Extended Events data to the file "C:\temp\events.csv".
+        Writes Extended Events data to the file "C:\temp\events.csv".
+
     #>
     [CmdletBinding()]
     param (
@@ -50,8 +52,7 @@ function Export-DbaXECsv {
     begin {
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -67,8 +68,7 @@ function Export-DbaXECsv {
 
                 if ($instance.IsLocalHost) {
                     $xelpath = $InputObject.TargetFile
-                }
-                else {
+                } else {
                     $xelpath = $InputObject.RemoteTargetFile
                 }
 
@@ -78,8 +78,7 @@ function Export-DbaXECsv {
 
                 try {
                     Get-ChildItem -Path $xelpath -ErrorAction Stop
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
@@ -97,15 +96,12 @@ function Export-DbaXECsv {
         foreach ($file in $InputObject) {
             if ($file -is [System.String]) {
                 $currentfile = $file
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-            }
-            elseif ($file -is [Microsoft.SqlServer.Management.XEvent.Session]) {
+            } elseif ($file -is [Microsoft.SqlServer.Management.XEvent.Session]) {
                 # it was taken care of above
                 continue
-            }
-            else {
+            } else {
                 Stop-Function -Message "Unsupported file type."
                 return
             }
@@ -123,18 +119,15 @@ function Export-DbaXECsv {
                     New-Item $Path -ItemType directory | Out-Null
                     $outDir = $Path
                     $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                }
-                else {
+                } else {
                     $outDir = [IO.Path]::GetDirectoryName($Path)
                     $outFile = [IO.Path]::GetFileName($Path)
                 }
-            }
-            else {
+            } else {
                 if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
                     $outDir = $Path
                     $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                }
-                else {
+                } else {
                     $outDir = [IO.Path]::GetDirectoryName($Path)
                     $outFile = [IO.Path]::GetFileName($Path)
                 }
@@ -150,12 +143,10 @@ function Export-DbaXECsv {
 
                 if ($file.Length -eq 0) {
                     Remove-Item -Path $adapter.OutputFile
-                }
-                else {
+                } else {
                     $file
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
             }
         }

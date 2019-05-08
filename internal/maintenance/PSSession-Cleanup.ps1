@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     while ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionCountExpired -gt 0) {
         $session = $null
         $session = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionPurgeExpired()

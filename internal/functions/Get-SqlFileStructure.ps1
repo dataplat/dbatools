@@ -3,16 +3,16 @@ function Get-SqlFileStructure {
     .SYNOPSIS
     Internal function. Returns custom object that contains file structures on destination paths (\\SqlInstance\m$\mssql\etc\etc\file.mdf) for
     source and destination servers.
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [object]$source,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory, Position = 1)]
         [ValidateNotNullOrEmpty()]
         [object]$destination,
-        [Parameter(Mandatory = $false, Position = 2)]
+        [Parameter(Position = 2)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential
@@ -40,8 +40,7 @@ function Get-SqlFileStructure {
                 $d = @{ }
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $file.filename
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     $filename = Split-Path $($file.filename) -leaf
                     $d.physical = "$directory\$filename"
@@ -70,8 +69,7 @@ function Get-SqlFileStructure {
                 $logical = "$pre$name"
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $physical
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
                     $filename = Split-Path($physical) -leaf
@@ -100,8 +98,7 @@ function Get-SqlFileStructure {
             $d = @{ }
             if ($ReuseSourceFolderStructure) {
                 $d.physical = $file.filename
-            }
-            else {
+            } else {
                 $directory = Get-SqlDefaultPaths $destserver log
                 $filename = Split-Path $($file.filename) -leaf
                 $d.physical = "$directory\$filename"

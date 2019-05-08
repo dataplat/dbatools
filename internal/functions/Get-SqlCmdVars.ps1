@@ -18,7 +18,7 @@ function Get-SqlCmdVars {
             Author: Richie lee (@bzzzt_io)
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
         .LINK
             https://dbatools.io/Test-Noun
@@ -57,11 +57,11 @@ function Get-SqlCmdVars {
             $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)
             Get-SqlCmdVars $dacProfile.DeployOptions.SqlCommandVariableValues -EnableException
         "
-    #>
+       #>
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         $SqlCommandVariableValues,
         [switch]$EnableException
     )
@@ -71,8 +71,7 @@ function Get-SqlCmdVars {
         if (Test-Path variable:$var) {
             $value = Get-Variable $var -ValueOnly
             $SqlCommandVariableValues[$var] = $value
-        }
-        else {
+        } else {
             $missingVariables += $var
         }
     }

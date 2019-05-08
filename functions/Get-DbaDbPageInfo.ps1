@@ -1,64 +1,67 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbPageInfo {
     <#
-        .SYNOPSIS
-            Get-DbaDbPageInfo will return page information for a database
+    .SYNOPSIS
+        Get-DbaDbPageInfo will return page information for a database
 
-        .DESCRIPTION
-            Get-DbaDbPageInfo is able to return information about the pages in a database.
-            It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
+    .DESCRIPTION
+        Get-DbaDbPageInfo is able to return information about the pages in a database.
+        It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
 
-        .PARAMETER SqlInstance
-            The target SQL Server instance(s)
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Filter to only get specific databases
+    .PARAMETER Database
+        Filter to only get specific databases
 
-        .PARAMETER Schema
-            Filter to only get specific schemas
+    .PARAMETER Schema
+        Filter to only get specific schemas
 
-        .PARAMETER Table
-            Filter to only get specific tables
+    .PARAMETER Table
+        Filter to only get specific tables
 
-        .PARAMETER InputObject
-            Enables piping from Get-DbaDatabase
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Page
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, Page
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaDbPageInfo
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaDbPageInfo -SqlInstance sql2017
+    .LINK
+        https://dbatools.io/Get-DbaDbPageInfo
 
-            Returns page information for all databases on sql2017
+    .EXAMPLE
+        PS C:\> et-DbaDbPageInfo -SqlInstance sql2017
 
-        .EXAMPLE
-            Get-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb
+        Returns page information for all databases on sql2017
 
-            Returns page information for the testdb on sql2017 and sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb
 
-        .EXAMPLE
-            $servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo
+        Returns page information for the testdb on sql2017 and sql2016
 
-            Returns page information for the testdb on all $servers
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo
+
+        Returns page information for the testdb on all $servers
+
     #>
     [CmdLetBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Schema,
@@ -94,8 +97,7 @@ function Get-DbaDbPageInfo {
         if ($Table) {
             if ($schema) {
                 $sql = "$sql AND st.name IN ('$($Table -join "','")')"
-            }
-            else {
+            } else {
                 $sql = "$sql WHERE st.name IN ('$($Table -join "','")')"
             }
         }
@@ -105,18 +107,15 @@ function Get-DbaDbPageInfo {
         foreach ($instance in $SqlInstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
-            }
-            else {
+            } else {
                 $InputObject += $server.Databases
             }
         }
@@ -127,13 +126,10 @@ function Get-DbaDbPageInfo {
             try {
                 if ($db.Parent.VersionMajor -ge 11) {
                     $db.Query($sql)
-                }
-                else
-                {
+                } else {
                     Stop-Function -Message "Unsupported SQL Server version" -Target $db -Continue
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Something went wrong executing the query" -ErrorRecord $_ -Target $instance -Continue
             }
         }

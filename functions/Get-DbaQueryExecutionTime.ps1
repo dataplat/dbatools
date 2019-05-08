@@ -1,70 +1,71 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaQueryExecutionTime {
     <#
-.SYNOPSIS
-Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
+    .SYNOPSIS
+        Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
 
-.DESCRIPTION
-Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
+    .DESCRIPTION
+        Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
 
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER MaxResultsPerDb
-Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
+    .PARAMETER MaxResultsPerDb
+        Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
 
-.PARAMETER MinExecs
-Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
+    .PARAMETER MinExecs
+        Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
 
-.PARAMETER MinExecMs
-Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
+    .PARAMETER MinExecMs
+        Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
 
-.PARAMETER NoSystemDb
-Allows you to suppress output on system databases
+    .PARAMETER ExcludeSystem
+        Allows you to suppress output on system databases
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Query, Performance
-Author: Brandon Abshire, netnerds.net
+    .NOTES
+        Tags: Query, Performance
+        Author: Brandon Abshire, netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaQueryExecutionTime
+    .LINK
+        https://dbatools.io/Get-DbaQueryExecutionTime
 
-.EXAMPLE
-Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
 
-Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
+        Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
 
-.EXAMPLE
-Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
 
-Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
+        Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
 
-.EXAMPLE
-Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
 
-Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database,
-limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
-#>
+        Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
+
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -73,14 +74,15 @@ limiting results to queries with more than 200 total executions and an execution
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1, Mandatory = $false)]
+        [parameter(Position = 1)]
         [int]$MaxResultsPerDb = 100,
-        [parameter(Position = 2, Mandatory = $false)]
+        [parameter(Position = 2)]
         [int]$MinExecs = 100,
-        [parameter(Position = 3, Mandatory = $false)]
+        [parameter(Position = 3)]
         [int]$MinExecMs = 500,
-        [parameter(Position = 4, Mandatory = $false)]
-        [switch]$NoSystemDb,
+        [parameter(Position = 4)]
+        [Alias("ExcludeSystemDatabases")]
+        [switch]$ExcludeSystem,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -165,8 +167,7 @@ limiting results to queries with more than 200 total executions and an execution
 
             if ($MinExecMs -gt 0 -and $MinExecs) {
                 $sql += "`n AND AvgExec_ms >= " + $MinExecMs
-            }
-            elseif ($MinExecMs) {
+            } elseif ($MinExecMs) {
                 $sql += "`n AvgExecs_ms >= " + $MinExecMs
             }
         }
@@ -180,12 +181,10 @@ limiting results to queries with more than 200 total executions and an execution
         }
 
         foreach ($instance in $SqlInstance) {
-            Write--Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases
@@ -193,7 +192,7 @@ limiting results to queries with more than 200 total executions and an execution
                 $dbs = $dbs | Where-Object Name -In $Database
             }
 
-            if ($NoSystemDb) {
+            if ($ExcludeSystem) {
                 $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
             }
 
@@ -230,8 +229,7 @@ limiting results to queries with more than 200 total executions and an execution
                             FullStatementText  = $row.full_statement_text
                         } | Select-DefaultView -ExcludeProperty FullStatementText
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
                 }
             }

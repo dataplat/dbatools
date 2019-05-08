@@ -1,4 +1,4 @@
-﻿function Get-CodePage {
+function Get-CodePage {
     <#
         .SYNOPSIS
             Converts Microsoft's code page ID to human readable format
@@ -13,7 +13,7 @@
             Get-CodePage 1252
 
             Returns a pscustomobject with id, alias and name
-    #>
+       #>
     [CmdletBinding()]
     param (
         [int]$id

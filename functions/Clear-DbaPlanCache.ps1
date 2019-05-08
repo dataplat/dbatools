@@ -1,62 +1,67 @@
-﻿function Clear-DbaPlanCache {
+function Clear-DbaPlanCache {
     <#
-        .SYNOPSIS
-            Removes adhoc and prepared plan caches is single use plans are over defined threshold.
+    .SYNOPSIS
+        Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.
 
-        .DESCRIPTION
-            Checks ahoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
+    .DESCRIPTION
+        Checks ad-hoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
 
-            This command automates that process.
+        This command automates that process.
 
-            References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
+        References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
 
-        .PARAMETER SqlInstance
-            The target SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-           Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Threshold
-            Memory used threshold.
+    .PARAMETER Threshold
+        Memory used threshold.
 
-        .PARAMETER InputObject
-            Enables results to be piped in from Get-DbaPlanCache.
+    .PARAMETER InputObject
+        Enables results to be piped in from Get-DbaPlanCache.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Memory
-            Author: Tracy Boggiano, databasesuperhero.com
+    .NOTES
+        Tags: Memory
+        Author: Tracy Boggiano, databasesuperhero.com
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Clear-DbaPlanCache
+    .LINK
+        https://dbatools.io/Clear-DbaPlanCache
 
-        .EXAMPLE
-            Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200
+    .EXAMPLE
+        PS C:\> Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200
 
-            Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MB.
+        Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MB.
 
-        .EXAMPLE
-            Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+    .EXAMPLE
+        PS C:\> Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
 
-            Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
-            and removes if Threshold over 100 MB.
+        Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
+        and removes if Threshold over 100 MB.
+
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaPlanCache | Clear-DbaPlanCache -Threshold 200
+
+        Scans localhost for instances using the browser service, traverses all instances and gets the plan cache for each, clears them out if they are above 200 MB.
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -73,8 +78,14 @@
         foreach ($result in $InputObject) {
             if ($result.MB -ge $Threshold) {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Cleared SQL Plans plan cache")) {
+                    try {
+                        $server = Connect-SqlInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
+                    } catch {
+                        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    }
+
                     $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $result.ComputerName
                         InstanceName = $result.InstanceName
                         SqlInstance  = $result.SqlInstance
@@ -82,10 +93,9 @@
                         Status       = "Plan cache cleared"
                     }
                 }
-            }
-            else {
+            } else {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Results $($result.Size) below threshold")) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $result.ComputerName
                         InstanceName = $result.InstanceName
                         SqlInstance  = $result.SqlInstance

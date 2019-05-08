@@ -1,5 +1,5 @@
-﻿Register-DbaConfigValidation -Name "timespan" -ScriptBlock {
-    Param (
+Register-DbatoolsConfigValidation -Name "timespan" -ScriptBlock {
+    param (
         $Value
     )
 

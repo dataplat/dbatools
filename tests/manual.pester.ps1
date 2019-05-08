@@ -191,8 +191,7 @@ if ($Path) {
     foreach ($item in $path) {
         if (Test-Path $item) {
             $files += Get-ChildItem -Path $item
-        }
-        else {
+        } else {
             $files += Get-ChildItem -Path "$ModuleBase\tests\*$item*.Tests.ps1"
         }
     }
@@ -220,8 +219,7 @@ foreach ($f in $AllTestsWithinScenario) {
     if ($Coverage) {
         if ($DependencyCoverage) {
             $CoverFilesPester = $CoverFiles
-        }
-        else {
+        } else {
             $CoverFilesPester = $HeadFunctionPath
         }
         $PesterSplat['CodeCoverage'] = $CoverFilesPester

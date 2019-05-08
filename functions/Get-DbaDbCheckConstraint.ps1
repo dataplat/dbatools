@@ -1,63 +1,64 @@
 function Get-DbaDbCheckConstraint {
     <#
-        .SYNOPSIS
-            Gets database Check constraints.
+    .SYNOPSIS
+        Gets database Check constraints.
 
-        .DESCRIPTION
-            Gets database Checks constraints.
+    .DESCRIPTION
+        Gets database Checks constraints.
 
-        .PARAMETER SqlInstance
-            The target SQL Server instance(s)
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-        .PARAMETER SqlCredential
-            Allows you to login to SQL Server using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials
 
-        .PARAMETER Database
-            To get Checks from specific database(s)
+    .PARAMETER Database
+        To get Checks from specific database(s)
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto populated from the server
 
-        .PARAMETER ExcludeSystemTable
-            This switch removes all system objects from the table collection
+    .PARAMETER ExcludeSystemTable
+        This switch removes all system objects from the table collection
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database
-            Author: Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)
+    .NOTES
+        Tags: Database
+        Author: Claudio Silva (@ClaudioESSilva), https://claudioessilva.eu
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaDbCheckConstraint -SqlInstance sql2016
 
-            Gets all database check constraints.
+        Gets all database check constraints.
 
-        .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -Database db1
+    .EXAMPLE
+        PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -Database db1
 
-            Gets the check constraints for the db1 database.
+        Gets the check constraints for the db1 database.
 
-        .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1
+    .EXAMPLE
+        PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1
 
-            Gets the check constraints for all databases except db1.
+        Gets the check constraints for all databases except db1.
 
-        .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
+    .EXAMPLE
+        PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
 
-            Gets the check constraints for all databases that are not system objects.
+        Gets the check constraints for all databases that are not system objects.
 
-        .EXAMPLE
-            'Sql1','Sql2/sqlexpress' | Get-DbaDbCheckConstraint
+    .EXAMPLE
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbCheckConstraint
 
-            Gets the check constraints for the databases on Sql1 and Sql2/sqlexpress.
+        Gets the check constraints for the databases on Sql1 and Sql2/sqlexpress.
+
     #>
     [CmdletBinding()]
     param (
@@ -75,11 +76,9 @@ function Get-DbaDbCheckConstraint {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $databases = $server.Databases | Where-Object IsAccessible
@@ -97,7 +96,7 @@ function Get-DbaDbCheckConstraint {
                     continue
                 }
 
-                foreach($tbl in $db.Tables) {
+                foreach ($tbl in $db.Tables) {
                     if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $tbl.IsSystemObject ) {
                         continue
                     }

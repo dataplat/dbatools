@@ -1,45 +1,48 @@
-﻿function Get-DbaOpenTransaction {
+function Get-DbaOpenTransaction {
     <#
-        .SYNOPSIS
-            Displays all open transactions.
+    .SYNOPSIS
+        Displays all open transactions.
 
-        .DESCRIPTION
-            This command is based on open transaction script published by Paul Randal.
-            Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
+    .DESCRIPTION
+        This command is based on open transaction script published by Paul Randal.
+        Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
 
-        .PARAMETER SqlInstance
-            The SQL Server instance
+    .PARAMETER SqlInstance
+        The SQL Server instance
 
-        .PARAMETER SqlCredential
-            Connect using alternative credentials
+    .PARAMETER SqlCredential
+        Connect using alternative credentials
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Database, Process, Session, ActivityMonitor
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, Process, Session, ActivityMonitor
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaOpenTransaction
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaOpenTransaction -SqlInstance sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaOpenTransaction
 
-            Returns open transactions for sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a
 
-        .EXAMPLE
-            Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+        Returns open transactions for sqlserver2014a
 
-            Logs into sqlserver2014a using the login "sqladmin"
+    .EXAMPLE
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential sqladmin
+
+        Logs into sqlserver2014a using the login "sqladmin"
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -86,12 +89,10 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $server.Query($sql)

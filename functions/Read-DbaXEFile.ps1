@@ -1,48 +1,51 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaXEFile {
     <#
-        .SYNOPSIS
-            Read XEvents from a xel or xem file.
+    .SYNOPSIS
+        Read XEvents from a *.xel or *.xem file.
 
-        .DESCRIPTION
-            Read XEvents from a xel or xem file.
+    .DESCRIPTION
+        Read XEvents from a *.xel or *.xem file.
 
-        .PARAMETER Path
-            The path to the xel or xem file. This is relative to the computer executing the command. UNC paths are supported.
+    .PARAMETER Path
+        The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.
 
-        .PARAMETER Exact
-            If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
+    .PARAMETER Exact
+        If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
 
-        .PARAMETER Raw
-            If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
+    .PARAMETER Raw
+        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Read-DbaXEFile
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\deadocks.xel
+    .LINK
+        https://dbatools.io/Read-DbaXEFile
 
-            Returns events from C:\temp\deadocks.xel.
+    .EXAMPLE
+        PS C:\> Read-DbaXEFile -Path C:\temp\deadocks.xel
 
-        .EXAMPLE
-            Get-ChildItem C:\temp\xe\*.xel | Read-DbaXEFile
+        Returns events from C:\temp\deadocks.xel.
 
-            Returns events from all .xel files in C:\temp\xe.
+    .EXAMPLE
+        PS C:\> Get-ChildItem C:\temp\xe\*.xel | Read-DbaXEFile
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
+        Returns events from all .xel files in C:\temp\xe.
 
-            Reads remote XEvents by accessing the file over the admin UNC share.
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
+
+        Reads remote XEvents by accessing the file over the admin UNC share.
 
     #>
     [CmdletBinding()]
@@ -63,13 +66,13 @@ function Read-DbaXEFile {
 
             if ($file -is [System.String]) {
                 $currentfile = $file
-                $manualadd = $true
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-                $manualadd = $true
-            }
-            else {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
                     Stop-Function -Message "Unsupported file type."
                     return
@@ -84,8 +87,7 @@ function Read-DbaXEFile {
 
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.TargetFile
-                }
-                else {
+                } else {
                     $currentfile = $file.RemoteTargetFile
                 }
             }
@@ -95,7 +97,7 @@ function Read-DbaXEFile {
                 $currentfile = $currentfile.Replace('.xem', '*.xem')
 
                 if ($currentfile -notmatch "xel" -and $currentfile -notmatch "xem") {
-                    $currentfile =  "$currentfile*.xel"
+                    $currentfile = "$currentfile*.xel"
                 }
             }
 
@@ -123,7 +125,7 @@ function Read-DbaXEFile {
             $columns = ($columns += $newcolumns) | Select-Object -Unique
 
             # Make it selectable, otherwise it's a weird enumeration
-            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+            foreach ($event in $enum) {
                 $hash = [ordered]@{ }
 
                 foreach ($column in $columns) {
@@ -140,6 +142,7 @@ function Read-DbaXEFile {
 
                 [pscustomobject]$hash
             }
+            $enum.Dispose()
         }
     }
 }

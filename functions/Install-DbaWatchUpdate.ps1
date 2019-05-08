@@ -1,43 +1,46 @@
 function Install-DbaWatchUpdate {
     <#
-        .SYNOPSIS
-            Adds the scheduled task to support Watch-DbaUpdate.
+    .SYNOPSIS
+        Adds the scheduled task to support Watch-DbaUpdate.
 
-        .DESCRIPTION
-            Adds the scheduled task to support Watch-DbaUpdate.
+    .DESCRIPTION
+        Adds the scheduled task to support Watch-DbaUpdate.
 
-        .PARAMETER TaskName
-            Provide custom name for the Scheduled Task
+    .PARAMETER TaskName
+        Provide custom name for the Scheduled Task
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Module
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Install-DbaWatchUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Install-DbaWatchUpdate
+    .LINK
+        https://dbatools.io/Install-DbaWatchUpdate
 
-            Adds the scheduled task needed by Watch-DbaUpdate
+    .EXAMPLE
+        PS C:\> Install-DbaWatchUpdate
 
-        .EXAMPLE
-            Install-DbaWatchUpdate -TaskName MyScheduledTask
+        Adds the scheduled task needed by Watch-DbaUpdate
 
-            Will create the scheduled task as the name MyScheduledTask
+    .EXAMPLE
+        PS C:\> Install-DbaWatchUpdate -TaskName MyScheduledTask
+
+        Will create the scheduled task as the name MyScheduledTask
+
     #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
@@ -57,10 +60,12 @@ function Install-DbaWatchUpdate {
                 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
                 $principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
                 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
-                $task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
-            }
-            catch {
+                #Variable $Task marked as unused by PSScriptAnalyzer replaced with $null for catching output
+                $null = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
+            } catch {
                 # keep moving
+                # here to avoid an empty catch
+                $null = 1
             }
         }
 
@@ -84,8 +89,7 @@ function Install-DbaWatchUpdate {
                         Write-Message -Level Output -Message "Scheduled Task [$TaskName] created! A notification should appear momentarily. Here's something cute to look at in the interim."
                         Show-Notification -Title "dbatools wants you" -Text "come hang out at dbatools.io/slack"
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Could not create scheduled task $TaskName" -Target $env:COMPUTERNAME -ErrorRecord $_
                 }
             }
@@ -95,8 +99,7 @@ function Install-DbaWatchUpdate {
                     Write-Message -Level Warning -Message "Scheduled Task was not created."
                 }
             }
-        }
-        else {
+        } else {
             Write-Message -Level Output -Message "Scheduled Task $TaskName is already installed on this machine."
         }
     }

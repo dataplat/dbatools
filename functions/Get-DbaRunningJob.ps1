@@ -1,88 +1,67 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaRunningJob {
     <#
-        .SYNOPSIS
-            Returns all non-idle Agent jobs running on the server.
+    .SYNOPSIS
+        Returns all non-idle Agent jobs running on the server
 
-        .DESCRIPTION
-            This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.
+    .DESCRIPTION
+        This function returns agent jobs that active on the SQL Server instance when calling the command
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAgentJob
 
-        .NOTES
-            Tags: Process, Session, ActivityMonitor, Agent, Job
-            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaRunningJob
+    .NOTES
+        Tags: Agent, Job
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
-        .EXAMPLE
-            Get-DbaRunningJob -SqlInstance localhost
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Returns any active jobs on localhost.
+    .LINK
+        https://dbatools.io/Get-DbaRunningJob
 
-        .EXAMPLE
-            Get-DbaRunningJob -SqlInstance localhost -Detailed
+    .EXAMPLE
+        PS C:\> Get-DbaRunningJob -SqlInstance sql2017
 
-            Returns a detailed output of any active jobs on localhost.
+        Returns any active jobs on sql2017
 
-        .EXAMPLE
-            'localhost','localhost\namedinstance' | Get-DbaRunningJob
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2017, sql2019 | Get-DbaRunningJob
 
-            Returns all active jobs on multiple instances piped into the function.
+        Returns all active jobs on multiple instances piped into the function.
+
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaRunningJob
+
+        Returns all active jobs on multiple instances piped into the function.
+
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+    param (
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
-            }
-
-            $jobs = $server.JobServer.jobs | Where-Object { $_.CurrentRunStatus -ne 'Idle' }
-
-            if (!$jobs) {
-                Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server."
-            }
-            else {
-                foreach ($job in $jobs) {
-                    [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.ServiceName
-                        SqlInstance      = $server.DomainInstanceName
-                        Name             = $job.name
-                        Category         = $job.Category
-                        CurrentRunStatus = $job.CurrentRunStatus
-                        CurrentRunStep   = $job.CurrentRunStep
-                        HasSchedule      = $job.HasSchedule
-                        LastRunDate      = $job.LastRunDate
-                        LastRunOutcome   = $job.LastRunOutcome
-                        JobStep          = $job.JobSteps
-                    }
-                }
-            }
+        if ($SqlInstance) {
+            Get-DbaAgentJob -SqlInstance $SqlInstance -SqlCredential $SqlCredential | Where-Object CurrentRunStatus -ne 'Idle'
         }
+
+        $InputObject | Where-Object CurrentRunStatus -ne 'Idle'
     }
 }

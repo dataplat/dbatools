@@ -30,11 +30,11 @@ Examples are better than a thousand words:
 
 a) Setting the configuration value
 # Put this in a configuration file in this folder
-Set-DbaConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Default
+Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Initialize -Description "Sopmething meaningful here"
 
 b) Retrieving the configuration value in your function
 # Put this in the function that uses this setting
-$path = Get-DbaConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
+$path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
 
 # Explanation #
 #-------------#
@@ -47,164 +47,127 @@ ALL configurations defined by the module should be 'default' values.
 In step b), which will be run whenever the function is called within which it is written, we retrieve the value stored behind the name 'Path.DbatoolsLog'.
 If there is nothing there (for example, if the user accidentally removed or nulled the configuration), then it will fall back to using "$($env:temp)\dbatools.log"
 
-#--------------------#
-# Architecture Notes #
-#--------------------#
-
-In order to reduce import times, this is executed in a separate runspace.
-
 #>
 
-$scriptBlock = {
-    Param (
-        $DbatoolsConfig
-    )
-    $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
+#region Paths
+$script:path_RegistryUserDefault = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
+$script:path_RegistryUserEnforced = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
+$script:path_RegistryMachineDefault = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
+$script:path_RegistryMachineEnforced = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
+$psVersionName = "WindowsPowerShell"
+if ($PSVersionTable.PSVersion.Major -ge 6) { $psVersionName = "PowerShell" }
 
-    #region Helper functions
-    # Empty dummy, should not have a cmdletbinding in order to avoid errors.
-    function Stop-Function { }
-
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Test-Bound.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaConfigValidation.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Register-DbaConfig.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Set-DbaConfig.ps1"))), $null, $null)
-    #endregion Helper functions
-
-
-
-    $configpath = "$ModuleRoot\internal\configurations"
-
-    # Import configuration validation
-    foreach ($file in (Get-ChildItem -Path "$configpath\validation")) {
-        if ($script:doDotSource) { . $file.FullName }
-        else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
-    }
-
-    # Import other configuration files
-    foreach ($file in (Get-ChildItem -Path "$configpath\settings")) {
-        if ($script:doDotSource) { . $file.FullName }
-        else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
-    }
-
-    #region Import settings from registry
-    if (-not [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone) {
-        $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
-
-        function Convert-RegType {
-            [CmdletBinding()]
-            Param (
-                [string]
-                $Value
-            )
-
-            $index = $Value.IndexOf(":")
-            if ($index -lt 1) { throw "No type identifier found!" }
-            $type = $Value.Substring(0, $index).ToLower()
-            $content = $Value.Substring($index + 1)
-
-            switch ($type) {
-                "bool" {
-                    if ($content -eq "true") { return $true }
-                    if ($content -eq "1") { return $true }
-                    if ($content -eq "false") { return $false }
-                    if ($content -eq "0") { return $false }
-                    throw "Failed to interpret as bool: $content"
-                }
-                "int" { return ([int]$content) }
-                "double" { return [double]$content }
-                "long" { return [long]$content }
-                "string" { return $content }
-                "timespan" { return (New-Object System.TimeSpan($content)) }
-                "datetime" { return (New-Object System.DateTime($content)) }
-                "consolecolor" { return ([System.ConsoleColor]$content) }
-
-                default { throw "Unknown type identifier" }
-            }
-        }
-
-        #region Import from registry
-        $config_hash = @{ }
-        foreach ($item in ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default" -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
-            try {
-                $config_hash[$item.Name.ToLower()] = New-Object PSObject -Property @{
-                    Name     = $item.Name
-                    Enforced = $false
-                    Value    = Convert-RegType -Value $item.Value
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
-            }
-        }
-        foreach ($item in ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default" -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
-            try {
-                $config_hash[$item.Name.ToLower()] = New-Object PSObject -Property @{
-                    Name     = $item.Name
-                    Enforced = $false
-                    Value    = Convert-RegType -Value $item.Value
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
-            }
-        }
-        foreach ($item in ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced" -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
-            try {
-                $config_hash[$item.Name.ToLower()] = New-Object PSObject -Property @{
-                    Name     = $item.Name
-                    Enforced = $true
-                    Value    = Convert-RegType -Value $item.Value
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
-            }
-        }
-        foreach ($item in ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced" -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
-            try {
-                $config_hash[$item.Name.ToLower()] = New-Object PSObject -Property @{
-                    Name     = $item.Name
-                    Enforced = $true
-                    Value    = Convert-RegType -Value $item.Value
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Failed to interpret configuration entry from registry: $($item.Name)" -ErrorRecord $_
-            }
-        }
-        #endregion Import from registry
-
-        foreach ($value in $config_hash.Values) {
-            try {
-                Set-DbaConfig -Name $value.Name -Value $value.Value -EnableException
-                [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicySet = $true
-                [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicyEnforced = $value.Enforced
-            }
-            catch { }
-        }
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
-    }
-    #endregion Import settings from registry
-
-    #region Implement user profile
-    if ($DbatoolsConfig -ne $null) {
-        if ($DbatoolsConfig.GetType().FullName -eq "System.Management.Automation.ScriptBlock") {
-            [System.Management.Automation.ScriptBlock]::Create($DbatoolsConfig.ToString()).Invoke()
-        }
-    }
-    #endregion Implement user profile
+#region User Local
+if ($IsLinux -or $IsMacOs)
+{
+    # Defaults to $Env:XDG_CONFIG_HOME on Linux or MacOS ($HOME/.config/)
+    $fileUserLocal = $Env:XDG_CONFIG_HOME
+    if (-not $fileUserLocal) { $fileUserLocal = Join-Path $HOME .config/ }
+    
+    $script:path_FileUserLocal = Join-DbaPath $fileUserLocal $psVersionName "dbatools/"
 }
-if ($script:serialImport) {
-    $scriptBlock.Invoke($global:dbatools_config)
+else
+{
+    # Defaults to $Env:LocalAppData on Windows
+    $script:path_FileUserLocal = Join-Path $Env:LocalAppData "$psVersionName\dbatools\Config"
+    if (-not $script:path_FileUserLocal) { $script:path_FileUserLocal = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "$psVersionName\dbatools\Config" }
 }
-else {
-    $script:dbatoolsConfigRunspace = [System.Management.Automation.PowerShell]::Create()
-    if ($script:dbatoolsConfigRunspace.Runspace.Name) {
-        try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }
+#endregion User Local
+
+#region User Shared
+if ($IsLinux -or $IsMacOs)
+{
+    # Defaults to the first value in $Env:XDG_CONFIG_DIRS on Linux or MacOS (or $HOME/.local/share/)
+    $fileUserShared = @($Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator))[0]
+    if (-not $fileUserShared) { $fileUserShared = Join-Path $HOME .local/share/ }
+    
+    $script:path_FileUserShared = Join-DbaPath $fileUserShared $psVersionName "dbatools/"
+    $script:AppData = $fileUserShared
+}
+else
+{
+    # Defaults to $Env:AppData on Windows
+    $script:path_FileUserShared = Join-DbaPath $Env:AppData $psVersionName "dbatools" "Config"
+    $script:AppData = $Env:APPDATA
+    if (-not $Env:AppData)
+    {
+        $script:path_FileUserShared = Join-DbaPath ([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+        $script:AppData = [Environment]::GetFolderPath("ApplicationData")
+    }
+}
+#endregion User Shared
+
+#region System
+if ($IsLinux -or $IsMacOs)
+{
+    # Defaults to /etc/xdg elsewhere
+    $XdgConfigDirs = $Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator) | Where-Object { $_ -and (Test-Path $_) }
+    if ($XdgConfigDirs.Count -gt 1) { $basePath = $XdgConfigDirs[1] }
+    else { $basePath = "/etc/xdg/" }
+    $script:path_FileSystem = Join-DbaPath $basePath $psVersionName "dbatools/"
+}
+else
+{
+    # Defaults to $Env:ProgramData on Windows
+    $script:path_FileSystem = Join-DbaPath $Env:ProgramData $psVersionName "dbatools" "Config"
+    if (-not $script:path_FileSystem) { $script:path_FileSystem = Join-DbaPath ([Environment]::GetFolderPath("CommonApplicationData")) $psVersionName "dbatools" "Config" }
+}
+#endregion System
+
+#region Special Paths
+# $script:AppData is already OS localized
+$script:path_Logging = Join-DbaPath $script:AppData $psVersionName "dbatools" "Logs"
+$script:path_typedata = Join-DbaPath $script:AppData $psVersionName "dbatools" "TypeData"
+#endregion Special Paths
+#endregion Paths
+
+# Determine Registry Availability
+$script:NoRegistry = $false
+if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*"))
+{
+    $script:NoRegistry = $true
+}
+
+$configpath = Resolve-Path "$script:PSModuleRoot\internal\configurations"
+
+# Import configuration validation
+foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\validation")))
+{
+    if ($script:doDotSource) { . $file.FullName }
+    else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
+}
+
+# Import other configuration files
+foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\settings")))
+{
+    if ($script:doDotSource) { . $file.FullName }
+    else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
+}
+
+if (-not [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone)
+{
+    # Read config from all settings
+    $config_hash = Read-DbatoolsConfigPersisted -Scope 127
+    
+    foreach ($value in $config_hash.Values)
+    {
+        try
+        {
+            if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException }
+            else { Set-DbatoolsConfig -FullName $value.FullName -PersistedValue $value.Value -PersistedType $value.Type -EnableException }
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicySet = $value.Policy
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicyEnforced = $value.Enforced
+        }
         catch { }
     }
-    $script:dbatoolsConfigRunspace.AddScript($scriptBlock).AddArgument($global:dbatools_config)
-    $script:dbatoolsConfigRunspace.BeginInvoke()
+    
+    if ($null -ne $global:dbatools_config)
+    {
+        if ($global:dbatools_config.GetType().FullName -eq "System.Management.Automation.ScriptBlock")
+        {
+            [System.Management.Automation.ScriptBlock]::Create($global:dbatools_config.ToString()).Invoke()
+        }
+    }
+    
+    [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
 }

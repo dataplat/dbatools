@@ -1,4 +1,4 @@
-﻿#region Initialize Cache
+#region Initialize Cache
 if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"]) {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"] = @{ }
 }
@@ -33,13 +33,12 @@ $ScriptBlock = {
 
     try {
         [DbaInstanceParameter]$parServer = $server | Select-Object -First 1
-    }
-    catch {
+    } catch {
         return
     }
 
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLower()]) {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()]) {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -47,12 +46,11 @@ $ScriptBlock = {
 
     try {
         $serverObject = Connect-SqlInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
-    }
-    catch {
+    } catch {
         return
     }
 }

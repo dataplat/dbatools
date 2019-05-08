@@ -1,80 +1,81 @@
 function Find-DbaView {
     <#
-        .SYNOPSIS
-            Returns all views that contain a specific case-insensitive string or regex pattern.
+    .SYNOPSIS
+        Returns all views that contain a specific case-insensitive string or regex pattern.
 
-        .DESCRIPTION
-            This function can either run against specific databases or all databases searching all user or user and system views.
+    .DESCRIPTION
+        This function can either run against specific databases or all databases searching all user or user and system views.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER Pattern
-            String pattern that you want to search for in the view textbody
+    .PARAMETER Pattern
+        String pattern that you want to search for in the view text body
 
-        .PARAMETER IncludeSystemObjects
-            By default, system views are ignored but you can include them within the search using this parameter.
+    .PARAMETER IncludeSystemObjects
+        By default, system views are ignored but you can include them within the search using this parameter.
 
-            Warning - this will likely make it super slow if you run it on all databases.
+        Warning - this will likely make it super slow if you run it on all databases.
 
-        .PARAMETER IncludeSystemDatabases
-            By default system databases are ignored but you can include them within the search using this parameter
+    .PARAMETER IncludeSystemDatabases
+        By default system databases are ignored but you can include them within the search using this parameter
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: View
-            Author: Cláudio Silva (@ClaudioESSilva)
+    .NOTES
+        Tags: View
+        Author: Claudio Silva  (@ClaudioESSilva)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Find-DbaView
+    .LINK
+        https://dbatools.io/Find-DbaView
 
-        .EXAMPLE
-            Find-DbaView -SqlInstance DEV01 -Pattern whatever
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance DEV01 -Pattern whatever
 
-            Searches all user databases views for "whatever" in the textbody
+        Searches all user databases views for "whatever" in the text body
 
-        .EXAMPLE
-            Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-            Searches all databases for all views that contain a valid email pattern in the textbody
+        Searches all databases for all views that contain a valid email pattern in the text body
 
-        .EXAMPLE
-            Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-            Searches in "mydb" database views for "some string" in the textbody
+        Searches in "mydb" database views for "some string" in the text body
 
-        .EXAMPLE
-            Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
 
-            Searches in "mydb" database views for "runtime" in the textbody
+        Searches in "mydb" database views for "runtime" in the text body
+
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+    param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
@@ -90,10 +91,8 @@ function Find-DbaView {
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $Instance"
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $Instance"
                 continue
             }
@@ -105,8 +104,7 @@ function Find-DbaView {
 
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
             }
 
@@ -160,8 +158,7 @@ function Find-DbaView {
                             } | Select-DefaultView -ExcludeProperty View, ViewFullText
                         }
                     }
-                }
-                else {
+                } else {
                     $Views = $db.Views
 
                     foreach ($vw in $Views) {

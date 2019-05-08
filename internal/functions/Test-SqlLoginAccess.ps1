@@ -2,10 +2,10 @@ function Test-SqlLoginAccess {
     <#
     .SYNOPSIS
         Internal function. Ensures login has access on SQL Server.
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
@@ -25,8 +25,7 @@ function Test-SqlLoginAccess {
             if (($rows | Measure-Object).Count -eq 0) {
                 return $false
             }
-        }
-        catch {
+        } catch {
             return $false
         }
     }

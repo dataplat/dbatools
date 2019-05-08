@@ -1,136 +1,134 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupInformation {
     <#
-        .SYNOPSIS
-            Scan backup files and creates a set, compatible with Restore-DbaDatabase
+    .SYNOPSIS
+        Scan backup files and creates a set, compatible with Restore-DbaDatabase
 
-        .DESCRIPTION
-            Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
-            backup sets. It will then filter those files down to a set
+    .DESCRIPTION
+        Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
+        backup sets. It will then filter those files down to a set
 
-            The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
-            XpDirTree will be used to perform the file scans
+        The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
+        XpDirTree will be used to perform the file scans
 
-            Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
-            passed in.
+        Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
+        passed in.
 
-        .PARAMETER Path
-            Path to SQL Server backup files.
+    .PARAMETER Path
+        Path to SQL Server backup files.
 
-            Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
-            Accepts multiple paths separated by ','
+        Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
+        Accepts multiple paths separated by ','
 
-            Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
-            your own file structures as needed
+        Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
+        your own file structures as needed
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to be used to read the headers of the backup files
+    .PARAMETER SqlInstance
+        The SQL Server instance to be used to read the headers of the backup files
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-        .PARAMETER DatabaseName
-            An array of Database Names to filter by. If empty all databases are returned.
+    .PARAMETER DatabaseName
+        An array of Database Names to filter by. If empty all databases are returned.
 
-        .PARAMETER SourceInstance
-            If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
+    .PARAMETER SourceInstance
+        If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
 
-        .PARAMETER NoXpDirTree
-            If this switch is set, then Files will be parsed as locally files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
+    .PARAMETER NoXpDirTree
+        If this switch is set, then Files will be parsed as locally files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
 
-        .PARAMETER DirectoryRecurse
-            If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
+    .PARAMETER DirectoryRecurse
+        If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
 
-        .PARAMETER Anonymise
-            If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out
-            This options is mainly for use if we need you to submit details for fault finding to the dbatools team
+    .PARAMETER Anonymise
+        If specified we will output the results with ComputerName, InstanceName, Database, UserName, Paths, and Logical and Physical Names hashed out
+        This options is mainly for use if we need you to submit details for fault finding to the dbatools team
 
-        .PARAMETER ExportPath
-            If specified the output will export via CliXml format to the specified file. This allows you to store the backup history object for later usage, or move it between computers
+    .PARAMETER ExportPath
+        If specified the output will export via CliXml format to the specified file. This allows you to store the backup history object for later usage, or move it between computers
 
-        .PARAMETER NoClobber
-            If specified will stop Export from overwriting an existing file, the default is to overwrite
+    .PARAMETER NoClobber
+        If specified will stop Export from overwriting an existing file, the default is to overwrite
 
-        .PARAMETER PassThru
-            When data is exported the cmdlet will return no other output, this switch means it will also return the normal output which can be then piped into another command
+    .PARAMETER PassThru
+        When data is exported the cmdlet will return no other output, this switch means it will also return the normal output which can be then piped into another command
 
-        .PARAMETER MaintenanceSolution
-            This switch tells the function that the folder is the root of a Ola Hallengren backup folder
+    .PARAMETER MaintenanceSolution
+        This switch tells the function that the folder is the root of a Ola Hallengren backup folder
 
-        .PARAMETER IgnoreLogBackup
-            This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
-            For all other scenarios we need to read the file headers to be sure.
+    .PARAMETER IgnoreLogBackup
+        This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
+        For all other scenarios we need to read the file headers to be sure.
 
-        .PARAMETER AzureCredential
-            The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+    .PARAMETER AzureCredential
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
 
-        .PARAMETER Import
-            When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
+    .PARAMETER Import
+        When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
 
-        .PARAMETER EnableException
-            Replaces user friendly yellow warnings with bloody red exceptions of doom!
-            Use this if you want the function to throw terminating errors you want to catch.
+    .PARAMETER EnableException
+        Replaces user friendly yellow warnings with bloody red exceptions of doom!
+        Use this if you want the function to throw terminating errors you want to catch.
 
-        .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
+    .NOTES
+        Tags: DisasterRecovery, Backup, Restore
+        Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)
 
-            Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatools BackupHistory object
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .NOTES
-            Tags: DisasterRecovery, Backup, Restore
+    .LINK
+        https://dbatools.io/Get-DbaBackupInformation
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .EXAMPLE
+        PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
 
-        .LINK
-            https://dbatools.io/Get-DbaBackupInformation
+        Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatools BackupHistory object
 
-        .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml
+    .EXAMPLE
+        PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml
+        PS C:\> robocopy c:\store\ \\remoteMachine\C$\store\ BackupHistory.xml
+        PS C:\> Get-DbaBackupInformation -Import -Path  c:\store\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
 
-            #Copy the file  c:\store\BackupHistory.xml to another machine via preferred technique, and the on 2nd machine:
+        This example creates backup history output from server1 and copies the file to the remote machine in order to preserve backup history. It is then used to restore the databases onto server2.
 
-            Get-DbaBackupInformation -Import -Path  c:\store\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
+    .EXAMPLE
+        PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath C:\store\BackupHistory.xml -PassThru | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
 
-            This allows you to move backup history across servers, or to preserve backup history even after the original server has been purged
+        In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase.
+        This allows us to repeat the restore without having to scan all the backup files again
 
-        .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru |
-                    Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
+    .EXAMPLE
+        PS C:\> Get-ChildItem c:\backups\ -recurse -files | Where-Object {$_.extension -in ('.bak','.trn') -and $_.LastWriteTime -gt (get-date).AddMonths(-1)} | Get-DbaBackupInformation -SqlInstance Server1 -ExportPath C:\backupHistory.xml
 
-            In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase
-            This allows us to repeat the restore without having to scan all the backup files again
+        This lets you keep a record of all backup history from the last month on hand to speed up refreshes
 
-        .EXAMPLE
-            Get-ChildItem c:\backups\ -recurse -files |
-                Where {$_.extension -in ('.bak','.trn') -and $_.LastWriteTime -gt (get-date).AddMonths(-1)} |
-                Get-DbaBackupInformation -SqlInstance Server1 -ExportPath c:\backupHistory.xml
+    .EXAMPLE
+        PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
+        PS C:\> $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
 
-            This lets you keep a record of all backup history from the last month on hand to speed up refreshes
+        Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on
+        Server2 not using xp_dirtree, adding the results to the first set.
 
-        .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
-            $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
+    .EXAMPLE
+        PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
 
-            Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on
-            Server2 not using xp_dirtree, adding the results to the first set.
+        When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
 
-        .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
+    .EXAMPLE
+        PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
 
-            When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren's backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
+        As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
 
-        .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
-
-            As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
-        [parameter(Mandatory = $true, ParameterSetName = "Create")]
+        [parameter(Mandatory, ParameterSetName = "Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]
@@ -179,9 +177,8 @@ function Get-DbaBackupInformation {
         if ($PSCmdlet.ParameterSetName -eq "Create") {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
         }
@@ -195,47 +192,41 @@ function Get-DbaBackupInformation {
         if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
             foreach ($f in $Path) {
                 if (Test-Path -Path $f) {
-                    $GroupResults += Import-CliXml -Path $f
-                    foreach ($group in  $GroupResults) {
-                        $Group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
-                        $Group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
-                        $Group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
-                        $Group.LastLsn = [BigInt]$group.LastLsn.ToString()
+                    $groupResults += Import-CliXml -Path $f
+                    foreach ($group in  $groupResults) {
+                        $group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
+                        $group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
+                        $group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
+                        $group.LastLsn = [BigInt]$group.LastLsn.ToString()
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "$f does not exist or is unreadable" -Level Warning
                 }
             }
-        }
-        else {
+        } else {
             $Files = @()
             $groupResults = @()
             if ($Path[0] -match 'http') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
-                        if ("Fullname" -notin $f.PSobject.Properties.name) {
+                        if ("FullName" -notin $f.PSObject.Properties.name) {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
                         Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
+                        if ((Test-DbaPath -Path $f.FullName -SqlInstance $server)) {
                             $files += $f
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "$server cannot 'see' file $($f.FullName)"
                         }
-                    }
-                    elseif ($True -eq $MaintenanceSolution) {
+                    } elseif ($True -eq $MaintenanceSolution) {
                         if ($true -eq $IgnoreLogBackup -and [System.IO.Path]::GetDirectoryName($f) -like '*LOG') {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "OLA - Getting folder contents"
                             $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         }
-                    }
-                    else {
+                    } else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
                         $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         if ($null -eq $check) {
@@ -243,38 +234,31 @@ function Get-DbaBackupInformation {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
-                            Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
-                            $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
-                        }
-                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
+                            Write-Message -Level VeryVerbose -Message "folder $($f.FullName)"
+                            $Files += Get-ChildItem -Path $f.FullName -File -Recurse:$DirectoryRecurse
+                        } elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
                             if ($IgnoreLogBackup -and $f -notlike '*LOG' ) {
                                 Write-Message -Level Verbose -Message "Skipping Log backups for Maintenance backups"
+                            } else {
+                                $Files += Get-ChildItem -Path $f.FullName -File -Recurse:$DirectoryRecurse
                             }
-                            else {
-                                $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
-                            }
-                        }
-                        elseif ($true -eq $MaintenanceSolution) {
-                            $Files += Get-ChildItem -Path $f.fullname -Recurse:$DirectoryRecurse
-                        }
-                        else {
+                        } elseif ($true -eq $MaintenanceSolution) {
+                            $Files += Get-ChildItem -Path $f.FullName -Recurse:$DirectoryRecurse
+                        } else {
                             Write-Message -Level VeryVerbose -Message "File"
-                            $Files += $f.fullname
+                            $Files += $f.FullName
                         }
-                    }
-                    else {
+                    } else {
                         if ($true -eq $MaintenanceSolution) {
                             $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
-                        }
-                        else {
+                        } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f
                         }
@@ -287,37 +271,47 @@ function Get-DbaBackupInformation {
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
 
-            Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-            try {
-                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
+            if ($Files.Count -gt 0) {
+                Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
+                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
             }
-            catch {
-                Stop-Function -Message "Failure reading backup header" -ErrorRecord $_ -Target $server -Continue
-            }
-            
-            $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 
-            foreach ($Group in $GroupDetails) {
+            $groupDetails = $FileDetails | Group-Object -Property BackupSetGUID
+
+            foreach ($group in $groupDetails) {
+                $dbLsn = $group.Group[0].DatabaseBackupLSN
+                if (-not $dbLsn) {
+                    $dbLsn = 0
+                }
+                $description = $group.Group[0].BackupTypeDescription
+                if (-not $description) {
+                    $header = Read-DbaBackupHeader -SqlInstance $server -Path $Path | Select-Object -First 1
+                    $description = switch ($header.BackupType) {
+                        1 { "Full" }
+                        2 { "Differential" }
+                        3 { "Log"}
+                    }
+                }
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
-                $historyObject.ComputerName = $group.group[0].MachineName
-                $historyObject.InstanceName = $group.group[0].ServiceName
-                $historyObject.SqlInstance = $group.group[0].ServerName
+                $historyObject.ComputerName = $group.Group[0].MachineName
+                $historyObject.InstanceName = $group.Group[0].ServiceName
+                $historyObject.SqlInstance = $group.Group[0].ServerName
                 $historyObject.Database = $group.Group[0].DatabaseName
                 $historyObject.UserName = $group.Group[0].UserName
                 $historyObject.Start = [DateTime]$group.Group[0].BackupStartDate
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
-                $historyObject.Path = [string[]]$Group.Group.BackupPath
-                $historyObject.FileList = ($group.Group.FileList | select-object Type, LogicalName, PhysicalName)
-                $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -Sum).Sum
-                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -Sum).Sum
-                $historyObject.Type = $group.Group[0].BackupTypeDescription
+                $historyObject.Path = [string[]]$group.Group.BackupPath
+                $historyObject.FileList = ($group.Group.FileList | Select-Object Type, LogicalName, PhysicalName -Unique)
+                $historyObject.TotalSize = ($group.Group.BackupSize.Byte | Measure-Object -Sum).Sum
+                $HistoryObject.CompressedBackupSize = ($group.Group.CompressedBackupSize.Byte | Measure-Object -Sum).Sum
+                $historyObject.Type = $description
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'
-                $historyObject.FullName = $Group.Group.BackupPath
+                $historyObject.FullName = $group.Group.BackupPath
                 $historyObject.Position = $group.Group[0].Position
                 $historyObject.FirstLsn = $group.Group[0].FirstLSN
-                $historyObject.DatabaseBackupLsn = $group.Group[0].DatabaseBackupLSN
+                $historyObject.DatabaseBackupLsn = $dbLsn
                 $historyObject.CheckpointLSN = $group.Group[0].CheckpointLSN
                 $historyObject.LastLsn = $group.Group[0].LastLsn
                 $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
@@ -333,17 +327,20 @@ function Get-DbaBackupInformation {
             $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
         }
         if ($true -eq $Anonymise) {
-            foreach ($group in $GroupResults) {
+            foreach ($group in $groupResults) {
                 $group.ComputerName = Get-HashString -InString $group.ComputerName
                 $group.InstanceName = Get-HashString -InString $group.InstanceName
                 $group.SqlInstance = Get-HashString -InString $group.SqlInstance
                 $group.Database = Get-HashString -InString $group.Database
                 $group.UserName = Get-HashString -InString $group.UserName
-                $group.Path = Get-HashString -InString  $Group.Path
-                $group.FullName = Get-HashString -InString $Group.Fullname
+                $group.Path = Get-HashString -InString  $group.Path
+                $group.FullName = Get-HashString -InString $group.FullName
+                $group.FileList = ($group.FileList | Select-Object Type,
+                    @{Name = "LogicalName"; Expression = {Get-HashString -InString $_."LogicalName"}},
+                    @{Name = "PhysicalName"; Expression = {Get-HashString -InString $_."PhysicalName"}})
             }
         }
-        if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
+        if ((Test-Bound -parameterName ExportPath) -and $null -ne $ExportPath) {
             $groupResults | Export-CliXml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
             if ($true -ne $PassThru) {
                 return

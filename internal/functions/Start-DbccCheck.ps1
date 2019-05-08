@@ -1,5 +1,5 @@
 function Start-DbccCheck {
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [object]$server,
         [string]$dbname,
@@ -17,14 +17,12 @@ function Start-DbccCheck {
             if ($table) {
                 $null = $server.databases[$dbname].CheckTables('None')
                 Write-Verbose "Dbcc CheckTables finished successfully for $dbname on $servername"
-            }
-            else {
+            } else {
                 $null = $server.Query("DBCC CHECKDB ([$dbname])")
                 Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
             }
             return "Success"
-        }
-        catch {
+        } catch {
             $message = $_.Exception
             if ($null -ne $_.Exception.InnerException) { $message = $_.Exception.InnerException }
 
@@ -34,8 +32,7 @@ function Start-DbccCheck {
                 $newmessage = ($newmessage -split "Microsoft.SqlServer.Management.Common.ExecutionFailureException:")[1]
                 $newmessage = ($newmessage -replace "An exception occurred while executing a Transact-SQL statement or batch. ---> System.Data.SqlClient.SqlException:").Trim()
                 $message = $newmessage
-            }
-            catch {
+            } catch {
                 $null
             }
             return $message.Trim()

@@ -5,10 +5,10 @@ Internal Function to get SQL Server backfiles from a specified folder
 
 .DESCRIPTION
 Takes path, checks for validity. Scans for usual backup file
-#>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
         [switch]$Recurse,
         [Alias('Silent')]
@@ -25,15 +25,12 @@ Takes path, checks for validity. Scans for usual backup file
     $PathCheckArray = $path.ToCharArray()
     if ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -eq '*') {
         #We're good
-    }
-    elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -eq '*') {
+    } elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -eq '*') {
         $Path = ($PathCheckArray[0..(($PathCheckArray.length) - 2)] -join ('')) + "\*"
-    }
-    elseif ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -ne '*') {
+    } elseif ($PathCheckArray[-2] -eq '\' -and $PathCheckArray[-1] -ne '*') {
         #Append a * to the end
         $Path = "$Path*"
-    }
-    elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -ne '*') {
+    } elseif ($PathCheckArray[-2] -ne '\' -and $PathCheckArray[-1] -ne '*') {
         #Append a \* to the end
         $Path = "$Path\*"
     }

@@ -1,28 +1,31 @@
 function Uninstall-DbaWatchUpdate {
     <#
-        .SYNOPSIS
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+    .SYNOPSIS
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .DESCRIPTION
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+    .DESCRIPTION
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .NOTES
-            Tags: JustForFun, Module
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: JustForFun, Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Uninstall-DbaWatchUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Uninstall-DbaWatchUpdate
+    .LINK
+        https://dbatools.io/Uninstall-DbaWatchUpdate
 
-            Removes the scheduled task created by Install-DbaWatchUpdate.
+    .EXAMPLE
+        PS C:\> Uninstall-DbaWatchUpdate
+
+        Removes the scheduled task created by Install-DbaWatchUpdate.
+
     #>
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
-            Write-Warning "This command only supports Windows 10 and higher."
+            Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
             return
         }
 
@@ -32,23 +35,21 @@ function Uninstall-DbaWatchUpdate {
                 $task = Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue
 
                 if ($null -eq $task) {
-                    Write-Warning "Task doesn't exist. Skipping removal."
-                }
-                else {
-                    Write-Output "Removing watchupdate.xml."
+                    Write-Message -Level Warning -Message "Task doesn't exist. Skipping removal."
+                } else {
+                    Write-Message -Level Output -Message "Removing watchupdate.xml."
                     $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
                     Remove-Item $file -ErrorAction SilentlyContinue
 
-                    Write-Output "Removing Scheduled Task 'dbatools version check'."
+                    Write-Message -Level Output -Message "Removing Scheduled Task 'dbatools version check'."
                     $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction Stop
 
-                    Write-Output "Task removed"
+                    Write-Message -Level Output -Message "Task removed"
 
                     Start-Sleep -Seconds 2
                 }
-            }
-            catch {
-                Write-Warning "Task could not be deleted. Please remove 'dbatools version check' manually."
+            } catch {
+                Write-Message -Level Warning -Message "Task could not be deleted. Please remove 'dbatools version check' manually."
             }
         }
         # Needs admin credentials to remove the task because of the way it was setup
@@ -56,18 +57,17 @@ function Uninstall-DbaWatchUpdate {
         $task = Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue
 
         if ($null -eq $task) {
-            Write-Warning "dbatools update watcher is not installed."
+            Write-Message -Level Warning -Message "dbatools update watcher is not installed."
             return
         }
 
         if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-            Write-Warning "Removal of this scheduled task requires elevated permissions."
+            Write-Message -Level Warning -Message "Removal of this scheduled task requires elevated permissions."
             Start-Process powershell -Verb runAs -ArgumentList Uninstall-DbaWatchUpdate -Wait
-        }
-        else {
+        } else {
             Invoke-Command -ScriptBlock $script
         }
 
-        Write-Output "All done!"
+        Write-Message -Level Output -Message "All done!"
     }
 }

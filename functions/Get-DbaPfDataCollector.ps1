@@ -1,62 +1,65 @@
-﻿function Get-DbaPfDataCollector {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaPfDataCollector {
     <#
-        .SYNOPSIS
-            Gets Performance Monitor Data Collectors.
+    .SYNOPSIS
+        Gets Performance Monitor Data Collectors.
 
-        .DESCRIPTION
-           Gets Performance Monitor Data Collectors.
+    .DESCRIPTION
+        Gets Performance Monitor Data Collectors.
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to servers using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using alternative credentials. To use:
 
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-        .PARAMETER CollectorSet
-            The Collector Set name.
+    .PARAMETER CollectorSet
+        The Collector Set name.
 
-        .PARAMETER Collector
-            The Collector name.
+    .PARAMETER Collector
+        The Collector name.
 
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: PerfMon
+    .NOTES
+        Tags: Performance, DataCollector, PerfCounter
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaPfDataCollector
+    .LINK
+        https://dbatools.io/Get-DbaPfDataCollector
 
-        .EXAMPLE
-            Get-DbaPfDataCollector
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollector
 
-            Gets all Collectors on localhost.
+        Gets all Collectors on localhost.
 
-        .EXAMPLE
-            Get-DbaPfDataCollector -ComputerName sql2017
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollector -ComputerName sql2017
 
-            Gets all Collectors on sql2017.
+        Gets all Collectors on sql2017.
 
-        .EXAMPLE
-            Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
-            Gets all Collectors for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
+        Gets all Collectors for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
 
-            Gets all Collectors for the 'System Correlation' CollectorSet.
+        Gets all Collectors for the 'System Correlation' CollectorSet.
+
     #>
     [CmdletBinding()]
     param (
@@ -74,6 +77,8 @@
         $columns = 'ComputerName', 'DataCollectorSet', 'Name', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords', 'Counters'
     }
     process {
+        
+        
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
@@ -102,8 +107,7 @@
                 if ($outputlocation) {
                     $dir = ($outputlocation).Replace(':', '$')
                     $remote = "\\$($set.ComputerName)\$dir"
-                }
-                else {
+                } else {
                     $remote = $null
                 }
 

@@ -1,48 +1,50 @@
-﻿function Read-DbaAuditFile {
+function Read-DbaAuditFile {
     <#
-        .SYNOPSIS
-            Read Audit details from a sqlaudit file.
+    .SYNOPSIS
+        Read Audit details from *.sqlaudit files.
 
-        .DESCRIPTION
-            Read Audit details from a sqlaudit file.
+    .DESCRIPTION
+        Read Audit details from *.sqlaudit files.
 
-        .PARAMETER Path
-            The path to the sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
+    .PARAMETER Path
+        The path to the *.sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
 
-        .PARAMETER Exact
-            If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
+    .PARAMETER Exact
+        If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
 
-        .PARAMETER Raw
-            If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
+    .PARAMETER Raw
+        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, Audit
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, Audit
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Read-DbaAuditFile
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Read-DbaAuditFile -Path C:\temp\logins.sqlaudit
+    .LINK
+        https://dbatools.io/Read-DbaAuditFile
 
-            Returns events from C:\temp\logins.sqlaudit.
+    .EXAMPLE
+        PS C:\> Read-DbaAuditFile -Path C:\temp\logins.sqlaudit
 
-        .EXAMPLE
-            Get-ChildItem C:\temp\audit\*.sqlaudit | Read-DbaAuditFile
+        Returns events from C:\temp\logins.sqlaudit.
 
-            Returns events from all .sqlaudit files in C:\temp\audit.
+    .EXAMPLE
+        PS C:\> Get-ChildItem C:\temp\audit\*.sqlaudit | Read-DbaAuditFile
 
-        .EXAMPLE
-            Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
+        Returns events from all .sqlaudit files in C:\temp\audit.
 
-            Reads remote Audit details by accessing the file over the admin UNC share.
+    .EXAMPLE
+        PS C:\> Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
+
+        Reads remote Audit details by accessing the file over the admin UNC share.
 
     #>
     [CmdletBinding()]
@@ -62,13 +64,13 @@
 
             if ($file -is [System.String]) {
                 $currentfile = $file
-                $manualadd = $true
-            }
-            elseif ($file -is [System.IO.FileInfo]) {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
-                $manualadd = $true
-            }
-            else {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$manualadd = $true
+            } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.Smo.Audit]) {
                     Stop-Function -Message "Unsupported file type."
                     return
@@ -83,8 +85,7 @@
 
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.FullName
-                }
-                else {
+                } else {
                     $currentfile = $file.RemoteFullName
                 }
             }

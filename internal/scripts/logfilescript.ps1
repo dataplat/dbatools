@@ -1,10 +1,10 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $script:___ScriptName = 'dbatools-logging'
 
     #region Helper Functions
     function Clean-ErrorXml {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 
@@ -24,7 +24,7 @@
 
     function Clean-MessageLog {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 
@@ -44,7 +44,7 @@
 
     function Clean-GlobalLog {
         [CmdletBinding()]
-        Param (
+        param (
             $Path
         )
 
@@ -71,15 +71,14 @@
     try {
         while ($true) {
             # This portion is critical to gracefully closing the script
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].State -notlike "Running") {
+            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
                 break
             }
 
             $path = [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath
             if (-not (Test-Path $path)) {
                 $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
-            }
-            else { $root = Get-Item -Path $path }
+            } else { $root = Get-Item -Path $path }
 
             try { [int]$num_Error = (Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name | Select-String -Pattern "(\d+)" -AllMatches).Matches[1].Value }
             catch { }
@@ -127,10 +126,9 @@
 
             Start-Sleep -Seconds 5
         }
-    }
-    catch { }
+    } catch { }
     finally {
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }
 

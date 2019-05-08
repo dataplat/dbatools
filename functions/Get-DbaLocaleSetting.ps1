@@ -1,52 +1,53 @@
 function Get-DbaLocaleSetting {
     <#
-      .SYNOPSIS
-      Gets the Locale settings on a computer.
+    .SYNOPSIS
+        Gets the Locale settings on a computer.
 
-      .DESCRIPTION
-      Gets the Locale settings on one or more computers.
+    .DESCRIPTION
+        Gets the Locale settings on one or more computers.
 
-      Requires Local Admin rights on destination computer(s).
+        Requires Local Admin rights on destination computer(s).
 
-      .PARAMETER ComputerName
-      The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+    .PARAMETER ComputerName
+        The target SQL Server instance or instances.
 
-      .PARAMETER Credential
-      Credential object used to connect to the computer as a different user.
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
 
-      .PARAMETER EnableException
-      By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-      This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-      Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-      .NOTES
-      Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-      Tags: OS
-      dbatools PowerShell module (https://dbatools.io)
-      Copyright (C) 2016 Chrissy LeMaire
-      License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: OS
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-      .LINK
-      https://dbatools.io/Get-DbaLocaleSetting
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-      .EXAMPLE
-      Get-DbaLocaleSetting -ComputerName sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaLocaleSetting
 
-      Gets the Locale settings on computer sqlserver2014a.
+    .EXAMPLE
+        PS C:\> Get-DbaLocaleSetting -ComputerName sqlserver2014a
 
-      .EXAMPLE
-      'sql1','sql2','sql3' | Get-DbaLocaleSetting
+        Gets the Locale settings on computer sqlserver2014a.
 
-      Gets the Locale settings on computers sql1, sql2 and sql3.
+    .EXAMPLE
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaLocaleSetting
 
-      .EXAMPLE
-      Get-DbaLocaleSetting -ComputerName sql1,sql2 | Out-Gridview
+        Gets the Locale settings on computers sql1, sql2 and sql3.
 
-      Gets the Locale settings on computers sql1 and sql2, and shows them in a grid view.
+    .EXAMPLE
+        PS C:\> Get-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential | Out-Gridview
 
-  #>
+        Gets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers, and shows them in a grid view.
+
+    #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
@@ -55,7 +56,7 @@ function Get-DbaLocaleSetting {
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
         $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
         $keyname = "Control Panel\International"
@@ -63,7 +64,10 @@ function Get-DbaLocaleSetting {
         $Reg = 'StdRegProv'
         [UInt32]$CIMHiveCU = 2147483649
     }
-    PROCESS {
+    process {
+        # uses cim commands
+        
+        
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential

@@ -1,12 +1,12 @@
-﻿function Invoke-DbaDiagnosticQueryScriptParser {
+function Invoke-DbaDiagnosticQueryScriptParser {
     [CmdletBinding(DefaultParameterSetName = "Default")]
 
     Param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [ValidateScript( {Test-Path $_})]
         [System.IO.FileInfo]$filename,
-        [Switch]$NoQueryTextColumn,
-        [Switch]$NoPlanColumn,
+        [Switch]$ExcludeQueryTextColumn,
+        [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing
     )
 
@@ -22,12 +22,12 @@
     $querynr = 0
     $DBSpecific = $false
 
-    if ($NoQueryTextColumn) {$QueryTextColumn = ""}  else {$QueryTextColumn = ", t.[text] AS [Complete Query Text]"}
-    if ($NoPlanColumn) {$PlanTextColumn = ""} else {$PlanTextColumn = ", qp.query_plan AS [Query Plan]"}
+    if ($ExcludeQueryTextColumn) {$QueryTextColumn = ""}  else {$QueryTextColumn = ", t.[text] AS [Complete Query Text]"}
+    if ($ExcludePlanColumn) {$PlanTextColumn = ""} else {$PlanTextColumn = ", qp.query_plan AS [Query Plan]"}
 
     foreach ($line in $fullscript) {
         if ($start -eq $false) {
-            if ($line -match "You have the correct major version of SQL Server for this diagnostic information script") {
+            if (($line -match "You have the correct major version of SQL Server for this diagnostic information script") -or ($line.StartsWith("-- Server level queries ***"))) {
                 $start = $true
             }
             continue
@@ -58,8 +58,7 @@
             $querydescription = $prev_querydescription
             $querynr = $prev_querynr
             $queryname = $prev_queryname
-        }
-        else {
+        } else {
             if (!$line.startswith("--") -and ($line.trim() -ne "") -and ($null -ne $line) -and ($line -ne "\n")) {
                 $scriptpart += $line + "`n"
             }

@@ -17,7 +17,7 @@ function Test-DbaLsnChain {
         Author: Stuart Moore (@napalmgram), stuart-moore.com
         Tags:
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -25,10 +25,10 @@ function Test-DbaLsnChain {
 
         Checks that the Restore chain in $FilteredFiles is complete and can be fully restored
 
-#>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$FilteredRestoreFiles,
         [switch]$Continue,
         [switch]$EnableException
@@ -51,8 +51,7 @@ function Test-DbaLsnChain {
         Write-Message -Level Verbose -Message "Testing LSN Chain"
         if ($null -eq $TestHistory[0].BackupTypeDescription) {
             $TypeName = 'Type'
-        }
-        else {
+        } else {
             $TypeName = "BackupTypeDescription"
         }
         Write-Message -Level VeryVerbose -Message "Testing LSN Chain - Type $typename"
@@ -88,12 +87,10 @@ function Test-DbaLsnChain {
             Write-Message -Level Warning -Message "More than 1 differential backup, not supported"
             return $false
             break;
-        }
-        elseif (($DiffAnchor | Measure-Object).Count -eq 1) {
+        } elseif (($DiffAnchor | Measure-Object).Count -eq 1) {
             Write-Message -Level VeryVerbose -Message "Found a diff file, setting Log Anchor"
             $TlogAnchor = $DiffAnchor
-        }
-        else {
+        } else {
             $TlogAnchor = $FullDBAnchor
         }
 
@@ -109,8 +106,7 @@ function Test-DbaLsnChain {
                     return $false
                     break
                 }
-            }
-            else {
+            } else {
                 if ($TranLogBackups[($i - 1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i - 1)])) {
                     Write-Message -Level Warning -Message "Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
                     return $false
