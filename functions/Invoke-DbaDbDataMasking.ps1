@@ -228,6 +228,7 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
 
                         for ($i = 0; $i -lt $data.Rows.Count; $i++) {
+
                             $rowValue = New-Object PSCustomObject
 
                             # Loop through each of the unique indexes
@@ -235,59 +236,81 @@ function Invoke-DbaDbDataMasking {
 
                                 # Loop through the index columns
                                 foreach ($indexColumn in $index.IndexedColumns) {
-                                    # Get the column mask info
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                                    if ($columnMaskInfo) {
-                                        # Generate a new value
-                                        try {
-                                            if ($columnMaskInfo.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
-                                            } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $min -Max $max -Locale $Locale
-                                            }
+                                    if (-not $dbTable.Columns[$indexColumn.Name].Identity) {
 
-                                        } catch {
-                                            Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
-                                        }
-
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                        }
-                                    }
-                                }
-
-                                # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
-
-                                    $rowValue = New-Object PSCustomObject
-
-                                    # Loop through the index columns
-                                    foreach ($indexColumn in $index.IndexedColumns) {
                                         # Get the column mask info
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                                        # Generate a new value
-                                        $newValue = $faker.$($columnMaskInfo.MaskingType).$($columnMaskInfo.SubType)()
+                                        if ($columnMaskInfo) {
+                                            # Generate a new value
+                                            try {
+                                                if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                                    $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                } else {
+                                                    $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                }
 
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                            $uniqueValueColumns += $indexColumn.Name
+                                            } catch {
+                                                Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
+                                            }
+
+                                            # Check if the value is already present as a property
+                                            if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                                $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                            }
                                         }
 
-                                    }
-                                }
+                                        # To be sure the values are unique, loop as long as long as needed to generate a unique value
+                                        <# if ($uniqueValues.Count -ge 1) { #>
+                                        while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
-                            }
+                                            $rowValue = New-Object PSCustomObject
 
-                            # Add the row value to the array
-                            $uniqueValues += $rowValue
+                                            # Loop through the index columns
+                                            foreach ($indexColumn in $index.IndexedColumns) {
 
-                        }
+                                                # Get the column mask info
+                                                $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
-                    }
+                                                if ($columnMaskInfo) {
+                                                    # Generate a new value
+                                                    try {
+                                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                        } else {
+                                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                        }
+
+                                                    } catch {
+                                                        Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
+                                                    }
+
+                                                    # Check if the value is already present as a property
+                                                    if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
+                                                        $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
+                                                    }
+
+                                                }
+
+                                            } # End for each index column
+
+                                        } # End while loop
+
+                                        <# } # End if unique value count #>
+
+                                    } # End if identity
+
+                                    # Add the row value to the array
+                                    $uniqueValues += $rowValue
+
+                                } # End for each index column
+
+                            } # End for each index
+
+                        } # End for each data row
+
+                    } # End if had unique index
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
@@ -394,8 +417,7 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if ($columnobject.SubType -in $supportedDataTypes) {
-                                            Write-Message -Level VeryVerbose -Message "`$newValue = Get-DbaRandomizedValue -DataType $($columnobject.ColumnType) -Min $min -Max $max -CharacterString $charstring -Locale $Locale"
+                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
@@ -409,18 +431,33 @@ function Invoke-DbaDbDataMasking {
 
                                 if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
                                     $updates += "[$($columnobject.Name)] = NULL"
-                                } elseif ($columnobject.ColumnType -eq 'xml') {
-                                    # nothing, unsure how i'll handle this
-                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -match 'int') {
-                                    $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
                                     if ($columnValue) {
                                         $updates += "[$($columnobject.Name)] = 1"
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                    $updates += "[$($columnobject.Name)] = $newValue"
+                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'datetime') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'datetime2') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -like 'date') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -like '*date*') {
+                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -like 'time') {
+                                    $newValue = ([datetime]$newValue).Tostring("HH:mm:ss.fffffff")
+                                    $updates += "[$($columnobject.Name)] = '$newValue'"
+                                } elseif ($columnobject.ColumnType -eq 'xml') {
+                                    # nothing, unsure how i'll handle this
                                 } else {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -449,10 +486,10 @@ function Invoke-DbaDbDataMasking {
                                 } elseif ($itemColumnType -in 'text', 'ntext') {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
-                                } elseif ($itemColumnType -like 'datetime') {
+                                } elseif ($itemColumnType -eq 'datetime') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
                                     $wheres += "[$item] = '$oldValue'"
-                                } elseif ($itemColumnType -like 'datetime2') {
+                                } elseif ($itemColumnType -eq 'datetime2') {
                                     $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
                                     $wheres += "[$item] = '$oldValue'"
                                 } elseif ($itemColumnType -like 'date') {
