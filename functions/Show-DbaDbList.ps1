@@ -131,7 +131,7 @@ function Show-DbaDbList {
     }
 
     process {
-        if (Test-FuntionInterrupt) { return }
+        if (Test-FunctionInterrupt) { return }
 
         # Create XAML form in Visual Studio, ensuring the ListView looks chromeless
         [xml]$xaml = "<Window
