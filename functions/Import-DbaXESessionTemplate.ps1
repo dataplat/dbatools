@@ -90,12 +90,16 @@ function Import-DbaXESessionTemplate {
         [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
+        [switch]$AddTargetRingBuffer,
         [switch]$AddTargetFile,
         [string]$TargetFilePath,
+        [int]$TargetFileMaxSize = 10,
+        [switch]$EnableTargetFileRollover,
+        [int]$TargetFileMaxRollover,
         [string]$TargetFileMetadataPath,
-        [switch]$AddTargetRingBuffer,
         [switch]$EnableException
     )
+    # ADD TARGET package0.event_file(SET filename=N'Login Tracker',max_file_size=(10240),max_rollover_files=(200))
     begin {
         $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
     }
