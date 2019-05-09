@@ -22,18 +22,18 @@ function Import-DbaXESessionTemplate {
     .PARAMETER Template
         Specifies the name of one of the templates from the dbatools repository. Press tab to cycle through the provided templates.
 
-	.PARAMETER AddTargetRingBuffer
-		Add a ring buffer target.
+    .PARAMETER AddTargetRingBuffer
+        Add a ring buffer target.
 
-	.PARAMETER AddTargetFile
-		Use this switch to save results to a file. By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
-		filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+    .PARAMETER AddTargetFile
+        Use this switch to save results to a file. By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
+        filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
-	.PARAMETER TargetFilePath
-		By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
-		filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+    .PARAMETER TargetFilePath
+        By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
+        filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
-		This path is relative to the destination directory
+        This path is relative to the destination directory
 
     .PARAMETER TargetFileMetadataPath
         By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
