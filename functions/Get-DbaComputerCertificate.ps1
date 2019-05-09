@@ -63,8 +63,8 @@ function Get-DbaComputerCertificate {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [string]$Store = "LocalMachine",
-        [string]$Folder = "My",
+        [string[]]$Store = "LocalMachine",
+        [string[]]$Folder = "My",
         [ValidateSet("All", "Service")]
         [string]$Type = "Service",
         [string]$Path,
@@ -133,7 +133,12 @@ function Get-DbaComputerCertificate {
                 }
 
                 foreach ($c in $certs) {
-                    Add-Member -Passthru -InputObject $c -NotePropertyName Algorithm -NotePropertyValue $c.SignatureAlgorithm.FriendlyName
+                    Add-Member -Force -InputObject $c -NotePropertyName Algorithm -NotePropertyValue $c.SignatureAlgorithm.FriendlyName
+                    Add-Member -Force -InputObject $c -NotePropertyName ComputerName -NotePropertyValue $env:ComputerName
+                    # had to add Name because remotely, "FriendlyName" refused to work. no idea why.
+                    Add-Member -Force -InputObject $c -NotePropertyName Name -NotePropertyValue $c.FriendlyName.ToString()
+                    Add-Member -Force -InputObject $c -NotePropertyName Store -NotePropertyValue $Store
+                    Add-Member -Force -InputObject $c -NotePropertyName Folder -NotePropertyValue $Folder -Passthru
                 }
             }
 
@@ -168,10 +173,28 @@ function Get-DbaComputerCertificate {
 
     process {
         foreach ($computer in $computername) {
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder, $Path -ErrorAction Stop | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
-            } catch {
-                Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+            if ($Store -eq "All") {
+                try {
+                    $Store = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { Get-ChildItem Cert: | Select-Object -ExpandProperty Location } -Raw
+                } catch {
+                    Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                }
+            }
+            if ($Folder -eq "All") {
+                try {
+                    $Folder = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { Get-ChildItem Cert: | Select-Object -ExpandProperty StoreNames | Select-Object -ExpandProperty Keys } -Raw
+                } catch {
+                    Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                }
+            }
+            foreach ($currentStore in $Store) {
+                foreach ($currentFolder in $Folder) {
+                    try {
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
+                    } catch {
+                        Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                    }
+                }
             }
         }
     }
