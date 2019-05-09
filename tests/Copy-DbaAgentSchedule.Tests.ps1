@@ -21,11 +21,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC msdb.dbo.sp_delete_schedule @proxy_name = 'dbatoolsci_DailySchedule'"
+        $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
         $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $sql = "EXEC msdb.dbo.sp_delete_schedule @proxy_name = 'dbatoolsci_DailySchedule'"
+        $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
     }
@@ -34,8 +34,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results = Copy-DbaAgentSchedule -Source $script:instance2 -Destination $script:instance3
 
         It "returns one results" {
-            $results.Count -eq 1
-            $results.Status -eq "Successful"
+            $results.Count | Should -BeGreaterThan 1
+            ($results | Where Status -eq "Successful") | Should -Not -Be $null
         }
 
         It "return one result of Start Time 1:00 AM" {
