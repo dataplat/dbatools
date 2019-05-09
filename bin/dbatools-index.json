@@ -11152,7 +11152,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Type] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-Thumbprint] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Store] \u003cString[]\u003e] [[-Folder] \u003cString[]\u003e] [[-Type] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-Thumbprint] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaComputerSystem",
@@ -35390,9 +35390,25 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
-        "Syntax":  "Reset-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nReset-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Reset-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nReset-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Resolve-DbaNetworkName",
