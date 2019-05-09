@@ -127,9 +127,7 @@ function Sync-DbaLoginPermission {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $sqlcredential
-            if ((Test-Bound -ParameterName Login)) {
-                $Login = ($sourceServer.Logins | Where-Object Name -NotIn $ExcludeLogin).Name
-            }
+            $Login = (Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin).Name
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
             return
