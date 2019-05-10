@@ -37,7 +37,12 @@ function Update-SqlPermission {
     $source = $SourceServer.DomainInstanceName
     $userName = $SourceLogin.Name
 
-    $SourceServer.ConnectionContext.Disconnect()
+    $saname = Get-SaLoginName -SqlInstance $DestServer
+
+    # gotta close because enum repeatedly causes problems with the datareader
+    $null = $SourceServer.ConnectionContext.SqlConnectionObject.Close()
+    $null = $DestServer.ConnectionContext.SqlConnectionObject.Close()
+
     # Server Roles: sysadmin, bulklogin, etc
     foreach ($role in $SourceServer.Roles) {
         $roleName = $role.Name
@@ -60,11 +65,13 @@ function Update-SqlPermission {
         if ($roleMembers -contains $userName) {
             if ($null -ne $destRole) {
                 if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
-                    try {
-                        $destRole.AddMember($userName)
-                        Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
-                    } catch {
-                        Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
+                    if ($userName -ne $saname) {
+                        try {
+                            $destRole.AddMember($userName)
+                            Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
+                        } catch {
+                            Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
+                        }
                     }
                 }
             }
@@ -104,6 +111,9 @@ function Update-SqlPermission {
             These operations are only supported by SQL Server 2005 and above.
             Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
         #>
+
+        $null = $sourceServer.ConnectionContext.SqlConnectionObject.Close()
+        $null = $destServer.ConnectionContext.SqlConnectionObject.Close()
 
         $perms = $SourceServer.EnumServerPermissions($userName)
         foreach ($perm in $perms) {
@@ -231,8 +241,8 @@ function Update-SqlPermission {
                 }
             }
 
-            $null = $sourceDb.Parent.ConnectionContext.Disconnect()
-            $null = $destDb.Parent.ConnectionContext.Disconnect()
+            $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
+            $null = $destDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             # Remove Connect, Alter Any Assembly, etc
             $destPerms = $destDb.EnumDatabasePermissions($userName)
             $perms = $sourceDb.EnumDatabasePermissions($userName)
@@ -264,8 +274,8 @@ function Update-SqlPermission {
     }
 
     # Adding database mappings and securables
-    $null = $SourceLogin.Parent.ConnectionContext.Disconnect()
-    #$null = $DestServer.ConnectionContext.Disconnect()
+    $null = $SourceLogin.Parent.ConnectionContext.SqlConnectionObject.Close()
+    $null = $DestServer.ConnectionContext.SqlConnectionObject.Close()
 
     foreach ($db in $SourceLogin.EnumDatabaseMappings()) {
         $dbName = $db.DbName
@@ -314,9 +324,10 @@ function Update-SqlPermission {
                 }
             }
 
-            $sourceDb.Parent.ConnectionContext.Disconnect()
             # Database Roles: db_owner, db_datareader, etc
             foreach ($role in $sourceDb.Roles) {
+                $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
+                $null = $destDb.Parent.ConnectionContext.SqlConnectionObject.Close()
                 if ($role.EnumMembers() -contains $userName) {
                     $roleName = $role.Name
                     $destDbRole = $destDb.Roles[$roleName]
@@ -336,6 +347,7 @@ function Update-SqlPermission {
             }
 
             # Connect, Alter Any Assembly, etc
+            $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             $perms = $sourceDb.EnumDatabasePermissions($userName)
             foreach ($perm in $perms) {
                 $permState = $perm.PermissionState

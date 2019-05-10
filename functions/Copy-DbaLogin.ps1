@@ -153,6 +153,9 @@ function Copy-DbaLogin {
     )
 
     begin {
+        if ($SyncOnly) {
+            Write-Message -Level Warning -Message "Please note that SyncOnly will be removed in dbatools 1.0. Please use Sync-DbaLoginPermission instead."
+        }
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
