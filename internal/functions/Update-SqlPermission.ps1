@@ -37,6 +37,7 @@ function Update-SqlPermission {
     $source = $SourceServer.DomainInstanceName
     $userName = $SourceLogin.Name
 
+    $SourceServer.ConnectionContext.Disconnect()
     # Server Roles: sysadmin, bulklogin, etc
     foreach ($role in $SourceServer.Roles) {
         $roleName = $role.Name
@@ -230,6 +231,8 @@ function Update-SqlPermission {
                 }
             }
 
+            $null = $sourceDb.Parent.ConnectionContext.Disconnect()
+            $null = $destDb.Parent.ConnectionContext.Disconnect()
             # Remove Connect, Alter Any Assembly, etc
             $destPerms = $destDb.EnumDatabasePermissions($userName)
             $perms = $sourceDb.EnumDatabasePermissions($userName)
@@ -261,6 +264,9 @@ function Update-SqlPermission {
     }
 
     # Adding database mappings and securables
+    $null = $SourceLogin.Parent.ConnectionContext.Disconnect()
+    #$null = $DestServer.ConnectionContext.Disconnect()
+
     foreach ($db in $SourceLogin.EnumDatabaseMappings()) {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
@@ -294,18 +300,21 @@ function Update-SqlPermission {
             if ($sourceDb.Owner -eq $userName) {
                 if ($Pscmdlet.ShouldProcess($destination, "Changing $dbName dbowner to $userName.")) {
                     try {
-                        $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
-                        if ($result -eq $true) {
-                            Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
-                        } else {
-                            Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                        if ($dbName -notin 'master', 'msdb', 'tempdb', 'model') {
+                            $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
+                            if ($result -eq $true) {
+                                Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
+                            } else {
+                                Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                            }
                         }
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                        Stop-Function -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)." -ErrorRecord $_
                     }
                 }
             }
 
+            $sourceDb.Parent.ConnectionContext.Disconnect()
             # Database Roles: db_owner, db_datareader, etc
             foreach ($role in $sourceDb.Roles) {
                 if ($role.EnumMembers() -contains $userName) {
