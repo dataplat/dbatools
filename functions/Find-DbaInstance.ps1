@@ -265,11 +265,13 @@ function Find-DbaInstance {
 
             process {
                 foreach ($computer in $Target) {
+                    $stepCounter = 0
                     if ($computersScanned.Contains($computer.ComputerName)) {
                         continue
                     } else {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
+                    Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Starting"
                     Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -FunctionName Find-DbaInstance
 
                     #region Null variables to prevent scope lookup on conditional existence
@@ -286,7 +288,10 @@ function Find-DbaInstance {
 
                     #region Gather data
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
-                        try { $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName) }
+                        try {
+                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Performing DNS resolution"
+                            $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName)
+                        }
                         catch {
                             # here to avoid an empty catch
                             $null = 1
@@ -295,7 +300,10 @@ function Find-DbaInstance {
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
                         $ping = New-Object System.Net.NetworkInformation.Ping
-                        try { $pingReply = $ping.Send($computer.ComputerName) }
+                        try {
+                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Waiting for ping response"
+                            $pingReply = $ping.Send($computer.ComputerName)
+                        }
                         catch {
                             # here to avoid an empty catch
                             $null = 1
@@ -306,7 +314,10 @@ function Find-DbaInstance {
                         $computerByName = $computer.ComputerName
                         if ($resolution.HostName) { $computerByName = $resolution.HostName }
                         if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
-                            try { $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN }
+                            try {
+                                Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SPNs"
+                                $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN
+                            }
                             catch {
                                 # here to avoid an empty catch
                                 $null = 1
@@ -315,10 +326,12 @@ function Find-DbaInstance {
                     }
 
                     # $ports required for all scans
+                    Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Testing TCP ports"
                     $ports = $TCPPort | Test-TcpPort -ComputerName $computer
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
+                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
                         } catch {
                             # here to avoid an empty catch
@@ -327,8 +340,13 @@ function Find-DbaInstance {
                     }
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
-                        if ($Credential) { $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
-                        else { $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
+                        Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SQL services using SQL WMI"
+                        if ($Credential) {
+                            $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue
+                        }
+                        else {
+                            $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue
+                        }
                     }
                     #endregion Gather data
 
