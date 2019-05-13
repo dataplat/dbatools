@@ -291,8 +291,7 @@ function Find-DbaInstance {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Performing DNS resolution"
                             $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName)
-                        }
-                        catch {
+                        } catch {
                             # here to avoid an empty catch
                             $null = 1
                         }
@@ -303,8 +302,7 @@ function Find-DbaInstance {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Waiting for ping response"
                             $pingReply = $ping.Send($computer.ComputerName)
-                        }
-                        catch {
+                        } catch {
                             # here to avoid an empty catch
                             $null = 1
                         }
@@ -317,8 +315,7 @@ function Find-DbaInstance {
                             try {
                                 Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SPNs"
                                 $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN
-                            }
-                            catch {
+                            } catch {
                                 # here to avoid an empty catch
                                 $null = 1
                             }
@@ -343,8 +340,7 @@ function Find-DbaInstance {
                         Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SQL services using SQL WMI"
                         if ($Credential) {
                             $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue
-                        }
-                        else {
+                        } else {
                             $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue
                         }
                     }
