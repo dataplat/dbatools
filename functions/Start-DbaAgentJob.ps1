@@ -169,9 +169,9 @@ function Start-DbaAgentJob {
                         $currentStep = $currentjob.CurrentRunStep
                         $jobStepsCount = $currentjob.JobSteps.Count
                         $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
-                            if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
+                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
                         $currentStepRetries = $currentjob.RetryAttempts
-                            if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
+                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
                         Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()

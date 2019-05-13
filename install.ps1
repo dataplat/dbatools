@@ -168,7 +168,7 @@ Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
 Remove-Item "$temp\dbatools-old" -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
-Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
+Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues"
 if (Get-Module dbatools) {
     Write-LocalMessage -Message @"
 
