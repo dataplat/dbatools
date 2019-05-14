@@ -80,16 +80,16 @@ function Get-DecryptedObject {
     }
 
     <#
-                Query link server password information from the Db.
-                Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
-                Ignore links with blank credentials (integrated auth ?)
-            #>
+        Query link server password information from the Db.
+        Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
+        Ignore links with blank credentials (integrated auth ?)
+    #>
 
     Write-Message -Level Verbose -Message "Query link server password information from the Db."
 
     try {
         if (-not $server.IsClustered) {
-            $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
+            $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True;Pooling=false"
         } else {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
@@ -101,7 +101,7 @@ function Get-DecryptedObject {
                 }
             }
 
-            $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
+            $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True;Pooling=false;"
         }
     } catch {
         Stop-Function -Message "Failure enabling DAC on $sourcename" -Target $source -ErrorRecord $_
@@ -127,11 +127,11 @@ function Get-DecryptedObject {
     }
 
     Write-Message -Level Debug -Message $sql
-    Write-Message -Level Verbose -Message "Get entropy from the registry"
 
     try {
         $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
-            $connString = $args[0]; $sql = $args[1]
+            $connString = $args[0]
+            $sql = $args[1]
             $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
             $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
             $dt = New-Object System.Data.DataTable
@@ -151,6 +151,7 @@ function Get-DecryptedObject {
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
+
 
     if ($server.IsClustered -and $dacEnabled -eq $false) {
         If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance.")) {
