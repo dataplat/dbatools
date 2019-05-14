@@ -1,6 +1,5 @@
-﻿#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
-function Remove-DbaDbRoleMember
-{
+#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
+function Remove-DbaDbRoleMember {
     <#
     .SYNOPSIS
         Removes a Database User from a database role for each instance(s) of SQL Server.
@@ -18,11 +17,11 @@ function Remove-DbaDbRoleMember
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Role
-        The role(s) to process. 
+        The role(s) to process.
 
 	.PARAMETER User
 		The user(s) to remove from the role(s) specified.
-	
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -77,58 +76,51 @@ function Remove-DbaDbRoleMember
 		[switch]$EnableException
 	)
 	
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
-			try
-			{
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch
-			{
+			} catch {
 				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			foreach ($item in $Database)
-			{
+			foreach ($item in $Database) {
 				Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-				if ($server.Databases[$item].IsAccessible -eq $false)
-				{
+				if ($server.Databases[$item].IsAccessible -eq $false) {
 					Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 			
-			$databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
-			
-			if (Test-Bound -Parameter 'Database')
-			{
-				$databases = $databases | Where-Object { $_.Name -in $Database }
+			$databases = $server.Databases | Where-Object {
+				$_.IsAccessible -eq $true
 			}
 			
-			foreach ($db in $databases)
-			{
+			if (Test-Bound -Parameter 'Database') {
+				$databases = $databases | Where-Object {
+					$_.Name -in $Database
+				}
+			}
+			
+			foreach ($db in $databases) {
 				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
 				
 				$dbRoles = $db.Roles
 				
-				if (Test-Bound -Parameter 'Role')
-				{
-					$dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
+				if (Test-Bound -Parameter 'Role') {
+					$dbRoles = $dbRoles | Where-Object {
+						$_.Name -in $Role
+					}
 				}
 				
-				foreach ($dbRole in $dbRoles)
-				{
+				foreach ($dbRole in $dbRoles) {
 					Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
 					
 					$members = $dbRole.EnumMembers()
 					
-					foreach ($username in $User)
-					{
-						if ($members -contains $username)
-						{
+					foreach ($username in $User) {
+						if ($members -contains $username) {
 							Write-Message -Level 'Verbose' -Message "Removing User $username from $dbRole in $db on $instance"
 							$dbRole.DropMember($username)
 						}
@@ -137,8 +129,7 @@ function Remove-DbaDbRoleMember
 			} # end foreach($db)
 		} # end foreach($server)
 	}
-	end
-	{
+	end {
 		
 	}
 }

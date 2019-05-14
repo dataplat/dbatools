@@ -60,75 +60,81 @@ function Add-DbaDbRoleMember {
         Adds user1 in the database DEMODB on the server localhost to the roles db_datareader and db_datawriter
 
     #>
-    [CmdletBinding()]
-    param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]$SqlCredential,
-        [string[]]$Database,
-        [parameter(Mandatory)]
-        [string[]]$Role,
-        [parameter(Mandatory)]
-        [string[]]$User,
-        [Alias('Silent')]
-        [switch]$EnableException
-    )
-
-    process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($item in $Database) {
-                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                if ($server.Databases[$item].IsAccessible -eq $false) {
-                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
-                }
-            }
-
-            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
-
-        if (Test-Bound -Parameter 'Database') {
-            $databases = $databases | Where-Object { $_.Name -in $Database }
-    }
-
-    foreach ($db in $databases) {
-        Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-        $dbRoles = $db.Roles
-
-        # Role is Mandatory so this will always be the case
-        if (Test-Bound -Parameter 'Role') {
-            $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-    }
-
-    foreach ($dbRole in $dbRoles) {
-        Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
-
-        $members = $dbRole.EnumMembers()
-
-        foreach ($username in $User) {
-            if ($db.Users.Name -contains $username) {
-                if ($members.Name -notcontains $username) {
-                    Write-Message -Level 'Verbose' -Message "Adding User $username to $dbRole in $db on $instance"
-                    $dbRole.AddMember($username)
-                }
-            } else {
-                Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
-            }
-        }
-    } # end foreach($dbRole)
-} # end foreach($db)
-} # end foreach($server)
-}
-end {
-
-}
+	[CmdletBinding()]
+	param (
+		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstance[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[string[]]$Database,
+		[parameter(Mandatory)]
+		[string[]]$Role,
+		[parameter(Mandatory)]
+		[string[]]$User,
+		[Alias('Silent')]
+		[switch]$EnableException
+	)
+	
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+			
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			} catch {
+				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			foreach ($item in $Database) {
+				Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
+				if ($server.Databases[$item].IsAccessible -eq $false) {
+					Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+				}
+			}
+			
+			$databases = $server.Databases | Where-Object {
+				$_.IsAccessible -eq $true
+			}
+			
+			if (Test-Bound -Parameter 'Database') {
+				$databases = $databases | Where-Object {
+					$_.Name -in $Database
+				}
+			}
+			
+			foreach ($db in $databases) {
+				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+				
+				$dbRoles = $db.Roles
+				
+				# Role is Mandatory so this will always be the case
+				if (Test-Bound -Parameter 'Role') {
+					$dbRoles = $dbRoles | Where-Object {
+						$_.Name -in $Role
+					}
+				}
+				
+				foreach ($dbRole in $dbRoles) {
+					Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
+					
+					$members = $dbRole.EnumMembers()
+					
+					foreach ($username in $User) {
+						if ($db.Users.Name -contains $username) {
+							if ($members.Name -notcontains $username) {
+								Write-Message -Level 'Verbose' -Message "Adding User $username to $dbRole in $db on $instance"
+								$dbRole.AddMember($username)
+							}
+						} else {
+							Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
+						}
+					}
+				} # end foreach($dbRole)
+			} # end foreach($db)
+		} # end foreach($server)
+	}
+	end {
+		
+	}
 }

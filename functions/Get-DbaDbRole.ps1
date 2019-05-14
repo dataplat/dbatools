@@ -76,80 +76,92 @@ function Get-DbaDbRole {
         Returns the db_owner role in the msdb database on localhost.
 
     #>
-    [CmdletBinding()]
-    param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]$SqlCredential,
-        [string[]]$Database,
-        [string[]]$ExcludeDatabase,
-        [string[]]$Role,
-        [string[]]$ExcludeRole,
-        [switch]$ExcludeFixedRole,
-        [Alias('Silent')]
-        [switch]$EnableException
-    )
-
-    process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($item in $Database) {
-                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                if ($server.Databases[$item].IsAccessible -eq $false) {
-                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
-                }
-            }
-
-            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
-
-        if (Test-Bound -Parameter 'Database') {
-            $databases = $databases | Where-Object { $_.Name -in $Database }
-    }
-
-    if (Test-Bound -Parameter 'ExcludeDatabase') {
-        $databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase }
-}
-
-foreach ($db in $databases) {
-    Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-    $dbRoles = $db.Roles
-
-    if (Test-Bound -Parameter 'Role') {
-        $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-}
-
-if (Test-Bound -Parameter 'ExcludeRole') {
-    $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
-}
-
-if (Test-Bound -Parameter 'ExcludeFixedRole') {
-    $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
-}
-
-foreach ($dbRole in $dbRoles) {
-    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
-
-    # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-    # Select-Object -InputObject $dbRole -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Name', 'IsSystemObject'
-    Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
-}
-}
-}
-}
-end {
-
-}
+	[CmdletBinding()]
+	param (
+		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstance[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[string[]]$Database,
+		[string[]]$ExcludeDatabase,
+		[string[]]$Role,
+		[string[]]$ExcludeRole,
+		[switch]$ExcludeFixedRole,
+		[Alias('Silent')]
+		[switch]$EnableException
+	)
+	
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+			
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			} catch {
+				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			foreach ($item in $Database) {
+				Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
+				if ($server.Databases[$item].IsAccessible -eq $false) {
+					Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+				}
+			}
+			
+			$databases = $server.Databases | Where-Object {
+				$_.IsAccessible -eq $true
+			}
+			
+			if (Test-Bound -Parameter 'Database') {
+				$databases = $databases | Where-Object {
+					$_.Name -in $Database
+				}
+			}
+			
+			if (Test-Bound -Parameter 'ExcludeDatabase') {
+				$databases = $databases | Where-Object {
+					$_.Name -notin $ExcludeDatabase
+				}
+			}
+			
+			foreach ($db in $databases) {
+				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+				
+				$dbRoles = $db.Roles
+				
+				if (Test-Bound -Parameter 'Role') {
+					$dbRoles = $dbRoles | Where-Object {
+						$_.Name -in $Role
+					}
+				}
+				
+				if (Test-Bound -Parameter 'ExcludeRole') {
+					$dbRoles = $dbRoles | Where-Object {
+						$_.Name -notin $ExcludeRole
+					}
+				}
+				
+				if (Test-Bound -Parameter 'ExcludeFixedRole') {
+					$dbRoles = $dbRoles | Where-Object {
+						$_.IsFixedRole -eq $false
+					}
+				}
+				
+				foreach ($dbRole in $dbRoles) {
+					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
+					
+					# Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
+					# Select-Object -InputObject $dbRole -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Name', 'IsSystemObject'
+					Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
+				}
+			}
+		}
+	}
+	end {
+		
+	}
 }
