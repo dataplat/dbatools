@@ -111,46 +111,45 @@ function Get-DbaDbRole {
 
             $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
 
-            if (Test-Bound -Parameter 'Database') {
-                $databases = $databases | Where-Object { $_.Name -in $Database }
-            }
-
-            if (Test-Bound -Parameter 'ExcludeDatabase') {
-                $databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase}
-            }
-
-            foreach ($db in $databases) {
-                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-                $dbRoles = $db.Roles
-
-                if (Test-Bound -Parameter 'Role') {
-                    $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-                }
-
-                if (Test-Bound -Parameter 'ExcludeRole') {
-                    $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
-                }
-
-                if (Test-Bound -Parameter 'ExcludeFixedRole') {
-                    $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
-                }
-				
-				foreach ($dbRole in $dbRoles)
-				{
-					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-					Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
-					
-					# Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                    # Select-Object -InputObject $dbRole -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Name', 'IsSystemObject'
-                    Select-DefaultView -InputObject $dbRole -Property "ComputerName","InstanceName","Database", "Name", "IsFixedRole"
-				}
-            }
-        }
+        if (Test-Bound -Parameter 'Database') {
+            $databases = $databases | Where-Object { $_.Name -in $Database }
     }
-    end {
 
-	}
+    if (Test-Bound -Parameter 'ExcludeDatabase') {
+        $databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase }
+}
+
+foreach ($db in $databases) {
+    Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+
+    $dbRoles = $db.Roles
+
+    if (Test-Bound -Parameter 'Role') {
+        $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
+}
+
+if (Test-Bound -Parameter 'ExcludeRole') {
+    $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
+}
+
+if (Test-Bound -Parameter 'ExcludeFixedRole') {
+    $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
+}
+
+foreach ($dbRole in $dbRoles) {
+    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+    Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
+
+    # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
+    # Select-Object -InputObject $dbRole -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Name', 'IsSystemObject'
+    Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
+}
+}
+}
+}
+end {
+
+}
 }

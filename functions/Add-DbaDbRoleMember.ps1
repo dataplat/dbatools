@@ -17,11 +17,11 @@ function Add-DbaDbRoleMember {
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Role
-        The role(s) to process. 
+        The role(s) to process.
 
 	.PARAMETER User
 		The user(s) to add to role(s) specified.
-	
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,11 +67,11 @@ function Add-DbaDbRoleMember {
         [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[parameter(Mandatory)]
-		[string[]]$Role,
-		[parameter(Mandatory)]
-		[string[]]$User,
+        [string[]]$Database,
+        [parameter(Mandatory)]
+        [string[]]$Role,
+        [parameter(Mandatory)]
+        [string[]]$User,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -95,45 +95,40 @@ function Add-DbaDbRoleMember {
 
             $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
 
-            if (Test-Bound -Parameter 'Database') {
-                $databases = $databases | Where-Object { $_.Name -in $Database }
-            }
-
-            foreach ($db in $databases) {
-                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-                $dbRoles = $db.Roles
-				
-				# Role is Mandatory so this will always be the case
-                if (Test-Bound -Parameter 'Role') {
-                    $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-                }
-
-                foreach ($dbRole in $dbRoles) {
-                    Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
-					
-					$members = $dbRole.EnumMembers()
-					
-					foreach ($username in $User)
-					{
-						if ($db.Users.Name -contains $username)
-						{
-							if ($members.Name -notcontains $username)
-							{
-								Write-Message -Level 'Verbose' -Message "Adding User $username to $dbRole in $db on $instance"
-								$dbRole.AddMember($username)
-							}
-						}
-						else
-						{
-							Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
-						}
-					}
-				} # end foreach($dbRole)
-            } # end foreach($db)
-        } # end foreach($server)
+        if (Test-Bound -Parameter 'Database') {
+            $databases = $databases | Where-Object { $_.Name -in $Database }
     }
-    end {
-		
-	}
+
+    foreach ($db in $databases) {
+        Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+
+        $dbRoles = $db.Roles
+
+        # Role is Mandatory so this will always be the case
+        if (Test-Bound -Parameter 'Role') {
+            $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
+    }
+
+    foreach ($dbRole in $dbRoles) {
+        Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
+
+        $members = $dbRole.EnumMembers()
+
+        foreach ($username in $User) {
+            if ($db.Users.Name -contains $username) {
+                if ($members.Name -notcontains $username) {
+                    Write-Message -Level 'Verbose' -Message "Adding User $username to $dbRole in $db on $instance"
+                    $dbRole.AddMember($username)
+                }
+            } else {
+                Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
+            }
+        }
+    } # end foreach($dbRole)
+} # end foreach($db)
+} # end foreach($server)
+}
+end {
+
+}
 }
