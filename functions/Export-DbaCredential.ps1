@@ -80,7 +80,7 @@ function Export-DbaCredential {
             foreach ($instance in $SqlInstance) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-                    
+
                     $serverCreds = $server.Credentials
                     if (Test-Bound -ParameterName Identity) {
                         $serverCreds = $serverCreds | Where-Object Identity -in $Identity
@@ -91,7 +91,7 @@ function Export-DbaCredential {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
-        } 
+        }
 
         foreach ($input in $InputObject) {
             $server = $input.Parent
@@ -105,9 +105,9 @@ function Export-DbaCredential {
 
                         foreach ($cred in $server.Credentials) {
                             $credObject = [PSCustomObject]@{
-                                Name        = '[' + $cred.name + ']'
-                                Identity    = $cred.Id.ToString()
-                                Password    = ''
+                                Name     = '[' + $cred.name + ']'
+                                Identity = $cred.Id.ToString()
+                                Password = ''
                             }
                             $creds.Add($credObject) | Out-Null
                         }
@@ -118,10 +118,10 @@ function Export-DbaCredential {
                         if (!(Test-SqlSa -SqlInstance $server)) {
                             Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
                         }
-        
+
                         Write-Message -Level Verbose -Message "Getting NetBios name for $instance."
                         $sourceNetBios = Resolve-NetBiosName $server
-        
+
                         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
                         try {
                             Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
@@ -129,7 +129,7 @@ function Export-DbaCredential {
                             Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                             return
                         }
-                        
+
                         $creds = Get-DecryptedObject -SqlInstance $server -Type Credential
                         Write-Message -Level Verbose -Message "Adding Members"
                         $creds | Add-Member -MemberType NoteProperty -Name 'SqlInstance' -Value $instance
@@ -142,10 +142,10 @@ function Export-DbaCredential {
 
                 $serverArray += $instance
 
-                $key = $input.Parent.Name + '::[' + $input.Name + ']' 
+                $key = $input.Parent.Name + '::[' + $input.Name + ']'
                 $credentialArray.add( $key, $true )
             } else {
-                $key = $input.Parent.Name + '::[' + $input.Name + ']' 
+                $key = $input.Parent.Name + '::[' + $input.Name + ']'
                 $credentialArray.add( $key, $true )
             }
         }
@@ -165,11 +165,11 @@ function Export-DbaCredential {
 
             foreach ($currentCred in $creds) {
                 $key = $currentCred.SqlInstance + '::' + $currentCred.Name
-                if( $credentialArray.ContainsKey($key) ){
+                if ( $credentialArray.ContainsKey($key) ) {
                     $name = $currentCred.Name.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     if ($currentCred.ExcludePassword) {
-                        $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'" 
+                        $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'"
                     } else {
                         $password = $currentCred.Password.Replace("'", "''")
                         $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'$password'"
