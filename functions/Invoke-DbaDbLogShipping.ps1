@@ -1357,7 +1357,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
-                    $DatabaseCopyJob = "$($CopyJob)$($db.Name))"
+                    $DatabaseCopyJob = "$($CopyJob)$($db.Name)"
                 } else {
                     $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
