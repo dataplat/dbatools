@@ -82,7 +82,6 @@ function Set-DbaMaxDop {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,

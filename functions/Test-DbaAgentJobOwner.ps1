@@ -64,7 +64,6 @@ function Test-DbaAgentJobOwner {
     [OutputType('System.Object[]')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]

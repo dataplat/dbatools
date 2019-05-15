@@ -76,7 +76,6 @@ function Remove-DbaDbUser {
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess)]
     param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
 
         [parameter(ParameterSetName = 'User')]

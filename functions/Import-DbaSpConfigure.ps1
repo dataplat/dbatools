@@ -93,7 +93,6 @@ function Import-DbaSpConfigure {
         [Parameter(ParameterSetName = "ServerCopy")]
         [PSCredential]$DestinationSqlCredential,
         [Parameter(ParameterSetName = "FromFile")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Parameter(ParameterSetName = "FromFile")]
         [string]$Path,

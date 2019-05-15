@@ -87,7 +87,6 @@ function Read-DbaBackupHeader {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]

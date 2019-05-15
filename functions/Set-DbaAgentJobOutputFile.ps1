@@ -55,7 +55,6 @@ function Set-DbaAgentJobOutputFile {
             Position = 0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipeline,

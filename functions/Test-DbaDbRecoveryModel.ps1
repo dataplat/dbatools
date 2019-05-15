@@ -69,7 +69,6 @@ function Test-DbaDbRecoveryModel {
     [OutputType("System.Collections.ArrayList")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Databases")]
         [object[]]$Database,

@@ -81,7 +81,6 @@ function Get-DbaDbTable {
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,

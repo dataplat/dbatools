@@ -93,7 +93,6 @@ function Invoke-DbaDbLogShipRecovery {
     [CmdletBinding(SupportsShouldProcess)]
     param
     (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$Database,
         [PSCredential]$SqlCredential,

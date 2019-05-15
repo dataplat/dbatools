@@ -94,7 +94,6 @@ function Invoke-DbaDbUpgrade {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [object[]]$Database,

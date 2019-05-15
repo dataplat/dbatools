@@ -64,7 +64,6 @@ function Test-DbaNetworkLatency {
     [OutputType([System.Object[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",

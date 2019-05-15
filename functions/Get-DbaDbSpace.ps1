@@ -70,7 +70,6 @@ function Get-DbaDbSpace {
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
