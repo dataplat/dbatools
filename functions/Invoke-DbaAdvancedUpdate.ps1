@@ -56,8 +56,9 @@ Function Invoke-DbaAdvancedUpdate {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
         [pscredential]$Credential,
-        [switch]$EnableException,
-        [string]$ExtractPath
+        [string]$ExtractPath,
+        [switch]$EnableException
+
     )
     $computer = $ComputerName
     $activity = "Updating SQL Server components on $computer"

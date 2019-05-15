@@ -175,8 +175,9 @@ function Update-DbaInstance {
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
-        [switch]$EnableException,
-        [string]$ExtractPath
+        [string]$ExtractPath,
+        [switch]$EnableException
+
     )
     begin {
         $notifiedCredentials = $false
