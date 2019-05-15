@@ -91,12 +91,8 @@ function Export-DbaRepServerSetting {
 
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
-            #TODO: Fix this as we're always going to have Path bound now
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-Path -Path $Path -ChildPath "$($server.replace('\', '$'))-$timenow-replication.sql"
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `

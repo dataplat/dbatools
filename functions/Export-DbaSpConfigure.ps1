@@ -79,12 +79,8 @@ function Export-DbaSpConfigure {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-#TODO: Fix this as $Path will always be bound now
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $filepath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
 
             if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")

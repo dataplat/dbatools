@@ -102,13 +102,9 @@ function Export-DbaLinkedServer {
                 Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                 return
             }
-            #TODO: Fix this as we're always going to have Path bound now
 
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
 
             $sql = @()
 

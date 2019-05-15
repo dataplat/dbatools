@@ -134,11 +134,8 @@ function Export-DbaInstance {
         [switch]$EnableException
     )
     begin {
-            #TODO: Fix this as we're always going to have Path bound now
-        if ((Test-Bound -ParameterName Path)) {
-            if (-not ((Get-Item $Path -ErrorAction Ignore) -is [System.IO.DirectoryInfo])) {
-                Stop-Function -Message "Path must be a directory"
-            }
+        if (-not ((Get-Item $Path -ErrorAction Ignore) -is [System.IO.DirectoryInfo])) {
+            Stop-Function -Message "Path must be a directory"
         }
 
         if (-not $ScriptingOption) {
@@ -161,12 +158,8 @@ function Export-DbaInstance {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-# TODO: Fix this asn $Path will always be bound
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow"
 
             if (-not (Test-Path $Path)) {
                 try {

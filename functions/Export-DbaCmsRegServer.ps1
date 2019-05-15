@@ -95,20 +95,11 @@ function Export-DbaCmsRegServer {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
                     $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
-# TODO: Need to handle $Path always being bound
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance.Replace('\', '$')
-                        $regservername = $object.Name.Replace('\', '$')
-                        $Path = "$serverName-regserver-$regservername-$timeNow.xml"
-                    }
+                    $Path = Join-Path -Path $Path -ChildPath "$serverName-regserver-$regservername-$timeNow.xml"
                     $object.Export($Path, $CredentialPersistenceType)
                 } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance.Replace('\', '$')
-                        $regservergroup = $object.Name.Replace('\', '$')
-                        $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
-                    }
+                    $Path = Join-Path -Path $Path -ChildPath "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     $object.Export($Path, $CredentialPersistenceType)
                 } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
