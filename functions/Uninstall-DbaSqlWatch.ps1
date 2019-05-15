@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 Function Uninstall-DbaSqlWatch {
     <#
     .SYNOPSIS

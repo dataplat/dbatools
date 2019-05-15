@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
     <#
     .SYNOPSIS

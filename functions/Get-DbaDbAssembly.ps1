@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaDbAssembly {
     <#
     .SYNOPSIS
