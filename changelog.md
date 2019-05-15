@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.817] - 2019-04-30
+### Changed
+* `Test-DbaLasBackup` explains why the `master` database is skipped
+### Added
+* `New-DbaAccessToken` for generating Azure oauth2 tokens
+* `Invoke-DbaDbPiiScan` to scan for Personally Identifiable Information
+
 ## [0.9.814] - 2019-04-29
 ### Fixed
 * `Copy-DbaAgentSchedule` does not overwrite schedules that already exist, even with `-Force` supplied [#5412](https://github.com/sqlcollaborative/dbatools/issues/5412)
