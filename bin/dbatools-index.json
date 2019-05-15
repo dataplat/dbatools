@@ -6358,8 +6358,8 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
+                           false,
+                           "false",
                            ""
                        ],
                        [
@@ -6415,7 +6415,7 @@
                            "Allow credentials to be piped in from Get-DbaCredential",
                            "",
                            false,
-                           "false",
+                           "true (ByValue)",
                            ""
                        ],
                        [
@@ -6427,7 +6427,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Identity] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \u003cCredential[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaCredential [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Identity] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \u003cCredential[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaDacPackage",
