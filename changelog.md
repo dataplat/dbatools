@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.812] - 2019-04-27
+### Fixed
+* Various migration fixes [#5414](https://github.com/sqlcollaborative/dbatools/pull/5414)
+* `Set-DbaNetworkCertificate` not granting permissions to private key [#5417](https://github.com/sqlcollaborative/dbatools/pull/5417)
+
 ## [0.9.811] - 2019-04-25
 ### Changed
 * Enhancements to data masking [#5388](https://github.com/sqlcollaborative/dbatools/pull/5388)
