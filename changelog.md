@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.818] - 2019-04-30
+### Fixed
+* `Get-DBAAvailabilityGroup` `IsPrimary` returns false when a port number is passed in under `$SQLInstance` [#5435](https://github.com/sqlcollaborative/dbatools/issues/5435)
+
+## [0.9.817] - 2019-04-30
+### Changed
+* `Test-DbaLasBackup` explains why the `master` database is skipped
+### Added
+* `New-DbaAccessToken` for generating Azure oauth2 tokens
+* `Invoke-DbaDbPiiScan` to scan for Personally Identifiable Information
+
+## [0.9.814] - 2019-04-29
+### Fixed
+* `Copy-DbaAgentSchedule` does not overwrite schedules that already exist, even with `-Force` supplied [#5412](https://github.com/sqlcollaborative/dbatools/issues/5412)
+* `Get-DBABuildReference` missing 13.0.5270 [#5408](https://github.com/sqlcollaborative/dbatools/issues/5408)
+### Added
+* Azure AccessToken support
+
+## [0.9.812] - 2019-04-27
+### Fixed
+* Various migration fixes [#5414](https://github.com/sqlcollaborative/dbatools/pull/5414)
+* `Set-DbaNetworkCertificate` not granting permissions to private key [#5417](https://github.com/sqlcollaborative/dbatools/pull/5417)
+
+## [0.9.811] - 2019-04-25
+### Changed
+* Enhancements to data masking [#5388](https://github.com/sqlcollaborative/dbatools/pull/5388)
+### Added
+* Add multi-IP and subnet support to `Add-DbaAgListener` [#5411](https://github.com/sqlcollaborative/dbatools/pull/5411)
+* Functions to get, enable and disable startup procedures [#5407](https://github.com/sqlcollaborative/dbatools/pull/5407)
+
+## [0.9.810] - 2019-04-25
+### Fixed
+* `Test-DbaDbCompression` fails on case-sensitive collations [#5404](https://github.com/sqlcollaborative/dbatools/issues/5404)
+### Added
+* Latest SQL Server build references
+* `Backup-DbaServiceMasterKey` function to back up the service master key for instances [#5397](https://github.com/sqlcollaborative/dbatools/issues/5397)
+
+## [0.9.809] - 2019-04-20
+### Fixed
+* `Test-DbaConnection` returns warnings and more useful objects when unable to resolve/connect to host
+
+## [0.9.808] - 2019-04-18
+### Fixed
+* `Get-DbaDbMasterKey` does not use `$SQLCredential` if passed [#5381](https://github.com/sqlcollaborative/dbatools/issues/5381)
+
+## [0.9.805] - 2019-04-17
+### Fixed
+* `Restore-DBADatabase` with multiple DBs found picks one at random [#5364](https://github.com/sqlcollaborative/dbatools/issues/5364)
+* Assignment of subschedule interval when a daily job schedule is set via `Set-DbaAgentSchedule` [#5288](https://github.com/sqlcollaborative/dbatools/issues/5288)
+* `Set-DbaAgentJobStep` throws db not present error when updating `CmdExec` steps [#5354](https://github.com/sqlcollaborative/dbatools/issues/5354)
+
+### Added
+* Support for striping backups with multiple block blobs on Azure in `Backup-DbaDatabase`
+* Basic support for migrations with Azure Managed Instances
+
+## [0.9.804] - 2019-04-14
+### Fixed
+* `Copy-DBAAgentAlert` incorrectly asserting that Agent Operators do not exist [#5300](https://github.com/sqlcollaborative/dbatools/issues/5300)
+* `Test-DbaLastBackup` fails if backup was mirrored based on Get-DbaBackupHistory output [#5360](https://github.com/sqlcollaborative/dbatools/issues/5360)
+* Issue handling restores of striped backups from non file/history sources in `Select-DbaBackupInformation` [#5357](https://github.com/sqlcollaborative/dbatools/issues/5357)
+### Added
+* Add check and warning when copying a Windows login to Azure Managed Instance via `Copy-DbaLogin`
+
+## [0.9.803] - 2019-04-10
+### Fixed
+* Correct support for AWS in `Get-DbaComputerSystem` [#5336](https://github.com/sqlcollaborative/dbatools/issues/5336)
+* Remove empty notes from output of `Set-DbaDbState` [#5345](https://github.com/sqlcollaborative/dbatools/pull/5345)
+* Backup to URL with Folder Fails with Error [#5347](https://github.com/sqlcollaborative/dbatools/issues/5347)
+* `Invoke-DbaLogShipping` error thrown when specifying a folder containing the full backup [#5348](https://github.com/sqlcollaborative/dbatools/pull/5348)
+
+## [0.9.802] - 2019-04-06
+### Fixed
+* `Find-DbaStoredProcedure` does not report TextHeader content [#3687](https://github.com/sqlcollaborative/dbatools/issues/3687)
+### Changed
+* Parameter for setting default database to specified db by parameter for all logins in `Export-DbaLogin`
+
 ## [0.9.801] - 2019-04-04
 ### Fixed
 * Properly use `append` in `Export-DbaRepServerSetting` [#5333](https://github.com/sqlcollaborative/dbatools/pull/5333)
