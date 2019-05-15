@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.811] - 2019-04-25
+### Changed
+* Enhancements to data masking [#5388](https://github.com/sqlcollaborative/dbatools/pull/5388)
+### Added
+* Add multi-IP and subnet support to `Add-DbaAgListener` [#5411](https://github.com/sqlcollaborative/dbatools/pull/5411)
+* Functions to get, enable and disable startup procedures [#5407](https://github.com/sqlcollaborative/dbatools/pull/5407)
+
 ## [0.9.810] - 2019-04-25
 ### Fixed
 * `Test-DbaDbCompression` fails on case-sensitive collations [#5404](https://github.com/sqlcollaborative/dbatools/issues/5404)
