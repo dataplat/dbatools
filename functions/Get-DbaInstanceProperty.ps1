@@ -74,7 +74,6 @@ function Get-DbaInstanceProperty {
         [PSCredential]$SqlCredential,
         [object[]]$InstanceProperty,
         [object[]]$ExcludeInstanceProperty,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

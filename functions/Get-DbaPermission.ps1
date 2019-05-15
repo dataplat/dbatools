@@ -80,7 +80,6 @@ function Get-DbaPermission {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
         [switch]$ExcludeSystemObjects,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

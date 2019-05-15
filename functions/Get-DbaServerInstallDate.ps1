@@ -72,7 +72,6 @@ function Get-DbaServerInstallDate {
         [PSCredential]
         $Credential,
         [Switch]$IncludeWindows,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

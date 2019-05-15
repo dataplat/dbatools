@@ -75,7 +75,6 @@ function Get-DbaSchemaChangeHistory {
         [object[]]$ExcludeDatabase,
         [DbaDateTime]$Since,
         [string[]]$Object,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

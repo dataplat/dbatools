@@ -79,7 +79,6 @@ function Find-DbaStoredProcedure {
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

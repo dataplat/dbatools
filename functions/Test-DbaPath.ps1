@@ -52,7 +52,6 @@ function Test-DbaPath {
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [object]$Path,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

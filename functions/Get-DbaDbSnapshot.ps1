@@ -68,7 +68,6 @@ function Get-DbaDbSnapshot {
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [object[]]$ExcludeSnapshot,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -56,7 +56,6 @@ function Remove-DbaClientAlias {
         [parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [Alias('AliasName')]
         [string[]]$Alias,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

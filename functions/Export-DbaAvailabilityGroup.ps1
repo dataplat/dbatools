@@ -78,7 +78,6 @@ function Export-DbaAvailabilityGroup {
         [Alias("OutputLocation", "FilePath")]
         [string]$Path = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",
         [switch]$NoClobber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -167,7 +167,6 @@ function Get-DbaDatabase {
         [datetime]$NoFullBackupSince,
         [switch]$NoLogBackup,
         [datetime]$NoLogBackupSince,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$IncludeLastUsed,
         [switch]$OnlyAccessible

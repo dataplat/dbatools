@@ -69,7 +69,6 @@ function Test-DbaDbCompatibility {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

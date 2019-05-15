@@ -90,7 +90,6 @@ function Find-DbaCommand {
         [String]$MinimumVersion,
         [String]$MaximumVersion,
         [switch]$Rebuild,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

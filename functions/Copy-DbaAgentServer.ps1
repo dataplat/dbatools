@@ -80,7 +80,6 @@ function Copy-DbaAgentServer {
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

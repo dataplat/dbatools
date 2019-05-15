@@ -88,7 +88,6 @@ function Get-DbaServerRoleMember {
         [string[]]$ExcludeServerRole,
         [object[]]$Login,
         [switch]$ExcludeFixedRole,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

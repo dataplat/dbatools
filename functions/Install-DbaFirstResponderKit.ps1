@@ -95,7 +95,6 @@ function Install-DbaFirstResponderKit {
         [object]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

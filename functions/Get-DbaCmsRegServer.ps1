@@ -95,7 +95,6 @@ function Get-DbaCmsRegServer {
         [switch]$IncludeSelf,
         [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

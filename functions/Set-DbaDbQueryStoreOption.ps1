@@ -111,7 +111,6 @@ function Set-DbaDbQueryStoreOption {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

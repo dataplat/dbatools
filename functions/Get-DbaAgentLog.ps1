@@ -58,7 +58,6 @@ function Get-DbaAgentLog {
         $SqlCredential,
         [ValidateRange(0, 9)]
         [int[]]$LogNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

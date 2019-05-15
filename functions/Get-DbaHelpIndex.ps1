@@ -134,7 +134,6 @@ function Get-DbaHelpIndex {
         [switch]$IncludeDataTypes,
         [switch]$Raw,
         [switch]$IncludeFragmentation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

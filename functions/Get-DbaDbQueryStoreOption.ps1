@@ -64,7 +64,6 @@ function Get-DbaDbQueryStoreOption {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

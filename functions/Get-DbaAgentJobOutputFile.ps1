@@ -97,7 +97,6 @@ function Get-DbaAgentJobOutputFile {
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

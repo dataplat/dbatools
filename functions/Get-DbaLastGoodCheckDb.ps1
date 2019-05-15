@@ -82,7 +82,6 @@ function Get-DbaLastGoodCheckDb {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

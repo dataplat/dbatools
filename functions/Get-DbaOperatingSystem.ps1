@@ -55,7 +55,6 @@ function Get-DbaOperatingSystem {
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

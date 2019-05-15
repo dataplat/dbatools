@@ -132,7 +132,6 @@ function Find-DbaAgentJob {
         [string[]]$Category,
         [string]$Owner,
         [datetime]$Since,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

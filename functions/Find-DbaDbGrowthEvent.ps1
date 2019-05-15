@@ -100,7 +100,6 @@ function Find-DbaDbGrowthEvent {
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
         [switch]$UseLocalTime,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

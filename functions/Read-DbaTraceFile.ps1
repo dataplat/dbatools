@@ -173,7 +173,6 @@ function Read-DbaTraceFile {
         [string[]]$ApplicationName,
         [string[]]$ObjectName,
         [string]$Where,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

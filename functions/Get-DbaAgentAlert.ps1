@@ -46,7 +46,6 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

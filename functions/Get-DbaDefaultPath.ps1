@@ -48,7 +48,6 @@ function Get-DbaDefaultPath {
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

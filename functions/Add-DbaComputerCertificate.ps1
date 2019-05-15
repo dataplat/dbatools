@@ -69,7 +69,6 @@ function Add-DbaComputerCertificate {
         [string]$Path,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

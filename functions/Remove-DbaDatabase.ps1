@@ -82,7 +82,6 @@ function Remove-DbaDatabase {
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$IncludeSystemDb,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -77,7 +77,6 @@ function Get-DbaUserPermission {
         [switch]$ExcludeSystemDatabase,
         [switch]$IncludePublicGuest,
         [switch]$IncludeSystemObjects,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

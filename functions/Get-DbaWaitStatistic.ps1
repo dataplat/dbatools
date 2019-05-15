@@ -84,7 +84,6 @@ function Get-DbaWaitStatistic {
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
         [switch]$IncludeIgnorable,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

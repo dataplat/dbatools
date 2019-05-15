@@ -210,7 +210,6 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

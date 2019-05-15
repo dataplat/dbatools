@@ -71,7 +71,6 @@ function Test-DbaWindowsLogin {
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -144,7 +144,6 @@ function New-DbaAgentSchedule {
         [string]$StartTime,
         [string]$EndTime,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

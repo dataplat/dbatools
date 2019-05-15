@@ -107,7 +107,6 @@ function Set-DbaDbCompression {
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         $InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

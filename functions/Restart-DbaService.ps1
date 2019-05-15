@@ -95,7 +95,6 @@ function Restart-DbaService {
         [int]$Timeout = 60,
         [PSCredential]$Credential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

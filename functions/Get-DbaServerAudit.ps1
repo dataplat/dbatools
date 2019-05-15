@@ -54,7 +54,6 @@ function Get-DbaServerAudit {
         [PSCredential]$SqlCredential,
         [string[]]$Audit,
         [string[]]$ExcludeAudit,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

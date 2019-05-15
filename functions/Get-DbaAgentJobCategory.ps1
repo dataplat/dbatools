@@ -66,7 +66,6 @@ function Get-DbaAgentJobCategory {
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

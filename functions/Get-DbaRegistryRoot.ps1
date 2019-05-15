@@ -41,7 +41,6 @@ function Get-DbaRegistryRoot {
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

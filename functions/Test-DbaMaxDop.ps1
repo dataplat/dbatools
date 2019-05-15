@@ -68,7 +68,6 @@ function Test-DbaMaxDop {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

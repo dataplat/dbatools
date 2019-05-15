@@ -95,7 +95,6 @@ function Copy-DbaPolicyManagement {
         [object[]]$Condition,
         [object[]]$ExcludeCondition,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

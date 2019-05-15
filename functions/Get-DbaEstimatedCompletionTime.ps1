@@ -82,7 +82,6 @@ function Get-DbaEstimatedCompletionTime {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

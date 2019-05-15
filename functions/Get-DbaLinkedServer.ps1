@@ -53,7 +53,6 @@ function Get-DbaLinkedServer {
         [PSCredential]$SqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

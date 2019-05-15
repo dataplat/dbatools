@@ -99,8 +99,7 @@ function Get-DbaCmObject {
         [switch]
         $SilentlyContinue,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

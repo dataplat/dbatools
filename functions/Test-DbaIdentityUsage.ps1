@@ -70,7 +70,6 @@ function Test-DbaIdentityUsage {
         [parameter(Position = 2)]
         [Alias("ExcludeSystemDb")]
         [switch]$ExcludeSystem,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

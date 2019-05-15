@@ -66,7 +66,6 @@ function Remove-DbaAgentJobCategory {
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

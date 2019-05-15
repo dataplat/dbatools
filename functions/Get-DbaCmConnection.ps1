@@ -55,8 +55,7 @@ function Get-DbaCmConnection {
         [String]
         $UserName = "*",
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

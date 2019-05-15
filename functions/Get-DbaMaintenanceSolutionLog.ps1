@@ -80,7 +80,6 @@ function Get-DbaMaintenanceSolutionLog {
         [string[]]$LogType = 'IndexOptimize',
         [datetime]$Since,
         [string]$Path,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

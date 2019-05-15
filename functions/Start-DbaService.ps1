@@ -86,7 +86,6 @@ function Start-DbaService {
         [object[]]$InputObject,
         [int]$Timeout = 60,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

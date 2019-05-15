@@ -85,7 +85,6 @@ function Get-DbaDbRestoreHistory {
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

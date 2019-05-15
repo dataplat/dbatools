@@ -64,7 +64,6 @@ function Get-DbaAgentOperator {
         $SqlCredential,
         [object[]]$Operator,
         [object[]]$ExcludeOperator,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

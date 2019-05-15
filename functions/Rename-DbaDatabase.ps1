@@ -219,7 +219,6 @@ function Rename-DbaDatabase {
         [switch]$Preview,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Pipe")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -62,7 +62,6 @@ function Get-DbaDbMailLog {
         [DateTime]$Since,
         [ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
         [string[]]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

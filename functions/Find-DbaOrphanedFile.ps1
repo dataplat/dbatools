@@ -89,7 +89,6 @@ function Find-DbaOrphanedFile {
         [string[]]$FileType,
         [switch]$LocalOnly,
         [switch]$RemoteOnly,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

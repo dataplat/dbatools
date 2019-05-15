@@ -96,7 +96,6 @@ function Get-DbaErrorLog {
         [string]$Text,
         [datetime]$After,
         [datetime]$Before,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

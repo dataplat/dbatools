@@ -76,7 +76,6 @@ function Set-DbaAgentJobOutputFile {
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

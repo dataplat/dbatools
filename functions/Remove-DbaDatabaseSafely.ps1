@@ -133,7 +133,6 @@ function Remove-DbaDatabaseSafely {
         [string]$BackupCompression = 'Default',
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

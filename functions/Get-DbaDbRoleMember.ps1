@@ -91,7 +91,6 @@ function Get-DbaDbRoleMember {
         [string[]]$ExcludeRole,
         [switch]$ExcludeFixedRole,
         [switch]$IncludeSystemUser,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

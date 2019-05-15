@@ -69,7 +69,6 @@ function Test-DbaNetworkLatency {
         [PSCredential]$SqlCredential,
         [string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
         [int]$Count = 3,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -95,7 +95,6 @@ function Start-DbaAgentJob {
         [switch]$Wait,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -107,7 +107,6 @@ function New-DbaDbSnapshot {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

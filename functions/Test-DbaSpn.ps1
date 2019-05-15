@@ -60,7 +60,6 @@ function Test-DbaSpn {
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

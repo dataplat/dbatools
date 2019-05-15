@@ -90,7 +90,6 @@ function Set-DbaAgentJobOwner {
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias("TargetLogin")]
         [string]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

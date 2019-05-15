@@ -74,7 +74,6 @@ function Get-DbaCpuRingBuffer {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$CollectionMinutes = 60,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

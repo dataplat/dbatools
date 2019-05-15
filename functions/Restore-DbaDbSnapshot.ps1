@@ -92,7 +92,6 @@ function Restore-DbaDbSnapshot {
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

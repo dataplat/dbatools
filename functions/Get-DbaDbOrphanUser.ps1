@@ -65,7 +65,6 @@ function Get-DbaDbOrphanUser {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

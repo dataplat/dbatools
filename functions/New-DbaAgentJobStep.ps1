@@ -167,7 +167,6 @@ function New-DbaAgentJobStep {
         [string[]]$Flag,
         [string]$ProxyName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

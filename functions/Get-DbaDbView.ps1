@@ -69,7 +69,6 @@ function Get-DbaDbView {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

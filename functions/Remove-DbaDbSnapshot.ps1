@@ -107,7 +107,6 @@ function Remove-DbaDbSnapshot {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$AllSnapshots,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

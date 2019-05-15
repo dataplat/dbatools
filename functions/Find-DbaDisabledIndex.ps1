@@ -79,7 +79,6 @@ function Find-DbaDisabledIndex {
         [object[]]$ExcludeDatabase,
         [switch]$NoClobber,
         [switch]$Append,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

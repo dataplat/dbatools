@@ -79,7 +79,6 @@ function Find-DbaView {
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

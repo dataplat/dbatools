@@ -61,7 +61,6 @@ function Read-DbaTransactionLog {
         [object]$Database,
         [Switch]$IgnoreLimit,
         [int]$RowLimit = 0,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

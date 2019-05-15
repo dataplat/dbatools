@@ -107,7 +107,6 @@ function Stop-DbaProcess {
         [string[]]$Program,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
         [object[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

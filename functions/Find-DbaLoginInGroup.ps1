@@ -55,7 +55,6 @@ function Find-DbaLoginInGroup {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

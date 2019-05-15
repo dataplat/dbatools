@@ -85,7 +85,6 @@ function Get-DbaTopResourceUsage {
         [ValidateSet("All", "Duration", "Frequency", "IO", "CPU")]
         [string[]]$Type = "All",
         [int]$Limit = 20,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$ExcludeSystem
     )

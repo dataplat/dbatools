@@ -82,7 +82,6 @@ function Get-DbaQueryExecutionTime {
         [parameter(Position = 4)]
         [Alias("ExcludeSystemDatabases")]
         [switch]$ExcludeSystem,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

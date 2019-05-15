@@ -45,7 +45,6 @@ function Test-DbaManagementObject {
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
         [int[]]$VersionNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

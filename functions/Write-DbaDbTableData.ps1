@@ -186,7 +186,6 @@ function Write-DbaDbTableData {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )

@@ -80,7 +80,6 @@ function Copy-DbaAgentProxy {
         [string[]]$ProxyAccount,
         [string[]]$ExcludeProxyAccount,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

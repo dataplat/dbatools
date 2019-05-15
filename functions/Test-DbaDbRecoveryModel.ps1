@@ -78,7 +78,6 @@ function Test-DbaDbRecoveryModel {
         [validateSet("Full", "Simple", "Bulk_Logged")]
         [object]$RecoveryModel,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

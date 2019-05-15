@@ -45,7 +45,6 @@ function Disable-DbaTraceFlag {
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [int[]]$TraceFlag,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

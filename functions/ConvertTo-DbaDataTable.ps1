@@ -88,7 +88,6 @@ function ConvertTo-DbaDataTable {
         [string]$SizeType = "Int64",
         [switch]$IgnoreNull,
         [switch]$Raw,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

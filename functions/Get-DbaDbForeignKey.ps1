@@ -69,7 +69,6 @@ function Get-DbaDbForeignKey {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemTable,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -87,7 +87,6 @@ function Copy-DbaXESession {
         [object[]]$XeSession,
         [object[]]$ExcludeXeSession,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

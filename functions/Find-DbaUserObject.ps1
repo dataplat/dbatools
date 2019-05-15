@@ -60,7 +60,6 @@ function Find-DbaUserObject {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Pattern,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

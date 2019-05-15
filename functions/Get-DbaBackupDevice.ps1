@@ -45,7 +45,6 @@ function Get-DbaBackupDevice {
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

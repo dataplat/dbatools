@@ -76,7 +76,6 @@ function Get-DbaDbVirtualLogFile {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

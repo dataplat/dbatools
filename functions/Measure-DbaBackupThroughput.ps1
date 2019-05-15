@@ -104,7 +104,6 @@ function Measure-DbaBackupThroughput {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string]$Type = "Full",
         [string[]]$DeviceType,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -96,7 +96,6 @@ function Copy-DbaAgentJobCategory {
         [string[]]$AgentCategory,
         [string[]]$OperatorCategory,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

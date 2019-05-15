@@ -64,7 +64,6 @@ function Export-DbaDiagnosticQuery {
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
         [switch]$NoQueryExport,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

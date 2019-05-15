@@ -191,7 +191,6 @@ function Set-DbaStartupParameter {
         [object]$StartupConfig,
         [switch]$Offline,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

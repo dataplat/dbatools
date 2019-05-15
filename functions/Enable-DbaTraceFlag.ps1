@@ -50,7 +50,6 @@ function Enable-DbaTraceFlag {
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [int[]]$TraceFlag,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

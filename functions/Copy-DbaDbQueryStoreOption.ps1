@@ -76,7 +76,6 @@ function Copy-DbaDbQueryStoreOption {
         [object[]]$DestinationDatabase,
         [object[]]$Exclude,
         [switch]$AllDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

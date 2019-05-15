@@ -79,7 +79,6 @@ function Dismount-DbaDatabase {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

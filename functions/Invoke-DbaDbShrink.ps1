@@ -143,7 +143,6 @@ function Invoke-DbaDbShrink {
         [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

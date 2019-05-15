@@ -68,7 +68,6 @@ function Get-DbaDbEncryption {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

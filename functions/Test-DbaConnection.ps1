@@ -66,7 +66,6 @@ function Test-DbaConnection {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -101,7 +101,6 @@ function Repair-DbaDbOrphanUser {
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

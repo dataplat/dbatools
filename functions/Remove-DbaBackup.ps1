@@ -95,7 +95,6 @@ function Remove-DbaBackup {
         [string]$RetentionPeriod ,
         [switch]$CheckArchiveBit = $false ,
         [switch]$RemoveEmptyBackupFolder = $false,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

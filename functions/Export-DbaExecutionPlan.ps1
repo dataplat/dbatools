@@ -98,7 +98,6 @@ function Export-DbaExecutionPlan {
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
         [object[]]$PipedObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

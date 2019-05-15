@@ -73,7 +73,6 @@ function Set-DbaDbOwner {
         [object[]]$ExcludeDatabase,
         [Alias("Login")]
         [string]$TargetLogin,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

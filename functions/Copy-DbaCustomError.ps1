@@ -87,7 +87,6 @@ function Copy-DbaCustomError {
         [object[]]$CustomError,
         [object[]]$ExcludeCustomError,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

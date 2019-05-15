@@ -76,7 +76,6 @@ function Copy-DbaBackupDevice {
         [PSCredential]$DestinationSqlCredential,
         [object[]]$BackupDevice,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

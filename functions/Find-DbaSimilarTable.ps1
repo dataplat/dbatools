@@ -98,7 +98,6 @@ function Find-DbaSimilarTable {
         [switch]$ExcludeViews,
         [switch]$IncludeSystemDatabases,
         [int]$MatchPercentThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

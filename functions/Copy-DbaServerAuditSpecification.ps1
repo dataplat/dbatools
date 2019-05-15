@@ -80,7 +80,6 @@ function Copy-DbaServerAuditSpecification {
         [object[]]$AuditSpecification,
         [object[]]$ExcludeAuditSpecification,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

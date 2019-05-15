@@ -85,7 +85,6 @@ function Remove-DbaAgentJob {
         [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

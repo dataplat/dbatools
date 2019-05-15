@@ -67,7 +67,6 @@ function Remove-DbaComputerCertificate {
         [string[]]$Thumbprint,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

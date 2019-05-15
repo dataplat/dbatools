@@ -85,7 +85,6 @@ function Find-DbaTrigger {
         [string]$TriggerLevel = 'All',
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

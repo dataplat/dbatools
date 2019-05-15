@@ -95,7 +95,6 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

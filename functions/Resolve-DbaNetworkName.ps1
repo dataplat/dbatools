@@ -91,7 +91,6 @@ function Resolve-DbaNetworkName {
         [PSCredential]$Credential,
         [Alias('FastParrot')]
         [switch]$Turbo,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

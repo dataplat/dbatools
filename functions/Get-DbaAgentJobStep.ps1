@@ -78,7 +78,6 @@ function Get-DbaAgentJobStep {
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [switch]$ExcludeDisabledJobs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

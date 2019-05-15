@@ -83,7 +83,6 @@ function Get-DbaModule {
         [string[]]$Type,
         [switch]$ExcludeSystemDatabases,
         [switch]$ExcludeSystemObjects,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -97,7 +97,6 @@ function Copy-DbaCredential {
         [Alias('ExcludeCredentialIdentity')]
         [string[]]$ExcludeIdentity,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     

@@ -41,7 +41,6 @@ function Get-DbaRepDistributor {
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Position = 1)]
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

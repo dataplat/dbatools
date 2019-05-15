@@ -89,7 +89,6 @@ function Test-DbaDbLogShipStatus {
         [switch]$Simple,
         [switch]$Primary,
         [switch]$Secondary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

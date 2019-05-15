@@ -71,7 +71,6 @@ function Get-DbaCredential {
         [string[]]$Identity,
         [Alias('ExcludeCredentialIdentity')]
         [string[]]$ExcludeIdentity,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
