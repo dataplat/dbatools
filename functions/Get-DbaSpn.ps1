@@ -1,4 +1,3 @@
-#ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
     <#
     .SYNOPSIS

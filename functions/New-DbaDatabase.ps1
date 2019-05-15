@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function New-DbaDatabase {
     <#
     .SYNOPSIS

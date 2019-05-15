@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCustomError {
     <#
     .SYNOPSIS

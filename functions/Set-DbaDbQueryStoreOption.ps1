@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Set-DbaDbQueryStoreOption {
     <#
     .SYNOPSIS

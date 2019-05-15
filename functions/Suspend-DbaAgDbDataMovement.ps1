@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Suspend-DbaAgDbDataMovement {
     <#
     .SYNOPSIS
