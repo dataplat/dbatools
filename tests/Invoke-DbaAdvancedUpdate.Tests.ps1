@@ -167,9 +167,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'dummy'
-            $result.Notes | Should -BeLike '*failed with exit code 12345'
+            $result.Notes | Should -BeLike '*failed with exit code 12345*'
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
-            $warVar | Should -BeLike '*failed with exit code 12345'
+            $warVar | Should -BeLike '*failed with exit code 12345*'
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
         }

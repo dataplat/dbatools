@@ -20,11 +20,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName Get-DbaDiskSpace -MockWith { [pscustomobject]@{ Name = 'C:\'; Free = 1 } } -ModuleName dbatools
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName','Credential','Version','Type','KB','InstanceName','Path','Restart','Continue','Throttle','Authentication','EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'KB', 'InstanceName', 'Path', 'Restart', 'Continue', 'Throttle', 'Authentication', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     Context "Validate upgrades to a latest version" {
@@ -600,9 +600,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'c:\mocked\filename.exe'
-            $result.Notes | Should -BeLike '*failed with exit code 12345'
+            $result.Notes | Should -BeLike '*failed with exit code 12345*'
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
-            $warVar | Should -BeLike '*failed with exit code 12345'
+            $warVar | Should -BeLike '*failed with exit code 12345*'
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
         }
