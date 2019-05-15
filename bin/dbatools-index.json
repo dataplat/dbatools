@@ -19683,6 +19683,37 @@
         "Syntax":  "Get-DbaTempdbUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbatoolsChangeLog",
+        "Description":  "Opens the link to our online change log. To see the local changelog instead, use the Local parameter.",
+        "Tags":  "changelog",
+        "Synopsis":  "Opens the link to our online change log",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Get-DbatoolsChangeLog",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbatoolsChangeLog",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsChangeLog\nOpens a browser to our online changelog\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsChangeLog -Local\nReturns the content from changelog.md",
+        "Params":  [
+                       [
+                           "Local",
+                           "Return the local change log to the console",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbatoolsChangeLog [-Local] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbatoolsConfig",
         "Description":  "Retrieves configuration elements by name.\nCan be used to search the existing configuration list.",
         "Tags":  [
