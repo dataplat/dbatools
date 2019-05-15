@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.810] - 2019-04-25
+### Fixed
+* `Test-DbaDbCompression` fails on case-sensitive collations [#5404](https://github.com/sqlcollaborative/dbatools/issues/5404)
+### Added
+* Latest SQL Server build references
+* `Backup-DbaServiceMasterKey` function to back up the service master key for instances [#5397](https://github.com/sqlcollaborative/dbatools/issues/5397)
+
 ## [0.9.809] - 2019-04-20
 ### Fixed
 * `Test-DbaConnection` returns warnings and more useful objects when unable to resolve/connect to host
