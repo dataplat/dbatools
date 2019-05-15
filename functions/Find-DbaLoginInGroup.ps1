@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
     <#
     .SYNOPSIS
