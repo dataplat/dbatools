@@ -79,6 +79,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
+            'Microsoft.SqlServer.XE.Core',
             'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Replication',
             'Microsoft.SqlServer.Rmo'
