@@ -180,7 +180,7 @@ function Set-DbaAgentJob {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

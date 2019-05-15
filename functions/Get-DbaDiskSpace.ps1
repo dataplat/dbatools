@@ -103,7 +103,7 @@ function Get-DbaDiskSpace {
         [Alias('Detailed', 'AllDrives')]
         [switch]$CheckFragmentation,
         [switch]$Force,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

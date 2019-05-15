@@ -37,7 +37,6 @@ function Get-DbaRepDistributor {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Position = 1)]
         [PSCredential]$SqlCredential,

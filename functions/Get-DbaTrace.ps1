@@ -49,7 +49,7 @@ function Get-DbaTrace {
         [PSCredential]$SqlCredential,
         [int[]]$Id,
         [switch]$Default,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
     begin {

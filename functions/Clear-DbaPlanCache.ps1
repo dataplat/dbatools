@@ -62,7 +62,6 @@ function Clear-DbaPlanCache {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 100,

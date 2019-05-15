@@ -52,7 +52,6 @@ function Enable-DbaForceNetworkEncryption {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,

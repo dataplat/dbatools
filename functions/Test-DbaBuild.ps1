@@ -110,7 +110,7 @@ function Test-DbaBuild {
         [PSCredential]$SqlCredential,
         [switch]$Update,
         [switch]$Quiet,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

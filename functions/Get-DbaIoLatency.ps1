@@ -57,7 +57,6 @@ function Get-DbaIoLatency {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException

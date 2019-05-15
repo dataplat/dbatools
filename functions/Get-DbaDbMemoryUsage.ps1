@@ -63,7 +63,6 @@ function Get-DbaDbMemoryUsage {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipelineByPropertyName = $true)]

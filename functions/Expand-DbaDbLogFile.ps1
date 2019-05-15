@@ -161,7 +161,7 @@ function Expand-DbaDbLogFile {
         [AllowEmptyString()]
         [string]$BackupDirectory,
         [switch]$ExcludeDiskSpaceValidation,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

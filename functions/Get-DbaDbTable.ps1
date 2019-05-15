@@ -89,7 +89,7 @@ function Get-DbaDbTable {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
         [string[]]$Table,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

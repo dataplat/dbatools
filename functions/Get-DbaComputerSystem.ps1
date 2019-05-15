@@ -54,7 +54,7 @@ function Get-DbaComputerSystem {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$IncludeAws,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
     process {

@@ -64,7 +64,7 @@ function Watch-DbaXESession {
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
         [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
         [switch]$Raw,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
     process {
