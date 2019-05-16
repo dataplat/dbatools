@@ -30,7 +30,7 @@ function New-DbaRepSubscriber {
 
     .NOTES
         Tags: Replication
-        Author: Gareth Newman @gazeranco
+        Author: Gareth Newman
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
