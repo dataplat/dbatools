@@ -1,4 +1,4 @@
-function Add-DbaRepPushSubscription {
+function Add-DbaPushSubscription {
     <#
     .SYNOPSIS
         Adds a new subscriber to an existing publication
@@ -34,10 +34,10 @@ function Add-DbaRepPushSubscription {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaRepPushSubscription
+        https://dbatools.io/Add-DbaPushSubscription
 
     .EXAMPLE
-        PS C:\> Add-DbaRepPushSubscription -publisherName "server1\dev2016" -subscriberName "server2\dev2016" -publicationName "avworkspub1" -pubDatabaseName "AdventureWorks2012" -subDatabaseName "replicatedAdventureWorks2012" -subSyncType "none"
+        PS C:\> Add-DbaPushSubscription -publisherName "server1\dev2016" -subscriberName "server2\dev2016" -publicationName "avworkspub1" -pubDatabaseName "AdventureWorks2012" -subDatabaseName "replicatedAdventureWorks2012" -subSyncType "none"
 
         Creates a new subscription to "avworkspub1" on server1\dev2016 to server2\dev2016 with a subscription sync type of none.
         The published database is AdventureWorks2012 on server1\dev2016, the subscriber database is replicatedAdventureWorks2012 on server2\dev2016.
