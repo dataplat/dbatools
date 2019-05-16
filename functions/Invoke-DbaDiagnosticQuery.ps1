@@ -177,11 +177,8 @@ function Invoke-DbaDiagnosticQuery {
 
         Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 
-        $module = Get-Module -Name dbatools
-        $base = $module.ModuleBase
-
         if (!$Path) {
-            $Path = "$base\bin\diagnosticquery"
+            $Path = "$script:PSModuleRoot\bin\diagnosticquery"
         }
 
         $scriptversions = @()
@@ -306,7 +303,7 @@ function Invoke-DbaDiagnosticQuery {
 
 
             }
-            
+
             foreach ($scriptpart in $parsedscript) {
                 # ensure results are null with each part, otherwise duplicated information may be returned
                 $result = $null
