@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.826] - 2019-05-13
+### Fixed
+* `Set-DbaAgentSchedule` does not properly set `EndTime` [#5513](https://github.com/sqlcollaborative/dbatools/issues/5513)
+### Changed
+* Updates to Sync Permissions and Copy Login `-SyncOnly` [#5511](https://github.com/sqlcollaborative/dbatools/pull/5511)
+### Added
+* Add progress bars to Find-DbaInstance [#5515](https://github.com/sqlcollaborative/dbatools/issues/5515)
+
 ## [0.9.825] - 2019-05-09
 ### Fixed
 * Throw error when attempting to fetch user permissions from Azure SQL DB (currently not supported) [#5076](https://github.com/sqlcollaborative/dbatools/issues/5076)
