@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.827] - 2019-05-14
+### Fixed
+* `Export-DbaCredential` - `-Identity` doesn't filter, DAC duplication problem [#5443](https://github.com/sqlcollaborative/dbatools/issues/5443)
+* Fix step count and retry when using `Start-DbaAgentJob` and `-Verbose` [#5519](https://github.com/sqlcollaborative/dbatools/pull/5519)
+* `Invoke-DbaDbLogShipping` line 1360 has a extra `)` [#5523](https://github.com/sqlcollaborative/dbatools/issues/5523)
+
 ## [0.9.826] - 2019-05-13
 ### Fixed
 * `Set-DbaAgentSchedule` does not properly set `EndTime` [#5513](https://github.com/sqlcollaborative/dbatools/issues/5513)
