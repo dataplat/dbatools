@@ -1,4 +1,4 @@
-function Watch-DbaUpdate {
+function Watch-DbaToolsUpdate {
     <#
     .SYNOPSIS
         Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
@@ -17,10 +17,10 @@ function Watch-DbaUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Watch-DbaUpdate
+        https://dbatools.io/Watch-DbaToolsUpdate
 
     .EXAMPLE
-        PS C:\> Watch-DbaUpdate
+        PS C:\> Watch-DbaToolsUpdate
 
         Watches the gallery for updates to dbatools.
 
