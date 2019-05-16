@@ -30,6 +30,10 @@ function Join-DbaPath
         $Child
     )
     
+    return @($path) + $Child -join 
+        [IO.Path]::DirectorySeparatorChar -replace 
+        '\\|/', [IO.Path]::DirectorySeparatorChar 
+
     $resultingPath = $Path
     if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows))
     {

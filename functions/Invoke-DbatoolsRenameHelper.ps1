@@ -66,76 +66,23 @@ function Invoke-DbatoolsRenameHelper {
         [switch]$EnableException
     )
     begin {
-        $morerenames = @(
-            @{
-                "AliasName"  = "Invoke-Sqlcmd2"
-                "Definition" = "Invoke-DbaQuery"
-            },
-            @{
-                "AliasName"  = "UseLastBackups"
-                "Definition" = "UseLastBackup"
-            },
-            @{
-                "AliasName"  = "NetworkShare"
-                "Definition" = "SharedPath"
-            },
-            @{
-                "AliasName"  = "NoSystemLogins"
-                "Definition" = "ExcludeSystemLogins"
-            },
-            @{
-                "AliasName"  = "NoJobSteps"
-                "Definition" = "ExcludeJobSteps"
-            },
-            @{
-                "AliasName"  = "NoSystemObjects"
-                "Definition" = "ExcludeSystemObjects"
-            },
-            @{
-                "AliasName"  = "NoJobs"
-                "Definition" = "ExcludeJobs"
-            },
-            @{
-                "AliasName"  = "NoDatabases"
-                "Definition" = "ExcludeDatabases"
-            },
-            @{
-                "AliasName"  = "NoDisabledJobs"
-                "Definition" = "ExcludeDisabledJobs"
-            },
-            @{
-                "AliasName"  = "NoJobSteps"
-                "Definition" = "ExcludeJobSteps"
-            },
-            @{
-                "AliasName"  = "NoSystem"
-                "Definition" = "ExcludeSystemLogins"
-            },
-            @{
-                "AliasName"  = "NoSystemDb"
-                "Definition" = "ExcludeSystem"
-            },
-            @{
-                "AliasName"  = "NoSystemObjects"
-                "Definition" = "ExcludeSystemObjects"
-            },
-            @{
-                "AliasName"  = "NoSystemSpid"
-                "Definition" = "ExcludeSystemSpids"
-            },
-            @{
-                "AliasName"  = "NoQueryTextColumn"
-                "Definition" = "ExcludeQueryTextColumn"
-            },
-            @{
-                "AliasName"  = "ExcludeAllSystemDb"
-                "Definition" = "ExcludeSystem"
-            },
-            @{
-                "AliasName"  = "ExcludeAllUserDb"
-                "Definition" = "ExcludeUser"
-            }
-        )
+        $morerenames = @{
+    ExcludeAllSystemDb='ExcludeSystem'
+    ExcludeAllUserDb='ExcludeUser'
+    'Invoke-Sqlcmd2'='Invoke-DbaQuery'
+    NetworkShare='SharedPath'
+    NoDatabases='ExcludeDatabases'
+    NoDisabledJobs='ExcludeDisabledJobs'
+    NoJobs='ExcludeJobs'
+    NoJobSteps='ExcludeJobSteps'
+    NoQueryTextColumn='ExcludeQueryTextColumn'
+    NoSystem='ExcludeSystemLogins'
+    NoSystemDb='ExcludeSystem'
+    NoSystemLogins='ExcludeSystemLogins'
+    NoSystemObjects='ExcludeSystemObjects'
+    NoSystemSpid='ExcludeSystemSpids'
+    UseLastBackups='UseLastBackup'
+}
 
         $allrenames = $script:renames + $morerenames
     }
@@ -143,10 +90,10 @@ function Invoke-DbatoolsRenameHelper {
         foreach ($fileobject in $InputObject) {
             $file = $fileobject.FullName
 
-            foreach ($name in $allrenames) {
-                if ((Select-String -Pattern $name.AliasName -Path $file)) {
-                    if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {
-                        $content = (Get-Content -Path $file -Raw).Replace($name.AliasName, $name.Definition).Trim()
+            foreach ($name in $allrenames.GetEnumerator()) {
+                if ((Select-String -Pattern $name.Key -Path $file)) {
+                    if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.Key) with $($name.Value)")) {
+                        $content = (Get-Content -Path $file -Raw).Replace($name.Key, $name.Value).Trim()
                         Set-Content -Path $file -Encoding $Encoding -Value $content
                         [pscustomobject]@{
                             Path         = $file

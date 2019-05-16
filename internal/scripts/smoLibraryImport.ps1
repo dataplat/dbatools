@@ -15,11 +15,12 @@ $scriptBlock = {
             [bool]$DoCopy,
             [string]$Name
         )
-        $DllRoot = (Resolve-Path -Path $DllRoot)
-
         if (-not $DoCopy) {
             return
         }
+
+        $DllRoot = (Resolve-Path -Path $DllRoot)
+
         if ((Resolve-Path -Path "$ModuleRoot\bin\smo") -eq $DllRoot) {
             return
         }
@@ -28,7 +29,7 @@ $scriptBlock = {
             $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
         }
 
-        Copy-Item -Path (Resolve-Path -Path "$ModuleRoot\bin\smo\$Name.dll") -Destination $DllRoot
+        Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot
     }
 
     #region Names
@@ -79,7 +80,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
-            'Microsoft.SqlServer.XE.Core',
             'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Replication',
             'Microsoft.SqlServer.Rmo'
@@ -87,34 +87,36 @@ $scriptBlock = {
     }
     #endregion Names
 
+    $basePath = $dllRoot
+    if ($PSVersionTable.PSEdition -eq 'core') {
+        $basePath = "$(Join-Path $dllRoot coreclr)"
+    }
+
     foreach ($name in $names) {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
-    }
-    if ($PSVersionTable.PSEdition -eq "Core") {
-        foreach ($name in $names) {
-            Add-Type -Path (Resolve-Path -Path "$DllRoot\coreclr\$name.dll")
-        }
-    } else {
-        foreach ($name in $names) {
+        $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
+        $null = try {
+            Import-Module $assemblyPath 
+        } catch {
             try {
-                Add-Type -Path (Resolve-Path -Path "$DllRoot\$name.dll") -ErrorAction Stop
-            } catch {
-                continue
+                [Reflection.Assembly]::LoadFrom($assemblyPath)
+            } 
+            catch {
+                Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
             }
         }
     }
 }
 
-$smo = (Resolve-Path -Path "$script:DllRoot\smo")
-
+$script:serialImport = $true
 if ($script:serialImport) {
-    $scriptBlock.Invoke($script:PSModuleRoot, "$script:DllRoot\smo", $script:copyDllMode)
+    $scriptBlock.Invoke($script:PSModuleRoot, "$(Join-Path $script:DllRoot smo)", $script:copyDllMode)
 } else {
     $script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
     if ($script:smoRunspace.Runspace.Name) {
         try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
         catch { }
     }
-    $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument($smo).AddArgument((-not $script:strictSecurityMode))
+    $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument("$(Join-Path $script:DllRoot smo)").AddArgument((-not $script:strictSecurityMode))
     $script:smoRunspace.BeginInvoke()
 }
