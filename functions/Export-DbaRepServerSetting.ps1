@@ -92,7 +92,7 @@ function Export-DbaRepServerSetting {
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-Path -Path $Path -ChildPath "$($server.replace('\', '$'))-$timenow-replication.sql"
+            $path = Join-DbaPath -Path $Path -Child "$($server.replace('\', '$'))-$timenow-replication.sql"
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `

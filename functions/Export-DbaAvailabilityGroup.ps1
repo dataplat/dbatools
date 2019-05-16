@@ -122,9 +122,9 @@ function Export-DbaAvailabilityGroup {
                     # Set the outfile name
                     if ($AppendDateToOutputFilename.IsPresent) {
                         $formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
-                        $outFile = Join-Path -Path $outputLocation -Child "${AGname}_${formatteddate}.sql"
+                        $outFile = Join-DbaPath -Path $outputLocation -Child "${AGname}_${formatteddate}.sql"
                     } else {
-                        $outFile = Join-Path -Path $outputLocation -Child "$agName.sql"
+                        $outFile = Join-DbaPath -Path $outputLocation -Child "$agName.sql"
                     }
 
                     # Check NoClobber and script out the AG

@@ -104,7 +104,7 @@ function Export-DbaLinkedServer {
             }
 
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
 
             $sql = @()
 

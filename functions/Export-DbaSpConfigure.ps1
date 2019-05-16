@@ -80,7 +80,7 @@ function Export-DbaSpConfigure {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+            $filepath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
 
             if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")

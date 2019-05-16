@@ -159,7 +159,7 @@ function Export-DbaInstance {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow"
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow"
 
             if (-not (Test-Path $Path)) {
                 try {

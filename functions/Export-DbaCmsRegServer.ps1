@@ -96,10 +96,10 @@ function Export-DbaCmsRegServer {
                     $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    $Path = Join-Path -Path $Path -ChildPath "$serverName-regserver-$regservername-$timeNow.xml"
+                    $Path = Join-DbaPath -Path $Path -Child "$serverName-regserver-$regservername-$timeNow.xml"
                     $object.Export($Path, $CredentialPersistenceType)
                 } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $Path = Join-Path -Path $Path -ChildPath "$serverName-reggroup-$regservergroup-$timeNow.xml"
+                    $Path = Join-DbaPath -Path $Path -Child "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     $object.Export($Path, $CredentialPersistenceType)
                 } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue

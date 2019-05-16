@@ -62,7 +62,7 @@ function Export-DbaCredential {
         [string[]]$Identity,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path= (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.Credential[]]$InputObject,
@@ -96,7 +96,7 @@ function Export-DbaCredential {
                 return
             }
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-credential.sql"
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-credential.sql"
 
             $sql = @()
 
