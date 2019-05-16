@@ -85,4 +85,32 @@
         </ScriptMethod>
         </Members>
     </Type>
+    <Type>
+        <Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException</Name>
+        <Members>            
+            <MemberSet>
+                <Name>PSStandardMembers</Name>
+                <Members>
+                    <NoteProperty>
+                        <Name>SerializationDepth</Name>
+                        <Value>2</Value>
+                    </NoteProperty>                                        
+                </Members>
+            </MemberSet>            
+        </Members>
+    </Type>
+    <Type>
+        <Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord</Name>
+        <Members>            
+            <MemberSet>
+                <Name>PSStandardMembers</Name>
+                <Members>
+                    <NoteProperty>
+                        <Name>SerializationDepth</Name>
+                        <Value>2</Value>
+                    </NoteProperty>                                        
+                </Members>
+            </MemberSet>            
+        </Members>
+    </Type>
 </Types>

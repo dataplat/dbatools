@@ -13,18 +13,18 @@ function Select-DefaultView {
 
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
-        [object]
-        $InputObject,
+    [parameter(ValueFromPipeline=$true)]
+    [psobject]
+    $InputObject,
 
-        [string[]]
-        $Property,
+    [string[]]
+    $Property,
 
-        [string[]]
-        $ExcludeProperty,
+    [string[]]
+    $ExcludeProperty,
 
-        [string]
-        $TypeName
+    [string]
+    $TypeName
     )
     process {
 
@@ -40,27 +40,28 @@ function Select-DefaultView {
             }
 
             $props = ($InputObject | Get-Member | Where-Object MemberType -in 'Property', 'NoteProperty', 'AliasProperty' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
-            $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$props)
+            $defaultset = 
+                [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$props)
         } else {
             # property needs to be string
             if ("$property" -like "* as *") {
-                $newproperty = @()
-                foreach ($p in $property) {
-                    if ($p -like "* as *") {
-                        $old, $new = $p -isplit " as "
-                        # Do not be tempted to not pipe here
-                        $inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
-                        $newproperty += $new
-                    } else {
-                        $newproperty += $p
-                    }
-                }
-                $property = $newproperty
+                $property = 
+                    @(foreach ($p in $property) {
+                        if ($p -like "* as *") {
+                            $old, $new = $p -isplit " as "
+                            # Do not be tempted to not pipe here
+                            $inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
+                            $new
+                        } else {
+                            $p
+                        }
+                    })
             }
-            $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+            $defaultset = 
+                [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$Property)
         }
 
-        $standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
+        $standardmembers = [Management.Automation.PSMemberInfo[]]@($defaultset)
 
         # Do not be tempted to not pipe here
         $inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue
