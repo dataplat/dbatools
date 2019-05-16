@@ -1,8 +1,8 @@
 #requires -Version 3.0
 param(
-[Collections.IDictionary]
-[Alias('Options')]
-$Option = @{}
+    [Collections.IDictionary]
+    [Alias('Options')]
+    $Option = @{}
 )
 
 
@@ -14,7 +14,8 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
     $script:isWindows = $false
 }
 
-if ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [Type]) { # If we've already got for module import,
+if ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [Type]) {
+    # If we've already got for module import,
     [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear() # clear it (since we're clearly re-importing)
 }
 
@@ -48,8 +49,8 @@ function Import-ModuleFile {
     if ($script:doDotSource) {
         . (Resolve-Path -Path $Path)
     } else {
-        $txt = [IO.File]::ReadAllText((Resolve-Path -Path $Path).ProviderPath)        
-        $ExecutionContext.InvokeCommand.InvokeScript($TXT,$false, [Management.Automation.Runspaces.PipelineResultTypes]::None, $null, $null)        
+        $txt = [IO.File]::ReadAllText((Resolve-Path -Path $Path).ProviderPath)
+        $ExecutionContext.InvokeCommand.InvokeScript($TXT, $false, [Management.Automation.Runspaces.PipelineResultTypes]::None, $null, $null)
     }
 }
 
@@ -75,15 +76,15 @@ function Write-ImportTime {
     )
 
 
-    if (-not $script:dbatools_ImportPerformance) { 
+    if (-not $script:dbatools_ImportPerformance) {
         $script:dbatools_ImportPerformance = [Collections.ArrayList]::new()
     }
 
-    if (-not ('Sqlcollaborative.Dbatools.Configuration.Config' -as [type]))  {
+    if (-not ('Sqlcollaborative.Dbatools.Configuration.Config' -as [type])) {
         $script:dbatools_ImportPerformance.AddRange(@(New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }))
     } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
-            foreach ($entry in $script:dbatools_ImportPerformance) { 
+            foreach ($entry in $script:dbatools_ImportPerformance) {
                 $te = [Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry]::new($entry.Action, $entry.Time, [Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)
                 [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
             }
@@ -117,7 +118,7 @@ if ($PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -ne 'Desktop') {
 #region Import Defines
 if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Type]) {
     $regType = 'Microsoft.Win32.Registry' -as [Type]
-    $hkcuNode = $regType::CurrentUser.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")  
+    $hkcuNode = $regType::CurrentUser.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
         $userValues = @{}
         foreach ($v in $hkcuNode.GetValueNames()) {
@@ -125,7 +126,7 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
         }
         $dbatoolsSystemUserNode = $systemValues
     }
-    $hklmNode = $regType::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")  
+    $hklmNode = $regType::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
         $systemValues = @{}
         foreach ($v in $hklmNode.GetValueNames()) {
@@ -133,54 +134,53 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
         }
         $dbatoolsSystemSystemNode = $systemValues
     }
-}
- else {
+} else {
     $dbatoolsSystemUserNode = @{}
     $dbatoolsSystemSystemNode = @{}
 }
 
 #region Dot Sourcing
 # Detect whether at some level dotsourcing was enforced
-$script:doDotSource = $dbatools_dotsourcemodule -or 
-    $dbatoolsSystemSystemNode.DoDotSource -or 
-    $dbatoolsSystemUserNode.DoDotSource -or
-    $option.DoDotSource
+$script:doDotSource = $dbatools_dotsourcemodule -or
+$dbatoolsSystemSystemNode.DoDotSource -or
+$dbatoolsSystemUserNode.DoDotSource -or
+$option.DoDotSource
 #endregion Dot Sourcing
 
 #region Copy DLL Mode
 $script:copyDllMode = $dbatools_copydllmode -or
-    $dbatoolsSystemSystemNode.CopyDllMode -or 
-    $dbatoolsSystemUserNode.CopyDllMode -or
-    $option.CopyDllMode
+$dbatoolsSystemSystemNode.CopyDllMode -or
+$dbatoolsSystemUserNode.CopyDllMode -or
+$option.CopyDllMode
 #endregion Copy DLL Mode
 
 #region Always Compile
-$script:alwaysBuildLibrary = $dbatools_alwaysbuildlibrary -or 
-    $dbatoolsSystemSystemNode.AlwaysBuildLibrary -or
-    $dbatoolsSystemUserNode.AlwaysBuildLibrary -or 
-    $option.AlwaysBuildLibrary
+$script:alwaysBuildLibrary = $dbatools_alwaysbuildlibrary -or
+$dbatoolsSystemSystemNode.AlwaysBuildLibrary -or
+$dbatoolsSystemUserNode.AlwaysBuildLibrary -or
+$option.AlwaysBuildLibrary
 #endregion Always Compile
 
 #region Serial Import
-$script:serialImport = $dbatools_serialimport -or 
-    $dbatoolsSystemSystemNode.SerialImport -or
-    $dbatoolsSystemUserNode.SerialImport -or
-    $Option.SerialImport
+$script:serialImport = $dbatools_serialimport -or
+$dbatoolsSystemSystemNode.SerialImport -or
+$dbatoolsSystemUserNode.SerialImport -or
+$Option.SerialImport
 #endregion Serial Import
 
 #region Multi File Import
 $script:multiFileImport = $dbatools_multiFileImport -or
-    $dbatoolsSystemSystemNode.MultiFileImport -or 
-    $dbatoolsSystemUserNode.MultiFileImport -or
-    $option.MultiFileImport
+$dbatoolsSystemSystemNode.MultiFileImport -or
+$dbatoolsSystemUserNode.MultiFileImport -or
+$option.MultiFileImport
 
 
 $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
-if ($dbatools_enabledebug -or 
-    $option.Debug -or 
-    $DebugPreference -ne 'silentlycontinue' -or 
+if ($dbatools_enabledebug -or
+    $option.Debug -or
+    $DebugPreference -ne 'silentlycontinue' -or
     ([IO.Directory]::Exists($gitDir) -and -not $serialImport)) {
-    $script:multiFileImport, $script:SerialImport, $script:doDotSource = $true, $true, $true 
+    $script:multiFileImport, $script:SerialImport, $script:doDotSource = $true, $true, $true
 }
 #endregion Multi File Import
 
@@ -225,7 +225,7 @@ if (-not ('Microsoft.SqlServer.Management.Smo.Server' -as [type])) {
 
 # Load our own custom library
 # Should always come before function imports
-. $psScriptRoot\bin\library.ps1 
+. $psScriptRoot\bin\library.ps1
 . $psScriptRoot\bin\typealiases.ps1
 Write-ImportTime -Text "Loading dbatools library"
 
@@ -239,7 +239,7 @@ if ($script:multiFileImport) {
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
-#    . $psScriptRoot\internal\scripts\cmdlets.ps1
+    #    . $psScriptRoot\internal\scripts\cmdlets.ps1
 
     Write-ImportTime -Text "Registering cmdlets"
 
@@ -250,9 +250,9 @@ if ($script:multiFileImport) {
     Write-ImportTime -Text "Loading Public Commands"
 
 } else {
-#    . $psScriptRoot\internal\scripts\cmdlets.ps1
+    #    . $psScriptRoot\internal\scripts\cmdlets.ps1
 
-    . $psScriptRoot\allcommands.ps1 
+    . $psScriptRoot\allcommands.ps1
     #. (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
 
@@ -306,193 +306,193 @@ Write-ImportTime -Text "Script: Maintenance"
 #region Aliases
 # I renamed this function to be more accurate - 1ms
 # changed to a script var so it can be used in the Rename-DbatoolsCommand
-$script:Renames= @{
-    'Add-DbaRegisteredServer'='Add-DbaCmsRegServer'
-    'Add-DbaRegisteredServerGroup'='Add-DbaCmsRegServerGroup'
-    'Backup-DbaDatabaseCertificate'='Backup-DbaDbCertificate'
-    'Backup-DbaDatabaseMasterKey'='Backup-DbaDbMasterKey'
-    'Clear-DbaSqlConnectionPool'='Clear-DbaConnectionPool'
-    'Connect-DbaServer'='Connect-DbaInstance'
-    'Copy-DbaAgentCategory'='Copy-DbaAgentJobCategory'
-    'Copy-DbaAgentProxyAccount'='Copy-DbaAgentProxy'
-    'Copy-DbaAgentSharedSchedule'='Copy-DbaAgentSchedule'
-    'Copy-DbaCentralManagementServer'='Copy-DbaCmsRegServer'
-    'Copy-DbaDatabaseAssembly'='Copy-DbaDbAssembly'
-    'Copy-DbaDatabaseMail'='Copy-DbaDbMail'
-    'Copy-DbaExtendedEvent'='Copy-DbaXESession'
-    'Copy-DbaQueryStoreConfig'='Copy-DbaDbQueryStoreOption'
-    'Copy-DbaSqlDataCollector'='Copy-DbaDataCollector'
-    'Copy-DbaSqlPolicyManagement'='Copy-DbaPolicyManagement'
-    'Copy-DbaSqlServerAgent'='Copy-DbaAgentServer'
-    'Copy-DbaTableData'='Copy-DbaDbTableData'
-    'Copy-SqlAgentCategory'='Copy-DbaAgentJobCategory'
-    'Copy-SqlAlert'='Copy-DbaAgentAlert'
-    'Copy-SqlAudit'='Copy-DbaServerAudit'
-    'Copy-SqlAuditSpecification'='Copy-DbaServerAuditSpecification'
-    'Copy-SqlBackupDevice'='Copy-DbaBackupDevice'
-    'Copy-SqlCentralManagementServer'='Copy-DbaCmsRegServer'
-    'Copy-SqlCredential'='Copy-DbaCredential'
-    'Copy-SqlCustomError'='Copy-DbaCustomError'
-    'Copy-SqlDatabase'='Copy-DbaDatabase'
-    'Copy-SqlDatabaseAssembly'='Copy-DbaDbAssembly'
-    'Copy-SqlDatabaseMail'='Copy-DbaDbMail'
-    'Copy-SqlDataCollector'='Copy-DbaDataCollector'
-    'Copy-SqlEndpoint'='Copy-DbaEndpoint'
-    'Copy-SqlExtendedEvent'='Copy-DbaXESession'
-    'Copy-SqlJob'='Copy-DbaAgentJob'
-    'Copy-SqlJobServer'='Copy-SqlServerAgent'
-    'Copy-SqlLinkedServer'='Copy-DbaLinkedServer'
-    'Copy-SqlLogin'='Copy-DbaLogin'
-    'Copy-SqlOperator'='Copy-DbaAgentOperator'
-    'Copy-SqlPolicyManagement'='Copy-DbaPolicyManagement'
-    'Copy-SqlProxyAccount'='Copy-DbaAgentProxy'
-    'Copy-SqlResourceGovernor'='Copy-DbaResourceGovernor'
-    'Copy-SqlServerAgent'='Copy-DbaAgentServer'
-    'Copy-SqlServerTrigger'='Copy-DbaServerTrigger'
-    'Copy-SqlSharedSchedule'='Copy-DbaAgentSchedule'
-    'Copy-SqlSpConfigure'='Copy-DbaSpConfigure'
-    'Copy-SqlSsisCatalog'='Copy-DbaSsisCatalog'
-    'Copy-SqlSysDbUserObjects'='Copy-DbaSysDbUserObject'
-    'Copy-SqlUserDefinedMessage'='Copy-SqlCustomError'
-    'Expand-DbaTLogResponsibly'='Expand-DbaDbLogFile'
-    'Expand-SqlTLogResponsibly'='Expand-DbaDbLogFile'
-    'Export-DbaDacpac'='Export-DbaDacPackage'
-    'Export-DbaRegisteredServer'='Export-DbaCmsRegServer'
-    'Export-SqlLogin'='Export-DbaLogin'
-    'Export-SqlSpConfigure'='Export-DbaSpConfigure'
-    'Export-SqlUser'='Export-DbaUser'
-    'Find-DbaDatabaseGrowthEvent'='Find-DbaDbGrowthEvent'
-    'Find-SqlDuplicateIndex'='Find-DbaDuplicateIndex'
-    'Find-SqlUnusedIndex'='Find-DbaDbUnusedIndex'
-    'Get-DbaCmsRegServerName'='Get-DbaCmsRegServer'
-    'Get-DbaConfig'='Get-DbatoolsConfig'
-    'Get-DbaConfigValue'='Get-DbatoolsConfigValue'
-    'Get-DbaDatabaseAssembly'='Get-DbaDbAssembly'
-    'Get-DbaDatabaseCertificate'='Get-DbaDbCertificate'
-    'Get-DbaDatabaseEncryption'='Get-DbaDbEncryption'
-    'Get-DbaDatabaseFile'='Get-DbaDbFile'
-    'Get-DbaDatabaseFreeSpace'='Get-DbaDbSpace'
-    'Get-DbaDatabaseMasterKey'='Get-DbaDbMasterKey'
-    'Get-DbaDatabasePartitionFunction'='Get-DbaDbPartitionFunction'
-    'Get-DbaDatabasePartitionScheme'='Get-DbaDbPartitionScheme'
-    'Get-DbaDatabaseSnapshot'='Get-DbaDbSnapshot'
-    'Get-DbaDatabaseSpace'='Get-DbaDbSpace'
-    'Get-DbaDatabaseState'='Get-DbaDbState'
-    'Get-DbaDatabaseUdf'='Get-DbaDbUdf'
-    'Get-DbaDatabaseUser'='Get-DbaDbUser'
-    'Get-DbaDatabaseView'='Get-DbaDbView'
-    'Get-DbaDbQueryStoreOptions'='Get-DbaDbQueryStoreOption'
-    'Get-DbaDistributor'='Get-DbaRepDistributor'
-    'Get-DbaInstance'='Connect-DbaInstance'
-    'Get-DbaJobCategory'='Get-DbaAgentJobCategory'
-    'Get-DbaLog'='Get-DbaErrorLog'
-    'Get-DbaLogShippingError'='Get-DbaDbLogShipError'
-    'Get-DbaOrphanUser'='Get-DbaDbOrphanUser'
-    'Get-DbaPolicy'='Get-DbaPbmPolicy'
-    'Get-DbaQueryStoreConfig'='Get-DbaDbQueryStoreOption'
-    'Get-DbaRegisteredServerGroup'='Get-DbaCmsRegServerGroup'
-    'Get-DbaRegisteredServerStore'='Get-DbaCmsRegServerStore'
-    'Get-DbaRestoreHistory'='Get-DbaDbRestoreHistory'
-    'Get-DbaRoleMember'='Get-DbaDbRoleMember'
-    'Get-DbaSqlBuildReference'='Get-DbaBuildReference'
-    'Get-DbaSqlFeature'='Get-DbaFeature'
-    'Get-DbaSqlInstanceProperty'='Get-DbaInstanceProperty'
-    'Get-DbaSqlInstanceUserOption'='Get-DbaInstanceUserOption'
-    'Get-DbaSqlManagementObject'='Get-DbaManagementObject'
-    'Get-DbaSqlModule'='Get-DbaModule'
-    'Get-DbaSqlProductKey'='Get-DbaProductKey'
-    'Get-DbaSqlRegistryRoot'='Get-DbaRegistryRoot'
-    'Get-DbaSqlService'='Get-DbaService'
-    'Get-DbaTable'='Get-DbaDbTable'
-    'Get-DbaTraceFile'='Get-DbaTrace'
-    'Get-DbaUserLevelPermission'='Get-DbaUserPermission'
-    'Get-DbaXEventSession'='Get-DbaXESession'
-    'Get-DbaXEventSessionTarget'='Get-DbaXESessionTarget'
-    'Get-DiskSpace'='Get-DbaDiskSpace'
-    'Get-SqlMaxMemory'='Get-DbaMaxMemory'
-    'Get-SqlRegisteredServerName'='Get-DbaCmsRegServer'
-    'Get-SqlServerKey'='Get-DbaProductKey'
-    'Import-DbaCsvToSql'='Import-DbaCsv'
-    'Import-DbaRegisteredServer'='Import-DbaCmsRegServer'
-    'Import-SqlSpConfigure'='Import-DbaSpConfigure'
-    'Install-SqlWhoIsActive'='Install-DbaWhoIsActive'
-    'Invoke-DbaCmd'='Invoke-DbaQuery'
-    'Invoke-DbaDatabaseClone'='Invoke-DbaDbClone'
-    'Invoke-DbaDatabaseShrink'='Invoke-DbaDbShrink'
-    'Invoke-DbaDatabaseUpgrade'='Invoke-DbaDbUpgrade'
-    'Invoke-DbaLogShipping'='Invoke-DbaDbLogShipping'
-    'Invoke-DbaLogShippingRecovery'='Invoke-DbaDbLogShipRecovery'
-    'Invoke-DbaSqlQuery'='Invoke-DbaQuery'
-    'Move-DbaRegisteredServer'='Move-DbaCmsRegServer'
-    'Move-DbaRegisteredServerGroup'='Move-DbaCmsRegServerGroup'
-    'New-DbaDatabaseCertificate'='New-DbaDbCertificate'
-    'New-DbaDatabaseMasterKey'='New-DbaDbMasterKey'
-    'New-DbaDatabaseSnapshot'='New-DbaDbSnapshot'
-    'New-DbaPublishProfile'='New-DbaDacProfile'
-    'New-DbaSqlConnectionString'='New-DbaConnectionString'
-    'New-DbaSqlConnectionStringBuilder'='New-DbaConnectionStringBuilder'
-    'New-DbaSqlDirectory'='New-DbaDirectory'
-    'Out-DbaDataTable'='ConvertTo-DbaDataTable'
-    'Publish-DbaDacpac'='Publish-DbaDacPackage'
-    'Read-DbaXEventFile'='Read-DbaXEFile'
-    'Register-DbaConfig'='Register-DbatoolsConfig'
-    'Remove-DbaDatabaseCertificate'='Remove-DbaDbCertificate'
-    'Remove-DbaDatabaseMasterKey'='Remove-DbaDbMasterKey'
-    'Remove-DbaDatabaseSnapshot'='Remove-DbaDbSnapshot'
-    'Remove-DbaOrphanUser'='Remove-DbaDbOrphanUser'
-    'Remove-DbaRegisteredServer'='Remove-DbaCmsRegServer'
-    'Remove-DbaRegisteredServerGroup'='Remove-DbaCmsRegServerGroup'
-    'Remove-SqlDatabaseSafely'='Remove-DbaDatabaseSafely'
-    'Remove-SqlOrphanUser'='Remove-DbaDbOrphanUser'
-    'Repair-DbaOrphanUser'='Repair-DbaDbOrphanUser'
-    'Repair-SqlOrphanUser'='Repair-DbaDbOrphanUser'
-    'Reset-SqlAdmin'='Reset-DbaAdmin'
-    'Reset-SqlSaPassword'='Reset-SqlAdmin'
-    'Restart-DbaSqlService'='Restart-DbaService'
-    'Restore-DbaDatabaseCertificate'='Restore-DbaDbCertificate'
-    'Restore-DbaDatabaseSnapshot'='Restore-DbaDbSnapshot'
-    'Restore-HallengrenBackup'='Restore-SqlBackupFromDirectory'
-    'Set-DbaConfig'='Set-DbatoolsConfig'
-    'Set-DbaDatabaseOwner'='Set-DbaDbOwner'
-    'Set-DbaDatabaseState'='Set-DbaDbState'
-    'Set-DbaDbQueryStoreOptions'='Set-DbaDbQueryStoreOption'
-    'Set-DbaJobOwner'='Set-DbaAgentJobOwner'
-    'Set-DbaQueryStoreConfig'='Set-DbaDbQueryStoreOption'
-    'Set-DbaTempDbConfiguration'='Set-DbaTempdbConfig'
-    'Set-SqlMaxMemory'='Set-DbaMaxMemory'
-    'Set-SqlTempDbConfiguration'='Set-DbaTempdbConfig'
-    'Show-DbaDatabaseList'='Show-DbaDbList'
-    'Show-SqlDatabaseList'='Show-DbaDbList'
-    'Show-SqlMigrationConstraint'='Test-SqlMigrationConstraint'
-    'Show-SqlServerFileSystem'='Show-DbaServerFileSystem'
-    'Show-SqlWhoIsActive'='Invoke-DbaWhoIsActive'
-    'Start-DbaSqlService'='Start-DbaService'
-    'Start-SqlMigration'='Start-DbaMigration'
-    'Stop-DbaSqlService'='Stop-DbaService'
-    'Sync-DbaSqlLoginPermission'='Sync-DbaLoginPermission'
-    'Sync-SqlLoginPermissions'='Sync-DbaLoginPermission'
-    'Test-DbaDatabaseCollation'='Test-DbaDbCollation'
-    'Test-DbaDatabaseCompatibility'='Test-DbaDbCompatibility'
-    'Test-DbaDatabaseOwner'='Test-DbaDbOwner'
-    'Test-DbaFullRecoveryModel'='Test-DbaDbRecoveryModel'
-    'Test-DbaJobOwner'='Test-DbaAgentJobOwner'
-    'Test-DbaLogShippingStatus'='Test-DbaDbLogShipStatus'
-    'Test-DbaRecoveryModel'='Test-DbaDbRecoveryModel'
-    'Test-DbaSqlBuild'='Test-DbaBuild'
-    'Test-DbaSqlManagementObject'='Test-DbaManagementObject'
-    'Test-DbaSqlPath'='Test-DbaPath'
-    'Test-DbaTempDbConfiguration'='Test-DbaTempdbConfig'
-    'Test-DbaValidLogin'='Test-DbaWindowsLogin'
-    'Test-DbaVirtualLogFile'='Test-DbaDbVirtualLogFile'
-    'Test-SqlConnection'='Test-DbaConnection'
-    'Test-SqlDiskAllocation'='Test-DbaDiskAllocation'
-    'Test-SqlMigrationConstraint'='Test-DbaMigrationConstraint'
-    'Test-SqlNetworkLatency'='Test-DbaNetworkLatency'
-    'Test-SqlPath'='Test-DbaPath'
-    'Test-SqlTempDbConfiguration'='Test-DbaTempdbConfig'
-    'Update-DbaSqlServiceAccount'='Update-DbaServiceAccount'
-    'Watch-DbaXEventSession'='Watch-DbaXESession'
-    'Watch-SqlDbLogin'='Watch-DbaDbLogin'
+$script:Renames = @{
+    'Add-DbaRegisteredServer'           = 'Add-DbaCmsRegServer'
+    'Add-DbaRegisteredServerGroup'      = 'Add-DbaCmsRegServerGroup'
+    'Backup-DbaDatabaseCertificate'     = 'Backup-DbaDbCertificate'
+    'Backup-DbaDatabaseMasterKey'       = 'Backup-DbaDbMasterKey'
+    'Clear-DbaSqlConnectionPool'        = 'Clear-DbaConnectionPool'
+    'Connect-DbaServer'                 = 'Connect-DbaInstance'
+    'Copy-DbaAgentCategory'             = 'Copy-DbaAgentJobCategory'
+    'Copy-DbaAgentProxyAccount'         = 'Copy-DbaAgentProxy'
+    'Copy-DbaAgentSharedSchedule'       = 'Copy-DbaAgentSchedule'
+    'Copy-DbaCentralManagementServer'   = 'Copy-DbaCmsRegServer'
+    'Copy-DbaDatabaseAssembly'          = 'Copy-DbaDbAssembly'
+    'Copy-DbaDatabaseMail'              = 'Copy-DbaDbMail'
+    'Copy-DbaExtendedEvent'             = 'Copy-DbaXESession'
+    'Copy-DbaQueryStoreConfig'          = 'Copy-DbaDbQueryStoreOption'
+    'Copy-DbaSqlDataCollector'          = 'Copy-DbaDataCollector'
+    'Copy-DbaSqlPolicyManagement'       = 'Copy-DbaPolicyManagement'
+    'Copy-DbaSqlServerAgent'            = 'Copy-DbaAgentServer'
+    'Copy-DbaTableData'                 = 'Copy-DbaDbTableData'
+    'Copy-SqlAgentCategory'             = 'Copy-DbaAgentJobCategory'
+    'Copy-SqlAlert'                     = 'Copy-DbaAgentAlert'
+    'Copy-SqlAudit'                     = 'Copy-DbaServerAudit'
+    'Copy-SqlAuditSpecification'        = 'Copy-DbaServerAuditSpecification'
+    'Copy-SqlBackupDevice'              = 'Copy-DbaBackupDevice'
+    'Copy-SqlCentralManagementServer'   = 'Copy-DbaCmsRegServer'
+    'Copy-SqlCredential'                = 'Copy-DbaCredential'
+    'Copy-SqlCustomError'               = 'Copy-DbaCustomError'
+    'Copy-SqlDatabase'                  = 'Copy-DbaDatabase'
+    'Copy-SqlDatabaseAssembly'          = 'Copy-DbaDbAssembly'
+    'Copy-SqlDatabaseMail'              = 'Copy-DbaDbMail'
+    'Copy-SqlDataCollector'             = 'Copy-DbaDataCollector'
+    'Copy-SqlEndpoint'                  = 'Copy-DbaEndpoint'
+    'Copy-SqlExtendedEvent'             = 'Copy-DbaXESession'
+    'Copy-SqlJob'                       = 'Copy-DbaAgentJob'
+    'Copy-SqlJobServer'                 = 'Copy-SqlServerAgent'
+    'Copy-SqlLinkedServer'              = 'Copy-DbaLinkedServer'
+    'Copy-SqlLogin'                     = 'Copy-DbaLogin'
+    'Copy-SqlOperator'                  = 'Copy-DbaAgentOperator'
+    'Copy-SqlPolicyManagement'          = 'Copy-DbaPolicyManagement'
+    'Copy-SqlProxyAccount'              = 'Copy-DbaAgentProxy'
+    'Copy-SqlResourceGovernor'          = 'Copy-DbaResourceGovernor'
+    'Copy-SqlServerAgent'               = 'Copy-DbaAgentServer'
+    'Copy-SqlServerTrigger'             = 'Copy-DbaServerTrigger'
+    'Copy-SqlSharedSchedule'            = 'Copy-DbaAgentSchedule'
+    'Copy-SqlSpConfigure'               = 'Copy-DbaSpConfigure'
+    'Copy-SqlSsisCatalog'               = 'Copy-DbaSsisCatalog'
+    'Copy-SqlSysDbUserObjects'          = 'Copy-DbaSysDbUserObject'
+    'Copy-SqlUserDefinedMessage'        = 'Copy-SqlCustomError'
+    'Expand-DbaTLogResponsibly'         = 'Expand-DbaDbLogFile'
+    'Expand-SqlTLogResponsibly'         = 'Expand-DbaDbLogFile'
+    'Export-DbaDacpac'                  = 'Export-DbaDacPackage'
+    'Export-DbaRegisteredServer'        = 'Export-DbaCmsRegServer'
+    'Export-SqlLogin'                   = 'Export-DbaLogin'
+    'Export-SqlSpConfigure'             = 'Export-DbaSpConfigure'
+    'Export-SqlUser'                    = 'Export-DbaUser'
+    'Find-DbaDatabaseGrowthEvent'       = 'Find-DbaDbGrowthEvent'
+    'Find-SqlDuplicateIndex'            = 'Find-DbaDuplicateIndex'
+    'Find-SqlUnusedIndex'               = 'Find-DbaDbUnusedIndex'
+    'Get-DbaCmsRegServerName'           = 'Get-DbaCmsRegServer'
+    'Get-DbaConfig'                     = 'Get-DbatoolsConfig'
+    'Get-DbaConfigValue'                = 'Get-DbatoolsConfigValue'
+    'Get-DbaDatabaseAssembly'           = 'Get-DbaDbAssembly'
+    'Get-DbaDatabaseCertificate'        = 'Get-DbaDbCertificate'
+    'Get-DbaDatabaseEncryption'         = 'Get-DbaDbEncryption'
+    'Get-DbaDatabaseFile'               = 'Get-DbaDbFile'
+    'Get-DbaDatabaseFreeSpace'          = 'Get-DbaDbSpace'
+    'Get-DbaDatabaseMasterKey'          = 'Get-DbaDbMasterKey'
+    'Get-DbaDatabasePartitionFunction'  = 'Get-DbaDbPartitionFunction'
+    'Get-DbaDatabasePartitionScheme'    = 'Get-DbaDbPartitionScheme'
+    'Get-DbaDatabaseSnapshot'           = 'Get-DbaDbSnapshot'
+    'Get-DbaDatabaseSpace'              = 'Get-DbaDbSpace'
+    'Get-DbaDatabaseState'              = 'Get-DbaDbState'
+    'Get-DbaDatabaseUdf'                = 'Get-DbaDbUdf'
+    'Get-DbaDatabaseUser'               = 'Get-DbaDbUser'
+    'Get-DbaDatabaseView'               = 'Get-DbaDbView'
+    'Get-DbaDbQueryStoreOptions'        = 'Get-DbaDbQueryStoreOption'
+    'Get-DbaDistributor'                = 'Get-DbaRepDistributor'
+    'Get-DbaInstance'                   = 'Connect-DbaInstance'
+    'Get-DbaJobCategory'                = 'Get-DbaAgentJobCategory'
+    'Get-DbaLog'                        = 'Get-DbaErrorLog'
+    'Get-DbaLogShippingError'           = 'Get-DbaDbLogShipError'
+    'Get-DbaOrphanUser'                 = 'Get-DbaDbOrphanUser'
+    'Get-DbaPolicy'                     = 'Get-DbaPbmPolicy'
+    'Get-DbaQueryStoreConfig'           = 'Get-DbaDbQueryStoreOption'
+    'Get-DbaRegisteredServerGroup'      = 'Get-DbaCmsRegServerGroup'
+    'Get-DbaRegisteredServerStore'      = 'Get-DbaCmsRegServerStore'
+    'Get-DbaRestoreHistory'             = 'Get-DbaDbRestoreHistory'
+    'Get-DbaRoleMember'                 = 'Get-DbaDbRoleMember'
+    'Get-DbaSqlBuildReference'          = 'Get-DbaBuildReference'
+    'Get-DbaSqlFeature'                 = 'Get-DbaFeature'
+    'Get-DbaSqlInstanceProperty'        = 'Get-DbaInstanceProperty'
+    'Get-DbaSqlInstanceUserOption'      = 'Get-DbaInstanceUserOption'
+    'Get-DbaSqlManagementObject'        = 'Get-DbaManagementObject'
+    'Get-DbaSqlModule'                  = 'Get-DbaModule'
+    'Get-DbaSqlProductKey'              = 'Get-DbaProductKey'
+    'Get-DbaSqlRegistryRoot'            = 'Get-DbaRegistryRoot'
+    'Get-DbaSqlService'                 = 'Get-DbaService'
+    'Get-DbaTable'                      = 'Get-DbaDbTable'
+    'Get-DbaTraceFile'                  = 'Get-DbaTrace'
+    'Get-DbaUserLevelPermission'        = 'Get-DbaUserPermission'
+    'Get-DbaXEventSession'              = 'Get-DbaXESession'
+    'Get-DbaXEventSessionTarget'        = 'Get-DbaXESessionTarget'
+    'Get-DiskSpace'                     = 'Get-DbaDiskSpace'
+    'Get-SqlMaxMemory'                  = 'Get-DbaMaxMemory'
+    'Get-SqlRegisteredServerName'       = 'Get-DbaCmsRegServer'
+    'Get-SqlServerKey'                  = 'Get-DbaProductKey'
+    'Import-DbaCsvToSql'                = 'Import-DbaCsv'
+    'Import-DbaRegisteredServer'        = 'Import-DbaCmsRegServer'
+    'Import-SqlSpConfigure'             = 'Import-DbaSpConfigure'
+    'Install-SqlWhoIsActive'            = 'Install-DbaWhoIsActive'
+    'Invoke-DbaCmd'                     = 'Invoke-DbaQuery'
+    'Invoke-DbaDatabaseClone'           = 'Invoke-DbaDbClone'
+    'Invoke-DbaDatabaseShrink'          = 'Invoke-DbaDbShrink'
+    'Invoke-DbaDatabaseUpgrade'         = 'Invoke-DbaDbUpgrade'
+    'Invoke-DbaLogShipping'             = 'Invoke-DbaDbLogShipping'
+    'Invoke-DbaLogShippingRecovery'     = 'Invoke-DbaDbLogShipRecovery'
+    'Invoke-DbaSqlQuery'                = 'Invoke-DbaQuery'
+    'Move-DbaRegisteredServer'          = 'Move-DbaCmsRegServer'
+    'Move-DbaRegisteredServerGroup'     = 'Move-DbaCmsRegServerGroup'
+    'New-DbaDatabaseCertificate'        = 'New-DbaDbCertificate'
+    'New-DbaDatabaseMasterKey'          = 'New-DbaDbMasterKey'
+    'New-DbaDatabaseSnapshot'           = 'New-DbaDbSnapshot'
+    'New-DbaPublishProfile'             = 'New-DbaDacProfile'
+    'New-DbaSqlConnectionString'        = 'New-DbaConnectionString'
+    'New-DbaSqlConnectionStringBuilder' = 'New-DbaConnectionStringBuilder'
+    'New-DbaSqlDirectory'               = 'New-DbaDirectory'
+    'Out-DbaDataTable'                  = 'ConvertTo-DbaDataTable'
+    'Publish-DbaDacpac'                 = 'Publish-DbaDacPackage'
+    'Read-DbaXEventFile'                = 'Read-DbaXEFile'
+    'Register-DbaConfig'                = 'Register-DbatoolsConfig'
+    'Remove-DbaDatabaseCertificate'     = 'Remove-DbaDbCertificate'
+    'Remove-DbaDatabaseMasterKey'       = 'Remove-DbaDbMasterKey'
+    'Remove-DbaDatabaseSnapshot'        = 'Remove-DbaDbSnapshot'
+    'Remove-DbaOrphanUser'              = 'Remove-DbaDbOrphanUser'
+    'Remove-DbaRegisteredServer'        = 'Remove-DbaCmsRegServer'
+    'Remove-DbaRegisteredServerGroup'   = 'Remove-DbaCmsRegServerGroup'
+    'Remove-SqlDatabaseSafely'          = 'Remove-DbaDatabaseSafely'
+    'Remove-SqlOrphanUser'              = 'Remove-DbaDbOrphanUser'
+    'Repair-DbaOrphanUser'              = 'Repair-DbaDbOrphanUser'
+    'Repair-SqlOrphanUser'              = 'Repair-DbaDbOrphanUser'
+    'Reset-SqlAdmin'                    = 'Reset-DbaAdmin'
+    'Reset-SqlSaPassword'               = 'Reset-SqlAdmin'
+    'Restart-DbaSqlService'             = 'Restart-DbaService'
+    'Restore-DbaDatabaseCertificate'    = 'Restore-DbaDbCertificate'
+    'Restore-DbaDatabaseSnapshot'       = 'Restore-DbaDbSnapshot'
+    'Restore-HallengrenBackup'          = 'Restore-SqlBackupFromDirectory'
+    'Set-DbaConfig'                     = 'Set-DbatoolsConfig'
+    'Set-DbaDatabaseOwner'              = 'Set-DbaDbOwner'
+    'Set-DbaDatabaseState'              = 'Set-DbaDbState'
+    'Set-DbaDbQueryStoreOptions'        = 'Set-DbaDbQueryStoreOption'
+    'Set-DbaJobOwner'                   = 'Set-DbaAgentJobOwner'
+    'Set-DbaQueryStoreConfig'           = 'Set-DbaDbQueryStoreOption'
+    'Set-DbaTempDbConfiguration'        = 'Set-DbaTempdbConfig'
+    'Set-SqlMaxMemory'                  = 'Set-DbaMaxMemory'
+    'Set-SqlTempDbConfiguration'        = 'Set-DbaTempdbConfig'
+    'Show-DbaDatabaseList'              = 'Show-DbaDbList'
+    'Show-SqlDatabaseList'              = 'Show-DbaDbList'
+    'Show-SqlMigrationConstraint'       = 'Test-SqlMigrationConstraint'
+    'Show-SqlServerFileSystem'          = 'Show-DbaServerFileSystem'
+    'Show-SqlWhoIsActive'               = 'Invoke-DbaWhoIsActive'
+    'Start-DbaSqlService'               = 'Start-DbaService'
+    'Start-SqlMigration'                = 'Start-DbaMigration'
+    'Stop-DbaSqlService'                = 'Stop-DbaService'
+    'Sync-DbaSqlLoginPermission'        = 'Sync-DbaLoginPermission'
+    'Sync-SqlLoginPermissions'          = 'Sync-DbaLoginPermission'
+    'Test-DbaDatabaseCollation'         = 'Test-DbaDbCollation'
+    'Test-DbaDatabaseCompatibility'     = 'Test-DbaDbCompatibility'
+    'Test-DbaDatabaseOwner'             = 'Test-DbaDbOwner'
+    'Test-DbaFullRecoveryModel'         = 'Test-DbaDbRecoveryModel'
+    'Test-DbaJobOwner'                  = 'Test-DbaAgentJobOwner'
+    'Test-DbaLogShippingStatus'         = 'Test-DbaDbLogShipStatus'
+    'Test-DbaRecoveryModel'             = 'Test-DbaDbRecoveryModel'
+    'Test-DbaSqlBuild'                  = 'Test-DbaBuild'
+    'Test-DbaSqlManagementObject'       = 'Test-DbaManagementObject'
+    'Test-DbaSqlPath'                   = 'Test-DbaPath'
+    'Test-DbaTempDbConfiguration'       = 'Test-DbaTempdbConfig'
+    'Test-DbaValidLogin'                = 'Test-DbaWindowsLogin'
+    'Test-DbaVirtualLogFile'            = 'Test-DbaDbVirtualLogFile'
+    'Test-SqlConnection'                = 'Test-DbaConnection'
+    'Test-SqlDiskAllocation'            = 'Test-DbaDiskAllocation'
+    'Test-SqlMigrationConstraint'       = 'Test-DbaMigrationConstraint'
+    'Test-SqlNetworkLatency'            = 'Test-DbaNetworkLatency'
+    'Test-SqlPath'                      = 'Test-DbaPath'
+    'Test-SqlTempDbConfiguration'       = 'Test-DbaTempdbConfig'
+    'Update-DbaSqlServiceAccount'       = 'Update-DbaServiceAccount'
+    'Watch-DbaXEventSession'            = 'Watch-DbaXESession'
+    'Watch-SqlDbLogin'                  = 'Watch-DbaDbLogin'
 }
 foreach ($_ in $script:renames.GetEnumerator()) {
     Set-Alias -Name $_.Key -Value $_.Value
@@ -501,10 +501,10 @@ foreach ($_ in $script:renames.GetEnumerator()) {
 
 # Leave forever
 $forever = @{
-    'Attach-DbaDatabase'='Mount-DbaDatabase'
-    'Detach-DbaDatabase'='Dismount-DbaDatabase'
-    'Get-DbaRegisteredServer'='Get-DbaCmsRegServer'
-    'Write-DbaDataTable'='Write-DbaDbTableData'
+    'Attach-DbaDatabase'      = 'Mount-DbaDatabase'
+    'Detach-DbaDatabase'      = 'Dismount-DbaDatabase'
+    'Get-DbaRegisteredServer' = 'Get-DbaCmsRegServer'
+    'Write-DbaDataTable'      = 'Write-DbaDbTableData'
 }
 foreach ($_ in $forever.GetEnumerator()) {
     Set-Alias -Name $_.Key -Value $_.Value
@@ -1081,8 +1081,8 @@ $script:windowsonly = @(
 # If a developer or appveyor calls the psm1 directly, they want all functions
 # So do not explicity export because everything else is then implicity excluded
 if (-not $script:multiFileImport) {
-    $exports = 
-        @(if (($PSVersionTable.Platform)) {
+    $exports =
+    @(if (($PSVersionTable.Platform)) {
             if ($PSVersionTable.Platform -ne "Win32NT") {
                 $script:xplat
             } else {
@@ -1091,14 +1091,14 @@ if (-not $script:multiFileImport) {
             }
         } else {
             $script:xplat
-        
+
             $script:windowsonly
             $script:noncoresmo
         })
 
     $aliasExport = @(
         foreach ($k in $script:Renames.Keys) {
-            $k 
+            $k
         }
         foreach ($k in $script:Forever.Keys) {
             $k

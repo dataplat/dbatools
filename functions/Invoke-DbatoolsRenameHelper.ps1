@@ -67,22 +67,22 @@ function Invoke-DbatoolsRenameHelper {
     )
     begin {
         $morerenames = @{
-    ExcludeAllSystemDb='ExcludeSystem'
-    ExcludeAllUserDb='ExcludeUser'
-    'Invoke-Sqlcmd2'='Invoke-DbaQuery'
-    NetworkShare='SharedPath'
-    NoDatabases='ExcludeDatabases'
-    NoDisabledJobs='ExcludeDisabledJobs'
-    NoJobs='ExcludeJobs'
-    NoJobSteps='ExcludeJobSteps'
-    NoQueryTextColumn='ExcludeQueryTextColumn'
-    NoSystem='ExcludeSystemLogins'
-    NoSystemDb='ExcludeSystem'
-    NoSystemLogins='ExcludeSystemLogins'
-    NoSystemObjects='ExcludeSystemObjects'
-    NoSystemSpid='ExcludeSystemSpids'
-    UseLastBackups='UseLastBackup'
-}
+            ExcludeAllSystemDb = 'ExcludeSystem'
+            ExcludeAllUserDb   = 'ExcludeUser'
+            'Invoke-Sqlcmd2'   = 'Invoke-DbaQuery'
+            NetworkShare       = 'SharedPath'
+            NoDatabases        = 'ExcludeDatabases'
+            NoDisabledJobs     = 'ExcludeDisabledJobs'
+            NoJobs             = 'ExcludeJobs'
+            NoJobSteps         = 'ExcludeJobSteps'
+            NoQueryTextColumn  = 'ExcludeQueryTextColumn'
+            NoSystem           = 'ExcludeSystemLogins'
+            NoSystemDb         = 'ExcludeSystem'
+            NoSystemLogins     = 'ExcludeSystemLogins'
+            NoSystemObjects    = 'ExcludeSystemObjects'
+            NoSystemSpid       = 'ExcludeSystemSpids'
+            UseLastBackups     = 'UseLastBackup'
+        }
 
         $allrenames = $script:renames + $morerenames
     }

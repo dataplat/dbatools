@@ -54,7 +54,7 @@ function Test-Bound {
     )
 
     if (-not $ParameterName) { return $false }
-    if (-not $BoundParameters) { return $false }  
+    if (-not $BoundParameters) { return $false }
 
     if ($And) {
         $test = $true
