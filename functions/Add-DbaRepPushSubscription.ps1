@@ -1,4 +1,4 @@
-function Add-DbaRepPushSubscriber {
+function Add-DbaRepPushSubscription {
     <#
     .SYNOPSIS
         Adds a new subscriber to an existing publication
@@ -21,9 +21,6 @@ function Add-DbaRepPushSubscriber {
     .PARAMETER subDatabaseName
         The name of the database on the subscriber.
 
-    .PARAMETER subType
-        The type of subscription e.g. PULL
-
     .PARAMETER subSyncType
         The subscription sync type. e.g. backup, snapshot, none
 
@@ -37,10 +34,10 @@ function Add-DbaRepPushSubscriber {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaRepPushSubscriber
+        https://dbatools.io/Add-DbaRepPushSubscription
 
     .EXAMPLE
-        PS C:\> Add-DbaRepPushSubscriber -publisherName "server1\dev2016" -subscriberName "server2\dev2016" -publicationName "avworkspub1" -pubDatabaseName "AdventureWorks2012" -subDatabaseName "replicatedAdventureWorks2012" -subSyncType "none"
+        PS C:\> Add-DbaRepPushSubscription -publisherName "server1\dev2016" -subscriberName "server2\dev2016" -publicationName "avworkspub1" -pubDatabaseName "AdventureWorks2012" -subDatabaseName "replicatedAdventureWorks2012" -subSyncType "none"
 
         Creates a new subscription to "avworkspub1" on server1\dev2016 to server2\dev2016 with a subscription sync type of none.
         The published database is AdventureWorks2012 on server1\dev2016, the subscriber database is replicatedAdventureWorks2012 on server2\dev2016.
@@ -53,7 +50,6 @@ function Add-DbaRepPushSubscriber {
         $publicationName,
         $pubDatabaseName,
         $subDatabaseName,
-        $subType,
         $subSyncType
     )
 
