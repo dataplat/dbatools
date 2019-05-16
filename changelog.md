@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.822] - 2019-05-06
+### Fixed
+* `Get-DbaCmsRegServer` overwrites the first server in the list with the CMS when using `-IncludeSelf` [#5367](https://github.com/sqlcollaborative/dbatools/issues/5367)
+### Changed
+* Error handling & messaging in `Find-DbaInstance` [#5482](https://github.com/sqlcollaborative/dbatools/pull/5482)
+* Replace output with progress bar in certificate-related functions [#5471](https://github.com/sqlcollaborative/dbatools/pull/5471)
+### Added
+* Certificate type in Get-DbaComputerCertificate [#5483](https://github.com/sqlcollaborative/dbatools/pull/5483)
+
 ## [0.9.821] - 2019-05-02
 ### Fixed
 * Turkish "I" Char Problem When using OS functions [#5453](https://github.com/sqlcollaborative/dbatools/issues/5453) [#5467](https://github.com/sqlcollaborative/dbatools/pull/5467)
@@ -15,7 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 * `Restore-DbaBackupFromDirectory`, superseded by `Restore-DbaDatabase` [#5457](https://github.com/sqlcollaborative/dbatools/issues/5457)
 * Remove default value of seeding mode in `Add-DbaAgReplica` [#5469](https://github.com/sqlcollaborative/dbatools/pull/5469)
-### Added
 
 ## [0.9.820] - 2019-05-02
 ### Fixed
