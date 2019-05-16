@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.819] - 2019-05-01
+### Added
+* `LastError` parameter on `Get-DbaToolsLog` to only get the most recent error in the log
+* Support for Managed Identities in `New-DbaAzAccessToken`
+
 ## [0.9.818] - 2019-04-30
 ### Fixed
 * `Get-DBAAvailabilityGroup` `IsPrimary` returns false when a port number is passed in under `$SQLInstance` [#5435](https://github.com/sqlcollaborative/dbatools/issues/5435)
