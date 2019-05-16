@@ -202,7 +202,7 @@ function Update-DbaInstance {
             }
         }
         $actions = @()
-        $actionTemplate = @{ }
+        $actionTemplate = @{}
         if ($InstanceName) { $actionTemplate.InstanceName = $InstanceName }
         if ($Continue) { $actionTemplate.Continue = $Continue }
         #Putting together list of actions based on current ParameterSet
