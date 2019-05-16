@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.828] - 2019-05-15
+### Added
+* `Get-DbatoolsChangeLog` to open link to this changelog [#5528](https://github.com/sqlcollaborative/dbatools/pull/5528)
+
 ## [0.9.827] - 2019-05-14
 ### Fixed
 * `Export-DbaCredential` - `-Identity` doesn't filter, DAC duplication problem [#5443](https://github.com/sqlcollaborative/dbatools/issues/5443)
