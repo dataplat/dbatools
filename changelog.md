@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.820] - 2019-05-20
+## [0.9.821] - 2019-05-02
+### Fixed
+* Turkish "I" Char Problem When using OS functions [#5453](https://github.com/sqlcollaborative/dbatools/issues/5453) [#5467](https://github.com/sqlcollaborative/dbatools/pull/5467)
+### Changed
+* Overhaul of `Show-DbaDbList` for 1.0 compliance [#5458](https://github.com/sqlcollaborative/dbatools/issues/5458i)
+* Overhaul of `Get-DbaMsdtc` for 1.0 compliance [#5456](https://github.com/sqlcollaborative/dbatools/issues/5456)
+* Overhaul of `Get-DbaDetachedDatabaseInfo` for 1.0 compliance [#5455](https://github.com/sqlcollaborative/dbatools/issues/5455)
+### Removed
+* `Restore-DbaBackupFromDirectory`, superseded by `Restore-DbaDatabase` [#5457](https://github.com/sqlcollaborative/dbatools/issues/5457)
+* Remove default value of seeding mode in `Add-DbaAgReplica` [#5469](https://github.com/sqlcollaborative/dbatools/pull/5469)
+### Added
+
+## [0.9.820] - 2019-05-02
 ### Fixed
 * `Update-DbaInstance` uses the same folder to extract the files [#5447](https://github.com/sqlcollaborative/dbatools/issues/5447)
 * `Restore-DbaDatabase` reports more than 1 database passed in when only 1 was passed  [#5425](https://github.com/sqlcollaborative/dbatools/issues/5425)
