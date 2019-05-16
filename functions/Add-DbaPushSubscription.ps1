@@ -62,7 +62,7 @@ function Add-DbaPushSubscription {
 
 
     # create the PULL replication subscription object
-    try{
+    try {
         $ts = New-Object Microsoft.SqlServer.Replication.TransSubscription
     } catch {
         Stop-Function -Message "Error occurred creating the replication object" -Continue
