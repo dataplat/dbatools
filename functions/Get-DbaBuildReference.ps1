@@ -309,7 +309,7 @@ function Get-DbaBuildReference {
         }
         #endregion Helper functions
 
-        $moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
+        $moduledirectory = $script:PSModuleRoot
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
