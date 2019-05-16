@@ -97,8 +97,8 @@ function Invoke-DbatoolsRenameHelper {
                         Set-Content -Path $file -Encoding $Encoding -Value $content
                         [pscustomobject]@{
                             Path         = $file
-                            Pattern      = $name.AliasName
-                            ReplacedWith = $name.Definition
+                            Pattern      = $name.Key
+                            ReplacedWith = $name.Value
                         }
                     }
                 }
