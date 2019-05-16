@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.824] - 2019-05-09
+### Fixed
+* `Invoke-DbaDbMirroring` fails to establish connection with Mirror server [#5318](https://github.com/sqlcollaborative/dbatools/issues/5318)
+### Added
+* Support for Linux paths in `Get-DbaMaintenanceSolutionLog` [#5035](https://github.com/sqlcollaborative/dbatools/issues/5035)
+* Support for `-WhatIf` in `Reset-DbatoolsConfig` [#5499](https://github.com/sqlcollaborative/dbatools/pull/5499)
+
 ## [0.9.823] - 2019-05-08
 ### Fixed
 * `Show-DbaDbList` calls non-existent function [#5494](https://github.com/sqlcollaborative/dbatools/issues/5494)
