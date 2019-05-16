@@ -9,22 +9,22 @@ function Select-DefaultView {
     https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 
     TypeName creates a new type so that we can use ps1xml to modify the output
-       #>
+    #>
 
     [CmdletBinding()]
     param (
-    [parameter(ValueFromPipeline=$true)]
-    [psobject]
-    $InputObject,
+        [parameter(ValueFromPipeline = $true)]
+        [psobject]
+        $InputObject,
 
-    [string[]]
-    $Property,
+        [string[]]
+        $Property,
 
-    [string[]]
-    $ExcludeProperty,
+        [string[]]
+        $ExcludeProperty,
 
-    [string]
-    $TypeName
+        [string]
+        $TypeName
     )
     process {
 
@@ -40,13 +40,13 @@ function Select-DefaultView {
             }
 
             $props = ($InputObject | Get-Member | Where-Object MemberType -in 'Property', 'NoteProperty', 'AliasProperty' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
-            $defaultset = 
-                [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$props)
+            $defaultset =
+            [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$props)
         } else {
             # property needs to be string
             if ("$property" -like "* as *") {
-                $property = 
-                    @(foreach ($p in $property) {
+                $property =
+                @(foreach ($p in $property) {
                         if ($p -like "* as *") {
                             $old, $new = $p -isplit " as "
                             # Do not be tempted to not pipe here
@@ -57,8 +57,8 @@ function Select-DefaultView {
                         }
                     })
             }
-            $defaultset = 
-                [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$Property)
+            $defaultset =
+            [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$Property)
         }
 
         $standardmembers = [Management.Automation.PSMemberInfo[]]@($defaultset)

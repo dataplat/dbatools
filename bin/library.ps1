@@ -34,12 +34,12 @@ Mostly for developers working on the library.
 
 #>
 
-$dll = 
-    if ($PSVersionTable.PSVersion.Major -ge 6) {
-        Join-Path $psModuleRoot "bin\netcoreapp2.1\dbatools.dll"
-    } else {
-        Join-Path $psModuleRoot "bin\net452\dbatools.dll"
-    }
+$dll =
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    Join-Path $psModuleRoot "bin\netcoreapp2.1\dbatools.dll"
+} else {
+    Join-Path $psModuleRoot "bin\net452\dbatools.dll"
+}
 
 $ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.
 
@@ -73,7 +73,7 @@ if ($ImportLibrary) {
 
             if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
-                
+
                 try {
                     Write-Verbose -Message "Found library, trying to copy & import"
                     $dbaToolsAssembly = Import-Module -Name "$dll"
@@ -131,8 +131,8 @@ aka "The guy who made most of The Library that Failed to import"
 
 #region Version Warning
 
-$dbaToolsVersion = 
-    @(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
+$dbaToolsVersion =
+@(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
         if ($_ -is [Reflection.AssemblyFileVersionAttribute]) {
             $_.ConstructorArguments.Value
             break

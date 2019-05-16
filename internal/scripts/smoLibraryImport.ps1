@@ -96,12 +96,11 @@ $scriptBlock = {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
         $null = try {
-            Import-Module $assemblyPath 
+            Import-Module $assemblyPath
         } catch {
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
-            } 
-            catch {
+            } catch {
                 Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
             }
         }

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject','Encoding','EnableException'
+        [object[]]$knownParameters = 'InputObject', 'Encoding', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -37,7 +37,7 @@ function Get-DbaStub {
     }
 }
 '@
-    
+
     $wantedContent = @'
 function Get-DbaStub {
     <#
@@ -56,13 +56,13 @@ function Get-DbaStub {
 }
 
 '@
-    
+
     Context "replacement actually works" {
         $temppath = Join-Path $TestDrive 'somefile2.ps1'
         [System.IO.File]::WriteAllText($temppath, $content)
         $results = $temppath | Invoke-DbatoolsRenameHelper
         $newcontent = [System.IO.File]::ReadAllText($temppath)
-        
+
         It "returns 4 results" {
             $results.Count | Should -Be 4
         }
@@ -79,7 +79,7 @@ function Get-DbaStub {
             $result = $results | Where-Object Pattern -eq "Export-SqlUser"
             $result.ReplacedWith | Should -Be "Export-DbaUser"
         }
-        
+
         It "should return exactly the format we want" {
             $newcontent | Should -Be $wantedContent
         }
