@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.823] - 2019-05-08
+### Fixed
+* `Show-DbaDbList` calls non-existent function [#5494](https://github.com/sqlcollaborative/dbatools/issues/5494)
+* Return elapsed minutes from `Get-DbaSsisExecutionHistory` [#5492](https://github.com/sqlcollaborative/dbatools/pull/5492)
+### Added
+* Additional verbose output in `Start-DbaAgentJob` [#5488](https://github.com/sqlcollaborative/dbatools/pull/5488)
+
 ## [0.9.822] - 2019-05-06
 ### Fixed
 * `Get-DbaCmsRegServer` overwrites the first server in the list with the CMS when using `-IncludeSelf` [#5367](https://github.com/sqlcollaborative/dbatools/issues/5367)
