@@ -869,5 +869,4 @@
             IsPrerelease = 'True'
         }
     }
-}   }
 }
