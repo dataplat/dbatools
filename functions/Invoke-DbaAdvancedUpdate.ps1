@@ -29,6 +29,9 @@ Function Invoke-DbaAdvancedUpdate {
           to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
+    .PARAMETER ExtractPath
+        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -40,13 +43,16 @@ Function Invoke-DbaAdvancedUpdate {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER ExtractPath
-        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
-
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 
     Invokes update actions on SQL1 after restarting it.
+
+    .EXAMPLE
+    PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -ExtractPath C:\temp
+
+    Extracts required files to the specific location "C:\temp". Invokes update actions on SQL1 after restarting it.
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
