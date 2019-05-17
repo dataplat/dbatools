@@ -197,6 +197,19 @@ function Connect-DbaInstance {
 
         Generates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.
         The connection is subsequently used to perform a sample query.
+
+        .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using a preconstructed connstring, then performs a sample query.
+
+        .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -Connstring "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using a preconstructed connstring, then performs a sample query.
+
     #>
     [CmdletBinding()]
     param (
@@ -233,6 +246,7 @@ function Connect-DbaInstance {
         [string]$WorkstationId,
         [string]$AppendConnectionString,
         [switch]$SqlConnectionOnly,
+        [string]$AzureDomain = "database.windows.net",
         [switch]$DisableException
     )
     begin {
@@ -307,6 +321,7 @@ function Connect-DbaInstance {
         $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
+        if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
     }
     process {
 
@@ -318,7 +333,7 @@ function Connect-DbaInstance {
             #endregion Safely convert input into instance parameters
 
             # Gracefully handle Azure connections
-            if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
+            if ($Connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
                     $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
@@ -342,7 +357,12 @@ function Connect-DbaInstance {
                     }
                 }
                 # Build connection string
-                $azureconnstring = New-DbaConnectionString @boundparams
+                if ($Connstring) {
+                    $azureconnstring = $Connstring
+                } else {
+                    $azureconnstring = New-DbaConnectionString @boundparams
+                }
+
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
