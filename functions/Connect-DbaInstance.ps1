@@ -120,6 +120,12 @@ function Connect-DbaInstance {
     .PARAMETER AzureUnsupported
         Terminate if Azure is detected but not supported
 
+    .PARAMETER AzureDomain
+        By default, this is set to database.windows.net
+
+        In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
+        This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
+
     .PARAMETER MinimumVersion
         Terminate if the target SQL Server instance version does not meet version requirements
 
@@ -202,7 +208,8 @@ function Connect-DbaInstance {
         PS C:\> $server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
-        Logs into Azure using a preconstructed connstring, then performs a sample query.
+        In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
+        This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
         .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -Connstring "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
