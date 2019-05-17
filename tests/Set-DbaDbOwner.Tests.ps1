@@ -53,7 +53,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Excludes databases" {
-        $svr.Databases[$dbnametwo].refresh()
+        $svr.Databases[$dbName].refresh()
         $results = Set-DbaDbOwner -SqlInstance $script:instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
         It "Excludes specified database" {
             $results.Database | Should Not Contain $dbnametwo
