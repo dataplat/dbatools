@@ -1,10 +1,12 @@
 function Connect-DbaInstance {
     <#
     .SYNOPSIS
-        Creates a robust SMO SQL Server object.
+        Creates a robust, reusable SQL Server object.
 
     .DESCRIPTION
-        This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
+        This command creates a robus, reusable sql server object.
+
+        It is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
 
         By default, this command also sets the connection's ApplicationName property  to "dbatools PowerShell module - dbatools.io - custom connection". If you're doing anything that requires profiling, you can look for this client name.
 
@@ -121,6 +123,7 @@ function Connect-DbaInstance {
         Terminate if Azure is detected but not supported
 
     .PARAMETER AzureDomain
+
         By default, this is set to database.windows.net
 
         In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
@@ -212,16 +215,17 @@ function Connect-DbaInstance {
         This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
         .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -Connstring "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
+        PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
+        ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
 
     #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Alias("ServerInstance", "SqlServer", "Connstring", "ConnectionString")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
@@ -329,6 +333,7 @@ function Connect-DbaInstance {
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
         if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
+
     }
     process {
 
@@ -339,8 +344,11 @@ function Connect-DbaInstance {
             # removed for now
             #endregion Safely convert input into instance parameters
 
+            if ($instance.IsConnectionString) {
+                $connstring = $instance.InputObject
+            }
             # Gracefully handle Azure connections
-            if ($Connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+            if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
                     $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
@@ -364,8 +372,8 @@ function Connect-DbaInstance {
                     }
                 }
                 # Build connection string
-                if ($Connstring) {
-                    $azureconnstring = $Connstring
+                if ($connstring) {
+                    $azureconnstring = $connstring
                 } else {
                     $azureconnstring = New-DbaConnectionString @boundparams
                 }
