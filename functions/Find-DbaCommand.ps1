@@ -190,7 +190,7 @@ function Find-DbaCommand {
             }
         }
 
-        $moduleDirectory = (Get-Module -Name dbatools).ModuleBase
+        $moduleDirectory = $script:PSModuleRoot
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")
