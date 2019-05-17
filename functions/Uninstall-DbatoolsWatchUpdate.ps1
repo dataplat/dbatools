@@ -1,10 +1,10 @@
-function Uninstall-DbaWatchUpdate {
+function Uninstall-DbatoolsWatchUpdate {
     <#
     .SYNOPSIS
-        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbatoolsWatchUpdate so that notifications no longer pop up.
 
     .DESCRIPTION
-        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbatoolsWatchUpdate so that notifications no longer pop up.
 
     .NOTES
         Tags: JustForFun, Module
@@ -15,12 +15,12 @@ function Uninstall-DbaWatchUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Uninstall-DbaWatchUpdate
+        https://dbatools.io/Uninstall-DbatoolsWatchUpdate
 
     .EXAMPLE
-        PS C:\> Uninstall-DbaWatchUpdate
+        PS C:\> Uninstall-DbatoolsWatchUpdate
 
-        Removes the scheduled task created by Install-DbaWatchUpdate.
+        Removes the scheduled task created by Install-DbatoolsWatchUpdate.
 
     #>
     process {
@@ -63,7 +63,7 @@ function Uninstall-DbaWatchUpdate {
 
         if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
             Write-Message -Level Warning -Message "Removal of this scheduled task requires elevated permissions."
-            Start-Process powershell -Verb runAs -ArgumentList Uninstall-DbaWatchUpdate -Wait
+            Start-Process powershell -Verb runAs -ArgumentList Uninstall-DbatoolsWatchUpdate -Wait
         } else {
             Invoke-Command -ScriptBlock $script
         }

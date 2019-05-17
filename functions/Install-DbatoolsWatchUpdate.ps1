@@ -1,4 +1,4 @@
-function Install-DbaWatchUpdate {
+function Install-DbatoolsWatchUpdate {
     <#
     .SYNOPSIS
         Adds the scheduled task to support Watch-DbaUpdate.
@@ -29,15 +29,15 @@ function Install-DbaWatchUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Install-DbaWatchUpdate
+        https://dbatools.io/Install-DbatoolsWatchUpdate
 
     .EXAMPLE
-        PS C:\> Install-DbaWatchUpdate
+        PS C:\> Install-DbatoolsWatchUpdate
 
         Adds the scheduled task needed by Watch-DbaUpdate
 
     .EXAMPLE
-        PS C:\> Install-DbaWatchUpdate -TaskName MyScheduledTask
+        PS C:\> Install-DbatoolsWatchUpdate -TaskName MyScheduledTask
 
         Will create the scheduled task as the name MyScheduledTask
 
@@ -76,7 +76,7 @@ function Install-DbaWatchUpdate {
                 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
                     Write-Message -Level Warning -Message "This command has to run using RunAs mode (privileged) to create the Scheduled Task. This will only happen once."
                     if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Starting process in RunAs mode") ) {
-                        Start-Process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
+                        Start-Process powershell -Verb runAs -ArgumentList Install-DbatoolsWatchUpdate -Wait
                     }
                 }
 
