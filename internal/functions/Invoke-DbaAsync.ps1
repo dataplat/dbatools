@@ -136,7 +136,12 @@ function Invoke-DbaAsync {
 '@
 
             try {
-                Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
+                if ($PSEdition -eq 'Core') {
+                    $assemblies = @('System.Management.Automation', 'System.Data.Common', 'System.ComponentModel.TypeConverter')
+                } else {
+                    $assemblies = @('System.Data', 'System.Xml')
+                }
+                Add-Type -TypeDefinition $cSharp -ReferencedAssemblies $assemblies -ErrorAction stop
             } catch {
                 if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
                     Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
