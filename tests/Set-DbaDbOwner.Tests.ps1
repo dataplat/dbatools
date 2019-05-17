@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','TargetLogin','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'TargetLogin', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -53,10 +53,35 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Excludes databases" {
-        $svr.Databases[$dbname].refresh()
+        $svr.Databases[$dbName].refresh()
         $results = Set-DbaDbOwner -SqlInstance $script:instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
         It "Excludes specified database" {
             $results.Database | Should Not Contain $dbnametwo
+        }
+        It "Updates at least one database" {
+            @($results).Count | Should BeGreaterOrEqual 1
+        }
+    }
+
+    Context "Enables input from Get-DbaDatabase" {
+        $svr.Databases[$dbnametwo].refresh()
+        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbnametwo
+        $results = Set-DbaDbOwner -InputObject $db -TargetLogin $owner
+
+        It "Includes specified database" {
+            $results.Database | Should Be $dbnametwo
+        }
+        It "Sets the database owner on databases" {
+            $results.owner | Should Be $owner
+        }
+    }
+
+    Context "Sets database owner to sa" {
+        $results = Set-DbaDbOwner -SqlInstance $script:instance1
+        It "Sets the database owner on multiple databases" {
+            foreach ($r in $results) {
+                $r.owner | Should Be 'sa'
+            }
         }
         It "Updates at least one database" {
             @($results).Count | Should BeGreaterOrEqual 1
