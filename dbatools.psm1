@@ -1440,7 +1440,8 @@ $script:xplat = @(
     'Export-DbaDbTableData',
     'Backup-DbaServiceMasterKey',
     'Invoke-DbaDbPiiScan',
-    'New-DbaAzAccessToken'
+    'New-DbaAzAccessToken',
+    'Get-DbatoolsChangeLog'
 )
 
 $script:noncoresmo = @(

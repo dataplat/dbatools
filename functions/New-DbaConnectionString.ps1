@@ -4,7 +4,11 @@ function New-DbaConnectionString {
         Builds or extracts a SQL Server Connection String
 
     .DESCRIPTION
-        Builds or extracts a SQL Server Connection String
+        Builds or extracts a SQL Server Connection String. Note that dbatools-style syntax is used.
+
+        So you do not need to specify "Data Source", you can just specify -SqlInstance and -SqlCredential and we'll handle it for you.
+
+        This is the simplified PowerShell approach to connection string building. See examples for more info.
 
         See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
@@ -143,6 +147,12 @@ function New-DbaConnectionString {
         Login to sql2014 as SQL login sqladmin.
 
     .EXAMPLE
+        PS C:\> $connstring = New-DbaConnectionString -SqlInstance mydb.database.windows.net -SqlCredential me@myad.onmicrosoft.com -Database db
+
+        Creates a connection string for an Azure Active Directory login to Azure SQL db. Output looks like this:
+        Data Source=TCP:mydb.database.windows.net,1433;Initial Catalog=db;User ID=me@myad.onmicrosoft.com;Password=fakepass;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;Application Name="dbatools PowerShell module - dbatools.io";Authentication="Active Directory Password"
+
+    .EXAMPLE
         PS C:\> $server = New-DbaConnectionString -SqlInstance sql2014 -ClientName "mah connection"
 
         Creates a connection string that connects using Windows Authentication and uses the client name "mah connection". So when you open up profiler or use extended events, you can search for "mah connection".
@@ -166,7 +176,7 @@ function New-DbaConnectionString {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Alias("ServerInstance", "SqlServer", "Server", "DataSource")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
