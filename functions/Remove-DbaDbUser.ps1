@@ -203,12 +203,16 @@ function Remove-DbaDbUser {
     }
 
     process {
-        if ($InputObject) {
-            Remove-DbUser $InputObject
+            if ($InputObject) {
+            $server = Connect-DbaInstance -SqlInstance $InputObject.Parent.Parent.Name 
+            $user = $server.Databases[$InputObject.Parent.Name].Users[$InputObject.Name]
+
+            Remove-DbUser $user
+
         } else {
             foreach ($instance in $SqlInstance) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
