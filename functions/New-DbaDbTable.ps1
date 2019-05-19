@@ -195,8 +195,9 @@ function Get-Table {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database]$InputObject,
+        [String]$Name,
+        [String]$Schema = "dbo",
+        [hashtable]$ColumnMap,
         [Switch]$AnsiNullsStatus,
         [Switch]$ChangeTrackingEnabled,
         [String]$DataSourceName,
@@ -245,15 +246,36 @@ function Get-Table {
         [Switch]$IsNode,
         [Switch]$IsEdge,
         [Switch]$IsVarDecimalStorageFormatEnabled,
-        [String]$Name,
-        [String]$Schema,
-        [Object]$UserData,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        function Get-SqlType {
+            param([string]$TypeName)
+            switch ($TypeName) {
+                'Boolean' {[Data.SqlDbType]::Bit}
+                'Byte[]' {[Data.SqlDbType]::VarBinary}
+                'Byte' {[Data.SQLDbType]::VarBinary}
+                'Datetime' {[Data.SQLDbType]::DateTime}
+                'Decimal' {[Data.SqlDbType]::Decimal}
+                'Double' {[Data.SqlDbType]::Float}
+                'Guid' {[Data.SqlDbType]::UniqueIdentifier}
+                'Int16' {[Data.SQLDbType]::SmallInt}
+                'Int32' {[Data.SQLDbType]::Int}
+                'Int64' {[Data.SqlDbType]::BigInt}
+                'UInt16' {[Data.SQLDbType]::SmallInt}
+                'UInt32' {[Data.SQLDbType]::Int}
+                'UInt64' {[Data.SqlDbType]::BigInt}
+                'Single' {[Data.SqlDbType]::Decimal}
+                default {[Data.SqlDbType]::VarChar}
+            }
+        }
+    }
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one Availability Group when using the SqlInstance parameter."
+            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName Name)) {
+                Stop-Function -Message "You must specify one or more databases and one Name when using the SqlInstance parameter."
                 return
             }
         }
@@ -263,70 +285,9 @@ function Get-Table {
         }
 
         foreach ($item in $InputObject) {
-            $object.InputObject = $InputObject
-            $object.AnsiNullsStatus = $AnsiNullsStatus
-            $object.ChangeTrackingEnabled = $ChangeTrackingEnabled
-            $object.DataSourceName = $DataSourceName
-            $object.Durability = $Durability
-            $object.ExternalTableDistribution = $ExternalTableDistribution
-            $object.FileFormatName = $FileFormatName
-            $object.FileGroup = $FileGroup
-            $object.FileStreamFileGroup = $FileStreamFileGroup
-            $object.FileStreamPartitionScheme = $FileStreamPartitionScheme
-            $object.FileTableDirectoryName = $FileTableDirectoryName
-            $object.FileTableNameColumnCollation = $FileTableNameColumnCollation
-            $object.FileTableNamespaceEnabled = $FileTableNamespaceEnabled
-            $object.HistoryTableName = $HistoryTableName
-            $object.HistoryTableSchema = $HistoryTableSchema
-            $object.IsExternal = $IsExternal
-            $object.IsFileTable = $IsFileTable
-            $object.IsMemoryOptimized = $IsMemoryOptimized
-            $object.IsSystemVersioned = $IsSystemVersioned
-            $object.Location = $Location
-            $object.LockEscalation = $LockEscalation
-            $object.Owner = $Owner
-            $object.PartitionScheme = $PartitionScheme
-            $object.QuotedIdentifierStatus = $QuotedIdentifierStatus
-            $object.RejectSampleValue = $RejectSampleValue
-            $object.RejectType = $RejectType
-            $object.RejectValue = $RejectValue
-            $object.RemoteDataArchiveDataMigrationState = $RemoteDataArchiveDataMigrationState
-            $object.RemoteDataArchiveEnabled = $RemoteDataArchiveEnabled
-            $object.RemoteDataArchiveFilterPredicate = $RemoteDataArchiveFilterPredicate
-            $object.RemoteObjectName = $RemoteObjectName
-            $object.RemoteSchemaName = $RemoteSchemaName
-            $object.RemoteTableName = $RemoteTableName
-            $object.RemoteTableProvisioned = $RemoteTableProvisioned
-            $object.ShardingColumnName = $ShardingColumnName
-            $object.TextFileGroup = $TextFileGroup
-            $object.TrackColumnsUpdatedEnabled = $TrackColumnsUpdatedEnabled
-            $object.HistoryRetentionPeriod = $HistoryRetentionPeriod
-            $object.HistoryRetentionPeriodUnit = $HistoryRetentionPeriodUnit
-            $object.DwTableDistribution = $DwTableDistribution
-            $object.RejectedRowLocation = $RejectedRowLocation
-            $object.OnlineHeapOperation = $OnlineHeapOperation
-            $object.LowPriorityMaxDuration = $LowPriorityMaxDuration
-            $object.DataConsistencyCheck = $DataConsistencyCheck
-            $object.LowPriorityAbortAfterWait = $LowPriorityAbortAfterWait
-            $object.MaximumDegreeOfParallelism = $MaximumDegreeOfParallelism
-            $object.IsNode = $IsNode
-            $object.IsEdge = $IsEdge
-            $object.IsVarDecimalStorageFormatEnabled = $IsVarDecimalStorageFormatEnabled
-            $object.Name = $Name
-            $object.Schema = $Schema
-            $object.UserData = $UserData
-        }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
             if ($Pscmdlet.ShouldProcess("Creating new object Microsoft.SqlServer.Management.Smo.Table")) {
                 try {
-                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $servder
-                    $object.InputObject = $InputObject
+                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $item, $name, $schema
                     $object.AnsiNullsStatus = $AnsiNullsStatus
                     $object.ChangeTrackingEnabled = $ChangeTrackingEnabled
                     $object.DataSourceName = $DataSourceName
@@ -375,9 +336,35 @@ function Get-Table {
                     $object.IsNode = $IsNode
                     $object.IsEdge = $IsEdge
                     $object.IsVarDecimalStorageFormatEnabled = $IsVarDecimalStorageFormatEnabled
-                    $object.Name = $Name
-                    $object.Schema = $Schema
-                    $object.UserData = $UserData
+
+                    foreach ($column in $ColumnMap) {
+                        $ColumnMap = @{
+                            Name      = 'test'
+                            Type      = 'varchar'
+                            MaxLength = 20
+                            Nullable  = $true
+                        }
+                        $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
+                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
+                            if ($column.MaxLength -gt 0) {
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $maxlength
+                            } else {
+                                $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
+                            }
+                        } else {
+                            $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
+                        }
+                        $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $table, $column.Name, $dataType
+                        $sqlcolumn.Nullable = $column.Nullable
+                        $object.Columns.Add($sqlcolumn)
+                    }
+
+                    if ($Passthru) {
+                        $object.Script()
+                    } else {
+                        Invoke-Create -Object $object
+                    }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
