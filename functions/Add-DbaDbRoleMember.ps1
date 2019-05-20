@@ -71,7 +71,6 @@ function Add-DbaDbRoleMember {
         [string[]]$Role,
         [parameter(Mandatory)]
         [string[]]$User,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
