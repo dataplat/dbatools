@@ -1,0 +1,79 @@
+[
+    {
+        "Name": "Name",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(firstname|fname|lastname|lname|fullname|fname).*$"
+        ]
+    },
+    {
+        "Name": "Address",
+        "Category": "Location",
+        "Pattern": [
+            "^.*address.*$"
+        ]
+    },
+    {
+        "Name": "City",
+        "Category": "Location",
+        "Pattern": [
+            "^.*city.*$"
+        ]
+    },
+    {
+        "Name": "State",
+        "Category": "Location",
+        "Pattern": [
+            "^.*state.*$"
+        ]
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Pattern": [
+            "^.*zip.*$"
+        ]
+    },
+    {
+        "Name": "County",
+        "Category": "Location",
+        "Pattern": [
+            "^.*county.*$"
+        ]
+    },
+    {
+        "Name": "Country",
+        "Category": "Location",
+        "Pattern": [
+            "^.*country.*$"
+        ]
+    },
+    {
+        "Name": "E-mail",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*(email|e-mail|mail).*$"
+        ]
+    },
+    {
+        "Name": "IPAddres",
+        "Category": "System",
+        "Pattern": [
+            "^.*(ip|ipaddress|ipv4|ipv6).*$"
+        ]
+    },
+    {
+        "Name": "Username",
+        "Category": "Security",
+        "Pattern": [
+            "^.*(userid|username).*$"
+        ]
+    },
+    {
+        "Name": "Password",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*pass.*$"
+        ]
+    }
+]

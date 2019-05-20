@@ -639,6 +639,10 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) {
             return
         }
+        if (($BackupHistory.Database | Sort-Object -Unique).count -gt 1 -and ('' -ne $DatabaseName)) {
+            Stop-Function -Message "Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed" -Category  InvalidArgument
+            return
+        }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($BackupHistory.Count -eq 0) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
@@ -689,18 +693,18 @@ function Restore-DbaDatabase {
             }
             $DbVerfied = ($FilteredBackupHistory | Where-Object {
                     $_.IsVerified -eq $True
-                } | Select-Object -Property Database -Unique).Database -join ','
+                } | Sort-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
             if ((@($FilteredBackupHistory | Where-Object {
                             $_.IsVerified -eq $True
                         })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object {
                         $_.IsVerified -eq $False
-                    } | Select-Object -Property Database -Unique).Database -join ','
+                    } | Sort-Object -Property Database -Unique).Database -join ','
                 Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
-                if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
+                if (($FilteredBackupHistory.Database | Sort-Object -Unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
                     return
                 } else {

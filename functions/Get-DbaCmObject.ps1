@@ -118,7 +118,7 @@ function Get-DbaCmObject {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
             # Since all connection caching runs using lower-case strings, making it lowercase here simplifies things.
-            $computer = $connectionObject.Connection.ComputerName.ToLower()
+            $computer = $connectionObject.Connection.ComputerName.ToLowerInvariant()
 
             Write-Message -Message "[$computer] Retrieving Management Information" -Level VeryVerbose -Target $computer
 

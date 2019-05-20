@@ -64,7 +64,7 @@ $ScriptBlock = {
 
     }
 
-    $moduledirectory = (Get-Module -Name dbatools).ModuleBase
+    $moduledirectory = $env:PSModuleRoot
     $idxfile = "$moduledirectory\bin\dbatools-index.json"
     $json = Get-Content $idxfile | ConvertFrom-Json
     $cleantags = @()

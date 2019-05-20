@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
     <#
     .SYNOPSIS
@@ -40,7 +39,7 @@ function Test-DbaBuild {
         Tags: SqlBuild, Version
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 

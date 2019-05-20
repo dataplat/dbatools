@@ -167,20 +167,20 @@ function New-DbaDbDataGeneratorConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geometry column"
                         continue
                     }
-                    if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
+                    if ($columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -eq 'xml') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
                     }
 
                     $dataGenType = $min = $null
                     $columnLength = $columnobject.Datatype.MaximumLength
-                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
+                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                         $min = 2
                     }
                     if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLower()
+                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
 
                     # Get the masking type with the synonym
@@ -192,92 +192,50 @@ function New-DbaDbDataGeneratorConfig {
                         # Make it easier to get the type name
                         $dataGenType = $dataGenType | Select-Object TypeName -ExpandProperty TypeName
 
-                        switch ($dataGenType.ToLower()) {
+                        $maskingType = $null
+                        $maskingSubtype = $null
+
+                        switch ($dataGenType.ToLowerInvariant()) {
                             "firstname" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Name"
-                                    SubType         = "Firstname"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Name"
+                                $maskingSubtype = "Firstname"
                             }
                             "lastname" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Name"
-                                    SubType         = "Lastname"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Name"
+                                $maskingSubtype = "Lastname"
                             }
                             "creditcard" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Finance"
-                                    SubType         = "CreditcardNumber"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Finance"
+                                $maskingSubtype = "CreditcardNumber"
                             }
                             "address" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "StreetAddress"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "StreetAddress"
                             }
                             "city" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "City"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "City"
                             }
                             "zipcode" {
-                                $columns += [PSCustomObject]@{
-                                    Name            = $columnobject.Name
-                                    ColumnType      = $columnType
-                                    CharacterString = $null
-                                    MinValue        = $min
-                                    MaxValue        = $columnLength
-                                    MaskingType     = "Address"
-                                    SubType         = "Zipcode"
-                                    Identity        = $columnobject.Identity
-                                    ForeignKey      = $columnobject.IsForeignKey
-                                    Nullable        = $columnobject.Nullable
-                                }
+                                $maskingType = "Address"
+                                $maskingSubtype = "Zipcode"
                             }
                         }
+
+                        $columns += [PSCustomObject]@{
+                            Name            = $columnobject.Name
+                            ColumnType      = $columnType
+                            CharacterString = $null
+                            MinValue        = $min
+                            MaxValue        = $columnLength
+                            MaskingType     = $maskingType
+                            SubType         = $maskingSubtype
+                            Identity        = $columnobject.Identity
+                            ForeignKey      = $columnobject.IsForeignKey
+                            Composite       = $false
+                            Nullable        = $columnobject.Nullable
+                        }
+
                     } else {
                         $type = "Random"
 
@@ -355,6 +313,7 @@ function New-DbaDbDataGeneratorConfig {
                             SubType         = $subType
                             Identity        = $columnobject.Identity
                             ForeignKey      = $columnobject.IsForeignKey
+                            Composite       = $false
                             Nullable        = $columnobject.Nullable
                         }
                     }

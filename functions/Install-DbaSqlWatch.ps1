@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaSqlWatch {
     <#
     .SYNOPSIS
@@ -92,7 +91,7 @@ function Install-DbaSqlWatch {
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
-        $releasetxt = $(if ($PreRelease) {"pre-release"} else {"release"})
+        $releasetxt = $(if ($PreRelease) { "pre-release" } else { "release" })
 
         if (-not $LocalFile) {
             if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest $releasetxt from GitHub")) {
@@ -172,6 +171,10 @@ function Install-DbaSqlWatch {
 
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
+        }
+        if ($Database -eq 'tempdb') {
+            Stop-Function -Message "Installation to tempdb not supported"
+            return
         }
     }
     process {

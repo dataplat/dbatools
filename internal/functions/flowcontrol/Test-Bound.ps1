@@ -1,45 +1,44 @@
 function Test-Bound {
     <#
-        .SYNOPSIS
-            Helperfunction that tests, whether a parameter was bound.
+    .SYNOPSIS
+        Helper function that tests if a parameter was bound.
 
-        .DESCRIPTION
-            Helperfunction that tests, whether a parameter was bound.
+    .DESCRIPTION
+        Helper function that tests if one or more parameters was bound.
 
-        .PARAMETER ParameterName
-            The name(s) of the parameter that is tested for being bound.
-            By default, the check is true when AT LEAST one was bound.
+    .PARAMETER ParameterName
+        The name(s) of the parameter that is tested for being bound.
+        By default, the check is true when AT LEAST one was bound.
 
-        .PARAMETER Not
-            Reverses the result. Returns true if NOT bound and false if bound.
+    .PARAMETER Not
+        Reverses the result. Returns true if NOT bound and false if bound.
 
-        .PARAMETER And
-            All specified parameters must be present, rather than at least one of them.
+    .PARAMETER And
+        All specified parameters must be present, rather than at least one of them.
 
-        .PARAMETER BoundParameters
-            The hashtable of bound parameters. Is automatically inherited from the calling function via default value. Needs not be bound explicitly.
+    .PARAMETER BoundParameters
+        The hashtable of bound parameters. Is automatically inherited from the calling function via default value. Needs not be bound explicitly.
 
-        .EXAMPLE
-            if (Test-Bound "Day")
-            {
+    .EXAMPLE
+        if (Test-Bound "Day")
+        {
 
-            }
+        }
 
-            Snippet as part of a function. Will check whether the parameter "Day" was bound. If yes, whatever logic is in the conditional will be executed.
+        Snippet as part of a function. Will check whether the parameter "Day" was bound. If yes, whatever logic is in the conditional will be executed.
 
-        .EXAMPLE
-            Test-Bound -Not 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
+    .EXAMPLE
+        Test-Bound -Not 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
 
-            Returns whether none of the parameters above were specified.
+        Returns whether none of the parameters above were specified.
 
-        .EXAMPLE
-            Test-Bound -And 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
+    .EXAMPLE
+        Test-Bound -And 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
 
-            Returns whether any of the specified parameters was not bound
-       #>
-    [CmdletBinding()]
+        Returns whether any of the specified parameters was not bound
+    #>
+    # Do not be tempted to use [CmdletBinding()] here, this will subtly change the way this function's parameters are bound, and break it.
     param (
-        [Parameter(Mandatory, Position = 0)]
         [string[]]
         $ParameterName,
 
@@ -51,8 +50,11 @@ function Test-Bound {
         $And,
 
         [object]
-        $BoundParameters = (Get-PSCallStack)[0].InvocationInfo.BoundParameters
+        $BoundParameters = $($ExecutionContext.SessionState.PSVariable.Get('psboundparameters').Value)
     )
+
+    if (-not $ParameterName) { return $false }
+    if (-not $BoundParameters) { return $false }
 
     if ($And) {
         $test = $true

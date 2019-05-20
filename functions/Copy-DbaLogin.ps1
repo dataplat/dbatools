@@ -153,6 +153,9 @@ function Copy-DbaLogin {
     )
 
     begin {
+        if ($SyncOnly) {
+            Write-Message -Level Warning -Message "Please note that SyncOnly will be removed in dbatools 1.0. Please use Sync-DbaLoginPermission instead."
+        }
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
@@ -178,6 +181,14 @@ function Copy-DbaLogin {
                     continue
                 }
 
+                if ($sourceLogin.LoginType -like 'Window*' -and $destServer.DatabaseEngineEdition -eq 'SqlManagedInstance' ) {
+                    Write-Message -Level Verbose -Message "$sourceLogin is a Windows login, not supported on a SQL Managed Instance"
+                    $copyLoginStatus.Status = "Skipped"
+                    $copyLoginStatus.Notes = "$sourceLogin is a Windows login, not supported on a SQL Managed Instance"
+                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    continue
+                }
+
                 $serverName = Resolve-NetBiosName $sourceServer
 
                 $currentLogin = $sourceServer.ConnectionContext.truelogin
@@ -196,7 +207,7 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
 
-                $userBase = ($userName.Split("\")[0]).ToLower()
+                $userBase = ($userName.Split("\")[0]).ToLowerInvariant()
 
                 if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
                     if ($sourceServer.ComputerName -ne $destServer.ComputerName) {

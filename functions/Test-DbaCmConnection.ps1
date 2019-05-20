@@ -237,7 +237,7 @@ function Test-DbaCmConnection {
         foreach ($ConnectionObject in $ComputerName) {
             if (-not $ConnectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($ConnectionObject.Input)" -Category InvalidArgument -Target $ConnectionObject.Input -Continue}
 
-            $Computer = $ConnectionObject.Connection.ComputerName.ToLower()
+            $Computer = $ConnectionObject.Connection.ComputerName.ToLowerInvariant()
             Write-Message -Level VeryVerbose -Message "[$Computer] Testing management connection"
 
             #region Setup connection object

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
     <#
     .SYNOPSIS
@@ -458,7 +457,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Get-Unique
+                $warn = $warn | Where {$_} | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null
