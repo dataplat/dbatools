@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Remove-DbaDbRole {
     <#
     .SYNOPSIS
@@ -23,6 +24,18 @@ function Remove-DbaDbRole {
 
     .PARAMETER ExcludeRole
         The role(s) to exclude.
+
+    .PARAMETER IncludeSystemDbs
+        If this switch is enabled, roles can be removed from system databases.
+
+    .PARAMETER InputObject
+		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -57,9 +70,9 @@ function Remove-DbaDbRole {
         Removes role1 from db1 and db2 on the servers in C:\servers.txt
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
@@ -68,65 +81,70 @@ function Remove-DbaDbRole {
         [string[]]$ExcludeDatabase,
         [string[]]$Role,
         [string[]]$ExcludeRole,
+        [switch]$IncludeSystemDbs,
+        [parameter(ValueFromPipeline)]
+        [Object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            return
+        }
 
-            foreach ($item in $Database) {
-                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                if ($server.Databases[$item].IsAccessible -eq $false) {
-                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $dbRoles = $input | Get-DbaDBRole -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                }
+                'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
+                    Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
+                    $dbRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or database role."
+                    return
                 }
             }
 
-            $databases = $server.Databases | Where-Object {
-                $_.IsAccessible -eq $true
-            }
-
-            if (Test-Bound -Parameter 'Database') {
-                $databases = $databases | Where-Object {
-                    $_.Name -in $Database
-                }
-            }
-
-            if (Test-Bound -Parameter 'ExcludeDatabase') {
-                $databases = $databases | Where-Object {
-                    $_.Name -notin $ExcludeDatabase
-                }
-            }
-
-            foreach ($db in $databases) {
-                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-                $dbRoles = $db.Roles
-
-                if (Test-Bound -Parameter 'Role') {
-                    $dbRoles = $dbRoles | Where-Object {
-                        $_.Name -in $Role
+            foreach ($dbRole in $dbRoles) {
+                $db = $dbRole.Parent
+                $instance = $db.Parent
+                if ((!$db.IsSystemObject) -or ($db.IsSystemObject -and $IncludeSystemDbs )) {
+                    if ((!$dbRole.IsFixedRole) -and ($dbRole.Name -ne 'public')) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Remove role $dbRole from database $db")) {
+                            $schemas = $dbRole.Parent.Schemas | Where-Object { $_.Owner -eq $dbRole.Name }
+                            if (!$schemas) {
+                                $dbRole.Drop()
+                            } else {
+                                Write-Message -Level warning -Message "Cannot remove role $dbRole from database $db on instance $instance as it owns one or more Schemas"
+                            }
+                        }
+                    } else {
+                        Write-Message -Level Verbose -Message "Cannot remove fixed role $dbRole from database $db on instance $instance"
                     }
+                } else {
+                    Write-Message -Level Verbose -Message "Can only remove roles from System database when IncludeSystemDbs switch used."
                 }
-
-                if (Test-Bound -Parameter 'ExcludeRole') {
-                    $dbRoles = $dbRoles | Where-Object {
-                        $_.Name -notin $ExcludeRole
-                    }
-                }
-
-                # Trick to get a list without using the Collection
-                $dbRoles = $dbRoles | Where-Object {
-                    $_.ID -gt 0
-                }
-
-                $dbRoles.Drop()
             }
         }
     }

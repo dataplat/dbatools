@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Remove-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -18,8 +19,17 @@ function Remove-DbaDbRoleMember {
     .PARAMETER Role
         The role(s) to process.
 
-    .PARAMETER User
-        The user(s) to remove from the role(s) specified.
+	.PARAMETER User
+		The user(s) to remove from the role(s) specified.
+
+    .PARAMETER InputObject
+		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -59,67 +69,78 @@ function Remove-DbaDbRoleMember {
         Removes user1 in the database DEMODB on the server localhost from the roles db_datareader and db_datawriter
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [parameter(Mandatory)]
         [string[]]$Role,
         [parameter(Mandatory)]
         [string[]]$User,
+        [parameter(ValueFromPipeline)]
+        [Object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            return
+        }
 
-            foreach ($item in $Database) {
-                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                if ($server.Databases[$item].IsAccessible -eq $false) {
-                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $dbRoles = $input | Get-DbaDBRole -Role $Role
+                }
+                'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
+                    Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
+                    $dbRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or database role."
+                    return
                 }
             }
 
-            $databases = $server.Databases | Where-Object {
-                $_.IsAccessible -eq $true
+            if ((Test-Bound -Not -ParameterName Role) -and ($inputType -ne 'Microsoft.SqlServer.Management.Smo.DatabaseRole')) {
+                Stop-Function -Message "You must pipe in a DatabaseRole or specify a Role."
+                return
             }
 
-            if (Test-Bound -Parameter 'Database') {
-                $databases = $databases | Where-Object {
-                    $_.Name -in $Database
-                }
-            }
+            foreach ($dbRole in $dbRoles) {
+                $db = $dbRole.Parent
+                $instance = $db.Parent
 
-            foreach ($db in $databases) {
-                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+                Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
 
-                $dbRoles = $db.Roles
+                $members = $dbRole.EnumMembers()
 
-                if (Test-Bound -Parameter 'Role') {
-                    $dbRoles = $dbRoles | Where-Object {
-                        $_.Name -in $Role
-                    }
-                }
-
-                foreach ($dbRole in $dbRoles) {
-                    Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
-
-                    $members = $dbRole.EnumMembers()
-
-                    foreach ($username in $User) {
-                        if ($members -contains $username) {
-                            Write-Message -Level 'Verbose' -Message "Removing User $username from $dbRole in $db on $instance"
+                foreach ($username in $User) {
+                    if ($members -contains $username) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Removing User $username from role: $dbRole in database $db")) {
+                            Write-Message -Level 'Verbose' -Message "Removing User $username from role: $dbRole in database $db on $instance"
                             $dbRole.DropMember($username)
                         }
                     }
