@@ -106,10 +106,10 @@ function Export-DbaDiagnosticQuery {
             }
 
             $queryname = Remove-InvalidFileNameChars -Name $Name
-            $excelfilename =    Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$Suffix.xlsx"
-            $exceldbfilename =  Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbname-$Suffix.xlsx"
-            $csvdbfilename =    Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
-            $csvfilename =      Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
+            $excelfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$Suffix.xlsx"
+            $exceldbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbname-$Suffix.xlsx"
+            $csvdbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+            $csvfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 
             $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan", "query_plan_xml"
             if (($result | Get-Member | Where-Object Name -in $columnnameoptions).Count -gt 0) {
