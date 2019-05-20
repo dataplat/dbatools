@@ -159,7 +159,4 @@ function Get-DbaDbRole {
             }
         }
     }
-    end {
-
-    }
 }
