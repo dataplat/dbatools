@@ -26,7 +26,7 @@ function Get-DbaDbRole {
         The role(s) to exclude.
 
     .PARAMETER ExcludeFixedRole
-		Excludes all fixed roles.
+        Excludes all fixed roles.
 
     .PARAMETER InputObject
         Enables piped input from Get-DbaDatabase

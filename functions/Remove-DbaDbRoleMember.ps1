@@ -19,11 +19,11 @@ function Remove-DbaDbRoleMember {
     .PARAMETER Role
         The role(s) to process.
 
-	.PARAMETER User
-		The user(s) to remove from the role(s) specified.
+    .PARAMETER User
+        The user(s) to remove from the role(s) specified.
 
     .PARAMETER InputObject
-		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -67,6 +67,10 @@ function Remove-DbaDbRoleMember {
         PS C:\> Remove-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -User user1 -Database DEMODB
 
         Removes user1 in the database DEMODB on the server localhost from the roles db_datareader and db_datawriter
+
+    .EXAMPLE
+        PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost -Role "db_datareader","db_datawriter"
+        PS C:\> $roles | Remove-DbaDbRoleMember -User user1
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]

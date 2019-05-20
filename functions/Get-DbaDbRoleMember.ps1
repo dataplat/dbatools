@@ -81,6 +81,11 @@ function Get-DbaDbRoleMember {
 
         Returns all members of the db_owner role in the msdb database on localhost.
 
+    .EXAMPLE
+        PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost -Database msdb -Role 'db_owner'
+        PS C:\> $roles | Get-DbaDbRoleMember
+
+        Returns all members of the db_owner role in the msdb database on localhost.
     #>
     [CmdletBinding()]
     param (

@@ -19,11 +19,11 @@ function Add-DbaDbRoleMember {
     .PARAMETER Role
         The role(s) to process.
 
-	.PARAMETER User
-		The user(s) to add to role(s) specified.
+    .PARAMETER User
+        The user(s) to add to role(s) specified.
 
     .PARAMETER InputObject
-		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -65,6 +65,12 @@ function Add-DbaDbRoleMember {
 
     .EXAMPLE
         PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -User user1 -Database DEMODB
+
+        Adds user1 in the database DEMODB on the server localhost to the roles db_datareader and db_datawriter
+
+   .EXAMPLE
+        PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost -Role "db_datareader","db_datawriter" -Database DEMODB
+        PS C:\> $roles | Add-DbaDbRoleMember -User user1
 
         Adds user1 in the database DEMODB on the server localhost to the roles db_datareader and db_datawriter
 

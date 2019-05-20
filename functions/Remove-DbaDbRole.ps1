@@ -29,7 +29,7 @@ function Remove-DbaDbRole {
         If this switch is enabled, roles can be removed from system databases.
 
     .PARAMETER InputObject
-		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -69,6 +69,11 @@ function Remove-DbaDbRole {
 
         Removes role1 from db1 and db2 on the servers in C:\servers.txt
 
+    .EXAMPLE
+        PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost, sql2016 -Database db1, db2 -Role role1, role2, role3
+        PS C:\> $roles | Remove-DbaDbRole
+
+        Removes role1,role2,role3 from db1 and db2 on the local and sql2016 SQL Server instances
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
