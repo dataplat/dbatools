@@ -12,6 +12,9 @@ function New-DbaDbTable {
     .PARAMETER SqlCredential
        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Database
+        The database or databases where the table will be created
+
     .PARAMETER Name
         The name of the table
 
