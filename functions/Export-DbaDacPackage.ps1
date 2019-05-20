@@ -95,7 +95,7 @@ function Export-DbaDacPackage {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
-        [string]$Pathi = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [parameter(ParameterSetName = 'SMO')]
         [Alias('ExtractOptions', 'ExportOptions', 'DacExtractOptions', 'DacExportOptions', 'Options', 'Option')]
         [object]$DacOption,
