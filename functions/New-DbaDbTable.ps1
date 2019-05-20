@@ -1,10 +1,10 @@
 function New-DbaDbTable {
     <#
     .SYNOPSIS
-
+        Creates a new table in a database
 
     .DESCRIPTION
-
+        Creates a new table in a database
 
    .PARAMETER SqlInstance
        The target SQL Server instance or instances.
@@ -13,159 +13,179 @@ function New-DbaDbTable {
        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Name
+        The name of the table
 
     .PARAMETER Schema
+        The schema for the table, defaults to dbo
 
     .PARAMETER ColumnMap
+        Hashtable for easy column creation. Looks like this:
+
+        # Create collection
+        $cols = @()
+
+        # Add columns to collection
+        $cols += @{
+            Name      = 'test'
+            Type      = 'varchar'
+            MaxLength = 20
+            Nullable  = $true
+        }
+        $cols += @{
+            Name      = 'test2'
+            Type      = 'int'
+            Nullable  = $false
+        }
 
     .PARAMETER ColumnObject
+        If you want to get fancy, you can build your own column objects and pass them in
 
     .PARAMETER InputObject
-
+        Allows piped input from Get-DbaDatabase
 
     .PARAMETER AnsiNullsStatus
-
+        No information provided by Microsoft
 
     .PARAMETER ChangeTrackingEnabled
-
+        No information provided by Microsoft
 
     .PARAMETER DataSourceName
-
+        No information provided by Microsoft
 
     .PARAMETER Durability
-
+        No information provided by Microsoft
 
     .PARAMETER ExternalTableDistribution
-
+        No information provided by Microsoft
 
     .PARAMETER FileFormatName
-
+        No information provided by Microsoft
 
     .PARAMETER FileGroup
-
+        No information provided by Microsoft
 
     .PARAMETER FileStreamFileGroup
-
+        No information provided by Microsoft
 
     .PARAMETER FileStreamPartitionScheme
-
+        No information provided by Microsoft
 
     .PARAMETER FileTableDirectoryName
-
+        No information provided by Microsoft
 
     .PARAMETER FileTableNameColumnCollation
-
+        No information provided by Microsoft
 
     .PARAMETER FileTableNamespaceEnabled
-
+        No information provided by Microsoft
 
     .PARAMETER HistoryTableName
-
+        No information provided by Microsoft
 
     .PARAMETER HistoryTableSchema
-
+        No information provided by Microsoft
 
     .PARAMETER IsExternal
-
+        No information provided by Microsoft
 
     .PARAMETER IsFileTable
-
+        No information provided by Microsoft
 
     .PARAMETER IsMemoryOptimized
-
+        No information provided by Microsoft
 
     .PARAMETER IsSystemVersioned
-
+        No information provided by Microsoft
 
     .PARAMETER Location
-
+        No information provided by Microsoft
 
     .PARAMETER LockEscalation
-
+        No information provided by Microsoft
 
     .PARAMETER Owner
-
+        No information provided by Microsoft
 
     .PARAMETER PartitionScheme
-
+        No information provided by Microsoft
 
     .PARAMETER QuotedIdentifierStatus
-
+        No information provided by Microsoft
 
     .PARAMETER RejectSampleValue
-
+        No information provided by Microsoft
 
     .PARAMETER RejectType
-
+        No information provided by Microsoft
 
     .PARAMETER RejectValue
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteDataArchiveDataMigrationState
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteDataArchiveEnabled
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteDataArchiveFilterPredicate
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteObjectName
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteSchemaName
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteTableName
-
+        No information provided by Microsoft
 
     .PARAMETER RemoteTableProvisioned
-
+        No information provided by Microsoft
 
     .PARAMETER ShardingColumnName
-
+        No information provided by Microsoft
 
     .PARAMETER TextFileGroup
-
+        No information provided by Microsoft
 
     .PARAMETER TrackColumnsUpdatedEnabled
-
+        No information provided by Microsoft
 
     .PARAMETER HistoryRetentionPeriod
-
+        No information provided by Microsoft
 
     .PARAMETER HistoryRetentionPeriodUnit
-
+        No information provided by Microsoft
 
     .PARAMETER DwTableDistribution
-
+        No information provided by Microsoft
 
     .PARAMETER RejectedRowLocation
-
+        No information provided by Microsoft
 
     .PARAMETER OnlineHeapOperation
-
+        No information provided by Microsoft
 
     .PARAMETER LowPriorityMaxDuration
-
+        No information provided by Microsoft
 
     .PARAMETER DataConsistencyCheck
-
+        No information provided by Microsoft
 
     .PARAMETER LowPriorityAbortAfterWait
-
+        No information provided by Microsoft
 
     .PARAMETER MaximumDegreeOfParallelism
-
+        No information provided by Microsoft
 
     .PARAMETER IsNode
-
+        No information provided by Microsoft
 
     .PARAMETER IsEdge
-
+        No information provided by Microsoft
 
     .PARAMETER IsVarDecimalStorageFormatEnabled
-
+        No information provided by Microsoft
 
     .PARAMETER WhatIf
        Shows what would happen if the command were to run. No actions are actually performed.
@@ -179,20 +199,25 @@ function New-DbaDbTable {
        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-       Tags:
-       Author:
+       Tags: table
+       Author: Chrissy LeMaire (@cl)
        Website: https://dbatools.io
-       Copyright: (c) 2018 by dbatools, licensed under MIT
+       Copyright: (c) 2019 by dbatools, licensed under MIT
        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
        https://dbatools.io/Get-Table
 
     .EXAMPLE
-       PS C:\> Get-Table -SqlInstance sql2017a -Confirm
+       PS C:\> $col = @{
+        >> Name      = 'test'
+        >> Type      = 'varchar'
+        >> MaxLength = 20
+        >> Nullable  = $true
+        >> }
+       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col
 
-       Prompts for confirmation.
-
+       Creates a new table on sql2017 in tempdb witht he name testtable and one column
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -290,10 +315,11 @@ function New-DbaDbTable {
         }
 
         foreach ($db in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("Creating new object Microsoft.SqlServer.Management.Smo.Table")) {
+            $server = $db.Parent
+            if ($Pscmdlet.ShouldProcess("Creating new object $name in $db on $server")) {
                 try {
                     $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $name, $schema
-                    $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException'
+                    $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
                     foreach ($prop in $properties.Key) {
                         $object.$prop = $prop
@@ -301,13 +327,6 @@ function New-DbaDbTable {
 
                     foreach ($column in $ColumnObject) {
                         $object.Columns.Add($column)
-                    }
-
-                    $ColumnMap = @{
-                        Name      = 'test'
-                        Type      = 'varchar'
-                        MaxLength = 20
-                        Nullable  = $true
                     }
 
                     foreach ($column in $ColumnMap) {
