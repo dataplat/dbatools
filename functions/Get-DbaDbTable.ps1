@@ -80,6 +80,7 @@ function Get-DbaDbTable {
         In addition any actual instance of the ] character must be escaped by being duplicated.
     #>
     [CmdletBinding()]
+       param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -91,7 +92,7 @@ function Get-DbaDbTable {
         [string[]]$Table,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
