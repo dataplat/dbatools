@@ -89,7 +89,7 @@ function New-DbaLogin {
 
     .EXAMPLE
         PS C:\> $securePassword = Read-Host "Input password" -AsSecureString
-        PS C:\> New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
+        PS C:\> New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -SecurePassword $securePassword -PasswordPolicy -PasswordExpiration
 
         Creates a login on Server1\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.
 
