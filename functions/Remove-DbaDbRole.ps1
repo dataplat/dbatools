@@ -130,7 +130,4 @@ function Remove-DbaDbRole {
             }
         }
     }
-    end {
-
-    }
 }
