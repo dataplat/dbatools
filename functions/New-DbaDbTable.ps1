@@ -289,59 +289,15 @@ function New-DbaDbTable {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
 
-        foreach ($item in $InputObject) {
+        foreach ($db in $InputObject) {
             if ($Pscmdlet.ShouldProcess("Creating new object Microsoft.SqlServer.Management.Smo.Table")) {
                 try {
-                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $item, $name, $schema
-                    $object.AnsiNullsStatus = $AnsiNullsStatus
-                    $object.ChangeTrackingEnabled = $ChangeTrackingEnabled
-                    $object.DataSourceName = $DataSourceName
-                    $object.Durability = $Durability
-                    $object.ExternalTableDistribution = $ExternalTableDistribution
-                    $object.FileFormatName = $FileFormatName
-                    $object.FileGroup = $FileGroup
-                    $object.FileStreamFileGroup = $FileStreamFileGroup
-                    $object.FileStreamPartitionScheme = $FileStreamPartitionScheme
-                    $object.FileTableDirectoryName = $FileTableDirectoryName
-                    $object.FileTableNameColumnCollation = $FileTableNameColumnCollation
-                    $object.FileTableNamespaceEnabled = $FileTableNamespaceEnabled
-                    $object.HistoryTableName = $HistoryTableName
-                    $object.HistoryTableSchema = $HistoryTableSchema
-                    $object.IsExternal = $IsExternal
-                    $object.IsFileTable = $IsFileTable
-                    $object.IsMemoryOptimized = $IsMemoryOptimized
-                    $object.IsSystemVersioned = $IsSystemVersioned
-                    $object.Location = $Location
-                    $object.LockEscalation = $LockEscalation
-                    $object.Owner = $Owner
-                    $object.PartitionScheme = $PartitionScheme
-                    $object.QuotedIdentifierStatus = $QuotedIdentifierStatus
-                    $object.RejectSampleValue = $RejectSampleValue
-                    $object.RejectType = $RejectType
-                    $object.RejectValue = $RejectValue
-                    $object.RemoteDataArchiveDataMigrationState = $RemoteDataArchiveDataMigrationState
-                    $object.RemoteDataArchiveEnabled = $RemoteDataArchiveEnabled
-                    $object.RemoteDataArchiveFilterPredicate = $RemoteDataArchiveFilterPredicate
-                    $object.RemoteObjectName = $RemoteObjectName
-                    $object.RemoteSchemaName = $RemoteSchemaName
-                    $object.RemoteTableName = $RemoteTableName
-                    $object.RemoteTableProvisioned = $RemoteTableProvisioned
-                    $object.ShardingColumnName = $ShardingColumnName
-                    $object.TextFileGroup = $TextFileGroup
-                    $object.TrackColumnsUpdatedEnabled = $TrackColumnsUpdatedEnabled
-                    $object.HistoryRetentionPeriod = $HistoryRetentionPeriod
-                    $object.HistoryRetentionPeriodUnit = $HistoryRetentionPeriodUnit
-                    $object.DwTableDistribution = $DwTableDistribution
-                    $object.RejectedRowLocation = $RejectedRowLocation
-                    $object.OnlineHeapOperation = $OnlineHeapOperation
-                    $object.LowPriorityMaxDuration = $LowPriorityMaxDuration
-                    $object.DataConsistencyCheck = $DataConsistencyCheck
-                    $object.LowPriorityAbortAfterWait = $LowPriorityAbortAfterWait
-                    $object.MaximumDegreeOfParallelism = $MaximumDegreeOfParallelism
-                    $object.IsNode = $IsNode
-                    $object.IsEdge = $IsEdge
-                    $object.IsVarDecimalStorageFormatEnabled = $IsVarDecimalStorageFormatEnabled
+                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $name, $schema
+                    $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException'
 
+                    foreach ($prop in $properties.Key) {
+                        $object.$prop = $prop
+                    }
 
                     foreach ($column in $ColumnObject) {
                         $object.Columns.Add($column)
@@ -366,7 +322,7 @@ function New-DbaDbTable {
                         } else {
                             $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
                         }
-                        $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $table, $column.Name, $dataType
+                        $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlcolumn.Nullable = $column.Nullable
                         $object.Columns.Add($sqlcolumn)
                     }
@@ -374,8 +330,9 @@ function New-DbaDbTable {
                     if ($Passthru) {
                         $object.Script()
                     } else {
-                        Invoke-Create -Object $object
+                        $null = Invoke-Create -Object $object
                     }
+                    $db | Get-DbaDbTable -Table $Name
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
