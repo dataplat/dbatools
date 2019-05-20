@@ -1,4 +1,4 @@
-function Get-Table {
+function New-DbaDbTable {
     <#
     .SYNOPSIS
 
@@ -14,8 +14,11 @@ function Get-Table {
 
     .PARAMETER Name
 
-
     .PARAMETER Schema
+
+    .PARAMETER ColumnMap
+
+    .PARAMETER ColumnObject
 
     .PARAMETER InputObject
 
@@ -195,9 +198,11 @@ function Get-Table {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [String[]]$Database,
         [String]$Name,
         [String]$Schema = "dbo",
-        [hashtable]$ColumnMap,
+        [hashtable[]]$ColumnMap,
+        [Microsoft.SqlServer.Management.Smo.Column[]]$ColumnObject,
         [Switch]$AnsiNullsStatus,
         [Switch]$ChangeTrackingEnabled,
         [String]$DataSourceName,
@@ -254,21 +259,21 @@ function Get-Table {
         function Get-SqlType {
             param([string]$TypeName)
             switch ($TypeName) {
-                'Boolean' {[Data.SqlDbType]::Bit}
-                'Byte[]' {[Data.SqlDbType]::VarBinary}
-                'Byte' {[Data.SQLDbType]::VarBinary}
-                'Datetime' {[Data.SQLDbType]::DateTime}
-                'Decimal' {[Data.SqlDbType]::Decimal}
-                'Double' {[Data.SqlDbType]::Float}
-                'Guid' {[Data.SqlDbType]::UniqueIdentifier}
-                'Int16' {[Data.SQLDbType]::SmallInt}
-                'Int32' {[Data.SQLDbType]::Int}
-                'Int64' {[Data.SqlDbType]::BigInt}
-                'UInt16' {[Data.SQLDbType]::SmallInt}
-                'UInt32' {[Data.SQLDbType]::Int}
-                'UInt64' {[Data.SqlDbType]::BigInt}
-                'Single' {[Data.SqlDbType]::Decimal}
-                default {[Data.SqlDbType]::VarChar}
+                'Boolean' { [Data.SqlDbType]::Bit }
+                'Byte[]' { [Data.SqlDbType]::VarBinary }
+                'Byte' { [Data.SQLDbType]::VarBinary }
+                'Datetime' { [Data.SQLDbType]::DateTime }
+                'Decimal' { [Data.SqlDbType]::Decimal }
+                'Double' { [Data.SqlDbType]::Float }
+                'Guid' { [Data.SqlDbType]::UniqueIdentifier }
+                'Int16' { [Data.SQLDbType]::SmallInt }
+                'Int32' { [Data.SQLDbType]::Int }
+                'Int64' { [Data.SqlDbType]::BigInt }
+                'UInt16' { [Data.SQLDbType]::SmallInt }
+                'UInt32' { [Data.SQLDbType]::Int }
+                'UInt64' { [Data.SqlDbType]::BigInt }
+                'Single' { [Data.SqlDbType]::Decimal }
+                default { [Data.SqlDbType]::VarChar }
             }
         }
     }
@@ -337,13 +342,19 @@ function Get-Table {
                     $object.IsEdge = $IsEdge
                     $object.IsVarDecimalStorageFormatEnabled = $IsVarDecimalStorageFormatEnabled
 
+
+                    foreach ($column in $ColumnObject) {
+                        $object.Columns.Add($column)
+                    }
+
+                    $ColumnMap = @{
+                        Name      = 'test'
+                        Type      = 'varchar'
+                        MaxLength = 20
+                        Nullable  = $true
+                    }
+
                     foreach ($column in $ColumnMap) {
-                        $ColumnMap = @{
-                            Name      = 'test'
-                            Type      = 'varchar'
-                            MaxLength = 20
-                            Nullable  = $true
-                        }
                         $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
                         if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
                             if ($column.MaxLength -gt 0) {
