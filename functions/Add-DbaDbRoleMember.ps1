@@ -128,11 +128,8 @@ function Add-DbaDbRoleMember {
                             Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
                         }
                     }
-                } # end foreach($dbRole)
-            } # end foreach($db)
-        } # end foreach($server)
-    }
-    end {
-
+                }
+            }
+        }
     }
 }
