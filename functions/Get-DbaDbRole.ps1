@@ -152,8 +152,6 @@ function Get-DbaDbRole {
                     Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
 
-                    # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                    # Select-Object -InputObject $dbRole -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Name', 'IsSystemObject'
                     Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
                 }
             }
