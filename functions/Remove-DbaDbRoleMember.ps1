@@ -64,7 +64,8 @@ function Remove-DbaDbRoleMember {
         Removes user1 from the SqlAgentOperatorRole in the msdb database in every server in C:\servers.txt
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -User user1 -Database DEMODB
+        PS C:\> $db = Get-DbaDataabse -SqlInstance localhost -Database DEMODB
+        PS C:\> $db | Remove-DbaDbRoleMember -Role "db_datareader","db_datawriter" -User user1
 
         Removes user1 in the database DEMODB on the server localhost from the roles db_datareader and db_datawriter
 
