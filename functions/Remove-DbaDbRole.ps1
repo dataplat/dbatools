@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Remove-DbaDbRole {
     <#
     .SYNOPSIS
@@ -58,81 +57,80 @@ function Remove-DbaDbRole {
         Removes role1 from db1 and db2 on the servers in C:\servers.txt
 
     #>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[string[]]$ExcludeDatabase,
-		[string[]]$Role,
-		[string[]]$ExcludeRole,
-		[Alias('Silent')]
-		[switch]$EnableException
-	)
-	
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-			
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			} catch {
-				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			foreach ($item in $Database) {
-				Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-				if ($server.Databases[$item].IsAccessible -eq $false) {
-					Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
-				}
-			}
-			
-			$databases = $server.Databases | Where-Object {
-				$_.IsAccessible -eq $true
-			}
-			
-			if (Test-Bound -Parameter 'Database') {
-				$databases = $databases | Where-Object {
-					$_.Name -in $Database
-				}
-			}
-			
-			if (Test-Bound -Parameter 'ExcludeDatabase') {
-				$databases = $databases | Where-Object {
-					$_.Name -notin $ExcludeDatabase
-				}
-			}
-			
-			foreach ($db in $databases) {
-				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-				
-				$dbRoles = $db.Roles
-				
-				if (Test-Bound -Parameter 'Role') {
-					$dbRoles = $dbRoles | Where-Object {
-						$_.Name -in $Role
-					}
-				}
-				
-				if (Test-Bound -Parameter 'ExcludeRole') {
-					$dbRoles = $dbRoles | Where-Object {
-						$_.Name -notin $ExcludeRole
-					}
-				}
-				
-				# Trick to get a list without using the Collection
-				$dbRoles = $dbRoles | Where-Object {
-					$_.ID -gt 0
-				}
-				
-				$dbRoles.Drop()
-			}
-		}
-	}
-	end {
-		
-	}
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Role,
+        [string[]]$ExcludeRole,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($item in $Database) {
+                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
+                if ($server.Databases[$item].IsAccessible -eq $false) {
+                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+                }
+            }
+
+            $databases = $server.Databases | Where-Object {
+                $_.IsAccessible -eq $true
+            }
+
+            if (Test-Bound -Parameter 'Database') {
+                $databases = $databases | Where-Object {
+                    $_.Name -in $Database
+                }
+            }
+
+            if (Test-Bound -Parameter 'ExcludeDatabase') {
+                $databases = $databases | Where-Object {
+                    $_.Name -notin $ExcludeDatabase
+                }
+            }
+
+            foreach ($db in $databases) {
+                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+
+                $dbRoles = $db.Roles
+
+                if (Test-Bound -Parameter 'Role') {
+                    $dbRoles = $dbRoles | Where-Object {
+                        $_.Name -in $Role
+                    }
+                }
+
+                if (Test-Bound -Parameter 'ExcludeRole') {
+                    $dbRoles = $dbRoles | Where-Object {
+                        $_.Name -notin $ExcludeRole
+                    }
+                }
+
+                # Trick to get a list without using the Collection
+                $dbRoles = $dbRoles | Where-Object {
+                    $_.ID -gt 0
+                }
+
+                $dbRoles.Drop()
+            }
+        }
+    }
+    end {
+
+    }
 }
