@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Remove-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -19,8 +18,8 @@ function Remove-DbaDbRoleMember {
     .PARAMETER Role
         The role(s) to process.
 
-	.PARAMETER User
-		The user(s) to remove from the role(s) specified.
+    .PARAMETER User
+        The user(s) to remove from the role(s) specified.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -60,76 +59,72 @@ function Remove-DbaDbRoleMember {
         Removes user1 in the database DEMODB on the server localhost from the roles db_datareader and db_datawriter
 
     #>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[parameter(Mandatory)]
-		[string[]]$Role,
-		[parameter(Mandatory)]
-		[string[]]$User,
-		[Alias('Silent')]
-		[switch]$EnableException
-	)
-	
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-			
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			} catch {
-				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			foreach ($item in $Database) {
-				Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-				if ($server.Databases[$item].IsAccessible -eq $false) {
-					Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
-				}
-			}
-			
-			$databases = $server.Databases | Where-Object {
-				$_.IsAccessible -eq $true
-			}
-			
-			if (Test-Bound -Parameter 'Database') {
-				$databases = $databases | Where-Object {
-					$_.Name -in $Database
-				}
-			}
-			
-			foreach ($db in $databases) {
-				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-				
-				$dbRoles = $db.Roles
-				
-				if (Test-Bound -Parameter 'Role') {
-					$dbRoles = $dbRoles | Where-Object {
-						$_.Name -in $Role
-					}
-				}
-				
-				foreach ($dbRole in $dbRoles) {
-					Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
-					
-					$members = $dbRole.EnumMembers()
-					
-					foreach ($username in $User) {
-						if ($members -contains $username) {
-							Write-Message -Level 'Verbose' -Message "Removing User $username from $dbRole in $db on $instance"
-							$dbRole.DropMember($username)
-						}
-					}
-				} # end foreach($dbRole)
-			} # end foreach($db)
-		} # end foreach($server)
-	}
-	end {
-		
-	}
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [parameter(Mandatory)]
+        [string[]]$Role,
+        [parameter(Mandatory)]
+        [string[]]$User,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($item in $Database) {
+                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
+                if ($server.Databases[$item].IsAccessible -eq $false) {
+                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+                }
+            }
+
+            $databases = $server.Databases | Where-Object {
+                $_.IsAccessible -eq $true
+            }
+
+            if (Test-Bound -Parameter 'Database') {
+                $databases = $databases | Where-Object {
+                    $_.Name -in $Database
+                }
+            }
+
+            foreach ($db in $databases) {
+                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+
+                $dbRoles = $db.Roles
+
+                if (Test-Bound -Parameter 'Role') {
+                    $dbRoles = $dbRoles | Where-Object {
+                        $_.Name -in $Role
+                    }
+                }
+
+                foreach ($dbRole in $dbRoles) {
+                    Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
+
+                    $members = $dbRole.EnumMembers()
+
+                    foreach ($username in $User) {
+                        if ($members -contains $username) {
+                            Write-Message -Level 'Verbose' -Message "Removing User $username from $dbRole in $db on $instance"
+                            $dbRole.DropMember($username)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
