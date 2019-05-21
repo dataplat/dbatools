@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Role', 'ExcludeRole', 'ExcludeFixedRole', 'IncludeSystemUser', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Role', 'ExcludeRole', 'ExcludeFixedRole', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -20,33 +20,33 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Functionality" {
-        It 'Excludes system users by default' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance
+        It 'Returns Results' {
+            $result = Get-DbaDbRole -SqlInstance $instance
 
-            $result.IsSystemObject | Select-Object -Unique | Should -Not -Contain $true
+            $result.Count | Should BeGreaterThan $allDatabases.Count
         }
 
-        It 'Includes system users' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -IncludeSystemUser
+        It 'Includes Fixed Roles' {
+            $result = Get-DbaDbRole -SqlInstance $instance
 
-            $result.IsSystemObject | Select-Object -Unique | Should -Contain $true
+            $result.IsFixedRole | Select-Object -Unique | Should -Contain $true
         }
 
         It 'Returns all role membership for all databases' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance
 
             $uniqueDatabases = $result.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeExactly $allDatabases.Count
         }
 
         It 'Accepts a list of databases' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -Database 'msdb' -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance -Database 'msdb'
 
             $result.Database | Select-Object -Unique | Should -Be 'msdb'
         }
 
         It 'Excludes databases' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -ExcludeDatabase 'msdb' -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance -ExcludeDatabase 'msdb'
 
             $uniqueDatabases = $result.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeExactly ($allDatabases.Count - 1)
@@ -54,21 +54,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Accepts a list of roles' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -Role 'db_owner' -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance -Role 'db_owner'
 
-            $result.Role | Select-Object -Unique | Should -Be 'db_owner'
+            $result.Name | Select-Object -Unique | Should -Be 'db_owner'
         }
 
         It 'Excludes roles' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -ExcludeRole 'db_owner' -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance -ExcludeRole 'db_owner'
 
-            $result.Role | Select-Object -Unique | Should -Not -Contain 'db_owner'
+            $result.Name | Select-Object -Unique | Should -Not -Contain 'db_owner'
         }
 
         It 'Excludes fixed roles' {
-            $result = Get-DbaDbRoleMember -SqlInstance $instance -ExcludeFixedRole -IncludeSystemUser
+            $result = Get-DbaDbRole -SqlInstance $instance -ExcludeFixedRole
 
-            $result.Role | Select-Object -Unique | Should -Not -Contain 'db_owner'
+            $results.IsFixedRole | Should Not Contain $true
+            $result.Name | Select-Object -Unique | Should -Not -Contain 'db_owner'
         }
     }
 }
