@@ -55,10 +55,7 @@ CREATE TRIGGER $triggerviewname
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $triggerontable = "DROP TRIGGER dbatoolsci_triggerontable ON dbo.dbatoolsci_trigger;"
-        $server.Query("$triggerontable")
-        $triggeronview = "DROP TRIGGER dbatoolsci_triggeronview ON dbo.dbatoolsci_view;"
-        $server.Query("$triggeronview")
+        $server.Query("DROP DATABASE dbatoolsci_addtriggertoobject")
     }
 
     Context "Gets Table Trigger" {
@@ -94,7 +91,7 @@ CREATE TRIGGER $triggerviewname
             $results.isenabled | Should Be $true
         }
         It "Should have text of Trigger" {
-            $results.TextBody | Should BeLike '*dbatoolsci_triggeronview view*'
+            $results.TextBody | Should BeLike '*dbatoolsci_view view*'
         }
     }
     Context "Gets View Trigger when using -Database" {
@@ -106,7 +103,7 @@ CREATE TRIGGER $triggerviewname
             $results.isenabled | Should Be $true
         }
         It "Should have text of Trigger" {
-            $results.TextBody | Should BeLike '*dbatoolsci_triggeronview view*'
+            $results.TextBody | Should BeLike '*dbatoolsci_view view*'
         }
     }
 }
