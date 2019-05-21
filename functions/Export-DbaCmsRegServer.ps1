@@ -16,7 +16,7 @@ function Export-DbaCmsRegServer {
         Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
 
     .PARAMETER Path
-        The path to the exported file. If no path is specified, one will be created.
+        The path to the exported files. If no path is specified, one will be created. This is expected to be a directory.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
@@ -71,18 +71,14 @@ function Export-DbaCmsRegServer {
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -ParameterName Path)) {
-            if ($Path -notmatch '\\') {
-                $Path = ".\$Path"
-            }
-
-            $directory = Split-Path $Path
-            if (-not (Test-Path $directory)) {
-                New-Item -Path $directory -ItemType Directory
-            }
+        if (-not (test-path $Path)) {
+            New-Item -Path $Path -ItemType Directory
         } else {
-            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            if ( -not (Get-Item -Path $Path).PSIsContainer) {
+                Stop-function  -Message "Path provided is an already-existing file. Please provide a directory name."
+            }
         }
+        $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -95,11 +91,17 @@ function Export-DbaCmsRegServer {
                     $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    $Path = Join-DbaPath -Path $Path -Child "$serverName-regserver-$regservername-$timeNow.xml"
-                    $object.Export($Path, $CredentialPersistenceType)
+                    $serverName = $object.SqlInstance.Replace('\', '$');
+                    $regservername = $object.Name.Replace('\', '$')
+                    $ExportFileName = "$serverName-regserver-$regservername-$timeNow.xml"
+                    $FullExportFile = Join-DbaPath -Path $Path -Child $ExportFileName
+                    $object.Export($FullExportFile, $CredentialPersistenceType)
                 } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $Path = Join-DbaPath -Path $Path -Child "$serverName-reggroup-$regservergroup-$timeNow.xml"
-                    $object.Export($Path, $CredentialPersistenceType)
+                    $servername = $object.SqlInstance.Replace('\', '$')
+                    $regservergroup = $object.Name.Replace('\', '$')
+                    $ExportFileName = "$serverName-reggroup-$regservergroup-$timeNow.xml"
+                    $FullExportFile = Join-DbaPath -Path $Path -Child $ExportFileName
+                    $object.Export($FullExportFile, $CredentialPersistenceType)
                 } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
