@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Add-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -86,16 +85,11 @@ function Add-DbaDbRoleMember {
         [string[]]$Role,
         [parameter(Mandatory)]
         [string[]]$User,
-        [parameter(ValueFromPipeline)]
-        [Object[]]$InputObject,
+        [parameter(ValueFromPipeline)]        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
             return

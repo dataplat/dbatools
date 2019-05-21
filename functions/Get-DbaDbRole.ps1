@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Get-DbaDbRole {
     <#
     .SYNOPSIS
@@ -131,8 +130,5 @@ function Get-DbaDbRole {
                 Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
             }
         }
-    }
-    end {
-
     }
 }

@@ -19,16 +19,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $role1 = "dbatoolssci_role1_$(Get-Random)"
         $role2 = "dbatoolssci_role2_$(Get-Random)"
         $dbname1 = "dbatoolsci_$(Get-Random)"
-
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname1 -Owner sa
-        #$null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname2 -Owner sa
-
-
-        #$null = $server.Query("CREATE ROLE $role1", 'msdb')
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -confirm:$false
-        #$null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -confirm:$false
     }
 
     Context "Functionality" {

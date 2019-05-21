@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Get-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -101,16 +100,11 @@ function Get-DbaDbRoleMember {
         [switch]$ExcludeFixedRole,
         [switch]$IncludeSystemUser,
         [parameter(ValueFromPipeline)]
-        [Object[]]$InputObject,
-        [Alias('Silent')]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
             return

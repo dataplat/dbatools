@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Remove-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -86,15 +85,11 @@ function Remove-DbaDbRoleMember {
         [parameter(Mandatory)]
         [string[]]$User,
         [parameter(ValueFromPipeline)]
-        [Object[]]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
             return
