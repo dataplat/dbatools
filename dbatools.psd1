@@ -425,7 +425,6 @@
         'Get-DbaAgentServer',
         'Set-DbaAgentServer',
         'Invoke-DbaDbccFreeCache',
-        'Get-DbaDbObjectTrigger',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
