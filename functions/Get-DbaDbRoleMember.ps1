@@ -31,7 +31,7 @@ function Get-DbaDbRoleMember {
         Includes system users. By default system users are not included.
 
     .PARAMETER InputObject
-		Enables piped input from Get-DbaDbRole or Get-DbaDatabase
+        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

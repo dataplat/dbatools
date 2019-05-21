@@ -85,7 +85,8 @@ function Add-DbaDbRoleMember {
         [string[]]$Role,
         [parameter(Mandatory)]
         [string[]]$User,
-        [parameter(ValueFromPipeline)]        [object[]]$InputObject,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
