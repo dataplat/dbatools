@@ -55,7 +55,12 @@ CREATE TRIGGER $triggerviewname
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("DROP DATABASE dbatoolsci_addtriggertoobject")
+        $server.Query("IF DB_ID('dbatoolsci_addtriggertoobject') IS NOT NULL
+                begin
+                    print 'Dropping dbatoolsci_addtriggertoobject'
+                    ALTER DATABASE dbatoolsci_addtriggertoobject] SET SINGLE_USER WITH ROLLBACK immediate;
+                    DROP DATABASE [dbatoolsci_addtriggertoobject];
+                end")
     }
 
     Context "Gets Table Trigger" {
