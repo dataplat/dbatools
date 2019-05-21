@@ -12,26 +12,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $multifgdb = "dbatoolsci_multifgdb$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
     }
 
     Context "Returns values for Instance" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance1
+        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2
         It "Results are not empty" {
             $results | Should Not Be $Null
         }
@@ -41,13 +37,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Accepts database and filegroup input" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance1 -Database $multifgdb
+        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 3
         }
 
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance1 -Database $multifgdb -FileGroup Test1
+        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb -FileGroup Test1
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 1
@@ -55,11 +51,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Accepts piped input" {
-        $systemDbs = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeUser
-        $results = $systemDbs | Get-DbaDbFileGroup -SqlInstance $script:instance1 -FileGroup Primary
+        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser | Get-DbaDbFileGroup
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 4
+        }
+
+        It "Excludes User Databases" {
+            $results.Parent.Name | Should -Not -Contain $multifgdb
+            $results.Parent.Name  | Should -Contain 'msdb'
         }
     }
 
