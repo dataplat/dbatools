@@ -28,7 +28,7 @@ function Get-DbaDbObjectTrigger {
 
     .NOTES
         Tags: Database, Trigger
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: Cláudio Silva (@claudioessilva), https://claudioessilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
