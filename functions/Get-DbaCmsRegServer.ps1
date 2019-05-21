@@ -82,29 +82,36 @@ function Get-DbaCmsRegServer {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [Alias("Groups")]
         [object[]]$Group,
         [object[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
         if ($ResolveNetworkName) {
             $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description'
         }
+        $i = 0
         $defaults = 'Name', 'ServerName', 'Group', 'Description'
+        $ns = @{ 'RegisteredServers' = 'http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08' }
+        # thank you forever https://social.msdn.microsoft.com/Forums/sqlserver/en-US/57811d43-a2b9-4179-a97b-a9936ddb188e/how-to-retrieve-a-password-saved-by-sql-server?forum=sqltools
+        function Unprotect-String([string] $base64String) {
+            return [System.Text.Encoding]::Unicode.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.Convert]::FromBase64String($base64String), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
+        }
     }
     process {
+        if (-not $PSBoundParameters.SqlInstance -and -not $PSBoundParameters.Path) {
+            $Path = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        }
+
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
@@ -120,6 +127,35 @@ function Get-DbaCmsRegServer {
                 }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
                 $serverstore.ServerConnection.Disconnect()
+            }
+        }
+
+        foreach ($dir in $Path) {
+            $regservers = Select-Xml -Path $dir -Namespace $ns -XPath //RegisteredServers:RegisteredServer
+            foreach ($svr in $regservers) {
+                if ($svr.Node.ServerType.'#text' -eq "DatabaseEngine") {
+                    $encodedconnstring = $connstring = $svr.Node.ConnectionStringWithEncryptedPassword.'#text'
+
+                    if ($encodedconnstring -imatch 'password="?([^";]+)"?') {
+                        $password = $Matches[1]
+                        $password = Unprotect-String $password
+                        $connstring = $encodedconnstring -ireplace 'password="?([^";]+)"?', "password=`"$password`""
+                    }
+
+                    $reg = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $svr.Node.Name.'#text', $svr.Node.ServerName.'#text'
+                    $reg.AuthenticationType = $svr.Node.AuthenticationType.'#text'
+                    $reg.ActiveDirectoryUserId = $svr.Node.ActiveDirectoryUserId.'#text'
+                    $reg.ActiveDirectoryTenant = $svr.Node.ActiveDirectoryTenant.'#text'
+                    $reg.Description = $svr.Node.Description.'#text'
+                    $reg.OtherParams = $svr.Node.OtherParams.'#text'
+                    $reg.SecureConnectionString = (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
+                    $reg.ConnectionString = $connstring
+                    # update read-only or problematic properties
+                    $reg | Add-Member -Force -Name Id -Value $(++$i; $i) -MemberType NoteProperty
+                    $reg | Add-Member -Force -Name CredentialPersistenceType -Value $svr.Node.CredentialPersistenceType.'#text' -MemberType NoteProperty
+                    $reg | Add-Member -Force -Name ServerType -Value $svr.Node.ServerType.'#text' -MemberType NoteProperty
+                    $servers += $reg | Add-Member -Force -Name ConnectionStringWithEncryptedPassword -Value $encodedconnstring -MemberType NoteProperty -PassThru
+                }
             }
         }
 
