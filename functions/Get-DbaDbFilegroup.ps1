@@ -78,7 +78,7 @@ function Get-DbaDbFileGroup {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [string[]]$FileGroup,
-        $EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -118,7 +118,5 @@ function Get-DbaDbFileGroup {
                 Write-Message -Level Verbose -Message "Skipping processing of database: $db as database is not accessible"
             }
         }
-    }
-    end {
     }
 }
