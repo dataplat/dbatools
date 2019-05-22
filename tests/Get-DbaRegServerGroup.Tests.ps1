@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ServerName', 'Group', 'ExcludeGroup', 'Id', 'IncludeSelf', 'ExcludeCmsServer', 'ResolveNetworkName', 'ExcludeLocal', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Group','ExcludeGroup','Id','EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
             $server = Connect-DbaInstance $script:instance1
@@ -51,31 +51,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer2.ServerName = $srvName2
             $newServer2.Description = $regSrvDesc2
             $newServer2.Create()
-
-            $regSrvName3 = "dbatoolsci-server3"
-            $srvName3 = "dbatoolsci-server3"
-            $regSrvDesc3 = "dbatoolsci-server3desc"
-            $newServer3 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($dbStore, $regSrvName3)
-            $newServer3.ServerName = $srvName3
-            $newServer3.Description = $regSrvDesc3
-            $newServer3.Create()
         }
         AfterAll {
-            Get-DbaCmsRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServer -Confirm:$false
-            Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
-        It "Should return multiple objects" {
-            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -Group $group -ExcludeLocal
-            $results.Count | Should Be 2
-        }
-        It "Should allow searching subgroups" {
-            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -Group "$group\$group2" -ExcludeLocal
+        It "Should return one group" {
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $group
             $results.Count | Should Be 1
         }
-        It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2" -ExcludeLocal
-            @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
+        It "Should allow searching subgroups" {
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results.Count | Should Be 1
         }
 
         # Property Comparisons will come later when we have the commands

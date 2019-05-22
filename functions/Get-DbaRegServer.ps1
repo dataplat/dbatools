@@ -1,4 +1,4 @@
-function Get-DbaCmsRegServer {
+function Get-DbaRegServer {
     <#
     .SYNOPSIS
         Gets list of SQL Server objects stored in local registered groups and central management server.
@@ -52,35 +52,36 @@ function Get-DbaCmsRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmsRegServer
+        https://dbatools.io/Get-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a
 
         Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -IncludeSelf
 
         Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
         Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
 
         Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group HR\Development
 
         Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -91,7 +92,6 @@ function Get-DbaCmsRegServer {
         [object[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
-        [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
         [switch]$ExcludeLocal,
         [switch]$EnableException
@@ -114,13 +114,13 @@ function Get-DbaCmsRegServer {
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
-                $groupservers = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
+                $groupservers = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             } else {
                 try {
-                    $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                    $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
                 } catch {
                     Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
                 }
@@ -157,7 +157,7 @@ function Get-DbaCmsRegServer {
         }
 
         if ($ExcludeGroup) {
-            $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
+            $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }

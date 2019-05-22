@@ -1,4 +1,4 @@
-function Export-DbaCmsRegServer {
+function Export-DbaRegServer {
     <#
     .SYNOPSIS
         Exports registered servers and registered server groups to file
@@ -19,7 +19,7 @@ function Export-DbaCmsRegServer {
         The path to the exported file. If no path is specified, one will be created.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
+        Enables piping from Get-DbaRegServer, Get-DbaRegServerGroup, CSVs and other objects.
 
         If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
 
@@ -39,20 +39,20 @@ function Export-DbaCmsRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaCmsRegServer
+        https://dbatools.io/Export-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Export-DbaCmsRegServer -SqlInstance sql2008
+        PS C:\> Export-DbaRegServer -SqlInstance sql2008
 
         Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
+        PS C:\> Get-DbaRegServer -SqlInstance sql2008, sql2012 | Export-DbaRegServer
 
         Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaRegServer
 
         Exports all registered servers on sql2008 and sql2012, organized by group.
 
@@ -86,13 +86,13 @@ function Export-DbaCmsRegServer {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+            $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
         }
 
         foreach ($object in $InputObject) {
             try {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
-                    $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ParentServer -Id 1
+                    $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
 
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {

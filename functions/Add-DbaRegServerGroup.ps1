@@ -1,10 +1,10 @@
-function Add-DbaCmsRegServerGroup {
+function Add-DbaRegServerGroup {
     <#
     .SYNOPSIS
         Adds registered server groups to SQL Server Central Management Server (CMS)
 
     .DESCRIPTION
-        Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexibility, look into Import-DbaCmsRegServer which accepts multiple kinds of input and allows you to add reg servers and groups from different CMS.
+        Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexibility, look into Import-DbaRegServer which accepts multiple kinds of input and allows you to add reg servers and groups from different CMS.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -22,7 +22,7 @@ function Add-DbaCmsRegServerGroup {
         The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServerGroup to be piped in
+        Allows results from Get-DbaRegServerGroup to be piped in
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,20 +46,20 @@ function Add-DbaCmsRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaCmsRegServerGroup
+        https://dbatools.io/Add-DbaRegServerGroup
 
     .EXAMPLE
-        PS C:\> Add-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR
+        PS C:\> Add-DbaRegServerGroup -SqlInstance sql2012 -Name HR
 
         Creates a registered server group called HR, in the root of sql2012's CMS
 
     .EXAMPLE
-        PS C:\> Add-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name sub-folder -Group HR
+        PS C:\> Add-DbaRegServerGroup -SqlInstance sql2012, sql2014 -Name sub-folder -Group HR
 
         Creates a registered server group on sql2012 and sql2014 called sub-folder within the HR group
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name sub-folder
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaRegServerGroup -Name sub-folder
 
         Creates a registered server group on sql2012 and sql2014 called sub-folder within the HR group of each server
 
@@ -84,9 +84,9 @@ function Add-DbaCmsRegServerGroup {
         }
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
-                $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
             } else {
-                $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+                $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
         }
 
@@ -104,7 +104,7 @@ function Add-DbaCmsRegServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
 
-                    Get-DbaCmsRegServerGroup -SqlInstance $server -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    Get-DbaRegServerGroup -SqlInstance $server -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
                     Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue

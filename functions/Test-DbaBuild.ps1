@@ -92,7 +92,7 @@ function Test-DbaBuild {
         Returns information builds identified by these versions strings.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a.
 

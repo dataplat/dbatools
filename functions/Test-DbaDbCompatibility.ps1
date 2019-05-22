@@ -53,7 +53,7 @@ function Test-DbaDbCompatibility {
         Returns detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Test-DbaDbCompatibility
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Test-DbaDbCompatibility
 
         Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016.
 

@@ -126,7 +126,7 @@ function Get-DbaBackupHistory {
         Returns information about all Full backups for AdventureWorks2014 on sql2014.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
 
         Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
 
