@@ -1,10 +1,10 @@
 function Get-DbaCmsRegServer {
     <#
     .SYNOPSIS
-        Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
+        Gets list of SQL Server objects stored in local registered groups and central management server.
 
     .DESCRIPTION
-        Returns an array of servers found in the CMS.
+       Gets list of SQL Server objects stored in local registered groups and central management server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -24,8 +24,8 @@ function Get-DbaCmsRegServer {
     .PARAMETER ExcludeGroup
         Specifies one or more Central Management Server groups to exclude.
 
-    .PARAMETER ExcludeCmsServer
-        Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
+    .PARAMETER ExcludeLocal
+        Do not include local registered servers in results.
 
     .PARAMETER Id
         Get server by Id(s)
@@ -93,15 +93,14 @@ function Get-DbaCmsRegServer {
         [switch]$IncludeSelf,
         [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
+        [switch]$ExcludeLocal,
         [switch]$EnableException
     )
     begin {
         if ($ResolveNetworkName) {
             $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description'
         }
-        $i = 0
         $defaults = 'Name', 'ServerName', 'Group', 'Description'
-        $ns = @{ 'RegisteredServers' = 'http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08' }
         # thank you forever https://social.msdn.microsoft.com/Forums/sqlserver/en-US/57811d43-a2b9-4179-a97b-a9936ddb188e/how-to-retrieve-a-password-saved-by-sql-server?forum=sqltools
         function Unprotect-String([string] $base64String) {
             return [System.Text.Encoding]::Unicode.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.Convert]::FromBase64String($base64String), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
@@ -130,59 +129,18 @@ function Get-DbaCmsRegServer {
             }
         }
 
-        if (-not $PSBoundParameters.SqlInstance) {
-            $store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore # | Select-Object -ExpandProperty DatabaseEngineServerGroup
-            $file = $($store).DomainInstanceName.ToString()
-            $file
-            return
-            create them up and down
-            build it with create and stuff, perhaps even using commands!
-            $regservers = Select-Xml -Path $file -Namespace $ns -XPath //RegisteredServers:RegisteredServer
-            foreach ($svr in $regservers) {
-                if ($svr.Node.ServerType.'#text' -eq "DatabaseEngine") {
-                    $groups = $svr.Node.Parent.Reference.Uri.ToString() -split '/' | Where-Object { '' -ne $_ }
-                    $svr.Node.Parent.Reference.Uri
-                    $groups
-                    foreach ($groupname in $groups) {
-                        if (-not $parentgroup) {
-                            $newgroup = $parentgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $store, $groupname
-                            #$newgroup.Parent = $store
-                            hello
-                            $newgroup
-                            return
-                        } else {
-                            $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $groupname
-                            $newgroup.Parent = $parentgroup
-                        }
-                        $parentgroup = $newgroup
-                    }
-                    $parent = $newgroup
-                    $encodedconnstring = $connstring = $svr.Node.ConnectionStringWithEncryptedPassword.'#text'
-
-                    if ($encodedconnstring -imatch 'password="?([^";]+)"?') {
-                        $password = $Matches[1]
-                        $password = Unprotect-String $password
-                        $connstring = $encodedconnstring -ireplace 'password="?([^";]+)"?', "password=`"$password`""
-                    }
-
-                    $reg = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $parent, $svr.Node.ServerName.'#text'
-                    $reg.AuthenticationType = $svr.Node.AuthenticationType.'#text'
-                    $reg.ActiveDirectoryUserId = $svr.Node.ActiveDirectoryUserId.'#text'
-                    $reg.ActiveDirectoryTenant = $svr.Node.ActiveDirectoryTenant.'#text'
-                    $reg.Description = $svr.Node.Description.'#text'
-                    $reg.OtherParams = $svr.Node.OtherParams.'#text'
-                    $reg.SecureConnectionString = (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
-                    $reg.ConnectionString = $connstring
-                    # update read-only or problematic properties
-                    $reg | Add-Member -Force -Name Id -Value $(++$i; $i) -MemberType NoteProperty
-                    $reg | Add-Member -Force -Name CredentialPersistenceType -Value $svr.Node.CredentialPersistenceType.'#text' -MemberType NoteProperty
-                    $reg | Add-Member -Force -Name ServerType -Value $svr.Node.ServerType.'#text' -MemberType NoteProperty
-                    $servers += $reg | Add-Member -Force -Name ConnectionStringWithEncryptedPassword -Value $encodedconnstring -MemberType NoteProperty -PassThru
+        # Magic courtesy of Mathias Jessen and David Shifflet
+        if (-not $PSBoundParameters.ExcludeLocal) {
+            $file = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]::LocalFileStore.DomainInstanceName
+            if ($file) {
+                if ((Test-Path -Path $file)) {
+                    $store = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
+                    $initMethod = $store.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
+                    $servers += ($initMethod.Invoke($null, @($file))).DatabaseEngineServerGroup.GetDescendantRegisteredServers()
                 }
             }
         }
-        $servers | select-defaultview -property $defaults
-        return
+
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name
@@ -214,7 +172,16 @@ function Get-DbaCmsRegServer {
                 $groupname = ($groupname -join "\")
             }
 
-
+            if ($server.ConnectionStringWithEncryptedPassword) {
+                $encodedconnstring = $connstring = $server.ConnectionStringWithEncryptedPassword
+                if ($encodedconnstring -imatch 'password="?([^";]+)"?') {
+                    $password = $Matches[1]
+                    $password = Unprotect-String $password
+                    $connstring = $encodedconnstring -ireplace 'password="?([^";]+)"?', "password=`"$password`""
+                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ConnectionString -Value $connstring
+                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SecureConnectionString -Value (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
+                }
+            }
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
@@ -254,10 +221,5 @@ function Get-DbaCmsRegServer {
             $self.Description = $null
             Select-DefaultView -InputObject $self -Property $defaults
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
     }
 }
