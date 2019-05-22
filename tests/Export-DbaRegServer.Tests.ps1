@@ -44,21 +44,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It -Skip "should create an xml file" {
-        $results = $newServer | Export-DbaCmsRegServer
+        $results = $newServer | Export-DbaRegServer
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.Extension -eq '.xml' | Should -Be $true
     }
 
     It "should create a specific xml file when using Path" {
-        $results2 = $newGroup2 | Export-DbaCmsRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
+        $results2 = $newGroup2 | Export-DbaRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
         $results2 -is [System.IO.FileInfo] | Should -Be $true
         $results2.FullName | Should -Be 'C:\temp\dbatoolsci_regserverexport.xml'
         Get-Content -Path $results2 -Raw | Should -Match dbatoolsci-group1a
     }
 
     It "creates an importable xml file" {
-        $results3 = $newServer3 | Export-DbaCmsRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
-        $results4 = Import-DbaCmsRegServer -SqlInstance $script:instance2 -Path $results3
+        $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
+        $results4 = Import-DbaRegServer -SqlInstance $script:instance2 -Path $results3
         $results4.ServerName | Should -Be $newServer3.ServerName
         $results4.Description | Should -Be $newServer3.Description
     }

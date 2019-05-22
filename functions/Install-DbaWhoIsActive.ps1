@@ -63,7 +63,7 @@ function Install-DbaWhoIsActive {
         Installs sp_WhoisActive to sqlserver2014a's master database from the local file whoisactive_install.sql
 
     .EXAMPLE
-        PS C:\> $instances = Get-DbaCmsRegServer sqlserver
+        PS C:\> $instances = Get-DbaRegServer sqlserver
         PS C:\> Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
         Installs sp_WhoisActive to all servers within CMS

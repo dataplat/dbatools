@@ -1,10 +1,10 @@
-function Get-DbaCmsRegServer {
+function Get-DbaRegServer {
     <#
     .SYNOPSIS
-        Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
+        Gets list of SQL Server objects stored in local registered groups and central management server.
 
     .DESCRIPTION
-        Returns an array of servers found in the CMS.
+       Gets list of SQL Server objects stored in local registered groups and central management server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -24,8 +24,8 @@ function Get-DbaCmsRegServer {
     .PARAMETER ExcludeGroup
         Specifies one or more Central Management Server groups to exclude.
 
-    .PARAMETER ExcludeCmsServer
-        Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
+    .PARAMETER ExcludeLocal
+        Do not include local registered servers in results.
 
     .PARAMETER Id
         Get server by Id(s)
@@ -52,50 +52,48 @@ function Get-DbaCmsRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmsRegServer
+        https://dbatools.io/Get-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a
 
         Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -IncludeSelf
 
         Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
         Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
 
         Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group HR\Development
 
         Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [Alias("Groups")]
         [object[]]$Group,
         [object[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
-        [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
-        [Alias('Silent')]
+        [switch]$ExcludeLocal,
         [switch]$EnableException
     )
     begin {
@@ -103,23 +101,43 @@ function Get-DbaCmsRegServer {
             $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description'
         }
         $defaults = 'Name', 'ServerName', 'Group', 'Description'
+        # thank you forever https://social.msdn.microsoft.com/Forums/sqlserver/en-US/57811d43-a2b9-4179-a97b-a9936ddb188e/how-to-retrieve-a-password-saved-by-sql-server?forum=sqltools
+        function Unprotect-String([string] $base64String) {
+            return [System.Text.Encoding]::Unicode.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.Convert]::FromBase64String($base64String), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
+        }
     }
     process {
+        if (-not $PSBoundParameters.SqlInstance) {
+            $null = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        }
+
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
-                $groupservers = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
+                $groupservers = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             } else {
                 try {
-                    $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                    $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
                 } catch {
                     Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
                 }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
                 $serverstore.ServerConnection.Disconnect()
+            }
+        }
+
+        # Magic courtesy of Mathias Jessen and David Shifflet
+        if (-not $PSBoundParameters.ExcludeLocal) {
+            $file = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]::LocalFileStore.DomainInstanceName
+            if ($file) {
+                if ((Test-Path -Path $file)) {
+                    $store = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
+                    $initMethod = $store.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
+                    $servers += ($initMethod.Invoke($null, @($file))).DatabaseEngineServerGroup.GetDescendantRegisteredServers()
+                }
             }
         }
 
@@ -139,7 +157,7 @@ function Get-DbaCmsRegServer {
         }
 
         if ($ExcludeGroup) {
-            $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
+            $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
@@ -154,7 +172,16 @@ function Get-DbaCmsRegServer {
                 $groupname = ($groupname -join "\")
             }
 
-
+            if ($server.ConnectionStringWithEncryptedPassword) {
+                $encodedconnstring = $connstring = $server.ConnectionStringWithEncryptedPassword
+                if ($encodedconnstring -imatch 'password="?([^";]+)"?') {
+                    $password = $Matches[1]
+                    $password = Unprotect-String $password
+                    $connstring = $encodedconnstring -ireplace 'password="?([^";]+)"?', "password=`"$password`""
+                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ConnectionString -Value $connstring
+                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SecureConnectionString -Value (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
+                }
+            }
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
@@ -194,10 +221,5 @@ function Get-DbaCmsRegServer {
             $self.Description = $null
             Select-DefaultView -InputObject $self -Property $defaults
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
     }
 }
