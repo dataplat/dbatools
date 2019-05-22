@@ -41,7 +41,7 @@ function Get-DbaLinkedServer {
         Returns all linked servers for the SQL Server instance DEV01
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
+        PS C:\> Get-DbaRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
 
         Returns all linked servers for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
     #>

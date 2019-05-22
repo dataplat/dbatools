@@ -74,7 +74,7 @@ function Invoke-DbaQuery {
         Runs the sql query 'SELECT foo FROM bar' against the instance 'server\instance'
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
+        PS C:\> Get-DbaRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
 
         Runs the sql query 'SELECT foo FROM bar' against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]
 

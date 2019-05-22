@@ -238,8 +238,8 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $null = Get-DbaCmsRegServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
-                $null = Get-DbaCmsRegServer -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-regserver.sql" -Append -BatchSeparator 'GO'
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-regserver.sql"
                 if (-not (Test-Path "$Path\$fileCounter-regserver.sql")) {
                     $fileCounter--

@@ -1,4 +1,4 @@
-function Remove-DbaCmsRegServerGroup {
+function Remove-DbaRegServerGroup {
     <#
     .SYNOPSIS
         Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
@@ -16,7 +16,7 @@ function Remove-DbaCmsRegServerGroup {
         Specifies one or more groups to include from SQL Server Central Management Server.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServerGroup to be piped in
+        Allows results from Get-DbaRegServerGroup to be piped in
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -40,15 +40,15 @@ function Remove-DbaCmsRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaCmsRegServerGroup
+        https://dbatools.io/Remove-DbaRegServerGroup
 
     .EXAMPLE
-        PS C:\> Remove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR, Accounting
+        PS C:\> Remove-DbaRegServerGroup -SqlInstance sql2012 -Group HR, Accounting
 
         Removes the HR and Accounting groups on sql2012
 
     .EXAMPLE
-        PS C:\> Remove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\Development -Confirm:$false
+        PS C:\> Remove-DbaRegServerGroup -SqlInstance sql2012 -Group HR\Development -Confirm:$false
 
         Removes the Development subgroup within the HR group on sql2012 and turns off all prompting
 
@@ -66,7 +66,7 @@ function Remove-DbaCmsRegServerGroup {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Name
+            $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Name
         }
 
         foreach ($regservergroup in $InputObject) {

@@ -66,7 +66,7 @@ function Get-DbaBuildReference {
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 

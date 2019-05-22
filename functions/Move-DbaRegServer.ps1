@@ -1,4 +1,4 @@
-function Move-DbaCmsRegServer {
+function Move-DbaRegServer {
     <#
     .SYNOPSIS
         Moves registered servers around SQL Server Central Management Server (CMS)
@@ -22,7 +22,7 @@ function Move-DbaCmsRegServer {
         The new group. If no new group is specified, the default root will used
 
     .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServer to be piped in
+        Allows results from Get-DbaRegServer to be piped in
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,15 +46,15 @@ function Move-DbaCmsRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Move-DbaCmsRegServer
+        https://dbatools.io/Move-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Move-DbaCmsRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
+        PS C:\> Move-DbaRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
 
         Moves the registered server on sql2012 titled 'Web SQL Cluster' to the Prod group within the HR group
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaCmsRegServer -NewGroup Web
+        PS C:\> Get-DbaRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaRegServer -NewGroup Web
 
         Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017
 
@@ -82,7 +82,7 @@ function Move-DbaCmsRegServer {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
 
         }
 
@@ -96,19 +96,19 @@ function Move-DbaCmsRegServer {
             $server = $regserver.ParentServer
 
             if ((Test-Bound -ParameterName NewGroup)) {
-                $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Group $NewGroup
+                $group = Get-DbaRegServerGroup -SqlInstance $server -Group $NewGroup
 
                 if (-not $group) {
                     Stop-Function -Message "$NewGroup not found on $server" -Continue
                 }
             } else {
-                $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Id 1
+                $group = Get-DbaRegServerGroup -SqlInstance $server -Id 1
             }
 
             if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
-                    Get-DbaCmsRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
+                    Get-DbaRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue

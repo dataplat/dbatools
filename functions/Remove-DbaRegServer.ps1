@@ -1,4 +1,4 @@
-function Remove-DbaCmsRegServer {
+function Remove-DbaRegServer {
     <#
     .SYNOPSIS
         Removes registered servers found in SQL Server Central Management Server (CMS).
@@ -22,7 +22,7 @@ function Remove-DbaCmsRegServer {
         Specifies one or more groups to include from SQL Server Central Management Server.
 
     .PARAMETER InputObject
-        Allows results from Get-DbaCmsRegServer to be piped in
+        Allows results from Get-DbaRegServer to be piped in
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,20 +46,20 @@ function Remove-DbaCmsRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaCmsRegServer
+        https://dbatools.io/Remove-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Remove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting
+        PS C:\> Remove-DbaRegServer -SqlInstance sql2012 -Group HR, Accounting
 
         Removes all servers from the HR and Accounting groups on sql2012
 
     .EXAMPLE
-        PS C:\> Remove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\Development
+        PS C:\> Remove-DbaRegServer -SqlInstance sql2012 -Group HR\Development
 
         Removes all servers from the HR and sub-group Development from the CMS on sql2012.
 
     .EXAMPLE
-        PS C:\> Remove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false
+        PS C:\> Remove-DbaRegServer -SqlInstance sql2012 -Confirm:$false
 
         Removes all registered servers on sql2012 and turns off all prompting
 
@@ -80,7 +80,7 @@ function Remove-DbaCmsRegServer {
 
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
         }
 
         foreach ($regserver in $InputObject) {

@@ -1,10 +1,10 @@
-function Copy-DbaCmsRegServer {
+function Copy-DbaRegServer {
     <#
     .SYNOPSIS
         Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
 
     .DESCRIPTION
-        Copy-DbaCmsRegServer copies all groups, subgroups, and server instances from one SQL Server to another.
+        Copy-DbaRegServer copies all groups, subgroups, and server instances from one SQL Server to another.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -53,20 +53,20 @@ function Copy-DbaCmsRegServer {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaCmsRegServer
+        https://dbatools.io/Copy-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaRegServer -Source sqlserver2014a -Destination sqlcluster
 
         All groups, subgroups, and server instances are copied from sqlserver2014a CMS to sqlcluster CMS.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3
+        PS C:\> Copy-DbaRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCmsRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+        PS C:\> Copy-DbaRegServer -Source sqlserver2014a -Destination sqlcluster -Group Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
         Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
 
@@ -285,7 +285,7 @@ function Copy-DbaCmsRegServer {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-            $fromCmStore = Get-DbaCmsRegServerStore -SqlInstance $sourceServer
+            $fromCmStore = Get-DbaRegServerStore -SqlInstance $sourceServer
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -300,7 +300,7 @@ function Copy-DbaCmsRegServer {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
+            $toCmStore = Get-DbaRegServerStore -SqlInstance $destServer
 
             $stores = $fromCmStore.DatabaseEngineServerGroup
             if ($Group) {
