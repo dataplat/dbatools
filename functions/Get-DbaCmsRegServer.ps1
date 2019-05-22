@@ -109,7 +109,7 @@ function Get-DbaCmsRegServer {
     }
     process {
         if (-not $PSBoundParameters.SqlInstance) {
-            $path = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $null = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
         $servers = @()
@@ -130,10 +130,31 @@ function Get-DbaCmsRegServer {
             }
         }
 
-        foreach ($file in $path) {
+        if (-not $PSBoundParameters.SqlInstance) {
+            $store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore # | Select-Object -ExpandProperty DatabaseEngineServerGroup
+            $file = $($store).DomainInstanceName.ToString()
+            $file
+            return
             $regservers = Select-Xml -Path $file -Namespace $ns -XPath //RegisteredServers:RegisteredServer
             foreach ($svr in $regservers) {
                 if ($svr.Node.ServerType.'#text' -eq "DatabaseEngine") {
+                    $groups = $svr.Node.Parent.Reference.Uri.ToString() -split '/' | Where-Object { '' -ne $_ }
+                    $svr.Node.Parent.Reference.Uri
+                    $groups
+                    foreach ($groupname in $groups) {
+                        if (-not $parentgroup) {
+                            $newgroup = $parentgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $store, $groupname
+                            #$newgroup.Parent = $store
+                            hello
+                            $newgroup
+                            return
+                        } else {
+                            $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $groupname
+                            $newgroup.Parent = $parentgroup
+                        }
+                        $parentgroup = $newgroup
+                    }
+                    $parent = $newgroup
                     $encodedconnstring = $connstring = $svr.Node.ConnectionStringWithEncryptedPassword.'#text'
 
                     if ($encodedconnstring -imatch 'password="?([^";]+)"?') {
@@ -142,7 +163,7 @@ function Get-DbaCmsRegServer {
                         $connstring = $encodedconnstring -ireplace 'password="?([^";]+)"?', "password=`"$password`""
                     }
 
-                    $reg = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $svr.Node.Name.'#text', $svr.Node.ServerName.'#text'
+                    $reg = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $parent, $svr.Node.ServerName.'#text'
                     $reg.AuthenticationType = $svr.Node.AuthenticationType.'#text'
                     $reg.ActiveDirectoryUserId = $svr.Node.ActiveDirectoryUserId.'#text'
                     $reg.ActiveDirectoryTenant = $svr.Node.ActiveDirectoryTenant.'#text'
@@ -150,7 +171,6 @@ function Get-DbaCmsRegServer {
                     $reg.OtherParams = $svr.Node.OtherParams.'#text'
                     $reg.SecureConnectionString = (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
                     $reg.ConnectionString = $connstring
-                    $reg.Parent = $svr.Node.Parent.Reference.Uri.Replace('/RegisteredServersStore/ServerGroup/DatabaseEngineServerGroup/ServerGroup/','')
                     # update read-only or problematic properties
                     $reg | Add-Member -Force -Name Id -Value $(++$i; $i) -MemberType NoteProperty
                     $reg | Add-Member -Force -Name CredentialPersistenceType -Value $svr.Node.CredentialPersistenceType.'#text' -MemberType NoteProperty
@@ -159,7 +179,7 @@ function Get-DbaCmsRegServer {
                 }
             }
         }
-        $servers
+        $servers | select-defaultview -property $defaults
         return
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
