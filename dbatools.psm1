@@ -1141,11 +1141,11 @@ if ($script:smoRunspace) {
 }
 Write-ImportTime -Text "Waiting for runspaces to finish"
 $myInv= $MyInvocation
-if ($option.LoadTypes -or 
-        ($myInv.Line -like '*.psm1*' -and 
-            (-not (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
+if ($option.LoadTypes -or
+    ($myInv.Line -like '*.psm1*' -and
+        (-not (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
         )))  {
-    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml") 
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
