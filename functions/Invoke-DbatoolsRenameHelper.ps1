@@ -142,7 +142,7 @@ function Invoke-DbatoolsRenameHelper {
             'Find-DbaDatabaseGrowthEvent'       = 'Find-DbaDbGrowthEvent'
             'Find-SqlDuplicateIndex'            = 'Find-DbaDuplicateIndex'
             'Find-SqlUnusedIndex'               = 'Find-DbaDbUnusedIndex'
-            'Get-DbaRegServerName'           = 'Get-DbaRegServer'
+            'Get-DbaRegServerName'              = 'Get-DbaRegServer'
             'Get-DbaConfig'                     = 'Get-DbatoolsConfig'
             'Get-DbaConfigValue'                = 'Get-DbatoolsConfigValue'
             'Get-DbaDatabaseAssembly'           = 'Get-DbaDbAssembly'
@@ -271,6 +271,19 @@ function Invoke-DbatoolsRenameHelper {
             'Update-DbaSqlServiceAccount'       = 'Update-DbaServiceAccount'
             'Watch-DbaXEventSession'            = 'Watch-DbaXESession'
             'Watch-SqlDbLogin'                  = 'Watch-DbaDbLogin'
+            'Add-DbaCmsRegServer'               = 'Add-DbaRegServer'
+            'Add-DbaCmsRegServerGroup'          = 'Add-DbaRegServerGroup'
+            'Copy-DbaCmsRegServer'              = 'Copy-DbaRegServer'
+            'Export-DbaCmsRegServer'            = 'Export-DbaRegServer'
+            'Get-DbaCmsRegistryRoot'            = 'Get-DbaRegistryRoot'
+            'Get-DbaCmsRegServer'               = 'Get-DbaRegServer'
+            'Get-DbaCmsRegServerGroup'          = 'Get-DbaRegServerGroup'
+            'Get-DbaCmsRegServerStore'          = 'Get-DbaRegServerStore'
+            'Import-DbaCmsRegServer'            = 'Import-DbaRegServer'
+            'Move-DbaCmsRegServer'              = 'Move-DbaRegServer'
+            'Move-DbaCmsRegServerGroup'         = 'Move-DbaRegServerGroup'
+            'Remove-DbaCmsRegServer'            = 'Remove-DbaRegServer'
+            'Remove-DbaCmsRegServerGroup'       = 'Remove-DbaRegServerGroup'
         }
 
         $allrenames = $commandrenames + $paramrenames
