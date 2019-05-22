@@ -172,7 +172,7 @@ function Invoke-DbaDbccFreeCache {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
@@ -183,7 +183,7 @@ function Invoke-DbaDbccFreeCache {
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
             }
-            If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
+            if ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName

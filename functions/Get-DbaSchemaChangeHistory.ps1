@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
@@ -86,7 +85,7 @@ function Get-DbaSchemaChangeHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Server.Version.Major -le 8) {
                 Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that"

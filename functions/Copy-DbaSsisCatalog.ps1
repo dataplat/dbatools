@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -54,7 +53,7 @@ function Copy-DbaSsisCatalog {
         Tags: Migration, SSIS
         Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -102,6 +101,7 @@ function Copy-DbaSsisCatalog {
     )
     <# Developer note: The throw calls must stay in this command #>
     begin {
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
@@ -254,7 +254,7 @@ function Copy-DbaSsisCatalog {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -282,7 +282,7 @@ function Copy-DbaSsisCatalog {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             try {

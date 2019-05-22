@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Backup-DbaDbCertificate {
     <#
     .SYNOPSIS
@@ -235,12 +234,12 @@ function Backup-DbaDbCertificate {
         if (Test-FunctionInterrupt) { return }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $Certificate
         }
 
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
-                Write-Message -Level Output -Message "Skipping system cert $cert"
+                Write-Message -Level Verbose -Message "Skipping system cert $cert"
             } else {
                 export-cert $cert
             }

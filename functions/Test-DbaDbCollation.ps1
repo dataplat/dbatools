@@ -53,7 +53,7 @@ function Test-DbaDbCollation {
         Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Test-DbaDbCollation
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Test-DbaDbCollation
 
         Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
 
@@ -80,7 +80,7 @@ function Test-DbaDbCollation {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases | Where-Object IsAccessible

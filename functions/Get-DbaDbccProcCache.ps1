@@ -45,7 +45,7 @@ function Get-DbaDbccProcCache {
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> Get-DbaDbccProcCache -SqlInstance Server1 -SqlCredential $cred
 
-        Connects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1 using
+        Connects using sqladmin credential and gets results of DBCC PROCCACHE for Instance Server1
 
     #>
     [CmdletBinding()]
@@ -67,30 +67,26 @@ function Get-DbaDbccProcCache {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Execute the command $query")) {
-                    Write-Message -Message "Query to run: $query" -Level Verbose
-                    $results = $server.Query($query)
-                }
+                Write-Message -Message "Query to run: $query" -Level Verbose
+                $results = $server.Query($query)
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
             }
-            If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
-                foreach ($row in $results) {
-                    [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Count        = $row[0]
-                        Used         = $row[1]
-                        Active       = $row[2]
-                        CacheSize    = $row[3]
-                        CacheUsed    = $row[4]
-                        CacheActive  = $row[5]
-                    }
+            foreach ($row in $results) {
+                [PSCustomObject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Count        = $row[0]
+                    Used         = $row[1]
+                    Active       = $row[2]
+                    CacheSize    = $row[3]
+                    CacheUsed    = $row[4]
+                    CacheActive  = $row[5]
                 }
             }
         }

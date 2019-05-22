@@ -154,12 +154,17 @@ function Invoke-DbaDbClone {
         if (Test-FunctionInterrupt) { return }
         
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
         
         foreach ($db in $InputObject) {
             $server = $db.Parent
-
+            $instance = $server.Name
+            
+            if (-not (Test-Bound -ParameterName CloneDatabase)) {
+                $CloneDatabase = "$($db.Name)_clone"
+            }
+            
             if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2012 SP4 and above required." -Target $server -Continue
             }
@@ -203,7 +208,7 @@ function Invoke-DbaDbClone {
             }
 
             $dbName = $db.Name
-
+            
             foreach ($clonedb in $CloneDatabase) {
                 Write-Message -Level Verbose -Message "Cloning $clonedb from $db"
                 if ($server.Databases[$clonedb]) {
@@ -214,6 +219,7 @@ function Invoke-DbaDbClone {
                             $sql = "DBCC CLONEDATABASE('$dbName','$clonedb') $sqlWith"
                             Write-Message -Level Debug -Message "Sql Statement: $sql"
                             $null = $db.Query($sql)
+                            $server.Databases.Refresh()
                             Get-DbaDatabase -SqlInstance $server -Database $clonedb
                         } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue

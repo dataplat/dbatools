@@ -91,27 +91,21 @@ function Sync-DbaLoginPermission {
             } catch {
                 $sa = "sa"
             }
-
-            foreach ($sourceLogin in $sourceServer.Logins) {
+            $stepCounter = 0
+            foreach ($sourceLogin in $alllogins) {
 
                 $username = $sourceLogin.Name
                 $currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
-                if (!$Login -and $currentLogin -eq $username) {
+                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $alllogins.count
+
+                if ($currentLogin -eq $username) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
                 }
 
-                if ($null -ne $Logins -and $Logins -notcontains $username) {
-                    continue
-                }
-
-                if ($Exclude -contains $username -or $username.StartsWith("##") -or $username -eq $sa) {
-                    continue
-                }
-
                 $serverName = Resolve-NetBiosName $sourceServer
-                $userBase = ($username.Split("\")[0]).ToLower()
+                $userBase = ($username.Split("\")[0]).ToLowerInvariant()
 
                 if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
                     continue
@@ -127,26 +121,30 @@ function Sync-DbaLoginPermission {
 
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $sqlcredential
-            if ((Test-Bound -ParameterName Login)) {
-                $Login = ($sourceServer.Logins | Where-Object Name -NotIn $ExcludeLogin).Name
-            }
+            $alllogins = Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin
+            $loginname = $alllogins.Name
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
 
+        if ($null -eq $loginname) {
+            Stop-Function -Message "No matching logins found for $($login -join ', ') on $Source"
+            return
+        }
+
         foreach ($dest in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
             }
 
             if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {
-                Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $Login -Exclude $ExcludeLogin
+                Sync-Only -SourceServer $sourceServer -DestServer $destServer
             }
         }
     }

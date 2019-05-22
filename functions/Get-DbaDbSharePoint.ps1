@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbSharePoint {
     <#
     .SYNOPSIS
@@ -66,7 +65,7 @@ function Get-DbaDbSharePoint {
             try {
                 $guid = $db.Query("SELECT Id FROM Classes WHERE FullName LIKE 'Microsoft.SharePoint.Administration.SPDatabase,%'").Id.Guid
                 $dbid = $db.Query("[dbo].[proc_getObjectsByBaseClass] @BaseClassId = '$guid', @ParentId = NULL").Id.Guid -join "', '"
-                $dbname = $db.Query("SELECT [Name] FROM [SharePoint_Config].[dbo].[Objects] WHERE id in ('$dbid')").Name
+                $dbname = $db.Query("SELECT [Name] FROM [dbo].[Objects] WHERE id in ('$dbid')").Name
                 Get-DbaDatabase -SqlInstance $db.Parent -Database $dbname
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_

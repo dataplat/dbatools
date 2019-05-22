@@ -33,26 +33,26 @@ function Get-DbaDbccUserOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccUserOptions
+        https://dbatools.io/Get-DbaDbccUserOption
 
     .EXAMPLE
-        PS C:\> Get-DbaDbccUserOptions -SqlInstance Server1
+        PS C:\> Get-DbaDbccUserOption -SqlInstance Server1
 
         Get results of DBCC USEROPTIONS for Instance Server1
 
     .EXAMPLE
-        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbccUserOptions
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbccUserOption
 
         Get results of DBCC USEROPTIONS for Instances Sql1 and Sql2/sqlexpress
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
-        PS C:\> Get-DbaDbccUserOptions -SqlInstance Server1 -SqlCredential $cred
+        PS C:\> Get-DbaDbccUserOption -SqlInstance Server1 -SqlCredential $cred
 
         Connects using sqladmin credential and gets results of DBCC USEROPTIONS for Instance Server1
 
     .EXAMPLE
-        PS C:\> Get-DbaDbccUserOptions -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst
+        PS C:\> Get-DbaDbccUserOption -SqlInstance Server1 -Option ansi_nulls, ansi_warnings, datefirst
 
         Gets results of DBCC USEROPTIONS for Instance Server1. Only display results for the options ansi_nulls, ansi_warnings, datefirst
 

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJob {
     <#
     .SYNOPSIS
@@ -245,7 +244,7 @@ function Set-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($j in $Job) {
@@ -379,12 +378,12 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($EventLogLevel) {
+            if (Test-Bound -ParameterName EventLogLevel) {
                 Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
                 $currentjob.EventLogLevel = $EventLogLevel
             }
 
-            if ($EmailLevel) {
+            if (Test-Bound -ParameterName EmailLevel) {
                 # Check if the notifiction needs to be removed
                 if ($EmailLevel -eq 0) {
                     # Remove the operator
@@ -403,7 +402,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($NetsendLevel) {
+            if (Test-Bound -ParameterName NetsendLevel) {
                 # Check if the notifiction needs to be removed
                 if ($NetsendLevel -eq 0) {
                     # Remove the operator
@@ -422,7 +421,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($PageLevel) {
+            if (Test-Bound -ParameterName PageLevel) {
                 # Check if the notifiction needs to be removed
                 if ($PageLevel -eq 0) {
                     # Remove the operator
@@ -472,7 +471,7 @@ function Set-DbaAgentJob {
                 }
             }
 
-            if ($DeleteLevel) {
+            if (Test-Bound -ParameterName DeleteLevel) {
                 Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
                 $currentjob.DeleteLevel = $DeleteLevel
             }

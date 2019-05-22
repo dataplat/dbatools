@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaDbTableData {
     <#
     .SYNOPSIS
@@ -8,7 +7,7 @@ function Copy-DbaDbTableData {
         Copies data between SQL Server tables using SQL Bulk Copy.
         The same can be achieved also doing
         $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDataTable -SqlInstance ... -InputObject $sourcetable
+        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
         but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
 
@@ -136,8 +135,8 @@ function Copy-DbaDbTableData {
 
     .EXAMPLE
         PS C:\> $params = @{
-        >> SourceSqlInstance = 'sql1'
-        >> DestinationSqlInstance = 'sql2'
+        >> SqlInstance = 'sql1'
+        >> Destination = 'sql2'
         >> Database = 'dbatools_from'
         >> DestinationDatabase = 'dbatools_dest'
         >> Table = '[Schema].[Table]'
@@ -153,7 +152,7 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer", "Source")]
@@ -201,7 +200,15 @@ function Copy-DbaDbTableData {
             }
         }'
 
-        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction SilentlyContinue
+        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+        if (-not $script:core) {
+            try {
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+        }
+
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -236,7 +243,7 @@ function Copy-DbaDbTableData {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
@@ -268,7 +275,7 @@ function Copy-DbaDbTableData {
                 $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
             }
 
-            $newTableParts = Get-TableNameParts $DestinationTable
+            $newTableParts = Get-ObjectNameParts -ObjectName $DestinationTable
             #using FQTN to determine database name
             if ($newTableParts.Database) {
                 $DestinationDatabase = $newTableParts.Database
@@ -284,7 +291,7 @@ function Copy-DbaDbTableData {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
 
@@ -298,13 +305,13 @@ function Copy-DbaDbTableData {
                     try {
                         $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
                         #replacing table name
-                        if ($newTableParts.Table) {
+                        if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($sqltable.Schema))\]\.\[)$([regex]::Escape($sqltable.Name))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Table)`$2"
+                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Name)`$2"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Schema))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
@@ -378,13 +385,18 @@ function Copy-DbaDbTableData {
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
-                        $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        if ($script:core) {
+                            $RowsTotal = "Unsupported in Core"
+                        } else {
+                            $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                        }
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
                         if ($rowCount -is [int]) {
                             Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                         }
 
+                        $server.ConnectionContext.SqlConnectionObject.Close()
                         $bulkCopy.Close()
                         $bulkCopy.Dispose()
                         $reader.Close()
@@ -392,9 +404,11 @@ function Copy-DbaDbTableData {
                         [pscustomobject]@{
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
+                            SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
-                            DestinationInstance = $destServer.name
+                            DestinationInstance = $destServer.Name
                             DestinationDatabase = $DestinationDatabase
+                            DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed

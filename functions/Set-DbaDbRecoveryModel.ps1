@@ -103,7 +103,7 @@ function Set-DbaDbRecoveryModel {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (!$Database -and !$AllDatabases -and !$ExcludeDatabase) {
@@ -113,7 +113,7 @@ function Set-DbaDbRecoveryModel {
 
             # We need to be able to change the RecoveryModel for model database
             $systemdbs = @("tempdb")
-            $databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name -and $_.IsAccessible }
+            $databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name -and $_.IsAccessible -and -Not($_.IsDatabaseSnapshot) }
 
             # filter collection based on -Database/-Exclude parameters
             if ($Database) {

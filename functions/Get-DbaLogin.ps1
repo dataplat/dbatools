@@ -162,6 +162,8 @@ function Get-DbaLogin {
         if ($WindowsLogins) {
             $Type = "Windows"
         }
+
+        $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -169,7 +171,7 @@ function Get-DbaLogin {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $serverLogins = $server.Logins
@@ -183,7 +185,7 @@ function Get-DbaLogin {
             }
 
             if ($Type -eq 'Windows') {
-                $serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
+                $serverLogins = $serverLogins | Where-Object LoginType -in @('WindowsUser', 'WindowsGroup')
             }
 
             if ($Type -eq 'SQL') {
@@ -222,18 +224,20 @@ function Get-DbaLogin {
                 $serverLogins = $serverLogins | Where-Object IsDisabled
             }
 
-            foreach ($serverLogin in $serverlogins) {
+            # There's no reliable method to get last login time with SQL Server 2000, so only show on 2005+
+            if ($server.VersionMajor -gt 9) {
+                Write-Message -Level Verbose -Message "Getting last login times"
+                $loginTimes = $server.ConnectionContext.ExecuteWithResults($loginTimeSql).Tables[0]
+            } else {
+                $loginTimes = $null
+            }
+
+            foreach ($serverLogin in $serverLogins) {
                 Write-Message -Level Verbose -Message "Processing $serverLogin on $instance"
 
-                if ($server.VersionMajor -gt 9) {
-                    # There's no reliable method to get last login time with SQL Server 2000, so only show on 2005+
-                    Write-Message -Level Verbose -Message "Getting last login time"
-                    $sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '$($serverLogin.name)'"
-                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $server.ConnectionContext.ExecuteScalar($sql)
-                } else {
-                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $null
-                }
+                $loginTime = $loginTimes | Where-Object { $_.login_name -eq $serverLogin.name } | Select-Object -ExpandProperty login_time
 
+                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName

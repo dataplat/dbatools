@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
@@ -48,7 +47,7 @@ function Get-DbaAvailabilityGroup {
         Shows basic information on the Availability Group AG-a on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object *
 
         Returns full object properties on all Availability Group(s) on sqlserver2014a.
 
@@ -98,7 +97,7 @@ function Get-DbaAvailabilityGroup {
 
                 if ($IsPrimary) {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as AvailabilityGroup', 'IsPrimary'
-                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.PrimaryReplicaServerName -eq $server.Name)
+                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.LocalReplicaRole -eq "Primary")
                     Select-DefaultView -InputObject $ag -Property $defaults
                 } else {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'ClusterType', 'DtcSupportEnabled', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'

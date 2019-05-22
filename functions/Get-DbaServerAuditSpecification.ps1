@@ -22,7 +22,7 @@ function Get-DbaServerAuditSpecification {
         Tags: Audit, Security, SqlAudit
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -54,7 +54,7 @@ function Get-DbaServerAuditSpecification {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($auditSpecification in $server.ServerAuditSpecifications) {

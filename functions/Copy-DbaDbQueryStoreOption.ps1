@@ -105,7 +105,7 @@ function Copy-DbaDbQueryStoreOption {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -148,15 +148,22 @@ function Copy-DbaDbQueryStoreOption {
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     if ($PSCmdlet.ShouldProcess("$db", "Copying QueryStoreConfig")) {
                         try {
-                            $null = Set-DbaDbQueryStoreOption -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-                                -Database $db.name `
-                                -State $SourceQSConfig.ActualState `
-                                -FlushInterval $SourceQSConfig.FlushInterval `
-                                -CollectionInterval $SourceQSConfig.CollectionInterval `
-                                -MaxSize $SourceQSConfig.MaxSize `
-                                -CaptureMode $SourceQSConfig.CaptureMode `
-                                -CleanupMode $SourceQSConfig.CleanupMode `
-                                -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+
+                            $setDbaDbQueryStoreOptionParameters = @{
+
+                                SqlInstance         = $destinationServer;
+                                SqlCredential       = $DestinationSqlCredential;
+                                Database            = $db.name;
+                                State               = $SourceQSConfig.ActualState;
+                                FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds;
+                                CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
+                                MaxSize             = $SourceQSConfig.MaxStorageSizeInMB;
+                                CaptureMode         = $SourceQSConfig.QueryCaptureMode;
+                                CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
+                                StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
+                            }
+
+                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
                             $copyQueryStoreStatus.Status = "Successful"
                         } catch {
                             $copyQueryStoreStatus.Status = "Failed"

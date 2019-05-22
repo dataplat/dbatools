@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Get-DbaAgentJob {
     <#
     .SYNOPSIS
@@ -73,7 +72,10 @@ function Get-DbaAgentJob {
         PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
-
+    .EXAMPLE
+       PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
+        
+        Exports all SSRS jobs from SQL instance sqlserver2014a to a file.
     #>
     [CmdletBinding()]
     param (
@@ -95,7 +97,7 @@ function Get-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $jobs = $server.JobServer.Jobs

@@ -111,9 +111,9 @@ function Measure-DbaBackupThroughput {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
@@ -128,52 +128,52 @@ function Measure-DbaBackupThroughput {
 
             foreach ($db in $DatabaseCollection) {
                 Write-Message -Level VeryVerbose -Message "Retrieving history for $db."
-                $allhistory = @()
+                $allHistory = @()
 
                 # Splatting didn't work
-                if ($since) {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType -Type $Type
+                if ($Since) {
+                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $Since -DeviceType $DeviceType -Type $Type
                 } else {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType -Type $Type
+                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$Last -DeviceType $DeviceType -Type $Type
                 }
 
                 foreach ($history in $histories) {
-                    $timetaken = New-TimeSpan -Start $history.Start -End $history.End
+                    $timeTaken = New-TimeSpan -Start $history.Start -End $history.End
 
-                    if ($timetaken.TotalMilliseconds -eq 0) {
+                    if ($timeTaken.TotalMilliseconds -eq 0) {
                         $throughput = $history.TotalSize.Megabyte
                     } else {
-                        $throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
+                        $throughput = $history.TotalSize.Megabyte / $timeTaken.TotalSeconds
                     }
 
-                    Add-Member -Force -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
+                    Add-Member -Force -InputObject $history -MemberType NoteProperty -Name MBps -value $throughput
 
-                    $allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
+                    $allHistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
                 }
 
                 Write-Message -Level VeryVerbose -Message "Calculating averages for $db."
-                foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database)) {
+                foreach ($db in ($allHistory | Sort-Object Database | Group-Object Database)) {
 
-                    $measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
-                    $measurestart = $db.Group.Start | Measure-Object -Minimum
-                    $measureend = $db.Group.End | Measure-Object -Maximum
-                    $measuresize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
-                    $avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
+                    $measureMb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
+                    $measureStart = $db.Group.Start | Measure-Object -Minimum
+                    $measureEnd = $db.Group.End | Measure-Object -Maximum
+                    $measureSize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
+                    $avgDuration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName  = $db.Group.ComputerName | Select-Object -First 1
                         InstanceName  = $db.Group.InstanceName | Select-Object -First 1
                         SqlInstance   = $db.Group.SqlInstance | Select-Object -First 1
                         Database      = $db.Name
-                        AvgThroughput = [dbasize]([System.Math]::Round($measuremb.Average, 2) * 1024 * 1024)
-                        AvgSize       = [dbasize]([System.Math]::Round($measuresize.Average, 2) * 1024 * 1024)
-                        AvgDuration   = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
-                        MinThroughput = [dbasize]([System.Math]::Round($measuremb.Minimum, 2) * 1024 * 1024)
-                        MaxThroughput = [dbasize]([System.Math]::Round($measuremb.Maximum, 2) * 1024 * 1024)
-                        MinBackupDate = [dbadatetime]$measurestart.Minimum
-                        MaxBackupDate = [dbadatetime]$measureend.Maximum
+                        AvgThroughput = [DbaSize]([System.Math]::Round($measureMb.Average, 2) * 1024 * 1024)
+                        AvgSize       = [DbaSize]([System.Math]::Round($measureSize.Average, 2) * 1024 * 1024)
+                        AvgDuration   = [DbaTimeSpan](New-TimeSpan -Seconds $avgDuration.Average)
+                        MinThroughput = [DbaSize]([System.Math]::Round($measureMb.Minimum, 2) * 1024 * 1024)
+                        MaxThroughput = [DbaSize]([System.Math]::Round($measureMb.Maximum, 2) * 1024 * 1024)
+                        MinBackupDate = [DbaDateTime]$measureStart.Minimum
+                        MaxBackupDate = [DbaDateTime]$measureEnd.Maximum
                         BackupCount   = $db.Count
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+                    }
                 }
             }
         }

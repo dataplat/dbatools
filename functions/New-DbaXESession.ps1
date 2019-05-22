@@ -1,11 +1,10 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESession {
     <#
     .SYNOPSIS
         Creates a new XESession object - for the dogged.
 
     .DESCRIPTION
-        Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:
+        Creates a new XESession object - for the dogged (very manual, Import-DbaXESessionTemplate is recommended). See the following for more info:
 
         https://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events
 
@@ -64,7 +63,7 @@ function New-DbaXESession {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Pscmdlet.ShouldProcess($instance, "Creating new XESession")) {

@@ -15,6 +15,10 @@ function Find-SqlServerUpdate {
     [CmdletBinding()]
     Param
     (
+        [DbaInstanceParameter]$ComputerName,
+        [pscredential]$Credential,
+        [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
+        [string]$Authentication = 'Default',
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$MajorVersion,
@@ -23,29 +27,38 @@ function Find-SqlServerUpdate {
         [string]$KB,
         [ValidateSet('x86', 'x64')]
         [string]$Architecture = 'x64',
-        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerUpdates'),
-        [bool]$EnableException = $EnableException
+        [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerUpdates')
 
     )
     begin {
     }
     process {
         if (!$Path) {
-            Stop-Function -Message "Path to SQL Server updates folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates' or specify the path in the original command"
-            return
+            throw "Path to SQL Server updates folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value '\\path\to\updates' or specify the path in the original command"
         }
         $filter = "SQLServer$MajorVersion*-KB$KB-*$Architecture*.exe"
         Write-Message -Level Verbose -Message "Using filter [$filter] to check for updates in $Path"
-        try {
+        $getFileScript = {
+            Param (
+                $Path,
+                $Filter
+            )
             foreach ($folder in (Get-Item -Path $Path -ErrorAction Stop)) {
                 $file = Get-ChildItem -Path $folder -Filter $filter -File -Recurse -ErrorAction Stop
                 if ($file) {
                     return $file | Select-Object -First 1
                 }
             }
-        } catch {
-            Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_
-            return
         }
+        $params = @{
+            ComputerName   = $ComputerName
+            Credential     = $Credential
+            Authentication = $Authentication
+            ScriptBlock    = $getFileScript
+            ArgumentList   = @($Path, $filter)
+            ErrorAction    = 'Stop'
+            Raw            = $true
+        }
+        Invoke-CommandWithFallback @params
     }
 }

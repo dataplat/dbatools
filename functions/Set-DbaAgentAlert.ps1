@@ -1,8 +1,7 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
+        Set-DbaAgentAlert updates the status of a SQL Agent Alert.
 
     .DESCRIPTION
         Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
@@ -106,7 +105,7 @@ function Set-DbaAgentAlert {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             foreach ($a in $Alert) {
                 # Check if the alert exists

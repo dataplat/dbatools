@@ -15,6 +15,8 @@ if (Test-Path C:\temp\constants.ps1) {
     $ssisserver = "localhost\sql2016"
     $script:azureblob = "https://dbatools.blob.core.windows.net/sql"
     $script:azureblobaccount = "dbatools"
+    $script:azureserver = 'psdbatools.database.windows.net'
+    $script:azuresqldblogin = "appveyor@clemairegmail.onmicrosoft.com"
 }
 
 if ($env:appveyor) {

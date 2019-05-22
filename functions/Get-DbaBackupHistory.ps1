@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupHistory {
     <#
     .SYNOPSIS
@@ -60,6 +59,9 @@ function Get-DbaBackupHistory {
 
     .PARAMETER LastLsn
         Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
+
+    .PARAMETER IncludeMirror
+        By default mirrors of backups are not returned, this switch will cause them to be returned
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -124,7 +126,7 @@ function Get-DbaBackupHistory {
         Returns information about all Full backups for AdventureWorks2014 on sql2014.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
 
         Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
 
@@ -167,6 +169,7 @@ function Get-DbaBackupHistory {
         [string[]]$DeviceType,
         [switch]$Raw,
         [bigint]$LastLsn,
+        [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
         [Alias('Silent')]
@@ -217,7 +220,7 @@ function Get-DbaBackupHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.VersionMajor -ge 10) {
@@ -260,7 +263,7 @@ function Get-DbaBackupHistory {
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
                     }
-                    if ($null -eq (Get-PsCallStack)[1].Command) {
+                    if ($null -eq (Get-PsCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PsCallStack)[1].Command) {
                         $forkCheckSql = "
                                 SELECT
                                     database_name,
@@ -275,15 +278,21 @@ function Get-DbaBackupHistory {
                                 $sinceSqlFilter
                                 $recoveryForkSqlFilter
                                 GROUP by database_name, last_recovery_fork_guid
+                                ORDER by MaxDate Asc
                                 "
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
-                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
-                            foreach ($result in $results) {
-                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
+                                }
                             }
-
+                            if ($null -eq $RecoveryFork) {
+                                $RecoveryFork = $results[-1].RecFork
+                                Write-Message -Message "Defaulting to last Recovery Fork, ID - $RecoveryFork"
+                            }
                         }
                     }
                     #Get the full and build upwards
@@ -350,16 +359,20 @@ function Get-DbaBackupHistory {
 
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
-                            Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
-                            foreach ($result in $results) {
-                                Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                            if (-not $LastFull) {
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                foreach ($result in $results) {
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                }
                             }
-
                         }
                     }
                     $whereCopyOnly = $null
                     if ($true -ne $IncludeCopyOnly) {
                         $whereCopyOnly = " AND is_copy_only='0' "
+                    }
+                    if ($true -ne $IncludeMirror) {
+                        $whereMirror = " AND mediafamily.mirror='0' "
                     }
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
@@ -477,6 +490,7 @@ function Get-DbaBackupHistory {
                                 $devTypeFilterWhere
                                 $sinceSqlFilter
                                 $recoveryForkSqlFilter
+                                $whereMirror
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;
@@ -540,14 +554,14 @@ function Get-DbaBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                              INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
+                if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
                 $whereArray = @()
 
-                if ($Database.length -gt 0) {
-                    $dbList = $Database -join "','"
+                if ($Database.length -gt 0 -or $ExcludeDatabase.length -gt 0) {
+                    $dbList = $databases.Name -join "','"
                     $whereArray += "database_name IN ('$dbList')"
                 }
 

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaCommand {
     <#
     .SYNOPSIS
@@ -38,7 +37,7 @@ function Find-DbaCommand {
 
     .NOTES
         Tags: Find, Help, Command
-        Author: Simone Bizzotto (@niphold)
+        Author: Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -58,24 +57,24 @@ function Find-DbaCommand {
         For rigorous typers: finds all commands searching the entire help for "snapshot"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Tag copy
+        PS C:\> Find-DbaCommand -Tag Job
 
-        Finds all commands tagged with "copy"
-
-    .EXAMPLE
-        PS C:\> Find-DbaCommand -Tag copy,user
-
-        Finds all commands tagged with BOTH "copy" and "user"
+        Finds all commands tagged with "Job"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Author chrissy
+        PS C:\> Find-DbaCommand -Tag Job,Owner
 
-        Finds every command whose author contains our beloved "chrissy"
+        Finds all commands tagged with BOTH "Job" and "Owner"
 
     .EXAMPLE
-        PS C:\> Find-DbaCommand -Author chrissy -Tag copy
+        PS C:\> Find-DbaCommand -Author Chrissy
 
-        Finds every command whose author contains our beloved "chrissy" and it tagged as "copy"
+        Finds every command whose author contains our beloved "Chrissy"
+
+    .EXAMPLE
+        PS C:\> Find-DbaCommand -Author Chrissy -Tag AG
+
+        Finds every command whose author contains our beloved "Chrissy" and it tagged as "AG"
 
     .EXAMPLE
         PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
@@ -105,10 +104,16 @@ function Find-DbaCommand {
         $maxverRex = ([regex]'(?m)^[\s]{0,15}MaximumVersion:(.*)$')
 
         function Get-DbaHelp([String]$commandName) {
+            $availability = 'Windows, Linux, macOS'
+            if ($commandName -in $script:noncoresmo -or $commandName -in $script:windowsonly) {
+                $availability = 'Windows only'
+            }
             $thishelp = Get-Help $commandName -Full
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
+
+            $thebase.Availability = $availability
 
             $alias = Get-Alias -Definition $commandName -ErrorAction SilentlyContinue
             $thebase.Alias = $alias.Name -Join ','
@@ -185,7 +190,7 @@ function Find-DbaCommand {
             }
         }
 
-        $moduleDirectory = (Get-Module -Name dbatools).ModuleBase
+        $moduleDirectory = $script:PSModuleRoot
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")

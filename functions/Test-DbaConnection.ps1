@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-DbaConnection {
     <#
@@ -76,8 +75,9 @@ function Test-DbaConnection {
             Write-Message -Level Verbose -Message "Getting local environment information"
             $localInfo = [pscustomobject]@{
                 Windows    = [environment]::OSVersion.Version.ToString()
+                Edition    = $PSVersionTable.PSEdition
                 PowerShell = $PSVersionTable.PSversion.ToString()
-                CLR        = $PSVersionTable.CLRVersion.ToString()
+                CLR        = [string]$PSVersionTable.CLRVersion
                 SMO        = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
                 DomainUser = $env:computername -ne $env:USERDOMAIN
                 RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
@@ -96,7 +96,7 @@ function Test-DbaConnection {
                         FQDN             :
                         FullComputerName :
                      #>
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
             } catch {
                 Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
@@ -110,32 +110,23 @@ function Test-DbaConnection {
                 $remoting = $_
             }
 
-            # Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
+            # Test Connection first using Ping class which requires ICMP access then failback to tcp if pings are blocked
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
-            $pingable = Test-Connection -ComputerName $instance.ComputerName -Count 1 -Quiet
-
-            # SQL Server connection
-            if ($instance.InstanceName -ne "MSSQLSERVER") {
-                #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
-                #$sqlport = "N/A"
-            } else {
-                Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
-                $tcp = New-Object System.Net.Sockets.TcpClient
-                try {
-                    $tcp.Connect($baseaddress, 1433)
-                    $tcp.Close()
-                    $tcp.Dispose()
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                }
-            }
+            $ping = New-Object System.Net.NetworkInformation.Ping
+            $timeout = 1000 #milliseconds
+            $reply = $ping.Send($instance.ComputerName, $timeout)
+            $pingable = $reply.Status -eq 'Success'
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
                 $connectSuccess = $true
+                $instanceName = $server.InstanceName
+                if (-not $instanceName) {
+                    $instanceName = $instance.InstanceName
+                }
             } catch {
                 $connectSuccess = $false
+                $instanceName = $instance.InstanceName
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -154,19 +145,20 @@ function Test-DbaConnection {
             }
 
             # Auth Scheme
+            $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -WarningVariable authwarning -WarningAction SilentlyContinue).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
 
             if ($authwarning) {
-                $authscheme = "N/A"
+                #$authscheme = "N/A"
             }
 
             [pscustomobject]@{
                 ComputerName         = $resolved.ComputerName
-                InstanceName         = $instance.InstanceName
+                InstanceName         = $instanceName
                 SqlInstance          = $instance.FullSmoName
                 SqlVersion           = $server.Version
                 ConnectingAsUser     = $username
@@ -185,6 +177,7 @@ function Test-DbaConnection {
                 LocalSMOVersion      = $localInfo.SMO
                 LocalDomainUser      = $localInfo.DomainUser
                 LocalRunAsAdmin      = $localInfo.RunAsAdmin
+                LocalEdition         = $localInfo.Edition
             }
         }
     }

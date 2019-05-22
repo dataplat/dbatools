@@ -93,14 +93,14 @@ function Test-DbaConnectionAuthScheme {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Getting results for the following query: $sql."
             try {
                 $results = $server.Query($sql)
             } catch {
-                Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
+                Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
             }
 
             # sorry, standards!

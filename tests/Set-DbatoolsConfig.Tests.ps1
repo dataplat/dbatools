@@ -4,20 +4,24 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 13
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Set-DbatoolsConfig).Parameters.Keys
-        $knownParameters = 'FullName', 'Name', 'Module', 'Value', 'Description', 'Validation', 'Handler', 'Hidden', 'Default', 'Initialize', 'DisableValidation', 'DisableHandler', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'FullName', 'Module', 'Name', 'Value', 'PersistedValue', 'PersistedType', 'Description', 'Validation', 'Handler', 'Hidden', 'Default', 'Initialize', 'SimpleExport', 'ModuleExport', 'DisableValidation', 'DisableHandler', 'PassThru', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 <#
-    Integration test should appear below and are custom to the command you are writing.
+    Integration test are custom to the command you are writing for.
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidence
 #>
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    It "impacts the connection timeout" {
+        $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
+        $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
+        $results | Should -Match 'Connect Timeout=60'
+    }
+}

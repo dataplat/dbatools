@@ -1,7 +1,7 @@
 function Find-DbaAgentJob {
     <#
     .SYNOPSIS
-        Find-DbaAgentJob finds agent job/s that fit certain search filters.
+        Find-DbaAgentJob finds agent jobs that fit certain search filters.
 
     .DESCRIPTION
         This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
@@ -104,7 +104,7 @@ function Find-DbaAgentJob {
         Returns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
+        PS C:\> Get-DbaRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
 
         Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
@@ -149,7 +149,7 @@ function Find-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $jobs = $server.JobServer.jobs

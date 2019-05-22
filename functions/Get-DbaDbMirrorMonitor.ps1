@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirrorMonitor {
     <#
     .SYNOPSIS
@@ -106,7 +105,7 @@ function Get-DbaDbMirrorMonitor {
 
         foreach ($db in $InputObject) {
             if (-not ($db.Parent.Databases['msdb'].Tables['dbm_monitor_data'].Name)) {
-                Stop-Function -Continue -Message "mdbo.dbo.dbm_monitor_data not found. Please run Add-DbaDbMirrorMonitor then you can get monitor stats."
+                Stop-Function -Continue -Message "msdb.dbo.dbm_monitor_data not found. Please run Add-DbaDbMirrorMonitor then you can get monitor stats."
             }
             try {
                 $sql = "msdb.dbo.sp_dbmmonitorresults $db, $rows, $updatebool"

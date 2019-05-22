@@ -1,17 +1,18 @@
 function Get-SQLInstanceComponent {
     <#
     .SYNOPSIS
-        Retrieves SQL server information from a local or remote servers. The majority of this function was created by
-        Boe Prox.
+        Retrieves SQL server information from a local or remote servers.
     .DESCRIPTION
         Retrieves SQL server information from a local or remote servers. Pulls all instances from a SQL server and
         detects if in a cluster or not.
     .PARAMETER ComputerName
         Local or remote systems to query for SQL information.
     .NOTES
-        Name: Get-SQLInstance
-        Author: Boe Prox
-        DateCreated: 07 SEPT 2013
+        Tags: Install, Patching, SP, CU, Instance
+        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
+
+        Based on https://github.com/adbertram/PSSqlUpdater
+        The majority of this function was created by Boe Prox.
     .EXAMPLE
         Get-SQLInstanceComponent -ComputerName SQL01 -Component SSDS
         ComputerName  : BDT005-BT-SQL
@@ -164,6 +165,14 @@ function Get-SQLInstanceComponent {
                         }
                         #endregion Get SQL edition
 
+                        #region Get resume value
+                        try {
+                            $resume = [bool][int]$instanceRegSetup.GetValue("Resume");
+                        } catch {
+                            $resume = $false;
+                        }
+                        #endregion Get resume value
+
                         #region Get SQL version
                         $version = $null
                         try {
@@ -197,12 +206,7 @@ function Get-SQLInstanceComponent {
                             # attempt to recover a real version of a sqlservr.exe by getting file properties from a remote machine
                             # not sure how to support SSRS/SSAS, as SSDS is the only one that has binary path in the Setup node
                             if ($binRoot = $instanceRegSetup.GetValue("SQLBinRoot")) {
-                                $fileVersion = Invoke-Command2 -ArgumentList $binRoot -Raw -Credential $Credential -ComputerName $computer -ScriptBlock {
-                                    Param (
-                                        $Path
-                                    )
-                                    (Get-Item -Path (Join-Path $Path "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
-                                }
+                                $fileVersion = (Get-Item -Path (Join-Path $binRoot "sqlservr.exe") -ErrorAction Stop).VersionInfo.ProductVersion
                                 if ($fileVersion) {
                                     $version = $fileVersion
                                     $log += "New version from the binary file: $version"
@@ -218,10 +222,6 @@ function Get-SQLInstanceComponent {
                         #region Generate return object
                         [pscustomobject]@{
                             ComputerName  = $computer.ToUpper();
-                            InstanceType  = {
-                                $componentNameMap | Where-Object { $_.ComponentName -eq $componentName } |
-                                    Select-Object -ExpandProperty DisplayName
-                            }.InvokeReturnAsIs();
                             InstanceName  = $sqlInstance;
                             InstanceID    = $instanceValue;
                             InstanceDir   = $instanceDir;
@@ -249,6 +249,7 @@ function Get-SQLInstanceComponent {
                                 }
                             }.InvokeReturnAsIs();
                             Log           = $log
+                            Resume        = $resume
                         }
                         #endregion Generate return object
                     }
@@ -278,7 +279,8 @@ function Get-SQLInstanceComponent {
                         foreach ($regValueName in $regKey.GetValueNames()) {
                             if ($componentRegKeyName -eq 'RS' -and $regValueName -eq 'PBIRS') { continue } #filtering out Power BI - not supported
                             if ($componentRegKeyName -eq 'RS' -and $regValueName -eq 'SSRS') { continue }  #filtering out SSRS2017+ - not supported
-                            Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $regValueName;
+                            $result = Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $regValueName;
+                            $result | Add-Member -Type NoteProperty -Name InstanceType -Value ($componentNameMap | Where-Object { $_.ComponentName -eq $componentName }).DisplayName -PassThru
                         }
                     }
                 }
@@ -294,15 +296,22 @@ function Get-SQLInstanceComponent {
     }
     process {
         foreach ($computer in $ComputerName) {
-            try {
-                $result = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component)
-                # Log is stored in the log property, pile it all into the debug log
-                foreach ($logEntry in $result.Log) {
-                    Write-Message -Level Debug -Message $logEntry
-                }
+            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component) -RequiredPSVersion 3.0
+
+            # Log is stored in the log property, pile it all into the debug log
+            foreach ($logEntry in $results.Log) {
+                Write-Message -Level Debug -Message $logEntry
+            }
+            foreach ($result in $results) {
+                #Replace first decimal of the minor build with a 0, since we're using build numbers here
+                #Refer to https://sqlserverbuilds.blogspot.com/
+                Write-Message -Level Debug -Message "Converting version $($result.Version) to [version]"
+                $newVersion = New-Object -TypeName System.Version -ArgumentList ([string]$result.Version)
+                $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
+                Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
+                #Find a proper build reference and replace Version property
+                $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
-            } catch {
-                Stop-Function -Message "Failed to get instance components from $computer" -ErrorRecord $_ -Continue -EnableException $false
             }
         }
     }

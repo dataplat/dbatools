@@ -61,7 +61,7 @@ function Test-DbaLastBackup {
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
     .PARAMETER IncludeCopyOnly
-        If this switch is enabled, copy only backups will not be counted as a last backup.
+        If this switch is enabled, copy only backups will be counted as a last backup.
 
     .PARAMETER IgnoreLogBackup
         If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
@@ -184,10 +184,32 @@ function Test-DbaLastBackup {
             $instance = [DbaInstanceParameter]$source
             $copysuccess = $true
             $dbname = $db.Name
+            $restoreresult = $null
 
             if (-not (Test-Bound -ParameterName Destination)) {
                 $destination = $sourceserver.Name
                 $DestinationCredential = $SqlCredential
+            }
+
+            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                [pscustomobject]@{
+                    SourceServer   = $source
+                    TestServer     = $destination
+                    Database       = $db.name
+                    FileExists     = $false
+                    Size           = $null
+                    RestoreResult  = "Skipped"
+                    DbccResult     = "Skipped"
+                    RestoreStart   = $null
+                    RestoreEnd     = $null
+                    RestoreElapsed = $null
+                    DbccStart      = $null
+                    DbccEnd        = $null
+                    DbccElapsed    = $null
+                    BackupDates    = $null
+                    BackupFiles    = $null
+                }
+                continue
             }
 
             try {
@@ -347,7 +369,9 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                if ($MaxSize -and $MaxSize -lt $restorelist.BackupSize.Megabyte) {
+                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
+
+                if ($MaxSize -and $MaxSize -lt $totalsize) {
                     $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {
@@ -363,12 +387,15 @@ function Test-DbaLastBackup {
                     if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname.")) {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
-                        if ($verifyonly) {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                        } else {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
-
+                        try {
+                            if ($verifyonly) {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                            } else {
+                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
+                            }
+                        } catch {
+                            $errormsg = Get-ErrorMessage -Record $_
                         }
 
                         $endRestore = Get-Date
@@ -379,7 +406,11 @@ function Test-DbaLastBackup {
                         if ($restoreresult.RestoreComplete -eq $true) {
                             $success = "Success"
                         } else {
-                            $success = "Failure"
+                            if ($errormsg) {
+                                $success = $errormsg
+                            } else {
+                                $success = "Failure"
+                            }
                         }
                     }
 
@@ -388,7 +419,10 @@ function Test-DbaLastBackup {
                     if (-not $NoCheck -and -not $VerifyOnly) {
                         # shouldprocess is taken care of in Start-DbccCheck
                         if ($ogdbname -eq "master") {
-                            $dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database."
+                            $dbccresult =
+                            "DBCC CHECKDB skipped for restored master ($dbname) database. `
+                             The master database cannot be copied off of a server and have a successful DBCC CHECKDB. `
+                             See https://www.itprotoday.com/my-master-database-really-corrupt for more information."
                         } else {
                             if ($success -eq "Success") {
                                 Write-Message -Level Verbose -Message "Starting DBCC."

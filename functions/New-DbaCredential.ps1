@@ -42,7 +42,7 @@ function New-DbaCredential {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Credential
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -60,18 +60,20 @@ function New-DbaCredential {
         Suppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -Identity '<Azure Storage Account Name>' -SecurePassword (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
+        PS C:\> $params = @{
+        >>SqlInstance = "Server1"
+        >>Name = "AzureBackupBlobStore"
+        >>Identity = "https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Container Name>"
+        >>SecurePassword = (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @params
 
-        Create credential on SQL Server 2012 CU2, SQL Server 2014 for use with BACKUP TO URL.
-        CredentialIdentity needs to be supplied with the Azure Storage Account Name.
-        Password needs to be one of the Access Keys for the account.
+        Creates a credential, "AzureBackupBlobStore", on Server1 using the Access Keys for Backup To URL. Identity must be the full URI for the blob container that will be the backup target. The SecurePassword supplied is one of the two Access Keys for the Azure Storage Account.
 
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1 -Name 'https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Store Container Name>' -Identity 'SHARED ACCESS SIGNATURE' -SecurePassword (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
 
-        Create Credential on SQL Server 2016 or higher for use with BACKUP TO URL.
-        Name has to be the full URL for the blob store container that will be the backup target.
-        Password needs to be passed the Shared Access Token (SAS Key).
+        Create a credential on Server1 using a SAS token for Backup To URL. Name has to be the full URI for the blob store container that will be the backup target. The SecurePassword will be the Share Access Token (SAS) and passed in as a SecureString.
 
     #>
     [CmdletBinding(SupportsShouldProcess)] #, ConfirmImpact = "High"
@@ -94,7 +96,7 @@ function New-DbaCredential {
     )
 
     begin {
-        $mappedclass = switch ($MappedClassType) {
+        $mappedClass = switch ($MappedClassType) {
             "CryptographicProvider" { 1 }
             "None" { 0 }
         }
@@ -107,28 +109,28 @@ function New-DbaCredential {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($cred in $Identity) {
-                $currentcred = $server.Credentials[$name]
+                $currentCred = $server.Credentials[$Name]
 
-                if ($currentcred) {
+                if ($currentCred) {
                     if ($force) {
-                        Write-Message -Level Verbose -Message "Dropping credential $name"
-                        $currentcred.Drop()
+                        Write-Message -Level Verbose -Message "Dropping credential $Name"
+                        $currentCred.Drop()
                     } else {
-                        Stop-Function -Message "Credential exists and Force was not specified" -Target $name -Continue
+                        Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
                     }
                 }
 
 
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential for database '$cred' on $instance")) {
                     try {
-                        $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $name
-                        $credential.MappedClassType = $mappedclass
+                        $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
+                        $credential.MappedClassType = $mappedClass
                         $credential.ProviderName = $ProviderName
                         $credential.Create($Identity, $SecurePassword)
 

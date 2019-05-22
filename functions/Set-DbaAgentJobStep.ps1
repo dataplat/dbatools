@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJobStep {
     <#
     .SYNOPSIS
@@ -25,6 +24,9 @@ function Set-DbaAgentJobStep {
     .PARAMETER SubSystem
         The subsystem used by the SQL Server Agent service to execute command.
         Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
+
+    .PARAMETER SubSystemServer
+        The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply
 
     .PARAMETER Command
         The commands to be executed by SQLServerAgent service through subsystem.
@@ -85,6 +87,9 @@ function Set-DbaAgentJobStep {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .PARAMETER InputObject
+        Enables piping job objects
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -137,19 +142,15 @@ function Set-DbaAgentJobStep {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [string]$StepName,
         [string]$NewName,
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem,
+        [string]$SubsystemServer,
         [string]$Command,
         [int]$CmdExecSuccessCode,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
@@ -166,7 +167,8 @@ function Set-DbaAgentJobStep {
         [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
         [string]$ProxyName,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.JobStep[]]$InputObject,
         [switch]$EnableException,
         [switch]$Force
     )
@@ -189,140 +191,211 @@ function Set-DbaAgentJobStep {
 
         if (Test-FunctionInterrupt) { return }
 
+        if ((-not $InputObject) -and (-not $Job)) {
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            return
+        }
+
+        if ((-not $InputObject) -and (-not $StepName)) {
+            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $sqlinstance
+            return
+        }
+
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($j in $Job) {
+
+                # Check if the job exists
+                if ($server.JobServer.Jobs.Name -notcontains $j) {
+                    Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
+                } else {
+                    # Get the job step
+                    try {
+                        $InputObject += $server.JobServer.Jobs[$j].JobSteps | Where-Object Name -in $StepName
+
+                        # Refresh the object
+                        $InputObject.Refresh()
+                    } catch {
+                        Stop-Function -Message "Something went wrong retrieving the job step(s)" -Target $j -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+        }
+
+        if ($Job) {
+            $InputObject = $InputObject | Where-Object { $_.Parent.Name -in $Job }
+        }
+
+        if ($StepName) {
+            $InputObject = $InputObject | Where-Object Name -in $StepName
+        }
+
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($j in $Job) {
+            foreach ($currentJobStep in $InputObject) {
+                if (-not $Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
+                    Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
+                } elseif ($Force -and ($Server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps.Name -notcontains $currentJobStep.Name)) {
+                    Write-Message -Message "Adding job step $($currentJobStep.Name) to $($currentJobStep.Parent.Name) on $instance" -Level Verbose
 
-                # Check if the job exists
-                if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance -Continue
+                    try {
+                        $JobStep = New-DbaAgentJobStep -SqlInstance $instance -SqlCredential $SqlCredential `
+                            -Job $currentJobStep.Parent.Name `
+                            -StepId $currentJobStep.ID `
+                            -StepName $currentJobStep.Name `
+                            -Subsystem $currentJobStep.SubSystem `
+                            -SubsystemServer $currentJobStep.Server `
+                            -Command $currentJobStep.Command `
+                            -CmdExecSuccessCode $currentJobStep.CmdExecSuccessCode `
+                            -OnFailAction $currentJobStep.OnFailAction `
+                            -OnSuccessAction $currentJobStep.OnSuccessAction `
+                            -OnSuccessStepId $currentJobStep.OnSuccessStepId `
+                            -OnFailStepId $currentJobStep.OnFailStepId `
+                            -Database $currentJobStep.Database `
+                            -DatabaseUser $currentJobStep.DatabaseUser `
+                            -RetryAttempts $currentJobStep.RetryAttempts `
+                            -RetryInterval $currentJobStep.RetryInterval `
+                            -OutputFileName $currentJobStep.OutputFileName `
+                            -Flag $currentJobStep.Flag `
+                            -ProxyName $currentJobStep.ProxyName `
+                            -EnableException
+                    } catch {
+                        Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
+                    }
+
                 } else {
-                    # Check if the job step exists
-                    if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-                        Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
+                    $JobStep = $server.JobServer.Jobs[$currentJobStep.Parent.Name].JobSteps[$currentJobStep.Name]
+                }
+
+                Write-Message -Message "Modifying job $j on $instance" -Level Verbose
+
+                #region job step options
+                # Setting the options for the job step
+                if ($NewName) {
+                    Write-Message -Message "Setting job step name to $NewName" -Level Verbose
+                    $JobStep.Rename($NewName)
+                }
+
+                if ($Subsystem) {
+                    Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
+                    $JobStep.Subsystem = $Subsystem
+                }
+
+                if ($SubsystemServer) {
+                    Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
+                    $JobStep.Server = $SubsystemServer
+                }
+
+                if ($Command) {
+                    Write-Message -Message "Setting job step command to $Command" -Level Verbose
+                    $JobStep.Command = $Command
+                }
+
+                if ($CmdExecSuccessCode) {
+                    Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose
+                    $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
+                }
+
+                if ($OnSuccessAction) {
+                    Write-Message -Message "Setting job step success action to $OnSuccessAction" -Level Verbose
+                    $JobStep.OnSuccessAction = $OnSuccessAction
+                }
+
+                if ($OnSuccessStepId) {
+                    Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose
+                    $JobStep.OnSuccessStep = $OnSuccessStepId
+                }
+
+                if ($OnFailAction) {
+                    Write-Message -Message "Setting job step fail action to $OnFailAction" -Level Verbose
+                    $JobStep.OnFailAction = $OnFailAction
+                }
+
+                if ($OnFailStepId) {
+                    Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose
+                    $JobStep.OnFailStep = $OnFailStepId
+                }
+
+                if ($Database) {
+                    # Check if the database is present on the server
+                    if ($server.Databases.Name -contains $Database) {
+                        Write-Message -Message "Setting job step database name to $Database" -Level Verbose
+                        $JobStep.DatabaseName = $Database
                     } else {
-
-                        # Get the job step
-                        $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
-
-                        Write-Message -Message "Modifying job $j on $instance" -Level Verbose
-
-                        #region job step options
-                        # Setting the options for the job step
-                        if ($NewName) {
-                            Write-Message -Message "Setting job step name to $NewName" -Level Verbose
-                            $JobStep.Rename($NewName)
-                        }
-
-                        if ($Subsystem) {
-                            Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
-                            $JobStep.Subsystem = $Subsystem
-                        }
-
-                        if ($Command) {
-                            Write-Message -Message "Setting job step command to $Command" -Level Verbose
-                            $JobStep.Command = $Command
-                        }
-
-                        if ($CmdExecSuccessCode) {
-                            Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose
-                            $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
-                        }
-
-                        if ($OnSuccessAction) {
-                            Write-Message -Message "Setting job step success action to $OnSuccessAction" -Level Verbose
-                            $JobStep.OnSuccessAction = $OnSuccessAction
-                        }
-
-                        if ($OnSuccessStepId) {
-                            Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose
-                            $JobStep.OnSuccessStep = $OnSuccessStepId
-                        }
-
-                        if ($OnFailAction) {
-                            Write-Message -Message "Setting job step fail action to $OnFailAction" -Level Verbose
-                            $JobStep.OnFailAction = $OnFailAction
-                        }
-
-                        if ($OnFailStepId) {
-                            Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose
-                            $JobStep.OnFailStep = $OnFailStepId
-                        }
-
-                        if ($Database) {
-                            # Check if the database is present on the server
-                            if ($Server.Databases.Name -contains $Database) {
-                                Write-Message -Message "Setting job step database name to $Database" -Level Verbose
-                                $JobStep.DatabaseName = $Database
-                            } else {
-                                Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
-                            }
-                        }
-
-                        if (($DatabaseUser) -and ($Database)) {
-                            # Check if the username is present in the database
-                            if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
-                                Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
-                                $JobStep.DatabaseUserName = $DatabaseUser
-                            } else {
-                                Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
-                            }
-                        }
-
-                        if ($RetryAttempts) {
-                            Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
-                            $JobStep.RetryAttempts = $RetryAttempts
-                        }
-
-                        if ($RetryInterval) {
-                            Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
-                            $JobStep.RetryInterval = $RetryInterval
-                        }
-
-                        if ($OutputFileName) {
-                            Write-Message -Message "Setting job step output file name to $OutputFileName" -Level Verbose
-                            $JobStep.OutputFileName = $OutputFileName
-                        }
-
-                        if ($ProxyName) {
-                            # Check if the proxy exists
-                            if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
-                                Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
-                                $JobStep.ProxyName = $ProxyName
-                            } else {
-                                Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
-                            }
-                        }
-
-                        if ($Flag.Count -ge 1) {
-                            Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose
-                            $JobStep.JobStepFlags = $Flag
-                        }
-                        #region job step options
-
-                        # Execute
-                        if ($PSCmdlet.ShouldProcess($instance, "Changing the job step $StepName for job $j")) {
-                            try {
-                                Write-Message -Message "Changing the job step $StepName for job $j" -Level Verbose
-
-                                # Change the job step
-                                $JobStep.Alter()
-                            } catch {
-                                Stop-Function -Message "Something went wrong changing the job step" -ErrorRecord $_ -Target $instance -Continue
-                            }
-                        }
+                        Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                     }
                 }
 
-            } # foreach object job
-        } # foreach object intance
+                if (($DatabaseUser) -and ($Database)) {
+                    # Check if the username is present in the database
+                    if ($Server.Databases[$currentJobStep.DatabaseName].Users.Name -contains $DatabaseUser) {
+                        Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
+                        $JobStep.DatabaseUserName = $DatabaseUser
+                    } else {
+                        Stop-Function -Message "The database user is not present in the database $($currentJobStep.DatabaseName) on instance $instance." -Target $instance -Continue
+                    }
+                }
+
+                if ($RetryAttempts) {
+                    Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
+                    $JobStep.RetryAttempts = $RetryAttempts
+                }
+
+                if ($RetryInterval) {
+                    Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
+                    $JobStep.RetryInterval = $RetryInterval
+                }
+
+                if ($OutputFileName) {
+                    Write-Message -Message "Setting job step output file name to $OutputFileName" -Level Verbose
+                    $JobStep.OutputFileName = $OutputFileName
+                }
+
+                if ($ProxyName) {
+                    # Check if the proxy exists
+                    if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
+                        Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
+                        $JobStep.ProxyName = $ProxyName
+                    } else {
+                        Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
+                    }
+                }
+
+                if ($Flag.Count -ge 1) {
+                    Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose
+                    $JobStep.JobStepFlags = $Flag
+                }
+                #region job step options
+
+                # Execute
+                if ($PSCmdlet.ShouldProcess($instance, "Changing the job step $StepName for job $j")) {
+                    try {
+                        Write-Message -Message "Changing the job step $StepName for job $j" -Level Verbose
+
+                        # Change the job step
+                        $JobStep.Alter()
+                    } catch {
+                        Stop-Function -Message "Something went wrong changing the job step" -ErrorRecord $_ -Target $instance -Continue
+                    }
+                }
+
+            } # end for each job step
+
+        } # end for each instance
+
     } # process
 
     end {

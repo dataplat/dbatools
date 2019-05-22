@@ -1165,7 +1165,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job name is set
                 if ($BackupJob) {
-                    $DatabaseBackupJob = "$BackupJob_$($db.Name)"
+                    $DatabaseBackupJob = "$($BackupJob)$($db.Name)"
                 } else {
                     $DatabaseBackupJob = "LSBackup_$($db.Name)"
                 }
@@ -1173,7 +1173,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the backup job schedule name is set
                 if ($BackupSchedule) {
-                    $DatabaseBackupSchedule = "$BackupSchedule_$($db.Name)"
+                    $DatabaseBackupSchedule = "$($BackupSchedule)$($db.Name)"
                 } else {
                     $DatabaseBackupSchedule = "LSBackupSchedule_$($db.Name)"
                 }
@@ -1187,11 +1187,11 @@ function Invoke-DbaDbLogShipping {
                     Stop-Function -Message "Secondary database already exists on instance $destInstance." -ErrorRecord $_ -Target $destInstance -Continue
                 }
 
-                # Check if the secondary database needs tobe initialized
+                # Check if the secondary database needs to be initialized
                 if ($setupResult -ne 'Failed') {
                     if (-not $NoInitialization) {
                         # Check if the secondary database exists on the secondary instance
-                        if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
+                        if ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase) {
                             # Check if force is being used and no option to generate the full backup is set
                             if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
                                 # Set the option to generate a full backup
@@ -1304,6 +1304,8 @@ function Invoke-DbaDbLogShipping {
                                 $comment = "The path to the full backup could not be reached"
                                 Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $destInstance -Continue
                             }
+
+                            $BackupPath = $FullBackupPath
                         } elseif ($UseBackupFolder.Length -ge 1) {
                             Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
                             if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
@@ -1355,17 +1357,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
-                    $DatabaseCopyJob = "$CopyJob_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "$($CopyJob)$($db.Name)"
                 } else {
-                    $DatabaseCopyJob = "LSCopy_$SourceServerName_$($db.Name)"
+                    $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
 
                 # Check if the copy job schedule name is set
                 if ($CopySchedule) {
-                    $DatabaseCopySchedule = "$CopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "$($CopySchedule)$($db.Name)"
                 } else {
-                    $DatabaseCopySchedule = "LSCopySchedule_$($db.Name)"
+                    $DatabaseCopySchedule = "LSCopySchedule_$($SourceServerName)_$($db.Name)"
                     Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose
                 }
 
@@ -1390,17 +1392,17 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the restore job name is set
                 if ($RestoreJob) {
-                    $DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "$($RestoreJob)$($db.Name)"
                 } else {
-                    $DatabaseRestoreJob = "LSRestore_$DestinationServerName_$($db.Name)"
+                    $DatabaseRestoreJob = "LSRestore_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
                 # Check if the restore job schedule name is set
                 if ($RestoreSchedule) {
-                    $DatabaseRestoreSchedule = "$RestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "$($RestoreSchedule)$($db.Name)"
                 } else {
-                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($db.Name)"
+                    $DatabaseRestoreSchedule = "LSRestoreSchedule_$($SourceServerName)_$($db.Name)"
                 }
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
@@ -1709,7 +1711,10 @@ function Invoke-DbaDbLogShipping {
                                 -DisconnectUsers:$DisconnectUsers `
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-                                -HistoryRetention $HistoryRetention
+                                -HistoryRetention $HistoryRetention `
+                                -MonitorServer $PrimaryMonitorServer `
+                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+                                -MonitorCredential $PrimaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {

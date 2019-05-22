@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
     <#
     .SYNOPSIS
@@ -63,7 +62,7 @@ function Get-DbaSsisExecutionHistory {
         Gets all failed or canceled executions for SMTQ01.
 
     .EXAMPLE
-        PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif
+        PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled
 
         Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
 
@@ -189,7 +188,7 @@ function Get-DbaSsisExecutionHistory {
                     , s.code AS StatusCode
                     , start_time as StartTime
                     , end_time as EndTime
-                    , ElapsedMinutes = DATEDIFF(ss, e.start_time, e.end_time)
+                    , ElapsedMinutes = DATEDIFF(mi, e.start_time, e.end_time)
                     , l.LoggingLevel
             FROM
                 [catalog].executions e

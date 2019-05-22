@@ -23,6 +23,7 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        'Get-DbaExecutionPlan',
         # weird too often
         'Add-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
@@ -35,10 +36,9 @@ $TestsRunGroups = @{
         # these work but fail too often on appveyor
         # will revisit once they get their new data center
         'Remove-DbaAvailabilityGroup',
-        'Test-DbaLastBackup',
+        'Get-DbaSuspectPage',
         'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
-        'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
         'Test-DbaOptimizeForAdHoc',
@@ -48,8 +48,14 @@ $TestsRunGroups = @{
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
         'Test-DbaDbVirtualLogFile',
-        'Test-DbaJobOwner',
-        'Resume-DbaAgDbDataMovement'
+        'Test-DbaAgentJobOwner',
+        'Resume-DbaAgDbDataMovement',
+        'Get-DbaDbMasterKey',
+        'Test-DbaAgentJobOwner',
+        'Stop-DbaXESession',
+        'Get-DbaPrivilege',
+        'Find-DbaAgentJob', #POS
+        'Set-DbaDbOwner' # fails so often
     )
     # do not run everywhere
     "disabled"          = @()

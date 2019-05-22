@@ -12,7 +12,7 @@ function Update-SqlPermission {
             Destination Login
         .PARAMETER EnableException
             Use this switch to disable any kind of verbose messages
-       #>
+    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(SupportsShouldProcess)]
@@ -37,6 +37,12 @@ function Update-SqlPermission {
     $source = $SourceServer.DomainInstanceName
     $userName = $SourceLogin.Name
 
+    $saname = Get-SaLoginName -SqlInstance $DestServer
+
+    # gotta close because enum repeatedly causes problems with the datareader
+    $null = $SourceServer.ConnectionContext.SqlConnectionObject.Close()
+    $null = $DestServer.ConnectionContext.SqlConnectionObject.Close()
+
     # Server Roles: sysadmin, bulklogin, etc
     foreach ($role in $SourceServer.Roles) {
         $roleName = $role.Name
@@ -59,11 +65,13 @@ function Update-SqlPermission {
         if ($roleMembers -contains $userName) {
             if ($null -ne $destRole) {
                 if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
-                    try {
-                        $destRole.AddMember($userName)
-                        Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
-                    } catch {
-                        Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
+                    if ($userName -ne $saname) {
+                        try {
+                            $destRole.AddMember($userName)
+                            Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
+                        } catch {
+                            Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
+                        }
                     }
                 }
             }
@@ -87,7 +95,7 @@ function Update-SqlPermission {
         if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
             if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $userName for $($ownedJob.Name).")) {
                 try {
-                    $destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJobs.Name }
+                    $destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJob.Name }
                     $destOwnedJob.Set_OwnerLoginName($userName)
                     $destOwnedJob.Alter()
                     Write-Message -Level Verbose -Message "Changing job owner to $userName for $($ownedJob.Name) on $destination successfully performed."
@@ -103,6 +111,9 @@ function Update-SqlPermission {
             These operations are only supported by SQL Server 2005 and above.
             Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
         #>
+
+        $null = $sourceServer.ConnectionContext.SqlConnectionObject.Close()
+        $null = $destServer.ConnectionContext.SqlConnectionObject.Close()
 
         $perms = $SourceServer.EnumServerPermissions($userName)
         foreach ($perm in $perms) {
@@ -184,8 +195,16 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $sourceDb) {
-            if (!$sourceDb.IsAccessible) {
+            if (-not $sourceDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
+                continue
+            }
+            if (-not $destDb.IsAccessible) {
+                Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on destination. Skipping."
+                continue
+            }
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$dbUsername]) {
@@ -222,6 +241,8 @@ function Update-SqlPermission {
                 }
             }
 
+            $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
+            $null = $destDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             # Remove Connect, Alter Any Assembly, etc
             $destPerms = $destDb.EnumDatabasePermissions($userName)
             $perms = $sourceDb.EnumDatabasePermissions($userName)
@@ -253,6 +274,9 @@ function Update-SqlPermission {
     }
 
     # Adding database mappings and securables
+    $null = $SourceLogin.Parent.ConnectionContext.SqlConnectionObject.Close()
+    $null = $DestServer.ConnectionContext.SqlConnectionObject.Close()
+
     foreach ($db in $SourceLogin.EnumDatabaseMappings()) {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
@@ -261,8 +285,13 @@ function Update-SqlPermission {
         $dbLogin = $db.LoginName
 
         if ($null -ne $destDb) {
-            if (!$destDb.IsAccessible) {
+            if (-not $destDb.IsAccessible) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not accessible. Skipping."
+                continue
+            }
+
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
+                Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
             if ($null -eq $destDb.Users[$dbUsername]) {
@@ -281,20 +310,24 @@ function Update-SqlPermission {
             if ($sourceDb.Owner -eq $userName) {
                 if ($Pscmdlet.ShouldProcess($destination, "Changing $dbName dbowner to $userName.")) {
                     try {
-                        $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
-                        if ($result -eq $true) {
-                            Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
-                        } else {
-                            Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                        if ($dbName -notin 'master', 'msdb', 'tempdb', 'model') {
+                            $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
+                            if ($result -eq $true) {
+                                Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
+                            } else {
+                                Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                            }
                         }
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                        Stop-Function -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)." -ErrorRecord $_
                     }
                 }
             }
 
             # Database Roles: db_owner, db_datareader, etc
             foreach ($role in $sourceDb.Roles) {
+                $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
+                $null = $destDb.Parent.ConnectionContext.SqlConnectionObject.Close()
                 if ($role.EnumMembers() -contains $userName) {
                     $roleName = $role.Name
                     $destDbRole = $destDb.Roles[$roleName]
@@ -314,6 +347,7 @@ function Update-SqlPermission {
             }
 
             # Connect, Alter Any Assembly, etc
+            $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             $perms = $sourceDb.EnumDatabasePermissions($userName)
             foreach ($perm in $perms) {
                 $permState = $perm.PermissionState

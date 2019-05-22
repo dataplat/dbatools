@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -78,7 +77,7 @@ function Remove-DbaAgReplica {
         foreach ($agreplica in $InputObject) {
             if ($Pscmdlet.ShouldProcess($agreplica.Parent.Parent.Name, "Removing availability group replica $agreplica")) {
                 try {
-                    $agreplica.Parent.AvailabilityGroupReplicas[$agreplica.Name].Drop()
+                    $agreplica.Drop()
                     [pscustomobject]@{
                         ComputerName      = $agreplica.ComputerName
                         InstanceName      = $agreplica.InstanceName

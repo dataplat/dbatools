@@ -100,8 +100,12 @@ function Copy-DbaCredential {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
+            return
+        }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
         function Copy-Credential {
@@ -179,7 +183,7 @@ function Copy-DbaCredential {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
 
@@ -206,7 +210,7 @@ function Copy-DbaCredential {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
 

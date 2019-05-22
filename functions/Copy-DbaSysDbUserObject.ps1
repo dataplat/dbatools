@@ -88,7 +88,7 @@ function Copy-DbaSysDbUserObject {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -102,7 +102,7 @@ function Copy-DbaSysDbUserObject {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
@@ -157,9 +157,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($schema)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add schema $($schema.Name) to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
@@ -212,9 +212,9 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
                             $null = $transfer.ObjectList.Add($table)
-                            $sql = $transfer.ScriptTransfer()
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $table to $systemDb")) {
                                 try {
+                                    $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
                                     $copyobject.Status = "Successful"
