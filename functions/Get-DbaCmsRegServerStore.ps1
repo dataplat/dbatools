@@ -52,7 +52,7 @@ function Get-DbaCmsRegServerStore {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-ConnstringInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
