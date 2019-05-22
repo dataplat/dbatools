@@ -131,7 +131,7 @@ function Show-DbaDbList {
     }
 
     process {
-        if (Test-FuntionInterrupt) { return }
+        if (Test-FunctionInterrupt) { return }
 
         # Create XAML form in Visual Studio, ensuring the ListView looks chromeless
         [xml]$xaml = "<Window
@@ -173,7 +173,7 @@ function Show-DbaDbList {
         [void]$stackpanel.Children.Add($textblock)
         $childitem.Header = $stackpanel
         #Variable marked as unused by PSScriptAnalyzer
-        #$databaseParent = $treeview.Items.Add($childitem)
+        $null = $treeview.Items.Add($childitem)
 
         try {
             $databases = $server.Databases.Name

@@ -405,7 +405,7 @@ function Set-DbaAgentSchedule {
 
                         if ($EndTime) {
                             Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.ActiveStartTimeOfDay = $EndTime
+                            $JobSchedule.ActiveEndTimeOfDay = $EndTime
                         }
                         #endregion job step options
 

@@ -523,10 +523,13 @@ function Import-DbaCsv {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
-                                $ColumnMap = New-Object -TypeName "System.Collections.Hashtable"
-
-                                $firstline -split $Delimiter | ForEach-Object {
-                                    $ColumnMap.Add($PSItem, $PSItem)
+                                try {
+                                    $firstline -split $Delimiter | ForEach-Object {
+                                        $ColumnMap.Add($PSItem, $PSItem)
+                                    }
+                                } catch {
+                                    # oh well, we tried
+                                    $ColumnMap = $null
                                 }
                             }
                         }
