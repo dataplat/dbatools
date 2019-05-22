@@ -108,7 +108,6 @@ if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServe
 Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
 
 $script:PSModuleRoot = $PSScriptRoot
-Update-TypeData $script:PSModuleRoot\xml\dbatools.Types.ps1xml
 
 if ($PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -ne 'Desktop') {
     $script:core = $true
@@ -1141,14 +1140,18 @@ if ($script:smoRunspace) {
     $script:smoRunspace = $null
 }
 Write-ImportTime -Text "Waiting for runspaces to finish"
-
-if ($option.LoadTypes) {
-    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
+$myInv= $MyInvocation
+if ($option.LoadTypes -or 
+        ($myInv.Line -like '*.psm1*' -and 
+            (-not (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
+        )))  {
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml") 
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
 #Write-ImportTime -Text "Loaded type extensions"
 
+$td = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
 $loadedModuleNames = Get-Module | Select-Object -ExpandProperty Name
 if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 'sqlps') {
