@@ -1,10 +1,12 @@
 function Get-DbaRegServer {
     <#
     .SYNOPSIS
-        Gets list of SQL Server objects stored in local registered groups and central management server.
+        Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
 
     .DESCRIPTION
-       Gets list of SQL Server objects stored in local registered groups and central management server.
+       Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
+
+       Local Registered Servers support alternative authentication but Azure Data Studio and Central Management Studio do not at this time.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -13,7 +15,7 @@ function Get-DbaRegServer {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Name
-        Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+        Specifies one or more names to include. Name is the visible name in SSMS interface (labeled Registered Server Name)
 
     .PARAMETER ServerName
         Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
@@ -25,13 +27,13 @@ function Get-DbaRegServer {
         Specifies one or more Central Management Server groups to exclude.
 
     .PARAMETER ExcludeLocal
-        Do not include local registered servers in results.
+        Do not include local registered servers or Azure Data Studio registered servers in results.
 
     .PARAMETER Id
         Get server by Id(s)
 
     .PARAMETER IncludeSelf
-        If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
+        If this switch is enabled and you're connecting to a Central Management Server, the CMS server itself will be included in the results, along with all other Registered Servers.
 
     .PARAMETER ResolveNetworkName
         If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
@@ -45,7 +47,7 @@ function Get-DbaRegServer {
 
     .NOTES
         Tags: RegisteredServer, CMS
-        Author: Bryan Hamby (@galador)
+        Author: Bryan Hamby (@galador) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -53,6 +55,11 @@ function Get-DbaRegServer {
 
     .LINK
         https://dbatools.io/Get-DbaRegServer
+
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer
+
+        Gets a list of servers from the local registered servers and azure data studio
 
     .EXAMPLE
         PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a
@@ -134,9 +141,39 @@ function Get-DbaRegServer {
             $file = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]::LocalFileStore.DomainInstanceName
             if ($file) {
                 if ((Test-Path -Path $file)) {
-                    $store = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
-                    $initMethod = $store.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
-                    $servers += ($initMethod.Invoke($null, @($file))).DatabaseEngineServerGroup.GetDescendantRegisteredServers()
+                    $class = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
+                    $initMethod = $class.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
+                    $store = ($initMethod.Invoke($null, @($file)))
+                    # Local Reg Servers
+                    $servers += $store.DatabaseEngineServerGroup.GetDescendantRegisteredServers()
+                    # Azure Reg Servers
+                    $azureids = @()
+                    foreach ($group in $store.AzureDataStudioConnectionStore.Groups) {
+                        $groupname = $group.Name
+                        if ($groupname -eq 'ROOT' -or $groupname -eq '') {
+                            $groupname = $null
+                        }
+                        $tempgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $groupname
+                        $tempgroup.Description = $group.Description
+
+                        foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $group.Id)) {
+                            $azureids += [pscustomobject]@{ id = $server.Id; group = $groupname }
+                            $connname = $server.Options['connectionName']
+                            if (-not $connname) {
+                                $connname = $server.Options['server']
+                            }
+                            $tempserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $tempgroup, $connname
+                            $tempserver.Description = $server.Options['Description']
+                            #$tempserver.AuthenticationType = $server.Options['authenticationType']
+                            #$tempserver.ConnectionString = $connstring
+                            # update read-only or problematic properties
+                            $tempserver | Add-Member -Force -Name ServerName -Value $server.Options['server'] -MemberType NoteProperty
+                            $tempserver | Add-Member -Force -Name Id -Value $server.Id -MemberType NoteProperty
+                            $tempserver | Add-Member -Force -Name CredentialPersistenceType -Value 1 -MemberType NoteProperty
+                            $tempserver | Add-Member -Force -Name ServerType -Value DatabaseEngine -MemberType NoteProperty
+                            $servers += $tempserver
+                        }
+                    }
                 }
             }
         }
@@ -163,14 +200,20 @@ function Get-DbaRegServer {
         }
 
         foreach ($server in $servers) {
-            $groupname = Get-RegServerGroupReverseParse $server
-            if ($groupname -eq $server.Name) {
-                $groupname = $null
+            $az = $azureids | Where-Object Id -in $server.Id
+            if ($az) {
+                $groupname = $az.Group
             } else {
-                $groupname = ($groupname).Split("\")
-                $groupname = $groupname[0 .. ($groupname.Count - 2)]
-                $groupname = ($groupname -join "\")
+                $groupname = Get-RegServerGroupReverseParse $server
+                if ($groupname -eq $server.Name) {
+                    $groupname = $null
+                } else {
+                    $groupname = ($groupname).Split("\")
+                    $groupname = $groupname[0 .. ($groupname.Count - 2)]
+                    $groupname = ($groupname -join "\")
+                }
             }
+
 
             if ($server.ConnectionStringWithEncryptedPassword) {
                 $encodedconnstring = $connstring = $server.ConnectionStringWithEncryptedPassword
