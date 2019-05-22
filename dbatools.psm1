@@ -108,6 +108,7 @@ if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServe
 Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
 
 $script:PSModuleRoot = $PSScriptRoot
+Update-TypeData $script:PSModuleRoot\xml\dbatools.Types.ps1xml
 
 if ($PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -ne 'Desktop') {
     $script:core = $true
