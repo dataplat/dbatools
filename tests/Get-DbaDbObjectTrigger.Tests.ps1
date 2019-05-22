@@ -88,7 +88,7 @@ CREATE TRIGGER $triggerviewname
         }
     }
     Context "Gets Table Trigger passing table object using pipeline" {
-        $results = Get-DbaDbTable -SqlInstance -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -132,11 +132,11 @@ CREATE TRIGGER $triggerviewname
             $results.isenabled | Should Be $true
         }
         It "Should have text of Trigger" {
-            $results.TextBody | Should BeLike '*dbatoolsci_trigger table*'
+            $results.TextBody | Should BeLike '*dbatoolsci_view table*'
         }
     }
     Context "Gets Table and View Trigger passing both objects using pipeline" {
-        $tableResults = Get-DbaDbTable -SqlInstance -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger"
+        $tableResults = Get-DbaDbTable -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger"
         $viewResults = Get-DbaDbView -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -ExcludeSystemView
         $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
         It "Gets results" {
