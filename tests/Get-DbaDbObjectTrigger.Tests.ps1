@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
+        $paramCount = 7
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaDbObjectTrigger).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Type', 'InputObject', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -87,6 +87,18 @@ CREATE TRIGGER $triggerviewname
             $results.TextBody | Should BeLike '*dbatoolsci_trigger table*'
         }
     }
+    Context "Gets Table Trigger passing table object using pipeline" {
+        $results = Get-DbaDbTable -SqlInstance -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.isenabled | Should Be $true
+        }
+        It "Should have text of Trigger" {
+            $results.TextBody | Should BeLike '*dbatoolsci_trigger table*'
+        }
+    }
     Context "Gets View Trigger" {
         $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 | Where-Object {$_.name -eq "dbatoolsci_triggeronview"}
         It "Gets results" {
@@ -109,6 +121,62 @@ CREATE TRIGGER $triggerviewname
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should BeLike '*dbatoolsci_view view*'
+        }
+    }
+    Context "Gets View Trigger passing table object using pipeline" {
+        $results = Get-DbaDbView -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -ExcludeSystemView | Get-DbaDbObjectTrigger
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.isenabled | Should Be $true
+        }
+        It "Should have text of Trigger" {
+            $results.TextBody | Should BeLike '*dbatoolsci_trigger table*'
+        }
+    }
+    Context "Gets Table and View Trigger passing both objects using pipeline" {
+        $tableResults = Get-DbaDbTable -SqlInstance -Database "dbatoolsci_addtriggertoobject" -Table "dbatoolsci_trigger"
+        $viewResults = Get-DbaDbView -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -ExcludeSystemView
+        $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be enabled" {
+            $results.Count | Should Be 2
+        }
+    }
+    Context "Gets All types Trigger when using -Type" {
+        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -Type All
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be only one" {
+            $results.Count | Should Be 2
+        }
+    }
+    Context "Gets only Table Trigger when using -Type" {
+        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -Type Table
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be only one" {
+            $results.Count | Should Be 1
+        }
+        It "Should have text of Trigger" {
+            $results.Parent.GetType().Name | Should Be "Table"
+        }
+    }
+    Context "Gets only View Trigger when using -Type" {
+        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database "dbatoolsci_addtriggertoobject" -Type View
+        It "Gets results" {
+            $results | Should Not Be $null
+        }
+        It "Should be only one" {
+            $results.Count | Should Be 1
+        }
+        It "Should have text of Trigger" {
+            $results.Parent.GetType().Name | Should Be "View"
         }
     }
 }
