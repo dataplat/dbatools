@@ -108,8 +108,8 @@ function Get-DbaCmsRegServer {
         }
     }
     process {
-        if (-not $PSBoundParameters.SqlInstance -and -not $PSBoundParameters.Path) {
-            $Path = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if (-not $PSBoundParameters.SqlInstance) {
+            $path = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
         $servers = @()
@@ -130,8 +130,8 @@ function Get-DbaCmsRegServer {
             }
         }
 
-        foreach ($dir in $Path) {
-            $regservers = Select-Xml -Path $dir -Namespace $ns -XPath //RegisteredServers:RegisteredServer
+        foreach ($file in $path) {
+            $regservers = Select-Xml -Path $file -Namespace $ns -XPath //RegisteredServers:RegisteredServer
             foreach ($svr in $regservers) {
                 if ($svr.Node.ServerType.'#text' -eq "DatabaseEngine") {
                     $encodedconnstring = $connstring = $svr.Node.ConnectionStringWithEncryptedPassword.'#text'
@@ -150,6 +150,7 @@ function Get-DbaCmsRegServer {
                     $reg.OtherParams = $svr.Node.OtherParams.'#text'
                     $reg.SecureConnectionString = (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
                     $reg.ConnectionString = $connstring
+                    $reg.Parent = $svr.Node.Parent.Reference.Uri.Replace('/RegisteredServersStore/ServerGroup/DatabaseEngineServerGroup/ServerGroup/','')
                     # update read-only or problematic properties
                     $reg | Add-Member -Force -Name Id -Value $(++$i; $i) -MemberType NoteProperty
                     $reg | Add-Member -Force -Name CredentialPersistenceType -Value $svr.Node.CredentialPersistenceType.'#text' -MemberType NoteProperty
@@ -158,7 +159,8 @@ function Get-DbaCmsRegServer {
                 }
             }
         }
-
+        $servers
+        return
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name
