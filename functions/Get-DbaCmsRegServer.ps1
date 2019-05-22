@@ -135,6 +135,8 @@ function Get-DbaCmsRegServer {
             $file = $($store).DomainInstanceName.ToString()
             $file
             return
+            create them up and down
+            build it with create and stuff, perhaps even using commands!
             $regservers = Select-Xml -Path $file -Namespace $ns -XPath //RegisteredServers:RegisteredServer
             foreach ($svr in $regservers) {
                 if ($svr.Node.ServerType.'#text' -eq "DatabaseEngine") {
