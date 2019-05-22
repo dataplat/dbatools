@@ -132,7 +132,7 @@ CREATE TRIGGER $triggerviewname
             $results.isenabled | Should Be $true
         }
         It "Should have text of Trigger" {
-            $results.TextBody | Should BeLike '*dbatoolsci_view table*'
+            $results.TextBody | Should BeLike '*dbatoolsci_view view*'
         }
     }
     Context "Gets Table and View Trigger passing both objects using pipeline" {
