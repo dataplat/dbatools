@@ -1,10 +1,10 @@
 function Get-DbaDbObjectTrigger {
     <#
     .SYNOPSIS
-        Get all existing database triggers on one or more SQL instances.
+        Get all existing triggers on object level (table or view) on one or more SQL instances.
 
     .DESCRIPTION
-        Get all existing database triggers on one or more SQL instances.
+        Get all existing triggers on object level (table or view) on one or more SQL instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -18,8 +18,11 @@ function Get-DbaDbObjectTrigger {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
 
+    .PARAMETER Type
+        Allows specify the object type associated with the trigger. Available options All, Table and View. By default is All.
+
     .PARAMETER InputObject
-        Allow pipedline input from Get-DbaDatabase
+        Allow pipedline input from Get-DbaDbTable and/or Get-DbaDbView
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -60,25 +63,29 @@ function Get-DbaDbObjectTrigger {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [ValidateSet('All', 'Table', 'View')]
+        [string]$Type = 'All',
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
     )
-
-    begin {
-        if ($null -ne $InputObject) {
+    process {
+        if ($InputObject.Count -gt 0) {
             $InputObject | foreach-object {
-                if (-not ($_ -as [Microsoft.SqlServer.Management.Smo.Table]) -or (-not ($_ -as [Microsoft.SqlServer.Management.Smo.View]))) {
-                    Stop-Function -Message "InputObject $_ not of type Table or View." -Continue
+                if (-not ($_ -is [Microsoft.SqlServer.Management.Smo.TableViewBase])) {
+                    Stop-Function -Message "InputObject $_ is not of type Table or View." -Continue
                     return
                 }
             }
         }
-    }
-    process {
+
         foreach ($Instance in $SqlInstance) {
-            $InputObject += Get-DbaDbTable -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
-            $InputObject += Get-DbaDbView -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            if ($Type -in @('All', 'Table')) {
+                $InputObject += Get-DbaDbTable -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            }
+            if ($Type -in @('All', 'View')) {
+                $InputObject += Get-DbaDbView -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            }
         }
 
         foreach ($obj in $InputObject) {
