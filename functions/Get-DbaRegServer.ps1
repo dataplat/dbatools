@@ -81,6 +81,7 @@ function Get-DbaRegServer {
 
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "Legitimate use, may switch to secureconnectionstring, we will see")]
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -91,7 +92,6 @@ function Get-DbaRegServer {
         [object[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
-        [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
         [switch]$ExcludeLocal,
         [switch]$EnableException
