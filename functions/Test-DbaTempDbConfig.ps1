@@ -53,7 +53,7 @@ function Test-DbaTempdbConfig {
         Checks tempdb on the localhost machine. All rest results are shown.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
 
         Checks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.
     #>

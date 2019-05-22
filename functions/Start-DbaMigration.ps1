@@ -316,7 +316,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'CentralManagementServer') {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaCmsRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'BackupDevices') {

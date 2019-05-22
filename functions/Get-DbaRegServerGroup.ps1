@@ -1,4 +1,4 @@
-function Get-DbaCmsRegServerGroup {
+function Get-DbaRegServerGroup {
     <#
     .SYNOPSIS
         Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
@@ -37,25 +37,25 @@ function Get-DbaCmsRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmsRegServerGroup
+        https://dbatools.io/Get-DbaRegServerGroup
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a
 
         Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
         Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
         Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
         Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
 
@@ -74,7 +74,7 @@ function Get-DbaCmsRegServerGroup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
@@ -130,7 +130,7 @@ function Get-DbaCmsRegServerGroup {
             }
 
             if ($ExcludeGroup) {
-                $excluded = Get-DbaCmsRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
+                $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }

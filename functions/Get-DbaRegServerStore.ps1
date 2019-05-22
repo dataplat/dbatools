@@ -1,4 +1,4 @@
-function Get-DbaCmsRegServerStore {
+function Get-DbaRegServerStore {
     <#
     .SYNOPSIS
         Returns a SQL Server Registered Server Store Object
@@ -27,15 +27,15 @@ function Get-DbaCmsRegServerStore {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmsRegServerStore
+        https://dbatools.io/Get-DbaRegServerStore
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaRegServerStore -SqlInstance sqlserver2014a
 
         Returns a SQL Server Registered Server Store Object from sqlserver2014a
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin
+        PS C:\> Get-DbaRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin
 
         Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
 
