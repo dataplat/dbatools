@@ -16,24 +16,25 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolscidb_$(Get-Random)"
-        $userName = "dbattolscidb_User1"
-        $userNameWithoutLogin = "dbattolscidb_UserWithoutLogin"
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+        $userName = "dbatoolscidb_User1"
+        $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $script:instance1 -Login $userName -Password $securePassword
+        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
     }
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query "drop table $tablename"
+        $null = Remove-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userName -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $userName -Confirm:$false
     }
     Context "Should create the user with login" {
         It "Creates the user" {
             (New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -Login $userName).Name | Should Be $userName
         }
         It "Really created it" {
-            (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname).Name | Should Be $userName
+            (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
         }
     }
     Context "Should create the user without login" {
