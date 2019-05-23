@@ -246,9 +246,4 @@ function Copy-DbaDataCollector {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDataCollector
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlDataCollector
-        if (Test-FunctionInterrupt) { return }
-    }
 }

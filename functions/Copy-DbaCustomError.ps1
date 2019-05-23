@@ -171,7 +171,4 @@ function Copy-DbaCustomError {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCustomError
-    }
 }

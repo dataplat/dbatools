@@ -196,7 +196,6 @@ function Copy-DbaDatabase {
         [switch]$AllDatabases,
         [parameter(Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
-        [Alias("NetworkShare")]
         [parameter(ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
         [string]$SharedPath,
@@ -238,8 +237,6 @@ function Copy-DbaDatabase {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-
         $CopyOnly = -not $NoCopyOnly
 
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
@@ -1465,6 +1462,5 @@ function Copy-DbaDatabase {
         } else {
             Write-Message -Level Verbose -Message "No work was done, as we stopped during setup phase"
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabase
     }
 }

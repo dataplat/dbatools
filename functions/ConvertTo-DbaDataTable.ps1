@@ -93,7 +93,6 @@ function ConvertTo-DbaDataTable {
     begin {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         Write-Message -Level Debug -Message "TimeSpanType = $TimeSpanType | SizeType = $SizeType"
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Out-DbaDataTable
 
         function Convert-Type {
             # This function will check so that the type is an accepted type which could be used when inserting into a table.

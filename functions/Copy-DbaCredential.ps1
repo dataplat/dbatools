@@ -216,7 +216,4 @@ function Copy-DbaCredential {
             Copy-Credential $credentials -force:$force
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
-    }
 }

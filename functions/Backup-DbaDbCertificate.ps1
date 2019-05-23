@@ -134,8 +134,6 @@ function Backup-DbaDbCertificate {
             Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
 
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
-
         function export-cert ($cert) {
             $certName = $cert.Name
             $db = $cert.Parent

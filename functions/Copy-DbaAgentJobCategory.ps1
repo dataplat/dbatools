@@ -100,7 +100,6 @@ function Copy-DbaAgentJobCategory {
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentCategory
         function Copy-JobCategory {
             <#
                 .SYNOPSIS
@@ -393,8 +392,5 @@ function Copy-DbaAgentJobCategory {
             Copy-AlertCategory
             Copy-JobCategory
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
     }
 }

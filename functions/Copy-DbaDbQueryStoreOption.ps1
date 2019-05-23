@@ -80,7 +80,6 @@ function Copy-DbaDbQueryStoreOption {
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaQueryStoreConfig
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
