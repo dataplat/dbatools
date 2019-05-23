@@ -6,7 +6,7 @@ function Get-DbaRegServer {
     .DESCRIPTION
        Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
 
-       Local Registered Servers support alternative authentication but Azure Data Studio and Central Management Studio do not at this time.
+       Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Studio does not.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
