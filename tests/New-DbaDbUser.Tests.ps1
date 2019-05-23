@@ -41,7 +41,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Should create the user without login" {
         It "Creates the user" {
-            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin
+            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin -Verbose
+            $results
             $results.Name | Should Be $userNameWithoutLogin
         }
         It "Really created it and don't have login property" {
