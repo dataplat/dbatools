@@ -62,7 +62,6 @@ function Watch-DbaDbLogin {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [object]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",

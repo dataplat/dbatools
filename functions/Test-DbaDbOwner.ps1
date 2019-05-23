@@ -65,7 +65,6 @@ function Test-DbaDbOwner {
     [CmdletBinding()]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,

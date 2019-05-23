@@ -68,7 +68,6 @@ function Test-DbaDiskAllocation {
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,
         [PSCredential]$SqlCredential,

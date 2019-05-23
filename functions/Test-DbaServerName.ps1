@@ -66,7 +66,6 @@ function Test-DbaServerName {
     [OutputType([System.Collections.ArrayList])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,

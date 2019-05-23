@@ -60,7 +60,6 @@ function Remove-DbaComputerCertificate {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [parameter(ValueFromPipelineByPropertyName, Mandatory)]

@@ -198,7 +198,6 @@ function Rename-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]

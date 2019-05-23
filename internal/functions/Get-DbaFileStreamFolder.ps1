@@ -40,7 +40,6 @@ function Get-DbaFileStreamFolder {
     License: MIT https://opensource.org/licenses/MIT
        #>
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,

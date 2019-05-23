@@ -72,7 +72,6 @@ function Install-DbaWhoIsActive {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]

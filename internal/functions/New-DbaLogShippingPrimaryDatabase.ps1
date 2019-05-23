@@ -92,7 +92,6 @@ function New-DbaLogShippingPrimaryDatabase {
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory)]

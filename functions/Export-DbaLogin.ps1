@@ -120,7 +120,6 @@ function Export-DbaLogin {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]

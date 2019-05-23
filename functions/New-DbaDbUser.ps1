@@ -82,7 +82,6 @@ function New-DbaDbUser {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin")]
     param(
         [parameter(Mandatory, Position = 1)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,

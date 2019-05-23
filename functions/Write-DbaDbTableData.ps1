@@ -154,7 +154,6 @@ function Write-DbaDbTableData {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [ValidateNotNull()]
         [DbaInstanceParameter]$SqlInstance,
         [ValidateNotNull()]

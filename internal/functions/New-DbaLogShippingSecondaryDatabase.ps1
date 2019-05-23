@@ -106,7 +106,6 @@ function New-DbaLogShippingSecondaryDatabase {
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,

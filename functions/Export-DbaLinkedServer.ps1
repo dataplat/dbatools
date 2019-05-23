@@ -59,7 +59,6 @@ function Export-DbaLinkedServer {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$LinkedServer,
         [PSCredential]$SqlCredential,

@@ -30,7 +30,6 @@ function Get-XpDirTreeRestoreFile {
         [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [switch]$EnableException,

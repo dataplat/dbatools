@@ -62,7 +62,6 @@ function Test-DbaDbCompatibility {
     [OutputType("System.Collections.ArrayList")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [object[]]$Database,

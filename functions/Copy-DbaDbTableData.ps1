@@ -155,7 +155,6 @@ function Copy-DbaDbTableData {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [DbaInstanceParameter[]]$Destination,

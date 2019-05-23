@@ -26,7 +26,6 @@ function Get-BackupAncientHistory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
         [PsCredential]$SqlCredential,

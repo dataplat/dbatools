@@ -133,7 +133,6 @@ function Invoke-DbaDiagnosticQuery {
     [outputtype([pscustomobject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Alias('DatabaseName')]

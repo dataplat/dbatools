@@ -156,7 +156,6 @@ function Read-DbaTraceFile {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,

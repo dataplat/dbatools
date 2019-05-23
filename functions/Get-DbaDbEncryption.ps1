@@ -61,7 +61,6 @@ function Get-DbaDbEncryption {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
