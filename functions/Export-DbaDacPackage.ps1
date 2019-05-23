@@ -297,7 +297,4 @@ function Export-DbaDacPackage {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
-    }
 }

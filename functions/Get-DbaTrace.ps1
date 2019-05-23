@@ -49,8 +49,7 @@ function Get-DbaTrace {
         [PSCredential]$SqlCredential,
         [int[]]$Id,
         [switch]$Default,
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile

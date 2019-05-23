@@ -275,7 +275,4 @@ function Copy-DbaLinkedServer {
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
-    }
 }

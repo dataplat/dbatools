@@ -255,7 +255,4 @@ ON fd.Drive = LEFT(df.physical_name, 1);
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
-    }
 }

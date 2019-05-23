@@ -62,8 +62,7 @@ function Get-DbaXESessionTarget {
         [string[]]$Target,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {

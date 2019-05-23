@@ -68,8 +68,7 @@ function Register-DbatoolsConfig
         [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
         $Scope = "UserDefault",
         
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     
     begin

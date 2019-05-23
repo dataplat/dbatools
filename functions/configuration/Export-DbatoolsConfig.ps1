@@ -93,8 +93,7 @@ function Export-DbatoolsConfig
         [switch]
         $SkipUnchanged,
         
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     
     begin

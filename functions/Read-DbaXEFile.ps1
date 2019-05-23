@@ -54,8 +54,7 @@ function Read-DbaXEFile {
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         foreach ($file in $path) {

@@ -75,8 +75,7 @@ function Import-DbatoolsConfig
         [switch]
         $Peek,
         
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     
     begin

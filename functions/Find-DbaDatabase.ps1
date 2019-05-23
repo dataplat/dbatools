@@ -22,10 +22,7 @@ function Find-DbaDatabase {
 
     .PARAMETER Exact
         Search for an exact match instead of a pattern
-
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
-
+		
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,12 +65,8 @@ function Find-DbaDatabase {
         [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$Exact,
-        [switch]$Detailed,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

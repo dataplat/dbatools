@@ -103,8 +103,7 @@ function Get-DbaBuildReference {
         [switch]
         $Update,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -457,8 +456,5 @@ function Get-DbaBuildReference {
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }

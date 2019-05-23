@@ -214,7 +214,4 @@ function Copy-DbaServerAudit {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAudit
-    }
 }

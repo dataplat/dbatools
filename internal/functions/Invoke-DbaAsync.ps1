@@ -65,8 +65,7 @@ function Invoke-DbaAsync {
         [switch]
         $MessagesToOutput,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {

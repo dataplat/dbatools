@@ -218,8 +218,6 @@ function Find-DbaDbGrowthEvent {
                     1 AS [SessionLoginName],
                     1 AS [SPID]
             END CATCH"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {
