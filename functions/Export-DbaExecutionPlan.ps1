@@ -91,7 +91,7 @@ function Export-DbaExecutionPlan {
         [object[]]$ExcludeDatabase,
         [parameter(ParameterSetName = 'Piped', Mandatory)]
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceCreation,
         [parameter(ParameterSetName = 'NotPiped')]

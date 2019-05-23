@@ -16,7 +16,7 @@ function Export-DbaRegServer {
         Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
 
     .PARAMETER Path
-        The path to the exported file. If no path is specified, one will be created.
+        The path to the exported files. If no path is specified, one will be created. This is expected to be a directory.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaRegServer, Get-DbaRegServerGroup, CSVs and other objects.
@@ -65,24 +65,20 @@ function Export-DbaRegServer {
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
         [string]$CredentialPersistenceType = "None",
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -ParameterName Path)) {
-            if ($Path -notmatch '\\') {
-                $Path = ".\$Path"
-            }
-
-            $directory = Split-Path $Path
-            if (-not (Test-Path $directory)) {
-                New-Item -Path $directory -ItemType Directory
-            }
+        if (-not (test-path $Path)) {
+            New-Item -Path $Path -ItemType Directory
         } else {
-            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            if ( -not (Get-Item -Path $Path).PSIsContainer) {
+                Stop-function  -Message "Path provided is an already-existing file. Please provide a directory name."
+            }
         }
+        $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -94,25 +90,22 @@ function Export-DbaRegServer {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
                     $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Id 1
                 }
-
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance.Replace('\', '$')
-                        $regservername = $object.Name.Replace('\', '$')
-                        $Path = "$serverName-regserver-$regservername-$timeNow.xml"
-                    }
-                    $object.Export($Path, $CredentialPersistenceType)
+                    $serverName = $object.SqlInstance.Replace('\', '$');
+                    $regservername = $object.Name.Replace('\', '$')
+                    $ExportFileName = "$serverName-regserver-$regservername-$timeNow.xml"
+                    $FullExportFile = Join-DbaPath -Path $Path -Child $ExportFileName
+                    $object.Export($FullExportFile, $CredentialPersistenceType)
                 } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance.Replace('\', '$')
-                        $regservergroup = $object.Name.Replace('\', '$')
-                        $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
-                    }
-                    $object.Export($Path, $CredentialPersistenceType)
+                    $servername = $object.SqlInstance.Replace('\', '$')
+                    $regservergroup = $object.Name.Replace('\', '$')
+                    $ExportFileName = "$serverName-reggroup-$regservergroup-$timeNow.xml"
+                    $FullExportFile = Join-DbaPath -Path $Path -Child $ExportFileName
+                    $object.Export($FullExportFile, $CredentialPersistenceType)
                 } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
-                Get-ChildItem $Path -ErrorAction Stop
+                Get-ChildItem $FullExportFile -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }

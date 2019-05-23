@@ -72,7 +72,7 @@ function Export-DbaRepServerSetting {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
@@ -90,11 +90,8 @@ function Export-DbaRepServerSetting {
 
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.replace('\', '$'))-$timenow-replication.sql"
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
