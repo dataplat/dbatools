@@ -307,9 +307,6 @@ function Connect-DbaInstance {
             $EnableException = $true
         }
 
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaServer
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
-
         $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
             $_.Fullname -like "Microsoft.SqlServer.SMO,*"
         }
@@ -346,7 +343,23 @@ function Connect-DbaInstance {
 
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
+                $isconnectionstring = $true
             }
+            if ($instance.Type -eq 'RegisteredServer' -and $instance.InputObject.ConnectionString) {
+                $connstring = $instance.InputObject.ConnectionString
+                $isconnectionstring = $true
+            }
+
+            if ($isconnectionstring) {
+                try {
+                    # ensure it's in the proper format
+                    $sb = New-Object System.Data.Common.DbConnectionStringBuilder
+                    $sb.ConnectionString = $connstring
+                } catch {
+                    $isconnectionstring = $false
+                }
+            }
+
             # Gracefully handle Azure connections
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 # so far, this is not evaluating
@@ -494,10 +507,10 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($instance.IsConnectionString) {
+            if ($isconnectionstring) {
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
-                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $instance.InputObject
+                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
@@ -509,7 +522,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } elseif (-not $isAzure -and -not $instance.IsConnectionString) {
+            } elseif (-not $isAzure -and -not $isconnectionstring) {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
