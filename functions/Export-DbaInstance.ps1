@@ -124,7 +124,7 @@ function Export-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
@@ -134,10 +134,8 @@ function Export-DbaInstance {
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -ParameterName Path)) {
-            if (-not ((Get-Item $Path -ErrorAction Ignore) -is [System.IO.DirectoryInfo])) {
-                Stop-Function -Message "Path must be a directory"
-            }
+        if (-not ((Get-Item $Path -ErrorAction Ignore) -is [System.IO.DirectoryInfo])) {
+            Stop-Function -Message "Path must be a directory"
         }
 
         if (-not $ScriptingOption) {
@@ -160,12 +158,8 @@ function Export-DbaInstance {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow"
 
             if (-not (Test-Path $Path)) {
                 try {

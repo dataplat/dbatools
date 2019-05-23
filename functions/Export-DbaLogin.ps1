@@ -130,7 +130,7 @@ function Export-DbaLogin {
         [Alias("Databases")]
         [object[]]$Database,
         [Alias("OutFile", "FilePath", "FileName")]
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,

@@ -58,7 +58,7 @@ function Export-DbaCredential {
         [string[]]$Identity,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$ExcludePassword,
         [switch]$Append,
         [Parameter(ValueFromPipeline)]
@@ -148,6 +148,8 @@ function Export-DbaCredential {
                 $key = $input.Parent.Name + '::[' + $input.Name + ']'
                 $credentialArray.add( $key, $true )
             }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-credential.sql"
         }
     }
 
@@ -159,7 +161,6 @@ function Export-DbaCredential {
                 $time = (Get-Date -Format yyyMMddHHmmss)
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $serverName = $($cred[0].SqlInstance.replace('\', '$'))
-
                 $path = Join-DbaPath -Path $mydocs "$serverName-$time-credential.sql"
             }
 
@@ -192,10 +193,5 @@ function Export-DbaCredential {
             Write-Message -Level Verbose -Message "Credentials exported to $path"
         }
     }
-
-
-
-
-
 
 }

@@ -76,7 +76,7 @@ function Export-DbaAvailabilityGroup {
         [object[]]$AvailabilityGroup,
         [object[]]$ExcludeAvailabilityGroup,
         [Alias("OutputLocation", "FilePath")]
-        [string]$Path = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",
+        [string]$Path = (Join-DbaPath -path (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport') -child "SqlAgExport"),
         [switch]$NoClobber,
         [Alias('Silent')]
         [switch]$EnableException
@@ -108,7 +108,7 @@ function Export-DbaAvailabilityGroup {
 
                 # Set and create the OutputLocation if it doesn't exist
                 $sqlinst = $instance.ToString().Replace('\', '$')
-                $outputLocation = "$Path\$sqlinst"
+                $outputLocation = Join-DbaPath -Path $Path -child $sqlinst
 
                 if (!(Test-Path $outputLocation -PathType Container)) {
                     $null = New-Item -Path $outputLocation -ItemType Directory -Force
@@ -121,9 +121,9 @@ function Export-DbaAvailabilityGroup {
                     # Set the outfile name
                     if ($AppendDateToOutputFilename.IsPresent) {
                         $formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
-                        $outFile = "$outputLocation\${AGname}_${formatteddate}.sql"
+                        $outFile = Join-DbaPath -Path $outputLocation -Child "${AGname}_${formatteddate}.sql"
                     } else {
-                        $outFile = "$outputLocation\$agName.sql"
+                        $outFile = Join-DbaPath -Path $outputLocation -Child "$agName.sql"
                     }
 
                     # Check NoClobber and script out the AG
