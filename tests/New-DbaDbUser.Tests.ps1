@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
         }
-        It "Really created it and don't have login property" {
+        It -Skip "Really created it and don't have login property" {
             $results = Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
             $results.Login | Should Be ""
