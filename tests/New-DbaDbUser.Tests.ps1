@@ -31,20 +31,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $userName -Confirm:$false
     }
     Context "Should create the user with login" {
-        It "Creates the user" {
-            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -Login $userName
-            $results.Name | Should Be $userName
-        }
-        It "Really created it" {
+        It "Creates the user and get it" {
+            New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -Login $userName
             (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
         }
     }
     Context "Should create the user without login" {
-        It -Skip "Creates the user" {
-            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin
-            $results.Name | Should Be $userNameWithoutLogin
-        }
-        It -Skip "Really created it and don't have login property" {
+        It -Skip "Creates the user and get it. Login property is empty" {
+            New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin
             $results = Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
             $results.Login | Should Be ""
