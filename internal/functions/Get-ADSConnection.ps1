@@ -31,7 +31,7 @@ function Invoke-ADSCsharpCompile () {
     }
 }
 
-Function Get-ADSCreds {
+Function Get-ADSConnection {
 
     # Defining C# code to enum credman creds
     $CredEnumWrapperClass =
@@ -229,7 +229,14 @@ namespace CredEnum {
                     $id, $value = $section.Split(":")
                     $result.$id = $value
                 }
-                [PSCustomObject]$result
+                $result = [PSCustomObject]$result
+
+                $connstring = "Data Source=$($result.server);User ID=$($result.user);Password=$($result.password)"
+                $connstring += ';Application Name="dbatools PowerShell module - dbatools.io"'
+                if ($result.database) {
+                    $connstring += ";Initial Catalog=""$($result.database)"""
+                }
+                $result | Add-Member -Force -Name connectionstring -Value "$connstring" -MemberType NoteProperty -Passthru
             }
         } catch {
             $null = 1
