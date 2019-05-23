@@ -38,9 +38,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $newServer3 = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
         }
-        AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance2, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance2, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        BeforeEach {
+             Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance2| Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        }
+        Aftereach {
+            Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance2| Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
         }
 
         It "imports group objects" {
@@ -57,10 +62,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "imports a file from Export-DbaRegServer" {
-            $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
+            $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
             $results4 = Import-DbaRegServer -SqlInstance $script:instance2 -Path $results3
-            $results4.ServerName | Should -Be @('dbatoolsci-server3', 'dbatoolsci-server1')
-            $results4.Description | Should -Be @('dbatoolsci-server3desc', 'dbatoolsci-server123')
+            $results4.ServerName | Should -Be @('dbatoolsci-server3')
+            $results4.Description | Should -Be @('dbatoolsci-server3desc')
         }
         It "imports from a random object so long as it has ServerName" {
             $object = [pscustomobject]@{
