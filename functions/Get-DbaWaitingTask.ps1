@@ -51,7 +51,7 @@ function Get-DbaWaitingTask {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [object[]]$Spid,
         [switch]$IncludeSystemSpid,
         [switch]$EnableException

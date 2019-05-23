@@ -45,8 +45,7 @@ function Get-DbaPageFileSetting {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-        [Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException

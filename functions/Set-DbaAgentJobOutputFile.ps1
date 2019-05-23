@@ -50,7 +50,7 @@ function Set-DbaAgentJobOutputFile {
     param (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false,
             Position = 0)]
         [ValidateNotNull()]
@@ -58,19 +58,19 @@ function Set-DbaAgentJobOutputFile {
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [Parameter(HelpMessage = 'The Job Step name',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [object[]]$Step,
         [Parameter(Mandatory, HelpMessage = 'The Full Output File Path',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
