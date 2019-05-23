@@ -62,7 +62,6 @@ function Get-DbaUptime {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

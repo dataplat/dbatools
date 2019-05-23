@@ -75,12 +75,10 @@ function Get-DbaPermission {
         [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
         [switch]$ExcludeSystemObjects,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

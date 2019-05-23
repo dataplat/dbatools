@@ -75,7 +75,6 @@ function Get-DbaModule {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$ModifiedSince = "1900-01-01",
@@ -83,7 +82,6 @@ function Get-DbaModule {
         [string[]]$Type,
         [switch]$ExcludeSystemDatabases,
         [switch]$ExcludeSystemObjects,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -81,7 +81,6 @@ function Copy-DbaLinkedServer {
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

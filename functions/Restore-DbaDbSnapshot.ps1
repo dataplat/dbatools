@@ -85,14 +85,12 @@ function Restore-DbaDbSnapshot {
         [DbaInstance[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

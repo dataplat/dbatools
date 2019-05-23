@@ -77,14 +77,12 @@ function Set-DbaDbOwner {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Alias("Login")]
         [string]$TargetLogin,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

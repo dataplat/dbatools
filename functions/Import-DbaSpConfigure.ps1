@@ -100,7 +100,6 @@ function Import-DbaSpConfigure {
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

@@ -98,7 +98,6 @@ function Invoke-DbaDbLogShipRecovery {
         [string[]]$Database,
         [PSCredential]$SqlCredential,
         [switch]$NoRecovery,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force,
         [Parameter(ValueFromPipeline)]

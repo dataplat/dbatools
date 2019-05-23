@@ -52,7 +52,6 @@ function Get-DbaManagementObject {
         [PSCredential]
         $Credential,
         [int]$VersionNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

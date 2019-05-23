@@ -81,7 +81,6 @@ function Copy-DbaDbMail {
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

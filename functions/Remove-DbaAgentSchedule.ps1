@@ -85,7 +85,6 @@ function Remove-DbaAgentSchedule {
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

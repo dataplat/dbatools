@@ -116,7 +116,6 @@ function Get-DbaAgentJobHistory {
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

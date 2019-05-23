@@ -148,7 +148,6 @@ function Set-DbaAgentSchedule {
         [string]$EndDate,
         [string]$StartTime,
         [string]$EndTime,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

@@ -141,7 +141,6 @@ function Expand-DbaDbLogFile {
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Position = 3)]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,

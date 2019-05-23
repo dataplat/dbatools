@@ -60,7 +60,6 @@ function Get-DbaDbPartitionFunction {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

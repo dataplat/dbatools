@@ -124,7 +124,6 @@ function Set-DbaDbState {
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -138,7 +137,6 @@ function Set-DbaDbState {
         [switch]$RestrictedUser,
         [switch]$MultiUser,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$InputObject

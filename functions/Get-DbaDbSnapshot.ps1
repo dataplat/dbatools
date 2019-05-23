@@ -63,12 +63,10 @@ function Get-DbaDbSnapshot {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [object[]]$ExcludeSnapshot,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

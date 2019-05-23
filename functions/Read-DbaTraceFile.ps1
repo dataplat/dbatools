@@ -155,7 +155,7 @@ function Read-DbaTraceFile {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ValueFromPipelineByPropertyName)]
@@ -173,7 +173,6 @@ function Read-DbaTraceFile {
         [string[]]$ApplicationName,
         [string[]]$ObjectName,
         [string]$Where,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

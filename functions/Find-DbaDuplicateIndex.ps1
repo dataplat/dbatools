@@ -79,7 +79,6 @@ function Find-DbaDuplicateIndex {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [switch]$IncludeOverlapping,
         [switch]$EnableException

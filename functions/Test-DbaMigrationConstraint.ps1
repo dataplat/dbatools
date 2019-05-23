@@ -78,10 +78,8 @@ function Test-DbaMigrationConstraint {
         [parameter(Mandatory)]
         [DbaInstance]$Destination,
         [PSCredential]$DestinationSqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

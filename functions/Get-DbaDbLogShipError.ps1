@@ -95,7 +95,6 @@ function Get-DbaDbLogShipError {
         [datetime]$DateTimeTo,
         [switch]$Primary,
         [switch]$Secondary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

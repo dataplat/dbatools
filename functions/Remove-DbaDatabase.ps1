@@ -74,11 +74,9 @@ function Remove-DbaDatabase {
         [PSCredential]
         $SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("Databases")]
         [object[]]$Database,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

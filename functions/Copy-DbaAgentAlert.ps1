@@ -84,7 +84,6 @@ function Copy-DbaAgentAlert {
         [object[]]$ExcludeAlert,
         [switch]$IncludeDefaults,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

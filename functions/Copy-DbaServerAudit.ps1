@@ -90,7 +90,6 @@ function Copy-DbaServerAudit {
         [object[]]$ExcludeAudit,
         [string]$Path,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

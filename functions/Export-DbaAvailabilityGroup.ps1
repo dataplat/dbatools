@@ -78,7 +78,6 @@ function Export-DbaAvailabilityGroup {
         [Alias("OutputLocation", "FilePath")]
         [string]$Path = (Join-DbaPath -path (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport') -child "SqlAgExport"),
         [switch]$NoClobber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

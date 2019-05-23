@@ -70,7 +70,7 @@ function Get-DbaAgentJobStep {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
@@ -78,7 +78,6 @@ function Get-DbaAgentJobStep {
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [switch]$ExcludeDisabledJobs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

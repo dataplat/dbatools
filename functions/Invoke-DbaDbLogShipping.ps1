@@ -573,7 +573,6 @@ function Invoke-DbaDbLogShipping {
 
         [switch]$Force,
 
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

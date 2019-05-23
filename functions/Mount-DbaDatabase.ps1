@@ -79,7 +79,6 @@ function Mount-DbaDatabase {
         [string]$DatabaseOwner,
         [ValidateSet('None', 'RebuildLog', 'EnableBroker', 'NewBroker', 'ErrorBrokerConversations')]
         [string]$AttachOption = "None",
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

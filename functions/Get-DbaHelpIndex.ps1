@@ -124,7 +124,6 @@ function Get-DbaHelpIndex {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [Parameter(ValueFromPipeline)]
@@ -134,7 +133,6 @@ function Get-DbaHelpIndex {
         [switch]$IncludeDataTypes,
         [switch]$Raw,
         [switch]$IncludeFragmentation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

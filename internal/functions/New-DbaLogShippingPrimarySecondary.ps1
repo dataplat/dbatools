@@ -65,7 +65,6 @@ function New-DbaLogShippingPrimarySecondary {
         [ValidateNotNullOrEmpty()]
         [DBAInstanceParameter]$SecondaryServer,
         [PSCredential]$SecondarySqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

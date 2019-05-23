@@ -94,14 +94,12 @@ function Repair-DbaDbOrphanUser {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -84,7 +84,6 @@ function Copy-DbaDbAssembly {
         [object[]]$Assembly,
         [object[]]$ExcludeAssembly,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

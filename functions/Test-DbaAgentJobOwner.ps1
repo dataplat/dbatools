@@ -73,7 +73,6 @@ function Test-DbaAgentJobOwner {
         [Alias("TargetLogin")]
         [string]$Login,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

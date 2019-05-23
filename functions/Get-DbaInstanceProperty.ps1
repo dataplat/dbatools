@@ -68,13 +68,12 @@ function Get-DbaInstanceProperty {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$InstanceProperty,
         [object[]]$ExcludeInstanceProperty,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

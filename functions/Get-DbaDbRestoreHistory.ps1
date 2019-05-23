@@ -79,13 +79,11 @@ function Get-DbaDbRestoreHistory {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -50,7 +50,6 @@ function Register-DbaRunspace {
         $Name,
 
         [switch]
-        [Alias('Silent')]
         $EnableException
     )
 

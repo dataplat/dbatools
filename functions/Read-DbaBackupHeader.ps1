@@ -95,7 +95,6 @@ function Read-DbaBackupHeader {
         [switch]$Simple,
         [switch]$FileList,
         [string]$AzureCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

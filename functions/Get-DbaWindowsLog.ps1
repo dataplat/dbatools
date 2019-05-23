@@ -79,8 +79,7 @@ function Get-DbaWindowsLog {
         [int]
         $MaxRemoteThreads = 2,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

@@ -69,7 +69,6 @@ function Get-DbaDbStoredProcedure {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

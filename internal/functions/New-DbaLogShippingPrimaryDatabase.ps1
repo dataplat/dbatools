@@ -118,7 +118,6 @@ function New-DbaLogShippingPrimaryDatabase {
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

@@ -204,7 +204,6 @@ function Rename-DbaDatabase {
         [PSCredential]
         $SqlCredential,
         [parameter(ParameterSetName = "Server")]
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -219,7 +218,6 @@ function Rename-DbaDatabase {
         [switch]$Preview,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Pipe")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

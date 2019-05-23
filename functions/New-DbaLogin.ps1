@@ -161,7 +161,6 @@ function New-DbaLogin {
         [switch]$Disabled,
         [switch]$NewSid,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

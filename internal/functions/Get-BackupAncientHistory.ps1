@@ -30,10 +30,8 @@ function Get-BackupAncientHistory {
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
         [PsCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [string]$FileNameStub,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

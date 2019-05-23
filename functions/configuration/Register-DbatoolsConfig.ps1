@@ -49,11 +49,11 @@ function Register-DbatoolsConfig
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]
         $Config,
         
-        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
         [string[]]
         $FullName,
         

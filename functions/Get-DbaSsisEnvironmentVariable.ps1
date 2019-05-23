@@ -115,7 +115,6 @@ function Get-DbaSsisEnvironmentVariable {
         [object[]]$EnvironmentExclude,
         [object[]]$Folder,
         [object[]]$FolderExclude,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

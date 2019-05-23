@@ -73,7 +73,6 @@ function Stop-DbaAgentJob {
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$Wait,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

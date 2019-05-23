@@ -73,7 +73,6 @@ function Watch-DbaDbLogin {
 
         # File with one server per line
         [string]$ServersFromFile,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

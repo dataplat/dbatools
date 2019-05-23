@@ -61,8 +61,7 @@ function Test-DbaWindowsLogin {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
@@ -71,7 +70,6 @@ function Test-DbaWindowsLogin {
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

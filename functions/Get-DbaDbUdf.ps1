@@ -69,7 +69,6 @@ function Get-DbaDbUdf {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

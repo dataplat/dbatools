@@ -85,7 +85,6 @@ function New-DbaDbUser {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
@@ -95,7 +94,6 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

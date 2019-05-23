@@ -53,7 +53,7 @@ function Read-DbaTransactionLog {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Position = 0, Mandatory)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -61,7 +61,6 @@ function Read-DbaTransactionLog {
         [object]$Database,
         [Switch]$IgnoreLimit,
         [int]$RowLimit = 0,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

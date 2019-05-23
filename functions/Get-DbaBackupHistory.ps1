@@ -149,7 +149,6 @@ function Get-DbaBackupHistory {
         $SqlInstance,
         [Alias("Credential")]
         [PsCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
@@ -172,7 +171,6 @@ function Get-DbaBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

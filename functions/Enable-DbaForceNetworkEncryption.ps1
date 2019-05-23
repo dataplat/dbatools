@@ -56,7 +56,6 @@ function Enable-DbaForceNetworkEncryption {
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

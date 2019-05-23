@@ -176,7 +176,6 @@ function Set-DbaLogin {
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

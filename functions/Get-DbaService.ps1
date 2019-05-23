@@ -104,7 +104,6 @@ function Get-DbaService {
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
         [switch]$AdvancedProperties,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

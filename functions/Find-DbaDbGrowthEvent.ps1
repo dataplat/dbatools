@@ -92,7 +92,6 @@ function Find-DbaDbGrowthEvent {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [ValidateSet('Growth', 'Shrink')]
@@ -100,7 +99,6 @@ function Find-DbaDbGrowthEvent {
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
         [switch]$UseLocalTime,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -126,7 +126,6 @@ function New-DbaComputerCertificate {
         [string]$Folder = "My",
         [string[]]$Dns,
         [switch]$SelfSigned,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

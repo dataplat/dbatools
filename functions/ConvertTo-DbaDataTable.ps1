@@ -74,7 +74,6 @@ function ConvertTo-DbaDataTable {
             ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
-        [Parameter(Position = 1)]
         [ValidateSet("Ticks",
             "TotalDays",
             "TotalHours",
@@ -88,7 +87,6 @@ function ConvertTo-DbaDataTable {
         [string]$SizeType = "Int64",
         [switch]$IgnoreNull,
         [switch]$Raw,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

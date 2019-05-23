@@ -80,7 +80,6 @@ function Remove-DbaDbUser {
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = 'User')]
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(ParameterSetName = 'User')]
         [object[]]$ExcludeDatabase,
@@ -91,7 +90,6 @@ function Remove-DbaDbUser {
         [parameter(ParameterSetName = 'User')]
         [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

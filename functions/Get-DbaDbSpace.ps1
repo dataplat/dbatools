@@ -73,7 +73,6 @@ function Get-DbaDbSpace {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,

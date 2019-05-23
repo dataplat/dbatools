@@ -69,7 +69,6 @@ function Get-DbaDbUser {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUser,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

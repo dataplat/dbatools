@@ -109,7 +109,7 @@ function Invoke-DbaQuery {
         [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string]$Database,
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
         [Int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]

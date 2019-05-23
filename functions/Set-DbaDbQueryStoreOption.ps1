@@ -97,7 +97,6 @@ function Set-DbaDbQueryStoreOption {
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -111,7 +110,6 @@ function Set-DbaDbQueryStoreOption {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

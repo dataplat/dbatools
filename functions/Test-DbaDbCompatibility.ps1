@@ -65,11 +65,9 @@ function Test-DbaDbCompatibility {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

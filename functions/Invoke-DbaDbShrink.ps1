@@ -128,7 +128,6 @@ function Invoke-DbaDbShrink {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
@@ -143,7 +142,6 @@ function Invoke-DbaDbShrink {
         [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

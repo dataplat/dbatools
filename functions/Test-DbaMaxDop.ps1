@@ -63,12 +63,10 @@ function Test-DbaMaxDop {
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

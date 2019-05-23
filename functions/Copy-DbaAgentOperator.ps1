@@ -82,7 +82,6 @@ function Copy-DbaAgentOperator {
         [object[]]$Operator,
         [object[]]$ExcludeOperator,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

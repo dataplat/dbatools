@@ -65,7 +65,6 @@ function Set-DbaAgentJobCategory {
         [string[]]$Category,
         [string[]]$NewName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

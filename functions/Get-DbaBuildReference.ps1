@@ -106,7 +106,6 @@ function Get-DbaBuildReference {
         $Update,
 
         [switch]
-        [Alias('Silent')]
         $EnableException
     )
 

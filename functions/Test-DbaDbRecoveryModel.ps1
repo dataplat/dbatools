@@ -71,14 +71,12 @@ function Test-DbaDbRecoveryModel {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
         [validateSet("Full", "Simple", "Bulk_Logged")]
         [object]$RecoveryModel,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

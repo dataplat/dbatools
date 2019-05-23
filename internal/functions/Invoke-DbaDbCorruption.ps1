@@ -62,7 +62,6 @@ function Invoke-DbaDbCorruption {
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     # For later if we want to do bit flipping.

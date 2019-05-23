@@ -240,7 +240,6 @@ function Invoke-DbaWhoIsActive {
         [switch]$ReturnSchema,
         [string]$Schema,
         [switch]$Help,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -107,7 +107,6 @@ function New-DbaLogShippingSecondaryPrimary {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

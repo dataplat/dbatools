@@ -71,7 +71,6 @@ function Find-DbaDatabase {
         [string]$Pattern,
         [switch]$Exact,
         [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

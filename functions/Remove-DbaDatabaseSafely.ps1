@@ -117,7 +117,6 @@ function Remove-DbaDatabaseSafely {
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [DbaInstanceParameter]$Destination = $sqlinstance,
         [PSCredential]
@@ -133,7 +132,6 @@ function Remove-DbaDatabaseSafely {
         [string]$BackupCompression = 'Default',
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

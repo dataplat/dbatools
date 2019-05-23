@@ -151,7 +151,6 @@ function Test-DbaDbCompression {
         [string]$Rank = 'TotalPages',
         [ValidateSet('Partition', 'Index', 'Table')]
         [string]$FilterBy = 'Partition',
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

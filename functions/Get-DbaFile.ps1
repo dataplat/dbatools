@@ -77,7 +77,6 @@ function Get-DbaFile {
         [string[]]$Path,
         [string[]]$FileType,
         [int]$Depth = 1,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

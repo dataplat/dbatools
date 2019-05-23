@@ -42,13 +42,12 @@ function Get-DbaDefaultPath {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

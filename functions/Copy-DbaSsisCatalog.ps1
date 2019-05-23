@@ -96,7 +96,6 @@ function Copy-DbaSsisCatalog {
         [System.Security.SecureString]$CreateCatalogPassword,
         [Switch]$EnableSqlClr,
         [Switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     <# Developer note: The throw calls must stay in this command #>

@@ -66,7 +66,6 @@ function Copy-DbaSysDbUserObject {
         [PSCredential]$DestinationSqlCredential,
         [switch]$Force,
         [switch]$Classic,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

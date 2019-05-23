@@ -89,7 +89,6 @@ function Invoke-DbaBalanceDataFiles {
         [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [Alias("Tables")]
         [object[]]$Table,
