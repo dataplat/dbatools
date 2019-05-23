@@ -62,27 +62,24 @@ function New-DbaDiagnosticAdsNotebook {
     #>
     [CmdletBinding()]
     param(
-        [parameter(Position = 1)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateSet("2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "AzureSQLDatabase")]
         [String]$TargetVersion,
         [parameter(Mandatory = $true)]
         [String]$Path,
-        [switch]$IncludeDatabaseSpecific = $false,
-        [Alias('Silent')]
+        [switch]$IncludeDatabaseSpecific,
         [switch]$EnableException
     )
-
-
     process {
-
         # validate input parameters: you cannot provide $TargetVersion and $SqlInstance
-        # together. If you specify a SqlInstance, version will be desumed from metadata
+        # together. If you specify a SqlInstance, version will be determined from metadata
         if (-not $TargetVersion -and -not $SqlInstance) {
-            Stop-Function -Message "At least one of `$SqlInstance and `$TargetVersion must be provided" -Continue
+            Stop-Function -Message "At least one of `$SqlInstance and `$TargetVersion must be provided"
+            return
         } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
-            Stop-Function -Message "Cannot provide both `$SqlInstance and `$TargetVersion" -Continue
+            Stop-Function -Message "Cannot provide both `$SqlInstance and `$TargetVersion"
+            return
         }
 
         if (-not $TargetVersion) {
@@ -104,9 +101,10 @@ function New-DbaDiagnosticAdsNotebook {
             }
 
             try {
-                $ServerInfo = Invoke-DbaQuery -ServerInstance $SqlInstance -Query $versionQuery
+                $ServerInfo = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Query $versionQuery
             } catch {
-                Stop-Function -Message "Error connecting to $SqlInstance - $($err[0].Exception.Message)" -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_
+                return
             }
 
             if ($ServerInfo.Edition -eq "SQL Azure") {
@@ -121,17 +119,18 @@ function New-DbaDiagnosticAdsNotebook {
         }
 
         $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" |
-        Select-Object -First 1
+            Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
-            Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion" -Continue
+            Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
+            return
         }
 
         $cells = @()
 
         Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName |
-        Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
-        ForEach-Object {
+            Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
+            ForEach-Object {
             $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
             $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
         }
@@ -154,9 +153,9 @@ function New-DbaDiagnosticAdsNotebook {
             "cells":
         '
 
-
         $preamble | Out-File $Path
         $cells | ConvertTo-Json | Out-File -FilePath $Path -Append
         "}}" | Out-File -FilePath $Path -Append
+        Get-ChildItem -Path $Path
     }
 }
