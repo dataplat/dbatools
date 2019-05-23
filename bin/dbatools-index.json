@@ -339,7 +339,7 @@
                            "",
                            false,
                            "false",
-                           "Automatic"
+                           ""
                        ],
                        [
                            "Endpoint",
@@ -1641,23 +1641,23 @@
     },
     {
         "Name":  "Connect-DbaInstance",
-        "Description":  "This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.\n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
+        "Description":  "This command creates a robus, reusable sql server object.\n\nIt is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.\n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
         "Tags":  [
                      "Connect",
                      "Connection"
                  ],
-        "Synopsis":  "Creates a robust SMO SQL Server object.",
+        "Synopsis":  "Creates a robust, reusable SQL Server object.",
         "Alias":  "Connect-DbaServer,Get-DbaInstance",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So when you open up profiler or use extended events, you can search for \"my \r\nconnection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\r\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nGenerates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.\r\nThe connection is subsequently used to perform a sample query.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So when you open up profiler or use extended events, you can search for \"my \r\nconnection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException\r\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nGenerates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.\r\nThe connection is subsequently used to perform a sample query.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -ConnectionString \"Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect \r\nTimeout=30;Encrypt=True;TrustServerCertificate=False;\"\nPS C:\\\u003e Invoke-Query -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure using a preconstructed connstring, then performs a sample query.\r\nConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
-                           "ServerInstance,SqlServer",
+                           "ServerInstance,SqlServer,Connstring,ConnectionString",
                            true,
                            "true (ByValue)",
                            ""
@@ -1871,6 +1871,14 @@
                            "False"
                        ],
                        [
+                           "AzureDomain",
+                           "By default, this is set to database.windows.net\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.",
+                           "",
+                           false,
+                           "false",
+                           "database.windows.net"
+                       ],
+                       [
                            "DisableException",
                            "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
                            "",
@@ -1879,7 +1887,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [-DisableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [[-AzureDomain] \u003cString\u003e] [-DisableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaDataTable",
@@ -6358,8 +6366,8 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
-                           "true (ByValue)",
+                           false,
+                           "false",
                            ""
                        ],
                        [
@@ -6415,7 +6423,7 @@
                            "Allow credentials to be piped in from Get-DbaCredential",
                            "",
                            false,
-                           "false",
+                           "true (ByValue)",
                            ""
                        ],
                        [
@@ -6427,7 +6435,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Identity] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \u003cCredential[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaCredential [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Identity] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \u003cCredential[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaDacPackage",
@@ -8465,7 +8473,7 @@
         "CommandName":  "Find-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType Domain, DataSourceEnumeration\nPerforms a network search for SQL Instances by:\r\n- Looking up the Service Principal Names of computers in active directory\r\n- Using the UDP broadcast based auto-discovery of SSMS\r\nAfter that it will extensively scan all hosts thus discovered for instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType All\nPerforms a network search for SQL Instances, using all discovery protocols:\r\n- Active directory search for Service Principal Names\r\n- SQL Instance Enumeration (same as SSMS does)\r\n- All IPAddresses in the current computer\u0027s subnets of all connected network interfaces\r\nNote: This scan will take a long time, due to including the IP Scan\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ADComputer -Filter \"*\" | Find-DbaInstance\nScans all computers in the domain for SQL Instances, using a deep probe:\r\n- Tries resolving the name in DNS\r\n- Tries pinging the computer\r\n- Tries listing all SQL Services using CIM/WMI\r\n- Tries discovering all instances via the browser service\r\n- Tries connecting to the default TCP Port (1433)\r\n- Tries connecting to the TCP port of each discovered instance\r\n- Tries to establish a SQL connection to the server using default windows credentials\r\n- Tries looking up the Service Principal Names for each instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-Content .\\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlConnect\nReads all servers from the servers.txt file (one server per line),\r\nthen scans each of them for instances using the browser service\r\nand finally attempts to connect to each instance found using the specified credentials.\r\nthen scans each of them for instances using the browser service and SqlService\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup \r\n| Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.\nUsing this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType Domain, DataSourceEnumeration\nPerforms a network search for SQL Instances by:\r\n- Looking up the Service Principal Names of computers in Active Directory\r\n- Using the UDP broadcast based auto-discovery of SSMS\r\nAfter that it will extensively scan all hosts thus discovered for instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaInstance -DiscoveryType All\nPerforms a network search for SQL Instances, using all discovery protocols:\r\n- Active directory search for Service Principal Names\r\n- SQL Instance Enumeration (same as SSMS does)\r\n- All IPAddresses in the current computer\u0027s subnets of all connected network interfaces\r\nNote: This scan will take a long time, due to including the IP Scan\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ADComputer -Filter \"*\" | Find-DbaInstance\nScans all computers in the domain for SQL Instances, using a deep probe:\r\n- Tries resolving the name in DNS\r\n- Tries pinging the computer\r\n- Tries listing all SQL Services using CIM/WMI\r\n- Tries discovering all instances via the browser service\r\n- Tries connecting to the default TCP Port (1433)\r\n- Tries connecting to the TCP port of each discovered instance\r\n- Tries to establish a SQL connection to the server using default windows credentials\r\n- Tries looking up the Service Principal Names for each instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-Content .\\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser, SqlConnect\nReads all servers from the servers.txt file (one server per line),\r\nthen scans each of them for instances using the browser service\r\nand finally attempts to connect to each instance found using the specified credentials.\r\nthen scans each of them for instances using the browser service and SqlService\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup \r\n| Format-Table -Wrap\nScans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.\nUsing this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.",
         "Params":  [
                        [
                            "ComputerName",
@@ -8548,7 +8556,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Find-DbaInstance -ComputerName \u003cDbaInstanceParameter[]\u003e [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]\nFind-DbaInstance -DiscoveryType {IPRange | Domain | DataSourceEnumeration | All} [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-IpAddress \u003cString[]\u003e] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Find-DbaInstance [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]\nFind-DbaInstance -ComputerName \u003cDbaInstanceParameter[]\u003e [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]\nFind-DbaInstance -DiscoveryType {IPRange | Domain | DataSourceEnumeration | All} [-Credential \u003cPSCredential\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ScanType {TCPPort | SqlConnect | SqlService | DNSResolve | SPN | Browser | Ping | Default | All}] [-IpAddress \u003cString[]\u003e] [-DomainController \u003cString\u003e] [-TCPPort \u003cInt32[]\u003e] [-MinimumConfidence {None | Low | Medium | High}] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Find-DbaLoginInGroup",
@@ -11120,6 +11128,14 @@
                            "My"
                        ],
                        [
+                           "Type",
+                           "The type of certificates to return. All or Service. Default is Service since this is SQL specific.",
+                           "",
+                           false,
+                           "false",
+                           "Service"
+                       ],
+                       [
                            "Path",
                            "The path to a certificate - basically changes the path into a certificate object",
                            "",
@@ -11144,7 +11160,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-Thumbprint] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Store] \u003cString[]\u003e] [[-Folder] \u003cString[]\u003e] [[-Type] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-Thumbprint] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaComputerSystem",
@@ -12289,6 +12305,56 @@
                        ]
                    ],
         "Syntax":  "Get-DbaDbDbccOpenTran [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbDetachedFileInfo",
+        "Description":  "Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.\n\n\"Data files\" and \"Log file\" report the structure of the data and log files as they were when the database was detached. \"Database version\" is the compatibility level.\n\nMDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.",
+        "Tags":  [
+                     "Database",
+                     "Detach"
+                 ],
+        "Synopsis":  "Get detailed information about detached SQL Server database files.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Get-DbaDbDetachedFileInfo",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbDetachedFileInfo",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbDetachedFileInfo -SqlInstance sql2016 -Path M:\\Archive\\mydb.mdf\nReturns information about the detached database file M:\\Archive\\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.\nThis function will not attach the database file, it will only use SQL Server to read its contents.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which \r\nthe SQL Server service account has access.",
+                           "Mdf,FilePath,FullName",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbDetachedFileInfo [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Path] \u003cString[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbEncryption",
@@ -14854,48 +14920,6 @@
         "Syntax":  "Get-DbaDeprecatedFeature [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Get-DbaDetachedDatabaseInfo",
-        "Description":  "Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.\n\n\"Data files\" and \"Log file\" report the structure of the data and log files as they were when the database was detached. \"Database version\" is the compatibility level.\n\nMDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.",
-        "Tags":  [
-                     "Database",
-                     "Detach"
-                 ],
-        "Synopsis":  "Get detailed information about detached SQL Server database files.",
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Get-DbaDetachedDatabaseInfo",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaDetachedDatabaseInfo",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\\Archive\\mydb.mdf\nReturns information about the detached database file M:\\Archive\\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.\nThis function will not attach the database file, it will only use SQL Server to read its contents.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Path",
-                           "Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which \r\nthe SQL Server service account has access.",
-                           "Mdf",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Syntax":  "Get-DbaDetachedDatabaseInfo [-SqlInstance] \u003cDbaInstanceParameter\u003e [-Path] \u003cString\u003e [[-SqlCredential] \u003cPSCredential\u003e] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "Get-DbaDiskSpace",
         "Description":  "Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.\n\nBy default, this function only shows drives of types 2 and 3 (removable disk and local disk).\n\nRequires Windows administrator access on SQL Servers",
         "Tags":  [
@@ -16521,9 +16545,25 @@
                            false,
                            "true (ByValue)",
                            "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Alternative credential",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cString[]\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaMsdtc [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaNetworkActivity",
@@ -22463,7 +22503,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] \r\n[[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] \r\n[[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaMaintenanceSolution",
@@ -23131,7 +23171,7 @@
         "CommandName":  "Invoke-DbaAdvancedUpdate",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions\nInvokes update actions on SQL1 after restarting it.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -ExtractPath C:\\temp\nExtracts required files to the specific location \"C:\\temp\". Invokes update actions on SQL1 after restarting it.",
         "Params":  [
                        [
                            "ComputerName",
@@ -23174,6 +23214,14 @@
                            ""
                        ],
                        [
+                           "ExtractPath",
+                           "Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\\temp",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -23198,7 +23246,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAgFailover",
@@ -28227,7 +28275,7 @@
     },
     {
         "Name":  "New-DbaAzAccessToken",
-        "Description":  "Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.",
+        "Description":  "Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.\n\nSqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.\n\nWant to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re",
         "Tags":  [
                      "Connect",
                      "Connection",
@@ -28251,7 +28299,7 @@
                        ],
                        [
                            "Subtype",
-                           "The subtype. Auto-completes. Currently supports AzureSqlDb and Management.\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
+                           "The subtype. Options include:\r\nAzureSqlDb (default)\r\nResourceManager\r\nDataLake\r\nEventHubs\r\nKeyVault\r\nResourceManager\r\nServiceBus\r\nStorage\nRead more here: https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-windows-vm-access-sql",
                            "",
                            false,
                            "false",
@@ -28653,7 +28701,7 @@
     },
     {
         "Name":  "New-DbaConnectionString",
-        "Description":  "Builds or extracts a SQL Server Connection String\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx",
+        "Description":  "Builds or extracts a SQL Server Connection String. Note that dbatools-style syntax is used.\n\nSo you do not need to specify \"Data Source\", you can just specify -SqlInstance and -SqlCredential and we\u0027ll handle it for you.\n\nThis is the simplified PowerShell approach to connection string building. See examples for more info.\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx",
         "Tags":  [
                      "Connection",
                      "Connect",
@@ -28665,12 +28713,12 @@
         "CommandName":  "New-DbaConnectionString",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaConnectionString",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaConnectionString -SqlInstance sql2014\nCreates a connection string that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2016 | New-DbaConnectionString\nBuilds a connected SMO object using Connect-DbaInstance then extracts and displays the connection string\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e New-DbaConnectionString -SqlInstance sql2014 -Credential $wincred\nCreates a connection string that connects using alternative Windows credentials\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = New-DbaConnectionString -SqlInstance sql2014 -Credential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -ClientName \"mah connection\"\nCreates a connection string that connects using Windows Authentication and uses the client name \"mah connection\". So when you open up profiler or use extended events, you can search for \"mah \r\nconnection\".\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates a connection string that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates a connection string with Windows Authentication that uses TCPIP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$connstring = New-DbaConnectionString sql2016 -ApplicationIntent ReadOnly\nCreates a connection string with ReadOnly ApplicationIntent.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaConnectionString -SqlInstance sql2014\nCreates a connection string that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2016 | New-DbaConnectionString\nBuilds a connected SMO object using Connect-DbaInstance then extracts and displays the connection string\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e New-DbaConnectionString -SqlInstance sql2014 -Credential $wincred\nCreates a connection string that connects using alternative Windows credentials\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = New-DbaConnectionString -SqlInstance sql2014 -Credential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$connstring = New-DbaConnectionString -SqlInstance mydb.database.windows.net -SqlCredential me@myad.onmicrosoft.com -Database db\nCreates a connection string for an Azure Active Directory login to Azure SQL db. Output looks like this:\r\nData Source=TCP:mydb.database.windows.net,1433;Initial Catalog=db;User ID=me@myad.onmicrosoft.com;Password=fakepass;MultipleActiveResultSets=False;Connect \r\nTimeout=30;Encrypt=True;TrustServerCertificate=False;Application Name=\"dbatools PowerShell module - dbatools.io\";Authentication=\"Active Directory Password\"\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -ClientName \"mah connection\"\nCreates a connection string that connects using Windows Authentication and uses the client name \"mah connection\". So when you open up profiler or use extended events, you can search for \"mah \r\nconnection\".\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates a connection string that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = New-DbaConnectionString -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates a connection string with Windows Authentication that uses TCPIP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$connstring = New-DbaConnectionString sql2016 -ApplicationIntent ReadOnly\nCreates a connection string with ReadOnly ApplicationIntent.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
-                           "ServerInstance,SqlServer",
+                           "ServerInstance,SqlServer,Server,DataSource",
                            true,
                            "true (ByValue)",
                            ""
@@ -29004,14 +29052,17 @@
     {
         "Name":  "New-DbaCredential",
         "Description":  "Creates a new credential",
-        "Tags":  "Certificate",
+        "Tags":  [
+                     "Certificate",
+                     "Credential"
+                 ],
         "Synopsis":  "Creates a new SQL Server credential",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "New-DbaCredential",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1\nYou will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1 -Confirm:$false\nSuppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -Identity \u0027\u003cAzure Storage Account Name\u003e\u0027 -SecurePassword (ConvertTo-SecureString \u0027\u003cAzure Storage Account Access Key\u003e\u0027 \r\n-AsPlainText -Force)\nCreate credential on SQL Server 2012 CU2, SQL Server 2014 for use with BACKUP TO URL.\r\nCredentialIdentity needs to be supplied with the Azure Storage Account Name.\r\nPassword needs to be one of the Access Keys for the account.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1 -Name \u0027https://\u003cAzure Storage Account Name\u003e.blob.core.windows.net/\u003cBlob Store Container Name\u003e\u0027 -Identity \u0027SHARED ACCESS SIGNATURE\u0027 -SecurePassword \r\n(ConvertTo-SecureString \u0027\u003cShared Access Token\u003e\u0027 -AsPlainText -Force)\nCreate Credential on SQL Server 2016 or higher for use with BACKUP TO URL.\r\nName has to be the full URL for the blob store container that will be the backup target.\r\nPassword needs to be passed the Shared Access Token (SAS Key).",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1\nYou will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1 -Confirm:$false\nSuppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003eSqlInstance = \"Server1\"\r\n\u003e\u003eName = \"AzureBackupBlobStore\"\r\n\u003e\u003eIdentity = \"https://\u003cAzure Storage Account Name\u003e.blob.core.windows.net/\u003cBlob Container Name\u003e\"\r\n\u003e\u003eSecurePassword = (ConvertTo-SecureString \u0027\u003cAzure Storage Account Access Key\u003e\u0027 -AsPlainText -Force)\r\n\u003e\u003e}\r\nPS C:\\\u003e New-DbaCredential @params\nCreates a credential, \"AzureBackupBlobStore\", on Server1 using the Access Keys for Backup To URL. Identity must be the full URI for the blob container that will be the backup target. The \r\nSecurePassword supplied is one of the two Access Keys for the Azure Storage Account.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaCredential -SqlInstance Server1 -Name \u0027https://\u003cAzure Storage Account Name\u003e.blob.core.windows.net/\u003cBlob Store Container Name\u003e\u0027 -Identity \u0027SHARED ACCESS SIGNATURE\u0027 -SecurePassword \r\n(ConvertTo-SecureString \u0027\u003cShared Access Token\u003e\u0027 -AsPlainText -Force)\nCreate a credential on Server1 using a SAS token for Backup To URL. Name has to be the full URI for the blob store container that will be the backup target. The SecurePassword will be the Share \r\nAccess Token (SAS) and passed in as a SecureString.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -30469,7 +30520,7 @@
         "CommandName":  "New-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\nPS C:\\\u003e New-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login \r\n[Newlogin] will be removed prior to creation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] \r\nand will be created in a disabled state.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance sql1 -Login domain\\user\nCreates a new Windows Authentication backed login on sql1. The login will be part of the public server role.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\nPS C:\\\u003e New-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -SecurePassword $securePassword -PasswordPolicy -PasswordExpiration\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login \r\n[Newlogin] will be removed prior to creation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] \r\nand will be created in a disabled state.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance sql1 -Login domain\\user\nCreates a new Windows Authentication backed login on sql1. The login will be part of the public server role.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -33204,18 +33255,18 @@
     },
     {
         "Name":  "Remove-DbaDatabase",
-        "Description":  "Tries a bunch of different ways to remove a database or two or more.",
+        "Description":  "Tries a bunch of different ways to remove a user created database or two or more.",
         "Tags":  [
                      "Delete",
                      "Databases"
                  ],
-        "Synopsis":  "Drops a database, hopefully even the really stuck ones.",
+        "Synopsis":  "Drops a user database, hopefully even the really stuck ones.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Remove-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb\nPrompts then removes the database containeddb on SQL Server sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb, mydb\nPrompts then removes the databases containeddb and mydb on SQL Server sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false\nDoes not prompt and swiftly removes containeddb on SQL Server sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance server\\instance -ExcludeSystem | Remove-DbaDatabase\nRemoves all the user databases from server\\instance\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance server\\instance -ExcludeSystem | Remove-DbaDatabase -Confirm:$false\nRemoves all the user databases from server\\instance without any confirmation",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb\nPrompts then removes the database containeddb on SQL Server sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb, mydb\nPrompts then removes the databases containeddb and mydb on SQL Server sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false\nDoes not prompt and swiftly removes containeddb on SQL Server sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance server\\instance | Remove-DbaDatabase\nRemoves all the user databases from server\\instance\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance server\\instance | Remove-DbaDatabase -Confirm:$false\nRemoves all the user databases from server\\instance without any confirmation",
         "Params":  [
                        [
                            "SqlInstance",
@@ -33250,14 +33301,6 @@
                            ""
                        ],
                        [
-                           "IncludeSystemDb",
-                           "Use this switch to disable any kind of verbose messages",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "Silent",
@@ -33282,7 +33325,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-IncludeSystemDb] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDatabase -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e [-IncludeSystemDb] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cDatabase[]\u003e [-IncludeSystemDb] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDatabase -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cDatabase[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDatabaseSafely",
@@ -35355,9 +35398,25 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
                        ]
                    ],
-        "Syntax":  "Reset-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nReset-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Reset-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nReset-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Resolve-DbaNetworkName",
@@ -35552,73 +35611,6 @@
                        ]
                    ],
         "Syntax":  "Restart-DbaService [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-InstanceName \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-Timeout \u003cInt32\u003e] [-Credential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestart-DbaService [-InstanceName \u003cString[]\u003e] [-Type \u003cString[]\u003e] -InputObject \u003cObject[]\u003e [-Timeout \u003cInt32\u003e] [-Credential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "Name":  "Restore-DbaBackupFromDirectory",
-        "Description":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Synopsis":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
-        "Alias":  "Restore-SqlBackupFromDirectory",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Restore-DbaBackupFromDirectory",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the most recent full/differential/logs.\nRequires -Version 3.0",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The SQL Server instance to which you will be restoring the database.",
-                           "ServerInstance,SqlServer",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Path",
-                           "Specifies the full path to the directory that contains the database backups. The SQL Server service must have read access to this path.",
-                           "",
-                           true,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "NoRecovery",
-                           "If this switch is enabled, the database is left in the No Recovery state to enable further backups to be added.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "ReuseSourceFolderStructure",
-                           "If this switch is enabled, the folder structure used on the instance where the backup was made will be recreated. By default, the database files will be restored to the default data and log \r\ndirectories for the instance you\u0027re restoring onto.",
-                           "ReuseFolderStructure",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Force",
-                           "If this switch is enabled, any existing database matching the name of a database being restored will be overwritten.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Syntax":  "Restore-DbaBackupFromDirectory [-SqlInstance] \u003cDbaInstanceParameter\u003e [-Path] \u003cString\u003e [-NoRecovery] [-ReuseSourceFolderStructure] [[-SqlCredential] \u003cPSCredential\u003e] [-Force] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Restore-DbaDatabase",
@@ -38707,13 +38699,13 @@
         "CommandName":  "Set-DbaDbOwner",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaDbOwner",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance localhost\nSets database owner to \u0027sa\u0027 on all databases where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance localhost -TargetLogin DOMAIN\\account\nSets the database owner to DOMAIN\\account on all databases where the owner does not match DOMAIN\\account.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance sqlserver -Database db1, db2\nSets database owner to \u0027sa\u0027 on the db1 and db2 databases if their current owner does not match \u0027sa\u0027.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance localhost\nSets database owner to \u0027sa\u0027 on all databases where the owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance localhost -TargetLogin DOMAIN\\account\nSets the database owner to DOMAIN\\account on all databases where the owner does not match DOMAIN\\account.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbOwner -SqlInstance sqlserver -Database db1, db2\nSets database owner to \u0027sa\u0027 on the db1 and db2 databases if their current owner does not match \u0027sa\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$db = Get-DbaDatabase -SqlInstance localhost -Database db1, db2\nPS C:\\\u003e $db | Set-DbaDbOwner -TargetLogin DOMAIN\\account\nSets database owner to \u0027sa\u0027 on the db1 and db2 databases if their current owner does not match \u0027sa\u0027.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "ServerInstance,SqlServer",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -38739,6 +38731,14 @@
                            "",
                            false,
                            "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
                            ""
                        ],
                        [
@@ -38774,7 +38774,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaDbOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-TargetLogin] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaDbOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-TargetLogin] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaDbQueryStoreOption",
@@ -40527,9 +40527,17 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis command, however, gifts you  with \"sea of red\" exceptions, by default, because it is useful for advanced scripting.\nUsing this switch turns our \"nice by default\" feature on which makes errors into pretty warnings.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Show-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Show-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Show-DbaServerFileSystem",
@@ -44937,7 +44945,7 @@
         "CommandName":  "Update-DbaInstance",
         "Availability":  "Windows only",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -Restart -Confirm:$false -ExtractPath \"C:\\temp\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\r\nExtracts the files in local driver on Server1 C:\\temp.",
         "Params":  [
                        [
                            "ComputerName",
@@ -45028,6 +45036,14 @@
                            "Credssp"
                        ],
                        [
+                           "ExtractPath",
+                           "Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\\temp",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -45052,7 +45068,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaServiceAccount",

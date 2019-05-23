@@ -131,52 +131,47 @@ function New-DbatoolsSupportPackage {
         #endregion Helper functions
     }
     process {
+        $stepCounter = 0
         if ($Pscmdlet.ShouldProcess("Creating a Support Package for diagnosing Dbatools")) {
 
             $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
             $filePathZip = $filePathXml -replace "\.xml$", ".zip"
 
             Write-Message -Level Critical -Message @"
-Gathering information...
 Will write the final output to: $filePathZip
-
-Please submit this file to the team, to help with troubleshooting whatever issue you encountered.
-Be aware that this package contains a lot of information including your input history in the console.
-Please make sure no sensitive data (such as passwords) can be caught this way.
-
-Ideally start a new console, perform the minimal steps required to reproduce the issue, then run this command.
-This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
+Please submit this file to the team, to help with troubleshooting whatever issue you encountered. Be aware that this package contains a lot of information including your input history in the console. Please make sure no sensitive data (such as passwords) can be caught this way.
+Ideally start a new console, perform the minimal steps required to reproduce the issue, then run this command. This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
 "@
 
             $hash = @{ }
-            Write-Message -Level Output -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
             $hash["Messages"] = Get-DbatoolsLog
-            Write-Message -Level Output -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
             $hash["Errors"] = Get-DbatoolsLog -Errors
-            Write-Message -Level Output -Message "Collecting copy of console buffer (what you can see on your console)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting copy of console buffer (what you can see on your console)"
             $hash["ConsoleBuffer"] = Get-ShellBuffer
-            Write-Message -Level Output -Message "Collecting Operating System information (Win32_OperatingSystem)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Operating System information (Win32_OperatingSystem)"
             $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
-            Write-Message -Level Output -Message "Collecting CPU information (Win32_Processor)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting CPU information (Win32_Processor)"
             $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
-            Write-Message -Level Output -Message "Collecting Ram information (Win32_PhysicalMemory)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Ram information (Win32_PhysicalMemory)"
             $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
-            Write-Message -Level Output -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
             $hash["PSVersion"] = $PSVersionTable
-            Write-Message -Level Output -Message "Collecting Input history (Get-History)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Input history (Get-History)"
             $hash["History"] = Get-History
-            Write-Message -Level Output -Message "Collecting list of loaded modules (Get-Module)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded modules (Get-Module)"
             $hash["Modules"] = Get-Module
             # Snapins not supported in Core: https://github.com/PowerShell/PowerShell/issues/6135
             if ($PSVersionTable.PSEdition -ne 'Core') {
-                Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded snapins (Get-PSSnapin)"
                 $hash["SnapIns"] = Get-PSSnapin
             }
-            Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
             $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
 
             if (Test-Bound "Variables") {
-                Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding variables specified for export: $($Variables -join ", ")"
                 $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
             }
 

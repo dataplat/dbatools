@@ -38,7 +38,7 @@ function Convert-DbaMessageTarget {
 
     if ($null -eq $Target) { return }
 
-    $typeName = $Target.GetType().FullName.ToLower()
+    $typeName = $Target.GetType().FullName.ToLowerInvariant()
 
     if ([Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms.ContainsKey($typeName)) {
         $scriptBlock = [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms[$typeName]

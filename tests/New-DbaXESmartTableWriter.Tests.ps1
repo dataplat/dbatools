@@ -12,8 +12,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Creates a smart object" {
+        It "returns the object with all of the correct properties" {
+            $results = New-DbaXESmartReplay -SqlInstance $script:instance2 -Database planning
+            $results.ServerName | Should -Be $script:instance2
+            $results.DatabaseName | Should -be 'planning'
+            $results.Password | Should -Be $null
+            $results.DelaySeconds | Should -Be 0
+        }
+    }
+}

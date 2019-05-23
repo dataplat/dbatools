@@ -128,7 +128,7 @@ function New-DbaDbSnapshot {
 
         function Resolve-SnapshotError($server) {
             $errhelp = ''
-            $CurrentEdition = $server.Edition.toLower()
+            $CurrentEdition = $server.Edition.ToLowerInvariant()
             $CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
             if ($server.Version.Major -lt 9) {
                 $errhelp = 'Not supported before 2005'

@@ -167,20 +167,20 @@ function New-DbaDbDataGeneratorConfig {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a geometry column"
                         continue
                     }
-                    if ($columnobject.DataType.SqlDataType.ToString().ToLower() -eq 'xml') {
+                    if ($columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -eq 'xml') {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is a xml column"
                         continue
                     }
 
                     $dataGenType = $min = $null
                     $columnLength = $columnobject.Datatype.MaximumLength
-                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLower()
+                    $columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLower() -notmatch 'date') {
+                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                         $min = 2
                     }
                     if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLower()
+                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
 
                     # Get the masking type with the synonym
@@ -195,7 +195,7 @@ function New-DbaDbDataGeneratorConfig {
                         $maskingType = $null
                         $maskingSubtype = $null
 
-                        switch ($dataGenType.ToLower()) {
+                        switch ($dataGenType.ToLowerInvariant()) {
                             "firstname" {
                                 $maskingType = "Name"
                                 $maskingSubtype = "Firstname"

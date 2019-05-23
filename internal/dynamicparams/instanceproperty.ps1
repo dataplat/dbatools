@@ -37,15 +37,15 @@ $ScriptBlock = {
         return
     }
 
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLower()]) {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLowerInvariant()]) {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
     }
 
     try {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["instanceproperty"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return

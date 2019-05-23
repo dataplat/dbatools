@@ -222,7 +222,7 @@ function Install-DbaInstance {
         [ValidateSet("Default", "All", "Engine", "Tools", "Replication", "FullText", "DataQuality", "PolyBase", "MachineLearning", "AnalysisServices",
             "ReportingServices", "ReportingForSharepoint", "SharepointAddin", "IntegrationServices", "MasterDataServices", "PythonPackages", "RPackages",
             "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
-        [string]$Feature = "Default",
+        [string[]]$Feature = "Default",
         [ValidateSet("Windows", "Mixed")]
         [string]$AuthenticationMode = "Windows",
         [string]$InstancePath,

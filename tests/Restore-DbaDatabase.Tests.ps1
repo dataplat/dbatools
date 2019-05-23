@@ -373,7 +373,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
             It "The test can run" {
-                Set-TestInconclusive -Message "a 2008R2 is strictly needed"
+                Set-TestInconclusive -Message "a 2016 is strictly needed"
             }
             return
         }
@@ -413,7 +413,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
             It "The test can run" {
-                Set-TestInconclusive -Message "a 2008R2 is strictly needed"
+                Set-TestInconclusive -Message "a 2016 is strictly needed"
             }
             return
         }
