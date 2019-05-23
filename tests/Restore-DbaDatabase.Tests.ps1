@@ -324,7 +324,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.count | Should be 4
         }
         It "Should have restored from "2019-05-02 21:12:27" {
-            $sqlResults.mindt | Should be (get-date ""2019-05-02 21:12:27")
+            $sqlResults.mindt | Should be (get-date "2019-05-02 21:12:27")
         }
         It "Should have restored to 2017-06-01 13:28:43" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
