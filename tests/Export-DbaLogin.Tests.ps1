@@ -44,7 +44,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $null = $server.Query("GRANT SELECT ON sys.databases TO [$login2] WITH GRANT OPTION")
             $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
-        } catch { } # No idea why appveyor can't handle this
+        } catch {
+            $_
+        }
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
