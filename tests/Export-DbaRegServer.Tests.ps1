@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','InputObject','Path','CredentialPersistenceType','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Path', 'CredentialPersistenceType', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -37,29 +37,31 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         $newServer3 = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
     }
-    AfterAll {
-        Get-DbaRegServer -SqlInstance $script:instance2, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $script:instance2, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+    AfterEach {
+        Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
     }
 
-    It -Skip "should create an xml file" {
+    It "should create an xml file" {
         $results = $newServer | Export-DbaRegServer
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.Extension -eq '.xml' | Should -Be $true
     }
 
     It "should create a specific xml file when using Path" {
-        $results2 = $newGroup2 | Export-DbaRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
+        $results2 = $newGroup2 | Export-DbaRegServer -Path C:\temp
         $results2 -is [System.IO.FileInfo] | Should -Be $true
-        $results2.FullName | Should -Be 'C:\temp\dbatoolsci_regserverexport.xml'
+        $results2.FullName | Should -match 'C\:\\temp'
         Get-Content -Path $results2 -Raw | Should -Match dbatoolsci-group1a
     }
 
     It "creates an importable xml file" {
-        $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp\dbatoolsci_regserverexport.xml
+        $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
+        Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         $results4 = Import-DbaRegServer -SqlInstance $script:instance2 -Path $results3
-        $results4.ServerName | Should -Be $newServer3.ServerName
-        $results4.Description | Should -Be $newServer3.Description
+        $newServer3.ServerName | Should -BeIn $results4.ServerName
+        $newServer3.Description | Should -BeIn $results4.Description
     }
 }

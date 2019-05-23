@@ -26,8 +26,8 @@ function Get-DbaRegServer {
     .PARAMETER ExcludeGroup
         Specifies one or more Central Management Server groups to exclude.
 
-    .PARAMETER ExcludeLocal
-        Do not include local registered servers or Azure Data Studio registered servers in results.
+    .PARAMETER IncludeLocal
+        Include local registered servers or Azure Data Studio registered servers in results when specifying SqlInstance.
 
     .PARAMETER Id
         Get server by Id(s)
@@ -100,7 +100,7 @@ function Get-DbaRegServer {
         [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ResolveNetworkName,
-        [switch]$ExcludeLocal,
+        [switch]$IncludeLocal,
         [switch]$EnableException
     )
     begin {
@@ -137,7 +137,7 @@ function Get-DbaRegServer {
         }
 
         # Magic courtesy of Mathias Jessen and David Shifflet
-        if (-not $PSBoundParameters.ExcludeLocal) {
+        if (-not $PSBoundParameters.SqlInstance -or $PSBoundParameters.IncludeLocal) {
             $file = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]::LocalFileStore.DomainInstanceName
             if ($file) {
                 if ((Test-Path -Path $file)) {
