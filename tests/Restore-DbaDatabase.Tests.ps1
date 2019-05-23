@@ -318,13 +318,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2017-06-01 13:22:44") -WarningVariable warnvar -ErrorVariable errvar
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date ""2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
-        It "Should have restored from 2017-06-01 12:59:12" {
-            $sqlResults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        It "Should have restored from "2019-05-02 21:12:27" {
+            $sqlResults.mindt | Should be (get-date ""2019-05-02 21:12:27")
         }
         It "Should have restored to 2017-06-01 13:28:43" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
