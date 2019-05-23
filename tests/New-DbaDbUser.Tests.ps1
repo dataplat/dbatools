@@ -31,7 +31,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Should create the user with login" {
         It "Creates the user" {
-            (New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -Login $userName).Name | Should Be $userName
+            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -Login $userName
+            $results.Name | Should Be $userName
         }
         It "Really created it" {
             (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
@@ -39,13 +40,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Should create the user without login" {
         It "Creates the user" {
-            (New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin).Name | Should Be $userNameWithoutLogin
-        }
-        $results = Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
-        It "Really created it" {
+            $results = New-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
         }
-        It "Don't have Login property" {
+        It "Really created it and don't have login property" {
+            $results = Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
+            $results.Name | Should Be $userNameWithoutLogin
             $results.Login | Should Be ""
         }
     }
