@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolscidb_$(Get-Random)"
-        $userName = "dbatoolscidb_User1"
+        $userName = "dbatoolscidb_UserWithLogin"
         $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
@@ -25,6 +25,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
     }
     AfterAll {
+        $null = Remove-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userNameWithoutLogin -Confirm:$false
         $null = Remove-DbaDbUser -SqlInstance $script:instance1 -Database $dbname -User $userName -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $userName -Confirm:$false
