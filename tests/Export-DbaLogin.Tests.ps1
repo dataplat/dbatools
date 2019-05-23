@@ -13,6 +13,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
+
 <#
 $outputFile = "dbatoolsci_exportdbalogin.sql"
 
