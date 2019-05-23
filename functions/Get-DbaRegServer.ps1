@@ -6,7 +6,7 @@ function Get-DbaRegServer {
     .DESCRIPTION
        Gets list of SQL Server objects stored in local registered groups, azure data studio and central management server.
 
-       Local Registered Servers support alternative authentication but Azure Data Studio and Central Management Studio do not at this time.
+       Local Registered Servers and Azure Data Studio support alternative authentication (excluding MFA) but Central Management Studio does not.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -148,6 +148,9 @@ function Get-DbaRegServer {
                     $servers += $store.DatabaseEngineServerGroup.GetDescendantRegisteredServers()
                     # Azure Reg Servers
                     $azureids = @()
+                    if ($store.AzureDataStudioConnectionStore.Groups) {
+                        $adsconnection = Get-ADSConnection
+                    }
                     foreach ($group in $store.AzureDataStudioConnectionStore.Groups) {
                         $groupname = $group.Name
                         if ($groupname -eq 'ROOT' -or $groupname -eq '') {
@@ -162,10 +165,13 @@ function Get-DbaRegServer {
                             if (-not $connname) {
                                 $connname = $server.Options['server']
                             }
+                            $adsconn = $adsconnection | Where-Object server -eq $server.Options['server']
+
                             $tempserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $tempgroup, $connname
                             $tempserver.Description = $server.Options['Description']
-                            #$tempserver.AuthenticationType = $server.Options['authenticationType']
-                            #$tempserver.ConnectionString = $connstring
+                            if ($adsconn.ConnectionString) {
+                                $tempserver.ConnectionString = $adsconn.ConnectionString
+                            }
                             # update read-only or problematic properties
                             $tempserver | Add-Member -Force -Name ServerName -Value $server.Options['server'] -MemberType NoteProperty
                             $tempserver | Add-Member -Force -Name Id -Value $server.Id -MemberType NoteProperty
