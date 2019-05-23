@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -ItemType Directory $DataFolder -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-    <#
+
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
@@ -365,7 +365,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
-#>
+
     Context "RestoreTime point in time and continue" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
@@ -394,8 +394,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
-        It "Should have restored 2 files" {
-            $results2.count | Should be 2
+        It "Should have restored 4 files" {
+            $results2.count | Should be 4
         }
         It "Should have restored from 02 May 2019 21:00:55" {
             $sqlResults2.mindt | Should be (get-date "02 May 2019 21:00:55")
