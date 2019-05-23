@@ -331,9 +331,20 @@ function Connect-DbaInstance {
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
         if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
 
+        if ($true) {
+            if (([enum]::GetValues('System.Data.SqlClient.SqlAuthenticationMethod') -notcontains 'ActiveDirectoryInteractive')) {
+                Stop-Function ".NET version 4.7.2 required to use AccessTokens and MFA. Please download it at https://dotnet.microsoft.com/download/dotnet-framework"
+                return
+            }
+            $configpath = "$script:PSModuleRoot\bin\app.config"
+            [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
+            Add-Type -AssemblyName System.Configuration
+            [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
+            [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
+            ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
+        }
     }
     process {
-
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
