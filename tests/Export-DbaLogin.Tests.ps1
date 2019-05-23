@@ -66,7 +66,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     $output = Export-DbaLogin -SqlInstance $script:instance2 -WarningAction SilentlyContinue
     It "Doesn't filter specific databases" {
-        ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 1
+        ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 0
     }
 
     It "Exports disabled logins" {
