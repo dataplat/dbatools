@@ -58,7 +58,6 @@ function Invoke-DbaCycleErrorLog {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('instance', 'agent')]
         [string]$Type,

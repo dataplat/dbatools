@@ -44,7 +44,6 @@ function Get-DbaDefaultPath {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [switch]$EnableException

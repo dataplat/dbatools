@@ -146,7 +146,6 @@ function Get-DbaBackupHistory {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]
         $SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

@@ -55,7 +55,6 @@ function Get-DbaDbMailLog {
     param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,

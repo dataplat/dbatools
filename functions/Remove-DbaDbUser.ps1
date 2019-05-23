@@ -76,7 +76,6 @@ function Remove-DbaDbUser {
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'User')]
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = 'User')]
         [object[]]$Database,

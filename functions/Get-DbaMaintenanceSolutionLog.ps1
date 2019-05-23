@@ -73,7 +73,6 @@ function Get-DbaMaintenanceSolutionLog {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck')]
         [string[]]$LogType = 'IndexOptimize',

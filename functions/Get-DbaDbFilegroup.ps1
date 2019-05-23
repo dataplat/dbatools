@@ -70,7 +70,6 @@ function Get-DbaDbFileGroup {
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [parameter(ValueFromPipeline)]

@@ -51,7 +51,6 @@ function Get-DbaPbmObjectSet {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$ObjectSet,
         [Parameter(ValueFromPipeline)]

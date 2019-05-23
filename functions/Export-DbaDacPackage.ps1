@@ -89,7 +89,6 @@ function Export-DbaDacPackage {
     (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

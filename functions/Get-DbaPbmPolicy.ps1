@@ -59,7 +59,6 @@ function Get-DbaPbmPolicy {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Policy,
         [string[]]$Category,

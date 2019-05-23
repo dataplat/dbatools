@@ -68,7 +68,6 @@ function Remove-DbaLogin {
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
         [string[]]$Login,

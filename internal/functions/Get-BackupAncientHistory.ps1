@@ -27,7 +27,6 @@ function Get-BackupAncientHistory {
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [object[]]$Database,
         [string]$FileNameStub,

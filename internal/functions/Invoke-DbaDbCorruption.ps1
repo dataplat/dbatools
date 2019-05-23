@@ -55,7 +55,6 @@ function Invoke-DbaDbCorruption {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [parameter(Mandatory)]

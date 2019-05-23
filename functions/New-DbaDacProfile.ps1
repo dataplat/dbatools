@@ -69,7 +69,6 @@ function New-DbaDacProfile {
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [string[]]$Database,

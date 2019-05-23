@@ -106,7 +106,6 @@ function Test-DbaBuild {
         [switch] $Latest,
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Update,
         [switch]$Quiet,

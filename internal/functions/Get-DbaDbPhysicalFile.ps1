@@ -25,7 +25,6 @@ function Get-DbaDbPhysicalFile {
     param(
         [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential
     )

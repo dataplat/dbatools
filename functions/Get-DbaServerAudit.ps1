@@ -50,7 +50,6 @@ function Get-DbaServerAudit {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Audit,
         [string[]]$ExcludeAudit,

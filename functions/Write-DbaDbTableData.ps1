@@ -157,7 +157,6 @@ function Write-DbaDbTableData {
         [ValidateNotNull()]
         [DbaInstanceParameter]$SqlInstance,
         [ValidateNotNull()]
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object]$Database,
         [Parameter(Mandatory, ValueFromPipeline)]

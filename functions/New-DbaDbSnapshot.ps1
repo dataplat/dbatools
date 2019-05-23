@@ -94,7 +94,6 @@ function New-DbaDbSnapshot {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

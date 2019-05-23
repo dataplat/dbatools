@@ -51,7 +51,6 @@ function Get-DbaPbmCategory {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Category,
         [Parameter(ValueFromPipeline)]

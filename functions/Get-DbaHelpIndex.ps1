@@ -121,7 +121,6 @@ function Get-DbaHelpIndex {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

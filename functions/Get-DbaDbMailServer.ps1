@@ -62,7 +62,6 @@ function Get-DbaDbMailServer {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Alias("Name")]
         [string[]]$Server,

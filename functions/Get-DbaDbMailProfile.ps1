@@ -62,7 +62,6 @@ function Get-DbaDbMailProfile {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Profile,
         [string[]]$ExcludeProfile,

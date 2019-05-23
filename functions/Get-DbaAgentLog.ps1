@@ -52,7 +52,6 @@ function Get-DbaAgentLog {
     param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [ValidateRange(0, 9)]

@@ -62,7 +62,6 @@ function Find-DbaDatabase {
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
         [string]$Property = 'Name',

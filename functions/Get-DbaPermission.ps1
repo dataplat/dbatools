@@ -72,7 +72,6 @@ function Get-DbaPermission {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

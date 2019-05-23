@@ -96,7 +96,6 @@ function Stop-DbaProcess {
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,

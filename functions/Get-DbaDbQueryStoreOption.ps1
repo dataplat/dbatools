@@ -57,7 +57,6 @@ function Get-DbaDbQueryStoreOption {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [object[]]$Database,

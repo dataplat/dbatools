@@ -108,7 +108,6 @@ function Publish-DbaDacPackage {
     [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,

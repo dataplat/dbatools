@@ -66,7 +66,6 @@ function Invoke-DbaXeReplay {
     param (
         [Parameter(Mandatory)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Event = @('sql_batch_completed', 'rcp_completed'),

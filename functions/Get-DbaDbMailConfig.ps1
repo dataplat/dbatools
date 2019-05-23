@@ -59,7 +59,6 @@ function Get-DbaDbMailConfig {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Alias("Config", "ConfigName")]
         [string[]]$Name,

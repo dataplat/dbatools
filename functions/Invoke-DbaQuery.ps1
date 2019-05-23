@@ -105,7 +105,6 @@ function Invoke-DbaQuery {
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string]$Database,
         [Parameter(Mandatory, ParameterSetName = "Query")]

@@ -66,7 +66,6 @@ function Repair-DbaServerName {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$AutoFix,
         [switch]$Force,

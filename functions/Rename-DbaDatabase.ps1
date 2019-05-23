@@ -199,7 +199,6 @@ function Rename-DbaDatabase {
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [parameter(ParameterSetName = "Server")]

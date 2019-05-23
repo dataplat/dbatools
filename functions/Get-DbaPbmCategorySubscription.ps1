@@ -45,7 +45,6 @@ function Get-DbaPbmCategorySubscription {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Dmf.PolicyStore[]]$InputObject,

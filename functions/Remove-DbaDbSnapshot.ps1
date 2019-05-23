@@ -96,7 +96,6 @@ function Remove-DbaDbSnapshot {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,

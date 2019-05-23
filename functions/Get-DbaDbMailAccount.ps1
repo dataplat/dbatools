@@ -62,7 +62,6 @@ function Get-DbaDbMailAccount {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Account,
         [string[]]$ExcludeAccount,

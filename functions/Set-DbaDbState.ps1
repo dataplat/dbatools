@@ -120,7 +120,6 @@ function Set-DbaDbState {
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [object[]]$Database,

@@ -58,7 +58,6 @@ function Get-DbaAgentJobCategory {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,

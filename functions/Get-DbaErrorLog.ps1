@@ -87,7 +87,6 @@ function Get-DbaErrorLog {
     param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateRange(0, 99)]
         [int[]]$LogNumber,

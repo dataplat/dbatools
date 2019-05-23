@@ -121,7 +121,6 @@ function Export-DbaLogin {
     param (
         [parameter()]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [object[]]$Login,

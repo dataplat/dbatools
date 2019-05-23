@@ -77,7 +77,6 @@ function Remove-DbaDbRoleMember {
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Role,

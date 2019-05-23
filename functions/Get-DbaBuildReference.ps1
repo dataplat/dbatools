@@ -97,7 +97,6 @@ function Get-DbaBuildReference {
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
 

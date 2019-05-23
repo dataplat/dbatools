@@ -78,7 +78,6 @@ function Get-DbaProcess {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,
