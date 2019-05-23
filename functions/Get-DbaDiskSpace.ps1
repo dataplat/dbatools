@@ -92,7 +92,6 @@ function Get-DbaDiskSpace {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
@@ -103,7 +102,7 @@ function Get-DbaDiskSpace {
         [Alias('Detailed', 'AllDrives')]
         [switch]$CheckFragmentation,
         [switch]$Force,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

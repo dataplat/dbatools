@@ -84,7 +84,7 @@ function Set-DbaAgentAlert {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Alert[]]$InputObject,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

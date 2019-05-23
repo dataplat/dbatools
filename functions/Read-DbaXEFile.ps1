@@ -54,7 +54,7 @@ function Read-DbaXEFile {
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
     process {

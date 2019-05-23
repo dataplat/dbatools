@@ -77,7 +77,7 @@ function Install-DbaWhoIsActive {
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
         [string]$LocalFile,
         [object]$Database,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException,
         [switch]$Force
     )

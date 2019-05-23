@@ -156,7 +156,7 @@ function Invoke-DbaDiagnosticQuery {
         [string]$OutputPath,
         [switch]$ExportQueries,
 
-        [switch][Alias('Silent')]
+        [switch]
         [switch]$EnableException
     )
 

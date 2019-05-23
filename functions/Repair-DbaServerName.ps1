@@ -70,7 +70,7 @@ function Repair-DbaServerName {
         [PSCredential]$SqlCredential,
         [switch]$AutoFix,
         [switch]$Force,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

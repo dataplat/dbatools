@@ -60,7 +60,7 @@ function Set-DbaPrivilege {
         [Parameter(Mandatory)]
         [ValidateSet('IFI', 'LPIM', 'BatchLogon')]
         [string[]]$Type,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 

@@ -58,7 +58,7 @@ function Update-ServiceStatus {
         [string[]]$Action,
         [int]$Timeout = 60,
         [PSCredential] $Credential,
-        [bool][Alias('Silent')]$EnableException
+        [bool]$EnableException
     )
     begin {
         $callStack = Get-PSCallStack

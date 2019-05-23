@@ -49,7 +49,7 @@ function Clear-DbaConnectionPool {
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]
+        [switch]
         $EnableException
     )
 
