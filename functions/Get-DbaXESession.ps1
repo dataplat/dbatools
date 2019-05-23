@@ -56,11 +56,6 @@ function Get-DbaXESession {
         [object[]]$Session,
         [switch]$EnableException
     )
-
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
-    }
-
     process {
 
         foreach ($instance in $SqlInstance) {

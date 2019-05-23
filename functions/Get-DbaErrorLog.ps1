@@ -96,9 +96,6 @@ function Get-DbaErrorLog {
         [datetime]$Before,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLog
-    }
     process {
         foreach ($instance in $SqlInstance) {
 

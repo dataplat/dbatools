@@ -206,9 +206,4 @@ function Get-DbaDbSpace {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseFreeSpace
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncludeSystemDBs
-    }
 }

@@ -52,7 +52,6 @@ function Get-DbaTrace {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
 
         # A Microsoft.SqlServer.Management.Trace.TraceServer class exists but is buggy
         # and requires x86 PowerShell. So we'll go with T-SQL.

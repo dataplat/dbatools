@@ -86,8 +86,6 @@ function Get-DbaDbRestoreHistory {
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -EnableException:$false -Parameter 'Force'
-
         if ($Since -ne $null) {
             $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
         }

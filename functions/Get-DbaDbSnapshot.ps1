@@ -104,7 +104,4 @@ function Get-DbaDbSnapshot {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSnapshot
-    }
 }

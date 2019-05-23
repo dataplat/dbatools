@@ -71,15 +71,11 @@ function Get-DbaTcpPort {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             if ($All) {
