@@ -91,9 +91,6 @@ function Set-DbaAgentJobOwner {
         [string]$Login,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Set-DbaJobOwner
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

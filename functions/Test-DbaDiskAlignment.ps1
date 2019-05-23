@@ -81,8 +81,6 @@ function Test-DbaDiskAlignment {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter 'Detailed'
-
         $sessionoption = New-CimSessionOption -Protocol DCom
 
         function Get-DiskAlignment {

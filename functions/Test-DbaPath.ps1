@@ -96,10 +96,5 @@ function Test-DbaPath {
                 }
             }
         }
-
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlPath
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlPath
     }
 }

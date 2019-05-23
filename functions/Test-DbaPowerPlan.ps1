@@ -59,13 +59,10 @@ function Test-DbaPowerPlan {
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
         [pscustomobject]$InputObject,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $bpPowerPlan = [PSCustomObject]@{
             InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
             ElementName = $null

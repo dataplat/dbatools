@@ -71,12 +71,10 @@ function Test-DbaAgentJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         #connect to the instance and set return array empty
         $return = @()
     }

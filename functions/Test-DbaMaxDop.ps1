@@ -66,13 +66,10 @@ function Test-DbaMaxDop {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
         $notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
         $notesDopZero = "This is the default setting. Consider using the recommended value instead."

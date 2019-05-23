@@ -63,8 +63,6 @@ function New-DbaDirectory {
         [switch]$EnableException
     )
 
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlDirectory
-
     foreach ($instance in $SqlInstance) {
         try {
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential

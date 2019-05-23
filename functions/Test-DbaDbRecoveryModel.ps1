@@ -75,13 +75,9 @@ function Test-DbaDbRecoveryModel {
         [PSCredential]$SqlCredential,
         [validateSet("Full", "Simple", "Bulk_Logged")]
         [object]$RecoveryModel,
-        [switch]$Detailed,
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Test-DbaFullRecoveryModel
-
         if (Test-Bound -ParameterName RecoveryModel -Not) {
             $RecoveryModel = "Full"
         }
@@ -155,8 +151,5 @@ function Test-DbaDbRecoveryModel {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaRecoveryModel
     }
 }

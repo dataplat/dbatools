@@ -65,13 +65,10 @@ function Test-DbaConnectionAuthScheme {
         [PSCredential]$SqlCredential,
         [switch]$Kerberos,
         [switch]$Ntlm,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                             SERVERPROPERTY('ServerName') AS SqlInstance,

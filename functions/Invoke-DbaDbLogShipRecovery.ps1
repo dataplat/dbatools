@@ -323,7 +323,4 @@ function Invoke-DbaDbLogShipRecovery {
             $stepCounter = 0
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
-    }
 }

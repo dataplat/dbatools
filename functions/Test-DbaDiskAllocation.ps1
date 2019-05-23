@@ -72,13 +72,10 @@ function Test-DbaDiskAllocation {
         [switch]$NoSqlCheck,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sessionoptions = New-CimSessionOption -Protocol DCOM
 
         function Get-AllDiskAllocation {

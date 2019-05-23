@@ -674,7 +674,5 @@ function Remove-DbaDatabaseSafely {
             $Duration = $End - $start
             Write-Message -Level Verbose -Message "Script Duration: $Duration."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlDatabaseSafely
     }
 }

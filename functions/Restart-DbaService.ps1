@@ -142,7 +142,5 @@ function Restart-DbaService {
         } else {
             Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Restart-DbaSqlService
     }
 }

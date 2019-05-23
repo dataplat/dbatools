@@ -104,7 +104,4 @@ function Remove-DbaRegServer {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServer
-    }
 }

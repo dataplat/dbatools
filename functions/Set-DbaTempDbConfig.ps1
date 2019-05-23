@@ -244,8 +244,4 @@ function Set-DbaTempdbConfig {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-SqlTempDbConfiguration
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaTempDbConfiguration
-    }
 }

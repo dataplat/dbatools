@@ -321,7 +321,4 @@ function New-DbaDbSnapshot {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseSnapshot
-    }
 }

@@ -190,7 +190,4 @@ function Restore-DbaDbSnapshot {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
-    }
 }

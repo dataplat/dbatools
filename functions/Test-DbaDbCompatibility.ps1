@@ -66,13 +66,8 @@ function Test-DbaDbCompatibility {
         [PSCredential]$Credential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$Detailed,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -105,8 +100,5 @@ function Test-DbaDbCompatibility {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCompatibility
     }
 }

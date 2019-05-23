@@ -61,9 +61,6 @@ function Remove-DbaDbCertificate {
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseCertificate
-    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database

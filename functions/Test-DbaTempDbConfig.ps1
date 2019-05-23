@@ -62,12 +62,8 @@ function Test-DbaTempdbConfig {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -199,9 +195,5 @@ function Test-DbaTempdbConfig {
             }
             Write-Message -Level Verbose -Message "Data File Size Equal evaluated."
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlTempDbConfiguration
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaTempDbConfiguration
     }
 }

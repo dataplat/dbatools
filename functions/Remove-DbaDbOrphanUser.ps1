@@ -302,8 +302,4 @@ function Remove-DbaDbOrphanUser {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-SqlOrphanUser
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-DbaOrphanUser
-    }
 }

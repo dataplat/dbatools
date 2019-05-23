@@ -137,17 +137,12 @@ function Invoke-DbaDbShrink {
         [string]$FileType = "All",
         [int]$StepSize,
         [int]$StatementTimeout = 0,
-        [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
         [switch]$EnableException
     )
 
     begin {
-        if ($LogsOnly) {
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
-            $FileType = 'Log'
-        }
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
@@ -327,8 +322,5 @@ function Invoke-DbaDbShrink {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }
