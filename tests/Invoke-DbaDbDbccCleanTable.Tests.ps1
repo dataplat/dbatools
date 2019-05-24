@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','Object','BatchSize','NoInformationalMessages','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'BatchSize', 'NoInformationalMessages', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -41,7 +41,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         It "returns correct results" {
             $result.Database -eq 'tempdb' | Should Be $true
             $result.Object -eq 'dbo.dbatoolct_example' | Should Be $true
-            $result.Output.Substring(0,25) -eq 'DBCC execution completed.' | Should Be $true
+            $result.Output.Substring(0, 25) -eq 'DBCC execution completed.' | Should Be $true
         }
     }
 
@@ -50,7 +50,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
         It "returns results for table" {
             $result.Cmd -eq "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example', 1000)" | Should Be $true
-            $result.Output.Substring(0,25) -eq 'DBCC execution completed.' | Should Be $true
+            $result.Output.Substring(0, 25) -eq 'DBCC execution completed.' | Should Be $true
         }
     }
 
@@ -63,5 +63,3 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
     }
 }
-
-
