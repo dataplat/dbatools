@@ -42,9 +42,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results.LastGoodCheckDb -is [datetime] | Should Be $true
     }
 
+    $server = Connect-DbaInstance -SqlInstance $script:instance1
+    $results = $server | Get-DbaLastGoodCheckDb -Database $dbname, master
+    It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
+        ($results).Count -eq 2 | Should Be $true
+    }
+
     $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, master
     $results = $db | Get-DbaLastGoodCheckDb
-    It "LastGoodCheckDb accepts piped input" {
+    It "LastGoodCheckDb accepts piped input from Get-DbaDatabase" {
         ($results).Count -eq 2 | Should Be $true
     }
 }
