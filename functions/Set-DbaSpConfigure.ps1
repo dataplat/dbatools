@@ -69,7 +69,6 @@ function Set-DbaSpConfigure {
        #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Alias("NewValue", "NewConfig")]

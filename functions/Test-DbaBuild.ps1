@@ -105,13 +105,11 @@ function Test-DbaBuild {
         [string]$MaxBehind,
         [switch] $Latest,
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Update,
         [switch]$Quiet,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -270,8 +268,5 @@ function Test-DbaBuild {
                 $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }

@@ -53,7 +53,6 @@ function Export-DbaCredential {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$Identity,
         [PSCredential]$SqlCredential,

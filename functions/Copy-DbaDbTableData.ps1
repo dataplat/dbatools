@@ -155,7 +155,6 @@ function Copy-DbaDbTableData {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [DbaInstanceParameter[]]$Destination,
@@ -419,8 +418,5 @@ function Copy-DbaDbTableData {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaTableData
     }
 }

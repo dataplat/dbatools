@@ -54,15 +54,12 @@ function Get-DbaDbMailLog {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,
         [ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
         [string[]]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

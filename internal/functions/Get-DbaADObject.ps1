@@ -89,7 +89,6 @@ function Get-DbaADObject {
 
         [PSCredential]$Credential,
         [switch]$SearchAllDomains,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

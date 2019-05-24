@@ -62,7 +62,6 @@ function Watch-DbaDbLogin {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [object]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",
@@ -73,7 +72,6 @@ function Watch-DbaDbLogin {
 
         # File with one server per line
         [string]$ServersFromFile,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -153,8 +151,5 @@ function Watch-DbaDbLogin {
                 Write-Message -Level Verbose -Message "No data returned for $instance."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Watch-SqlDbLogin
     }
 }

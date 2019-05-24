@@ -79,7 +79,6 @@ function New-DbaCredential {
     [CmdletBinding(SupportsShouldProcess)] #, ConfirmImpact = "High"
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Name = $Identity,

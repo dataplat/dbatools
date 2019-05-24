@@ -62,7 +62,6 @@ function Move-DbaRegServer {
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
@@ -115,8 +114,5 @@ function Move-DbaRegServer {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServer
     }
 }

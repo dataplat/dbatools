@@ -69,20 +69,13 @@ function Get-DbaTcpPort {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             if ($All) {

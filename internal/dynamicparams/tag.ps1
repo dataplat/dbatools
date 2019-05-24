@@ -13,7 +13,7 @@ $ScriptBlock = {
 
     # Hack till we get this working
     function New-CompletionResult {
-        param ([Parameter(Position = 0, ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
+        param ([Parameter(ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
             [ValidateNotNullOrEmpty()]
             [string]
             $CompletionText,

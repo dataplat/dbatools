@@ -92,7 +92,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $obj.PSObject.TypeNames.Clear()
             $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
             return $obj
-        } #mock connect-sqlserver
+        } #mock connect-SqlInstance
         Context "Return values" {
 
             Mock Get-DbaAgentJobOutputFile -MockWith {

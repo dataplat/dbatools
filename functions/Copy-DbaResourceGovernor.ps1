@@ -80,7 +80,6 @@ function Copy-DbaResourceGovernor {
         [object[]]$ResourcePool,
         [object[]]$ExcludeResourcePool,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -359,8 +358,5 @@ function Copy-DbaResourceGovernor {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlResourceGovernor
     }
 }

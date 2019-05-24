@@ -137,33 +137,27 @@ function Expand-DbaDbLogFile {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
         [parameter(Position = 1, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Position = 3)]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,
         [parameter(Position = 5, Mandatory)]
-        [Alias('TargetLogSizeMB')]
         [int]$TargetLogSize,
         [parameter(Position = 6)]
-        [Alias('IncrementSizeMB')]
         [int]$IncrementSize = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
         [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
         [switch]$ShrinkLogFile,
         [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory)]
-        [Alias('ShrinkSizeMB')]
         [int]$ShrinkSize,
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
         [switch]$ExcludeDiskSpaceValidation,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -509,10 +503,5 @@ function Expand-DbaDbLogFile {
 
     end {
         Write-Message -Level Verbose -Message "Process finished $((Get-Date) - ($initialTime))"
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter TargetLogSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncrementSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-DbaTLogResponsibly
     }
 }

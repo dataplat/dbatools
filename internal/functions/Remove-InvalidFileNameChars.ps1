@@ -3,7 +3,7 @@ Function Remove-InvalidFileNameChars {
         [Parameter(Mandatory = $true,
             Position = 0,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName)]
         [String]$Name
     )
 

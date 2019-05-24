@@ -108,14 +108,12 @@ function Get-DbaSsisEnvironmentVariable {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Environment,
         [object[]]$EnvironmentExclude,
         [object[]]$Folder,
         [object[]]$FolderExclude,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

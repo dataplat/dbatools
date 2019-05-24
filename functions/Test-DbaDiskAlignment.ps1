@@ -74,7 +74,6 @@ function Test-DbaDiskAlignment {
     #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -82,8 +81,6 @@ function Test-DbaDiskAlignment {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter 'Detailed'
-
         $sessionoption = New-CimSessionOption -Protocol DCom
 
         function Get-DiskAlignment {

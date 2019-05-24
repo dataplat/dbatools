@@ -67,7 +67,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-sqlserver
+            } #mock connect-SqlInstance
             It "Gets only steps with output files" {
                 $Results = @()
                 $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName'

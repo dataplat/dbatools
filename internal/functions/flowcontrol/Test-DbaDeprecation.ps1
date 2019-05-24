@@ -77,7 +77,6 @@ function Test-DbaDeprecation {
         $CustomMessage,
 
         [bool]
-        [Alias('Silent')]
         $EnableException = $EnableException
     )
 

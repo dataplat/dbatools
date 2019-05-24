@@ -81,7 +81,6 @@ function Copy-DbaLinkedServer {
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -275,8 +274,5 @@ function Copy-DbaLinkedServer {
             # Magic happens here
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
     }
 }

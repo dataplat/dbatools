@@ -94,7 +94,6 @@ function Invoke-DbaDbUpgrade {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -107,7 +106,6 @@ function Invoke-DbaDbUpgrade {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -273,8 +271,5 @@ function Invoke-DbaDbUpgrade {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }

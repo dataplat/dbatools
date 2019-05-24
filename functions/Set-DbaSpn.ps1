@@ -81,7 +81,6 @@ function Set-DbaSpn {
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [switch]$NoDelegation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

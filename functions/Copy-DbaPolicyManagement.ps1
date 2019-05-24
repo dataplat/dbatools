@@ -95,7 +95,6 @@ function Copy-DbaPolicyManagement {
         [object[]]$Condition,
         [object[]]$ExcludeCondition,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -328,9 +327,5 @@ function Copy-DbaPolicyManagement {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlPolicyManagement
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlPolicyManagement
     }
 }

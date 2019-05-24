@@ -72,14 +72,12 @@ function Install-DbaWhoIsActive {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
         [string]$LocalFile,
         [object]$Database,
-        [switch][Alias('Silent')]
-        $EnableException,
+        [switch]$EnableException,
         [switch]$Force
     )
 
@@ -245,6 +243,5 @@ function Install-DbaWhoIsActive {
         if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
             Get-Item $sqlfile | Remove-Item
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
     }
 }

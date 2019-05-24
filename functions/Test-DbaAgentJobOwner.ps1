@@ -64,7 +64,6 @@ function Test-DbaAgentJobOwner {
     [OutputType('System.Object[]')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
@@ -72,13 +71,10 @@ function Test-DbaAgentJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         #connect to the instance and set return array empty
         $return = @()
     }

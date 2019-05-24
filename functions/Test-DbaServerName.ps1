@@ -66,20 +66,11 @@ function Test-DbaServerName {
     [OutputType([System.Collections.ArrayList])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
-        [Alias("NoWarning")]
         [switch]$ExcludeSsrs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoWarning
-    }
     process {
 
         foreach ($instance in $SqlInstance) {

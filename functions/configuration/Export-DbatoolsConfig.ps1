@@ -56,11 +56,11 @@ function Export-DbatoolsConfig
 #>
     [CmdletBinding(DefaultParameterSetName = 'FullName')]
     Param (
-        [Parameter(ParameterSetName = "FullName", Position = 0, Mandatory = $true)]
+        [Parameter(ParameterSetName = "FullName", Mandatory = $true)]
         [string]
         $FullName,
         
-        [Parameter(ParameterSetName = "Module", Position = 0, Mandatory = $true)]
+        [Parameter(ParameterSetName = "Module", Mandatory = $true)]
         [string]
         $Module,
         
@@ -68,7 +68,7 @@ function Export-DbatoolsConfig
         [string]
         $Name = "*",
         
-        [Parameter(ParameterSetName = "Config", Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]
         $Config,
         
@@ -93,8 +93,7 @@ function Export-DbatoolsConfig
         [switch]
         $SkipUnchanged,
         
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
     
     begin

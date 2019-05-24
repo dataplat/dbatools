@@ -64,7 +64,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-sqlserver
+            } #mock connect-SqlInstance
 
             It "Honors the Job parameter" {
                 $Results = @()

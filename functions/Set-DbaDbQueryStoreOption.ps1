@@ -92,12 +92,9 @@ function Set-DbaDbQueryStoreOption {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -111,7 +108,6 @@ function Set-DbaDbQueryStoreOption {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -214,8 +210,5 @@ function Set-DbaDbQueryStoreOption {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDbQueryStoreOptions
     }
 }

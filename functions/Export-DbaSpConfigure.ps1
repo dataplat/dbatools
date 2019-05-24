@@ -65,7 +65,6 @@ function Export-DbaSpConfigure {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -137,10 +136,7 @@ function Export-DbaSpConfigure {
             Get-ChildItem -Path $filepath
         }
     }
-
     end {
         Write-Message -Level Verbose -Message "Server configuration export finished"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }

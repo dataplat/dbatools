@@ -88,18 +88,14 @@ function Remove-DbaDbOrphanUser {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [object[]]$User,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -305,9 +301,5 @@ function Remove-DbaDbOrphanUser {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-SqlOrphanUser
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Remove-DbaOrphanUser
     }
 }

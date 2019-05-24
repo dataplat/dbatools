@@ -155,7 +155,4 @@ function Backup-DbaDbMasterKey {
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Backup-DbaDatabaseMasterKey
-    }
 }

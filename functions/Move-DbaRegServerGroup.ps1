@@ -58,7 +58,6 @@ function Move-DbaRegServerGroup {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Group,
@@ -115,8 +114,5 @@ function Move-DbaRegServerGroup {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServerGroup
     }
 }
