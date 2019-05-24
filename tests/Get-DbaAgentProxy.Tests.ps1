@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Proxy','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Proxy', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -14,14 +14,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll{
+    BeforeAll {
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         $tUserName = "dbatoolsci_proxytest"
         New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
         New-DbaCredential -SqlInstance $script:instance2 -Name "$tUserName" -Identity "$env:COMPUTERNAME\$tUserName" -Password $tPassword
         New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIG -ProxyCredential "$tUserName"
     }
-    Afterall{
+    Afterall {
         $tUserName = "dbatoolsci_proxytest"
         Remove-LocalUser -Name $tUserName
         $credential = Get-DbaCredential -SqlInstance $script:instance2 -Name $tUserName

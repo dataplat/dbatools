@@ -38,7 +38,7 @@ function Get-DbaPowerPlan {
 
         Gets the Power Plan settings for sql2017 using an alternative credential
 
-       #>
+    #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,

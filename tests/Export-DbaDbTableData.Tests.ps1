@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             INSERT dbo.dbatoolsci_example
             SELECT top 10 1
             FROM sys.objects")
-         $null = $db.Query("Select * into dbatoolsci_temp from sys.databases")
+        $null = $db.Query("Select * into dbatoolsci_temp from sys.databases")
     }
     AfterAll {
         try {
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     It "exports the table data" {
         $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped =  [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
         "$results" | Should -match $escaped
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     It "supports piping more than one table" {
         $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped =  [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
         "$results" | Should -match $escaped
         "$results" | Should -match $secondescaped

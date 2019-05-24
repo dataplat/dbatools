@@ -172,8 +172,8 @@ function Test-DbaDiskAllocation {
 
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($computer in $ComputerName) {
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential

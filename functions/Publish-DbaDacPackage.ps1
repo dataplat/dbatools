@@ -92,7 +92,7 @@ function Publish-DbaDacPackage {
     .EXAMPLE
         PS C:\> $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
         PS C:\> Publish-DbaDacPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc -Confirm
-    
+
         Publishes the dacpac using a specific dacfx library. Prompts for confirmation.
 
     .EXAMPLE

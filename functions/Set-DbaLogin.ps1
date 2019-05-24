@@ -338,7 +338,7 @@ function Set-DbaLogin {
                         }
                     }
                 }
-                
+
                 # Set the default database
                 if (Test-Bound -ParameterName 'DefaultDatabase') {
                     if ($l.DefaultDatabase -eq $DefaultDatabase) {

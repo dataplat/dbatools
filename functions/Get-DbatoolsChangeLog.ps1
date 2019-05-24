@@ -34,7 +34,7 @@ function Get-DbatoolsChangeLog {
         Get-DbatoolsChangeLog -Local
 
         Returns the content from changelog.md
-#>
+    #>
     [CmdletBinding()]
     param (
         [switch]$Local,
