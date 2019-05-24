@@ -20,9 +20,6 @@ function Get-DbaDiskSpace {
         This parameter has been deprecated and will be removed in 1.0.0
         All properties previously generated through this command are present at the same time, but hidden by default.
 
-    .PARAMETER CheckForSql
-        If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
-
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -93,7 +90,6 @@ function Get-DbaDiskSpace {
         [PSCredential]$Credential,
         [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
         [string]$Unit = 'GB',
-        [switch]$CheckForSql,
         [PSCredential]$SqlCredential,
         [string[]]$ExcludeDrive,
         [switch]$CheckFragmentation,
@@ -129,44 +125,6 @@ function Get-DbaDiskSpace {
                 Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
             }
 
-            if ($CheckForSql) {
-                try {
-                    $sqlServices = Get-DbaService -ComputerName $computer -Type Engine
-                } catch {
-                    Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
-                }
-
-                Write-Message -Level Verbose -Message "Instances found on $($computer): $($sqlServices.InstanceName.Count)"
-                if ($sqlServices.InstanceName.Count -gt 0) {
-                    foreach ($sqlService in $sqlServices) {
-                        if ($sqlService.InstanceName -eq "MSSQLSERVER") {
-                            $instanceName = $sqlService.ComputerName
-                        } else {
-                            $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
-                        }
-                        Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
-                        try {
-                            $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
-                            if ($server.Version.Major -lt 9) {
-                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sysaltfiles"
-                            } else {
-                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sys.master_files"
-                            }
-                            $results = $server.Query($sql)
-                            if ($results.SqlDisk.Count -gt 0) {
-                                foreach ($sqlDisk in $results.SqlDisk) {
-                                    if (-not $sqlDisks.Contains($sqlDisk)) {
-                                        $null = $sqlDisks.Add($sqlDisk)
-                                    }
-                                }
-                            }
-                        } catch {
-                            Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
-                        }
-                    }
-                }
-            }
-
             foreach ($disk in $disks) {
                 if ($disk.Name -in $ExcludeDrive) {
                     continue
@@ -188,16 +146,6 @@ function Get-DbaDiskSpace {
                 $info.FileSystem = $disk.FileSystem
                 $info.Type = $disk.DriveType
 
-                if ($CheckForSql) {
-                    $drivePath = $disk.Name
-                    $info.IsSqlDisk = $false
-                    foreach ($sqlDisk in $sqlDisks) {
-                        if ($sqlDisk -like ($drivePath + '*')) {
-                            $info.IsSqlDisk = $true
-                            break
-                        }
-                    }
-                }
                 $info
             }
         }
