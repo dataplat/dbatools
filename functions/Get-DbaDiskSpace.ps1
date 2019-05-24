@@ -29,9 +29,6 @@ function Get-DbaDiskSpace {
     .PARAMETER ExcludeDrive
         Filter out drives - format is C:\
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
-
     .PARAMETER CheckFragmentation
         If this switch is enabled, fragmentation of all filesystems will be checked.
 

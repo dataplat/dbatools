@@ -25,9 +25,6 @@ function Test-DbaDbRecoveryModel {
     .PARAMETER RecoveryModel
         Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.

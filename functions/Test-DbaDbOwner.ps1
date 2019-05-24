@@ -25,9 +25,6 @@ function Test-DbaDbOwner {
     .PARAMETER TargetLogin
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-    .PARAMETER Detailed
-        Will be deprecated in 1.0.0 release.
-
     .PARAMETER InputObject
         Enables piped input from Get-DbaDatabase.
 
