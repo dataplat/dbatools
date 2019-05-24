@@ -323,7 +323,7 @@ function Restore-DbaDatabase {
 
         Restores 'database' to 'server1' and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
     param (

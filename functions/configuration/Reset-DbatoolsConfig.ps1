@@ -1,6 +1,5 @@
-function Reset-DbatoolsConfig
-{
-<#
+function Reset-DbatoolsConfig {
+    <#
     .SYNOPSIS
         Reverts a configuration item to its default value.
 
@@ -49,8 +48,8 @@ function Reset-DbatoolsConfig
         PS C:\> Reset-DbatoolsConfig -FullName MyModule.Group.Setting1
 
         Resets the configuration item named 'MyModule.Group.Setting1'.
-#>
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact='Low')]
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]
@@ -71,13 +70,10 @@ function Reset-DbatoolsConfig
         [switch]$EnableException
     )
 
-    process
-    {
+    process {
         #region By configuration Item
-        foreach ($item in $ConfigurationItem)
-        {
-            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value'))
-            {
+        foreach ($item in $ConfigurationItem) {
+            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
                 try { $item.ResetValue() }
                 catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
             }
@@ -85,28 +81,22 @@ function Reset-DbatoolsConfig
         #endregion By configuration Item
 
         #region By FullName
-        foreach ($nameItem in $FullName)
-        {
+        foreach ($nameItem in $FullName) {
             # The configuration items themselves can be cast to string, so they need to be filtered out,
             # otherwise on bind they would execute for this code-path as well.
             if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
 
-            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem))
-            {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value'))
-                {
+            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
                     try { $item.ResetValue() }
                     catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
                 }
             }
         }
         #endregion By FullName
-        if ($Module)
-        {
-            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name))
-            {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value'))
-                {
+        if ($Module) {
+            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
                     try { $item.ResetValue() }
                     catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
                 }

@@ -57,7 +57,7 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused indexes on all databases on sql2016
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

@@ -99,7 +99,7 @@ function Copy-DbaCredential {
         [switch]$Force,
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $script:isWindows) {
             Stop-Function -Message "Copy-DbaCredential is only supported on Windows"

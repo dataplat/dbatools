@@ -65,8 +65,8 @@ function Get-DbaLocaleSetting {
     }
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
