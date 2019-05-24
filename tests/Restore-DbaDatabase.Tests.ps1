@@ -784,7 +784,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             ($errvar -match "SQL Server detected a logical consistency-based I/O error: incorrect checksum \(expected") | Should be $True
             ($null -eq $sqlResults2) | SHould be $True
         }
-        $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -AllowContinue -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
+        $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
         $sqlResults3 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
         It -Skip "Should work after page restore" {
             #($null -eq $errvar3) | Should Be $True
