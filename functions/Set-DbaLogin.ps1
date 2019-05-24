@@ -154,7 +154,6 @@ function Set-DbaLogin {
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
     param (
-        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
@@ -176,7 +175,6 @@ function Set-DbaLogin {
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

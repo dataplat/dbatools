@@ -227,7 +227,6 @@ function Connect-DbaInstance {
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "Connstring", "ConnectionString")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string]$Database,
         [string]$AccessToken,

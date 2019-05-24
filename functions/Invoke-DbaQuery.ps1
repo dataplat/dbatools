@@ -104,12 +104,10 @@ function Invoke-DbaQuery {
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string]$Database,
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
         [Int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]
@@ -339,7 +337,5 @@ function Invoke-DbaQuery {
                 Remove-Item -Path $item -ErrorAction Ignore
             }
         }
-        Test-DbaDeprecation -DeprecatedOn '1.0.0' -Alias Invoke-DbaCmd
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }

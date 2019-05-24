@@ -66,7 +66,6 @@ function Add-DbaRegServerGroup {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -111,8 +110,5 @@ function Add-DbaRegServerGroup {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Add-DbaRegisteredServerGroup
     }
 }

@@ -65,22 +65,15 @@ function Test-DbaDbOwner {
     [CmdletBinding()]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string]$TargetLogin,
-        [Switch]$Detailed,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$EnableException
     )
-
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
-    }
     process {
         if (-not $InputObject -and -not $Sqlinstance) {
             Stop-Function -Message 'You must specify a $SqlInstance parameter'
@@ -119,8 +112,5 @@ function Test-DbaDbOwner {
                 OwnerMatch   = ($db.owner -eq $TargetLogin)
             } | Select-DefaultView -ExcludeProperty Server
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseOwner
     }
 }

@@ -111,7 +111,6 @@ function New-DbaComputerCertificate {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string]$CaServer,
@@ -126,7 +125,6 @@ function New-DbaComputerCertificate {
         [string]$Folder = "My",
         [string[]]$Dns,
         [switch]$SelfSigned,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

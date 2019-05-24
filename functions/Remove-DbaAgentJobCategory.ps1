@@ -60,13 +60,11 @@ function Remove-DbaAgentJobCategory {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

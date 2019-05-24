@@ -89,9 +89,7 @@ function Get-DbaDbRoleMember {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
@@ -165,8 +163,5 @@ function Get-DbaDbRoleMember {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRoleMember
     }
 }

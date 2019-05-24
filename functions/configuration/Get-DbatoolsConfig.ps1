@@ -65,5 +65,4 @@ function Get-DbatoolsConfig {
             [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
         }
     }
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfig
 }

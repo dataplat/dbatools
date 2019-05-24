@@ -29,7 +29,6 @@ function Update-SqlPermission {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$DestLogin,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

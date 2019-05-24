@@ -1,4 +1,4 @@
-function Find-SqlServerUpdate {
+function Find-SqlInstanceUpdate {
     <#
         .SYNOPSIS
             Returns a SQL Server KB filesystem object based on parameters
@@ -7,7 +7,7 @@ function Find-SqlServerUpdate {
             "SQLServer$MajorVersion*-KB$KB-*$Architecture*.exe"
 
         .EXAMPLE
-            PS> Find-SqlServerUpdate -MajorVersion 2016 -KB 412348 -Path \\my\updates
+            PS> Find-SqlInstanceUpdate -MajorVersion 2016 -KB 412348 -Path \\my\updates
 
             Looks for SQLServer2016*-KB412348-*x64*.exe in \\my\updates and all the subfolders
     #>

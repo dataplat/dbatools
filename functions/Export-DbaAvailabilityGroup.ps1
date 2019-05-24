@@ -70,7 +70,6 @@ function Export-DbaAvailabilityGroup {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$AvailabilityGroup,
@@ -78,7 +77,6 @@ function Export-DbaAvailabilityGroup {
         [Alias("OutputLocation", "FilePath")]
         [string]$Path = (Join-DbaPath -path (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport') -child "SqlAgExport"),
         [switch]$NoClobber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

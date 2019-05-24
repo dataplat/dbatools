@@ -60,20 +60,15 @@ function Test-DbaConnectionAuthScheme {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
         [PSCredential]$SqlCredential,
         [switch]$Kerberos,
         [switch]$Ntlm,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                             SERVERPROPERTY('ServerName') AS SqlInstance,

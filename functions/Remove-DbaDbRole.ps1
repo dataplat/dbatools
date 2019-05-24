@@ -77,9 +77,7 @@ function Remove-DbaDbRole {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,

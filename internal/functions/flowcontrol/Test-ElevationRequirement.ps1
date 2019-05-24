@@ -68,7 +68,6 @@ function Test-ElevationRequirement {
         $NoStop,
 
         [bool]
-        [Alias('Silent')]
         $EnableException = $EnableException
     )
 

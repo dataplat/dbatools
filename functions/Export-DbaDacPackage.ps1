@@ -88,9 +88,7 @@ function Export-DbaDacPackage {
     param
     (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -298,8 +296,5 @@ function Export-DbaDacPackage {
                 } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
     }
 }

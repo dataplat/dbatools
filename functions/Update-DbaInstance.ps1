@@ -353,7 +353,7 @@ function Update-DbaInstance {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
                 Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
                 # get upgrade details for each component
-                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
+                $upgradeDetails = Get-SqlInstanceUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
                 if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
                     $upgradeDetails
@@ -372,7 +372,7 @@ function Update-DbaInstance {
                         KB             = $detail.KB
                     }
                     try {
-                        $installer = Find-SqlServerUpdate @kbLookupParams
+                        $installer = Find-SqlInstanceUpdate @kbLookupParams
                     } catch {
                         Stop-Function -Message "Failed to enumerate files in -Path" -ErrorRecord $_ -Continue
                     }

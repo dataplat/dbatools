@@ -86,7 +86,6 @@ function Start-DbaService {
         [object[]]$InputObject,
         [int]$Timeout = 60,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -113,6 +112,5 @@ function Start-DbaService {
                 Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
             }
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Start-DbaSqlService
     }
 }

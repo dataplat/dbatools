@@ -181,7 +181,6 @@ function Backup-DbaDatabase {
         [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
@@ -210,7 +209,6 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

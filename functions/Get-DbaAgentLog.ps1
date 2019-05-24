@@ -51,14 +51,11 @@ function Get-DbaAgentLog {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [ValidateRange(0, 9)]
         [int[]]$LogNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

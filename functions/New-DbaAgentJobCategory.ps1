@@ -60,7 +60,6 @@ function New-DbaAgentJobCategory {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -69,7 +68,6 @@ function New-DbaAgentJobCategory {
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

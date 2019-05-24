@@ -55,7 +55,6 @@ function Remove-DbaRegServerGroup {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Group")]
@@ -92,8 +91,5 @@ function Remove-DbaRegServerGroup {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServerGroup
     }
 }

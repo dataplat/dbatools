@@ -175,7 +175,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
                 $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-                $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+                $s = Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $cred
                 $s.Name | Should Be $script:instance1
                 Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
             }

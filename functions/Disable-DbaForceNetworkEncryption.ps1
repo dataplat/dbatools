@@ -53,10 +53,8 @@ function Disable-DbaForceNetworkEncryption {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

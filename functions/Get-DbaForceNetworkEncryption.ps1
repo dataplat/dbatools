@@ -44,7 +44,6 @@ function Get-DbaForceNetworkEncryption {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException

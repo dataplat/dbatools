@@ -92,7 +92,6 @@ function Get-DbaDiskSpace {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
@@ -100,17 +99,12 @@ function Get-DbaDiskSpace {
         [switch]$CheckForSql,
         [PSCredential]$SqlCredential,
         [string[]]$ExcludeDrive,
-        [Alias('Detailed', 'AllDrives')]
         [switch]$CheckFragmentation,
         [switch]$Force,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter AllDrives
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Unit
 
         $condition = " WHERE DriveType = 2 OR DriveType = 3"
         if (Test-Bound 'Force') {

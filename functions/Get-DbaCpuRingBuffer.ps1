@@ -70,11 +70,9 @@ function Get-DbaCpuRingBuffer {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$CollectionMinutes = 60,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

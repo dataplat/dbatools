@@ -63,7 +63,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                     }
                 ) #databases
             } #object
-        } -ModuleName dbatools #mock connect-sqlserver
+        } -ModuleName dbatools #mock connect-SqlInstance
         function Invoke-QueryRawDatabases { }
         Mock Invoke-QueryRawDatabases -MockWith {
             [object]@(
@@ -113,7 +113,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         }
                     )
                 } #object
-            } -ModuleName dbatools #mock connect-sqlserver
+            } -ModuleName dbatools #mock connect-SqlInstance
             function Invoke-QueryDBlastUsed { }
             Mock Invoke-QueryDBlastUsed -MockWith {
                 [object]

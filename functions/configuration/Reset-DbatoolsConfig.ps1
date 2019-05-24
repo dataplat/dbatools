@@ -68,8 +68,7 @@ function Reset-DbatoolsConfig
         [string]
         $Name = "*",
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     process

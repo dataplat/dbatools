@@ -46,7 +46,7 @@ function Invoke-DbaAsync {
         [ValidateNotNullOrEmpty()]
         [Microsoft.SqlServer.Management.Common.ServerConnection]$SQLConnection,
 
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]
         $Query,
 
@@ -65,8 +65,7 @@ function Invoke-DbaAsync {
         [switch]
         $MessagesToOutput,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {

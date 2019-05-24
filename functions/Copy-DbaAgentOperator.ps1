@@ -82,7 +82,6 @@ function Copy-DbaAgentOperator {
         [object[]]$Operator,
         [object[]]$ExcludeOperator,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -169,8 +168,5 @@ function Copy-DbaAgentOperator {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlOperator
     }
 }

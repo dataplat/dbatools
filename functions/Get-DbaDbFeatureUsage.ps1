@@ -50,7 +50,6 @@ function Get-DbaDbFeatureUsage {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,

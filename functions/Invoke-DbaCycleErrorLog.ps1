@@ -57,13 +57,10 @@ function Invoke-DbaCycleErrorLog {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('instance', 'agent')]
         [string]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -107,9 +107,7 @@ function Publish-DbaDacPackage {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,
@@ -373,8 +371,5 @@ function Publish-DbaDacPackage {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }

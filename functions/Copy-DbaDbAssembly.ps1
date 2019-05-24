@@ -84,7 +84,6 @@ function Copy-DbaDbAssembly {
         [object[]]$Assembly,
         [object[]]$ExcludeAssembly,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -227,9 +226,5 @@ function Copy-DbaDbAssembly {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabaseAssembly
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseAssembly
     }
 }

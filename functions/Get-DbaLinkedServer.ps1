@@ -48,12 +48,10 @@ function Get-DbaLinkedServer {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

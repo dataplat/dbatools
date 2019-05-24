@@ -91,17 +91,14 @@ function Repair-DbaDbOrphanUser {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -222,9 +219,5 @@ function Repair-DbaDbOrphanUser {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-DbaOrphanUser
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-SqlOrphanUser
     }
 }

@@ -65,14 +65,12 @@ function Get-DbaServerInstallDate {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
         [PSCredential]
         $Credential,
         [Switch]$IncludeWindows,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

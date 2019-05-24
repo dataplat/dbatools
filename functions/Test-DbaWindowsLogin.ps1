@@ -61,8 +61,7 @@ function Test-DbaWindowsLogin {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
@@ -70,14 +69,10 @@ function Test-DbaWindowsLogin {
         [ValidateSet("LoginsOnly", "GroupsOnly", "None")]
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         if ($IgnoreDomains) {
             $IgnoreDomainsNormalized = $IgnoreDomains.ToUpper()
             Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -280,8 +275,5 @@ function Test-DbaWindowsLogin {
 
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }

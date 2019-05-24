@@ -68,19 +68,14 @@ function Test-DbaDiskAllocation {
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sessionoptions = New-CimSessionOption -Protocol DCOM
 
         function Get-AllDiskAllocation {

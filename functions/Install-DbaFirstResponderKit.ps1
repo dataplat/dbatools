@@ -87,7 +87,6 @@ function Install-DbaFirstResponderKit {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateSet('master', 'dev')]
@@ -95,7 +94,6 @@ function Install-DbaFirstResponderKit {
         [object]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

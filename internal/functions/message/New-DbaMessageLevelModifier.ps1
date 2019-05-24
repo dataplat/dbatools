@@ -88,8 +88,7 @@ function New-DbaMessageLevelModifier {
         [string[]]
         $ExcludeTags,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     if (Test-Bound -ParameterName IncludeFunctionName, ExcludeFunctionName, IncludeModuleName, ExcludeModuleName, IncludeTags, ExcludeTags -Not) {

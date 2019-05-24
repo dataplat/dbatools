@@ -573,7 +573,6 @@ function Invoke-DbaDbLogShipping {
 
         [switch]$Force,
 
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -1755,6 +1754,5 @@ function Invoke-DbaDbLogShipping {
     } # end process
     end {
         Write-Message -Message "Finished setting up log shipping." -Level Verbose
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShipping
     }
 }

@@ -82,11 +82,9 @@ function Export-DbaExecutionPlan {
     [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'NotPiped')]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ParameterSetName = 'Piped', Mandatory)]
@@ -98,7 +96,6 @@ function Export-DbaExecutionPlan {
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
         [object[]]$PipedObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

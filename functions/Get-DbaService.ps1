@@ -104,7 +104,6 @@ function Get-DbaService {
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
         [switch]$AdvancedProperties,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -270,8 +269,5 @@ function Get-DbaService {
                 Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }

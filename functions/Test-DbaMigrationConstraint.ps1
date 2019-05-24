@@ -78,10 +78,8 @@ function Test-DbaMigrationConstraint {
         [parameter(Mandatory)]
         [DbaInstance]$Destination,
         [PSCredential]$DestinationSqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -291,8 +289,5 @@ function Test-DbaMigrationConstraint {
         } else {
             Write-Message -Level Output -Message "There are no databases to validate."
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
     }
 }

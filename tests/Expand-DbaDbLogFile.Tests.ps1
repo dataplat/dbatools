@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
     }
 
-    $results = Expand-DbaDbLogFile -SqlInstance $script:instance1 -Database $db1 -TargetLogSizeMB 128
+    $results = Expand-DbaDbLogFile -SqlInstance $script:instance1 -Database $db1 -TargetLogSize 128
 
     It -Skip "Should have correct properties" {
         $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ID,Name,LogFileCount,InitialSize,CurrentSize,InitialVLFCount,CurrentVLFCount'.Split(',')

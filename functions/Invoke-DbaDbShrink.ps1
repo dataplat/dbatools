@@ -124,11 +124,8 @@ function Invoke-DbaDbShrink {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
@@ -140,18 +137,12 @@ function Invoke-DbaDbShrink {
         [string]$FileType = "All",
         [int]$StepSize,
         [int]$StatementTimeout = 0,
-        [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        if ($LogsOnly) {
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
-            $FileType = 'Log'
-        }
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
@@ -331,8 +322,5 @@ function Invoke-DbaDbShrink {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }

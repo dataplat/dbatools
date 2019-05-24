@@ -88,7 +88,6 @@ function Copy-DbaRegServer {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaCentralManagementServer
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
             param (
@@ -314,8 +313,5 @@ function Copy-DbaRegServer {
                 Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCentralManagementServer
     }
 }

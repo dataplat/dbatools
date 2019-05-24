@@ -84,7 +84,6 @@ function Start-DbaAgentJob {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
@@ -95,7 +94,6 @@ function Start-DbaAgentJob {
         [switch]$Wait,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -327,7 +327,7 @@ function Restore-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
     param (
-        [parameter(Mandatory)][Alias("ServerInstance", "SqlServer")][DbaInstanceParameter]$SqlInstance,
+        [parameter(Mandatory)][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")][parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")][object[]]$Path,
         [parameter(ValueFromPipeline)][Alias("Name")][object[]]$DatabaseName,

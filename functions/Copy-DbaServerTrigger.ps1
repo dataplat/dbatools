@@ -82,7 +82,6 @@ function Copy-DbaServerTrigger {
         [object[]]$ServerTrigger,
         [object[]]$ExcludeServerTrigger,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -174,8 +173,5 @@ function Copy-DbaServerTrigger {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerTrigger
     }
 }

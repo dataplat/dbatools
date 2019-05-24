@@ -94,20 +94,16 @@ function Get-DbaBuildReference {
         $CumulativeUpdate,
 
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
 
         [switch]
         $Update,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -460,8 +456,5 @@ function Get-DbaBuildReference {
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }

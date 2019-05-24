@@ -137,7 +137,6 @@ function New-DbaAgentJobStep {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -167,7 +166,6 @@ function New-DbaAgentJobStep {
         [string[]]$Flag,
         [string]$ProxyName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
