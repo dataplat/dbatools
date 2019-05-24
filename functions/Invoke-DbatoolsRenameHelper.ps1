@@ -261,7 +261,7 @@ function Invoke-DbatoolsRenameHelper {
             'Test-DbaSqlPath'                   = 'Test-DbaPath'
             'Test-DbaTempDbConfiguration'       = 'Test-DbaTempdbConfig'
             'Test-DbaValidLogin'                = 'Test-DbaWindowsLogin'
-            'Test-DbaVirtualLogFile'            = 'Test-DbaDbVirtualLogFile'
+            'Test-DbaVirtualLogFile'            = 'Measure-DbaDbVirtualLogFile'
             'Test-SqlConnection'                = 'Test-DbaConnection'
             'Test-SqlDiskAllocation'            = 'Test-DbaDiskAllocation'
             'Test-SqlMigrationConstraint'       = 'Test-DbaMigrationConstraint'

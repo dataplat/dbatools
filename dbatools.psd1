@@ -113,7 +113,7 @@
         'Set-DbaDbOwner',
         'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
-        'Test-DbaDbVirtualLogFile',
+        'Measure-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',

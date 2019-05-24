@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Test-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        $results = Measure-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
 
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,TotalCount,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
