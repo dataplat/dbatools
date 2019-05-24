@@ -245,7 +245,7 @@ function Expand-DbaDbLogFile {
                     $currentSizeMB = $currentSize / 1024
 
                     #Get the number of VLFs
-                    $initialVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
+                    $initialVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
@@ -480,7 +480,7 @@ function Expand-DbaDbLogFile {
                 }
 
                 #Get the number of VLFs
-                $currentVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
+                $currentVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                 [pscustomobject]@{
                     ComputerName    = $server.ComputerName
