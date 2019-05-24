@@ -367,7 +367,7 @@ function Restore-DbaDatabase {
         [switch]$StopAfterTestBackupInformation,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
-        [int]$StatementTimeout = 0,
+        [int]$StatementTimeout = 0
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
