@@ -18,7 +18,7 @@ function Get-DbaLastGoodCheckDb {
 
         SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
 
-        This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
+        This script will only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -31,6 +31,9 @@ function Get-DbaLastGoodCheckDb {
 
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
+
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,95 +74,91 @@ function Get-DbaLastGoodCheckDb {
 
         Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. All databases except for "TempDB" will be displayed in the output.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database DB1, DB2 | Get-DbaLastGoodCheckDb | Format-Table -AutoSize
+
+        Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Only databases DB1 abd DB2 will be displayed in the output.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound -not 'SqlInstance', 'InputObject') {
+            Write-Message -Level Warning -Message "You must specify either a SQL instance or supply an InputObject"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+            Write-Message -Level Verbose -Message "Processing $db on $instances."
+
+            if ($db.IsAccessible -eq $false) {
+                Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
             }
 
-            if ($server.versionMajor -lt 9) {
-                Stop-Function -Message "Get-DbaLastGoodCheckDb is only supported on SQL Server 2005 and above. Skipping Instance." -Continue -Target $instance
+            $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
+            $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
+            Write-Message -Level Debug -Message "T-SQL: $sql"
+
+            $resultTable = $db.ExecuteWithResults($sql).Tables[0]
+            [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
+
+            ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
+            if ($lastKnownGoodArray.count -ge 2) {
+                Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+            }
+            [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
+
+            [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
+            [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
+
+            if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
+                $dataPurityEnabled = $false
+            } else {
+                $dataPurityEnabled = $true
             }
 
-            $dbs = $server.Databases
+            $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
+            $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
 
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -In $Database
+            if ($daysSinceCheckDb -lt 7) {
+                $Status = 'Ok'
+            } elseif ($daysSinceDbCreated -lt 7) {
+                $Status = 'New database, not checked yet'
+            } else {
+                $Status = 'CheckDB should be performed'
             }
 
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
+                Remove-Variable -Name lastKnownGood, daysSinceCheckDb
             }
 
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instances."
-
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
-                }
-
-                $sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
-                Write-Message -Level Debug -Message "T-SQL: $sql"
-
-                $resultTable = $db.ExecuteWithResults($sql).Tables[0]
-                [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
-
-                ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
-                if ($lastKnownGoodArray.count -ge 2) {
-                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
-                }
-                [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
-
-                [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
-                [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
-
-                if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
-                    $dataPurityEnabled = $false
-                } else {
-                    $dataPurityEnabled = $true
-                }
-
-                $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
-
-                if ($daysSinceCheckDb -lt 7) {
-                    $Status = 'Ok'
-                } elseif ($daysSinceDbCreated -lt 7) {
-                    $Status = 'New database, not checked yet'
-                } else {
-                    $Status = 'CheckDB should be performed'
-                }
-
-                if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
-                    Remove-Variable -Name lastKnownGood, daysSinceCheckDb
-                }
-
-                [PSCustomObject]@{
-                    ComputerName             = $server.ComputerName
-                    InstanceName             = $server.ServiceName
-                    SqlInstance              = $server.DomainInstanceName
-                    Database                 = $db.name
-                    DatabaseCreated          = $db.createDate
-                    LastGoodCheckDb          = $lastKnownGood
-                    DaysSinceDbCreated       = $daysSinceDbCreated
-                    DaysSinceLastGoodCheckDb = $daysSinceCheckDb
-                    Status                   = $status
-                    DataPurityEnabled        = $dataPurityEnabled
-                    CreateVersion            = $createVersion
-                    DbccFlags                = $dbccFlags
-                }
+            [PSCustomObject]@{
+                ComputerName             = $server.ComputerName
+                InstanceName             = $server.ServiceName
+                SqlInstance              = $server.DomainInstanceName
+                Database                 = $db.name
+                DatabaseCreated          = $db.createDate
+                LastGoodCheckDb          = $lastKnownGood
+                DaysSinceDbCreated       = $daysSinceDbCreated
+                DaysSinceLastGoodCheckDb = $daysSinceCheckDb
+                Status                   = $status
+                DataPurityEnabled        = $dataPurityEnabled
+                CreateVersion            = $createVersion
+                DbccFlags                = $dbccFlags
             }
         }
     }
