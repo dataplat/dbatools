@@ -23,9 +23,6 @@ function Test-DbaDiskAllocation {
 
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 

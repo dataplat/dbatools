@@ -19,9 +19,6 @@ function Test-DbaPowerPlan {
     .PARAMETER CustomPowerPlan
         If your organization uses a custom power plan that's considered best practice, specify it here.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER InputObject
         Enables piping from Get-DbaPowerPlan
 
