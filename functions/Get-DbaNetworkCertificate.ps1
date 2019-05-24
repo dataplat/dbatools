@@ -43,11 +43,11 @@ function Get-DbaNetworkCertificate {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-    
+
     process {
         # Registry access
-        
-        
+
+
         foreach ($computer in $computername) {
 
             try {

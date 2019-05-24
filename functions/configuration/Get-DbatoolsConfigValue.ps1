@@ -47,7 +47,7 @@ function Get-DbatoolsConfigValue {
         [object]$Fallback,
         [switch]$NotNull
     )
-    
+
     $FullName = $FullName.ToLowerInvariant()
 
     $temp = $null

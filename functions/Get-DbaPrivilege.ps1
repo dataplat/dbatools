@@ -45,7 +45,7 @@ function Get-DbaPrivilege {
 
         Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
 
-             #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

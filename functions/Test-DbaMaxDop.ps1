@@ -56,7 +56,7 @@ function Test-DbaMaxDop {
 
         Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NumaNodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 
-       #>
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (

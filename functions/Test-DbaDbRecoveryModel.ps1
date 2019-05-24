@@ -61,7 +61,7 @@ function Test-DbaDbRecoveryModel {
 
         Shows all of the properties for the databases that have Full Recovery Model
 
-       #>
+    #>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
     param (
