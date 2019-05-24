@@ -87,7 +87,6 @@ function Get-DbaDbFile {
             case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
             case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             vfs.num_of_writes as NumberOfDiskWrites,
             vfs.num_of_reads as NumberOfDiskReads,
             vfs.num_of_bytes_read as BytesReadFromDisk,
