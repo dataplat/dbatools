@@ -88,7 +88,7 @@ function Get-DbaLastGoodCheckDb {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     process {
@@ -97,68 +97,95 @@ function Get-DbaLastGoodCheckDb {
             return
         }
 
+        #if ($SqlInstance) {
+        #    Write-Message -Level Verbose -Message "Processing via SQL Instance."
+        #    $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        #}
+
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject = $SqlInstance
         }
 
-        foreach ($db in $InputObject) {
-            $server = $db.Parent
-            Write-Message -Level Verbose -Message "Processing $db on $instances."
-
-            if ($db.IsAccessible -eq $false) {
-                Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $databases = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or database."
+                    return
+                }
             }
 
-            $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
-            $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
-            Write-Message -Level Debug -Message "T-SQL: $sql"
+            foreach ($db in $databases) {
+                $server = $db.Parent
+                Write-Message -Level Verbose -Message "Processing $($db.Name) on $($server.Name)."
 
-            $resultTable = $db.ExecuteWithResults($sql).Tables[0]
-            [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
+                if ($db.IsAccessible -eq $false) {
+                    Stop-Function -Message "The database $($db.Name) is not accessible. Skipping database." -Continue -Target $db
+                }
 
-            ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
-            if ($lastKnownGoodArray.count -ge 2) {
-                Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
-            }
-            [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
+                $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
+                $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
+                Write-Message -Level Debug -Message "T-SQL: $sql"
 
-            [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
-            [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
+                $resultTable = $db.ExecuteWithResults($sql).Tables[0]
+                [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
 
-            if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
-                $dataPurityEnabled = $false
-            } else {
-                $dataPurityEnabled = $true
-            }
+                ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
+                if ($lastKnownGoodArray.count -ge 2) {
+                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+                }
+                [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
-            $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-            $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
+                [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
+                [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
 
-            if ($daysSinceCheckDb -lt 7) {
-                $Status = 'Ok'
-            } elseif ($daysSinceDbCreated -lt 7) {
-                $Status = 'New database, not checked yet'
-            } else {
-                $Status = 'CheckDB should be performed'
-            }
+                if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
+                    $dataPurityEnabled = $false
+                } else {
+                    $dataPurityEnabled = $true
+                }
 
-            if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
-                Remove-Variable -Name lastKnownGood, daysSinceCheckDb
-            }
+                $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
+                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
 
-            [PSCustomObject]@{
-                ComputerName             = $server.ComputerName
-                InstanceName             = $server.ServiceName
-                SqlInstance              = $server.DomainInstanceName
-                Database                 = $db.name
-                DatabaseCreated          = $db.createDate
-                LastGoodCheckDb          = $lastKnownGood
-                DaysSinceDbCreated       = $daysSinceDbCreated
-                DaysSinceLastGoodCheckDb = $daysSinceCheckDb
-                Status                   = $status
-                DataPurityEnabled        = $dataPurityEnabled
-                CreateVersion            = $createVersion
-                DbccFlags                = $dbccFlags
+                if ($daysSinceCheckDb -lt 7) {
+                    $Status = 'Ok'
+                } elseif ($daysSinceDbCreated -lt 7) {
+                    $Status = 'New database, not checked yet'
+                } else {
+                    $Status = 'CheckDB should be performed'
+                }
+
+                if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
+                    Remove-Variable -Name lastKnownGood, daysSinceCheckDb
+                }
+
+                [PSCustomObject]@{
+                    ComputerName             = $server.ComputerName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Database                 = $db.name
+                    DatabaseCreated          = $db.createDate
+                    LastGoodCheckDb          = $lastKnownGood
+                    DaysSinceDbCreated       = $daysSinceDbCreated
+                    DaysSinceLastGoodCheckDb = $daysSinceCheckDb
+                    Status                   = $status
+                    DataPurityEnabled        = $dataPurityEnabled
+                    CreateVersion            = $createVersion
+                    DbccFlags                = $dbccFlags
+                }
             }
         }
     }
