@@ -132,6 +132,24 @@ function Connect-DbaInstance {
     .PARAMETER MinimumVersion
         Terminate if the target SQL Server instance version does not meet version requirements
 
+    .PARAMETER AuthenticationType
+        We try to automatically detect the authentication type but if you'd like to state it explicitly, the options are as follows:
+        Auto
+        Windows Authentication
+        SQL Server Authentication
+        AD Universal with MFA Support
+        AD - Password
+        AD - Integrated
+
+    .PARAMETER TenantId
+        The TenantId for an Azure Instance
+
+    .PARAMETER Thumbprint
+        Thumbprint for connections to Azure MSI
+
+    .PARAMETER Store
+        Store where the Azure MSI certificate is stored
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -456,7 +474,7 @@ function Connect-DbaInstance {
                 [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
-                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue
+                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
                 }
             }
             #endregion Safely convert input into instance parameters
