@@ -82,3 +82,35 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
         }
     }
 }
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Gets a job step" {
+        BeforeAll {
+            $jobName = "dbatoolsci_job_$(get-random)"
+            $null = New-DbaAgentJob -SqlInstance $script:instance1 -Job $jobName
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance1 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance sqlpomf\sql2016 -Job $jobName -Confirm:$false
+        }
+
+        It "Successfully gets job when not using Job param" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance1
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully gets job when using Job param" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance1 -Job $jobName
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully gets job when excluding some jobs" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance1 -ExcludeJob 'syspolicy_purge_history'
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully excludes disabled jobs" {
+            $null = Set-DbaAgentJob -SqlInstance $script:instance1 -Job $jobName -Disabled
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance1 -ExcludeDisabledJobs
+            $results.Name | should not contain 'dbatoolsci_jobstep1'
+        }
+
+    }
+}
