@@ -268,6 +268,19 @@ function Connect-DbaInstance {
     )
     begin {
         #region Utility functions
+        if ($TenantId -and ($null -eq (Get-DbatoolsConfigValue -FullName azure.vm))) {
+            # Do an Azure check - this will be slow just once
+            try {
+                $azurevm = Invoke-RestMethod -Headers @{"Metadata" = "true"} -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
+                if ($azurevm.compute.azEnvironment) {
+                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
+                } else {
+                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
+                }
+            } catch {
+                $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
+            }
+        }
         function Invoke-TEPPCacheUpdate {
             [CmdletBinding()]
             param (
@@ -395,30 +408,12 @@ function Connect-DbaInstance {
                     $azureconnstring = New-DbaConnectionString @boundparams
                 }
 
-                if ($Tenant) {
-                    # Do an Azure check - this will be slow just once
-                    if ($null -eq (Get-DbatoolsConfigValue -FullName azure.vm)) {
-                        try {
-                            $azurevm = Invoke-RestMethod -Headers @{"Metadata" = "true"} -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
-                            if ($azurevm.compute.azEnvironment) {
-                                $null = Set-DbatoolsConfig -FullName azure.vm -Value $true
-                            } else {
-                                $null = Set-DbatoolsConfig -FullName azure.vm -Value $false
-                            }
-                        } catch {
-                            $null = Set-DbatoolsConfig -FullName azure.vm -Value $false
-                        }
-                    }
-
+                if ($TenantId) {
                     if ($script:net472 -and $AuthenticationType -in "Auto") {
-                        $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$tenant;AppKey=$($Credential.GetNetworkCredential().Password)"
+                        $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$TenantId;AppKey=$($Credential.GetNetworkCredential().Password)"
                         $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     } else {
-                        if (Get-DbatoolsConfigValue -FullName azure.vm) {
-                            $accesstoken = (New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb)
-                        } else {
-                            $accesstoken = (New-DbaAzAccessToken )
-                        }
+                        $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb)
                     }
                 }
 
