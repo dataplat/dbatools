@@ -58,8 +58,8 @@ $scriptBlock = {
         )
     } else {
         $names = @(
-			'Microsoft.IdentityModel.Clients.ActiveDirectory',
-			'Microsoft.Azure.Services.AppAuthentication',
+            'Microsoft.IdentityModel.Clients.ActiveDirectory',
+            'Microsoft.Azure.Services.AppAuthentication',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',
