@@ -58,8 +58,6 @@ $scriptBlock = {
         )
     } else {
         $names = @(
-            'Microsoft.IdentityModel.Clients.ActiveDirectory',
-            'Microsoft.Azure.Services.AppAuthentication',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -94,6 +92,13 @@ $scriptBlock = {
         $basePath = "$(Join-Path $dllRoot coreclr)"
     }
 
+    # New SQL Auth types require newer versions of .NET, check
+    # https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
+    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
+        $script:net472 = $true
+        $names += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
+    }
+
     foreach ($name in $names) {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
@@ -107,6 +112,18 @@ $scriptBlock = {
             }
         }
     }
+}
+
+# if .net 4.7.2 load new sql auth config
+if ($script:net472) {
+    # Load app.config that supports MFA
+    $configpath = "$script:PSModuleRoot\bin\app.config"
+    [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
+    Add-Type -AssemblyName System.Configuration
+    # Clear some cache to make sure it loads
+    [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
+    [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
+    ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
 }
 
 $script:serialImport = $true
