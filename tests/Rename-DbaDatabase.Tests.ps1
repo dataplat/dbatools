@@ -15,22 +15,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaDatabase -SqlInstance $script:instance3 -Name 'dbatoolsci_rename1'
+        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_rename1'
+        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filemove'
         $date = (Get-Date).ToString('yyyyMMdd')
     }
     AfterAll {
-        $database = Get-DbaDatabase -SqlInstance $script:instance3 -UserDbOnly | Where-Object {$_.name -like '*dbatoolsci*'}
-        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -database $($database.name) -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Databases "test_dbatoolsci_rename2_$($date)","Dbatoolsci_filemove" -Confirm:$false
     }
 
     Context "Should preview a rename of a database" {
-        $variables = @{SqlInstance = $script:instance3
-                    Database = 'dbatoolsci_rename1'
-                    DatabaseName = 'dbatoolsci_rename2'
-                    Preview = $true
-                    }
+        $variables = @{SqlInstance = $script:instance2
+            Database               = 'dbatoolsci_rename1'
+            DatabaseName           = 'dbatoolsci_rename2'
+            Preview                = $true
+        }
 
-            $results = Rename-DbaDatabase @variables
+        $results = Rename-DbaDatabase @variables
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -41,10 +41,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database" {
-        $variables = @{SqlInstance = $script:instance3
-                    Database = 'dbatoolsci_rename1'
-                    DatabaseName = 'dbatoolsci_rename2'
-                    }
+        $variables = @{SqlInstance = $script:instance2
+            Database               = 'dbatoolsci_rename1'
+            DatabaseName           = 'dbatoolsci_rename2'
+        }
 
         $results = Rename-DbaDatabase @variables
 
@@ -63,10 +63,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database with a prefix" {
-        $variables = @{SqlInstance = $script:instance3
-                    Database = 'dbatoolsci_rename2'
-                    DatabaseName = 'test_<DBN>'
-                    }
+        $variables = @{SqlInstance = $script:instance2
+            Database               = 'dbatoolsci_rename2'
+            DatabaseName           = 'test_<DBN>'
+        }
 
         $results = Rename-DbaDatabase @variables
 
@@ -85,10 +85,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database with a date" {
-        $variables = @{SqlInstance = $script:instance3
-                    Database = 'test_dbatoolsci_rename2'
-                    DatabaseName = '<DBN>_<DATE>'
-                    }
+        $variables = @{SqlInstance = $script:instance2
+            Database               = 'test_dbatoolsci_rename2'
+            DatabaseName           = '<DBN>_<DATE>'
+        }
 
         $results = Rename-DbaDatabase @variables
 
@@ -103,6 +103,99 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have the previous database name" {
             $results.DBN.Keys | Should Be 'test_dbatoolsci_rename2'
+        }
+    }
+
+    Context "Should preview renaming a database files" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_filemove"
+            FileName               = "<DBN>_<FGN>_<FNN>"
+            Preview                = $true
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have a Preview of renaming the database file name" {
+            $results.FileNameRenames | Should BeLike "*dbatoolsci_filemove.mdf --> *"
+        }
+        It "Should have a Preview of previous database file name" {
+            $results.FNN.Keys | Should Not Be $Null
+        }
+        It "Should have a Status of Partial" {
+            $results.Status | Should Be "Partial"
+        }
+    }
+    Context "Should rename database files and move them" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_filemove"
+            FileName               = "<DBN>_<FGN>_<FNN>"
+            Move                   = $true
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have renamed the database files" {
+            $results.FileNameRenames | Should BeLike "*dbatoolsci_filemove.mdf --> *"
+        }
+        It "Should have the previous database name" {
+            $results.FNN.Keys | Should Not Be $Null
+        }
+        It "Should have a Status of FULL" {
+            $results.Status | Should Be "Full"
+        }
+    }
+    Context "Should rename database files and forces the move" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_filemove"
+            FileName               = "<FNN>_<FT>"
+            ReplaceBefore          = $true
+            Force                  = $true
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have renamed the database files" {
+            $results.FileNameRenames | Should BeLike "*_ROWS.mdf*"
+        }
+        It "Should have the previous database name" {
+            $results.FNN.Keys | Should Not Be $Null
+        }
+        It "Should have a Status of Partial" {
+            $results.Status | Should Be "Partial"
+        }
+    }
+    Context "Should rename database files and set the database offline" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_filemove"
+            FileName               = "<FNN>_<LGN>_<DATE>"
+            SetOffline             = $true
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have renamed the database files" {
+            $results.FileNameRenames | Should BeLike "*___log_LOG.ldf --> *"
+        }
+        It "Should have the previous database name" {
+            $results.FNN.Keys | Should Not Be $Null
+        }
+        It "Should have the pending database name" {
+            $results.PendingRenames | Should Not Be $Null
+        }
+        It "Should have a Status of Partial" {
+            $results.Status | Should Be "Partial"
         }
     }
 }
