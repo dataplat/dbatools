@@ -12,8 +12,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Should Export all items from an instance" {
+        $results = Export-DbaInstance -SqlInstance $script:instance2
+        #$null = Remove-Item -Path $results -Force -Recurse
+        It "Should execute with default settings" {
+            $results | Should Not Be Null
+        }
+    }
+    Context "Should exclude some items from an Export" {
+        $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects
+        #$null = Remove-Item -Path $results -Force -Recurse
+        It "Should execute with parameters excluding objects" {
+            $results | Should Not Be Null
+        }
+    }
+}
