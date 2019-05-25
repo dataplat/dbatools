@@ -78,7 +78,7 @@ function New-DbaAzAccessToken {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [ValidateSet("ManagedIdentity", "ServicePrincipal")]
+        [ValidateSet("ManagedIdentity", "ServicePrincipal", "RenewableServicePrincipal")]
         [string]$Type,
         [ValidateSet("AzureSqlDb", "ResourceManager", "DataLake", "EventHubs", "KeyVault", "ResourceManager", "ServiceBus", "Storage")]
         [string]$Subtype = "AzureSqlDb",
@@ -88,11 +88,63 @@ function New-DbaAzAccessToken {
         [switch]$EnableException
     )
     begin {
-        if ($Type -eq "ServicePrincipal") {
+        if ($Type -notin "ServicePrincipal", "RenewableServicePrincipal") {
             if (-not $Credential -and -not $Tenant) {
                 Stop-Function -Message "You must specify a Credential and Tenant when using ServicePrincipal"
                 return
             }
+        }
+
+        if ($Type -eq "RenewableServicePrincipal") {
+            $source = @"
+            using System;
+            using Microsoft.SqlServer.Management.Common;
+            using System.Management.Automation;
+            using System.Collections.ObjectModel;
+            using System.Management.Automation.Runspaces;
+
+            public class PsObjectIRenewableToken : IRenewableToken {
+                public String GetAccessToken() {
+                    PowerShell psCmd = PowerShell.Create().AddScript(@"param(`$this)$({
+                    $authority = "https://login.microsoftonline.com/$($this.Tenant)/oauth2/token"
+                    $parameter = @{
+                        grant_type='client_credentials'
+                        client_id=$this.UserID
+                        client_secret=$this.ClientSecret
+                        resource=$this.Resource
+                    }
+
+                    $body = (@(foreach ($param in $parameter.GetEnumerator()) {
+                        "$($param.key)=$([Uri]::EscapeDataString($param.Value.ToString()))"
+                    }) -join '&')
+
+                    $bearerInfo = Invoke-RestMethod -Uri $authority -Method Post -Body $body
+                    $this.TokenExpiry = [DateTimeOffset]::FromUnixTimeSeconds($BearerInfo.expires_on)
+                    return $bearerInfo.access_token
+                    }.ToString().Replace('"','""'))").AddArgument(this);
+
+                    Collection<string> results = psCmd.Invoke<string>();
+                    if (psCmd.Streams.Error.Count > 0) {
+                        throw psCmd.Streams.Error[0].Exception;
+                    }
+
+                    psCmd.Dispose();
+
+                    if (results.Count == 1) {
+                        return results[0];
+                    } else {
+                        return String.Empty;
+                    }
+                }
+
+                public System.DateTimeOffset TokenExpiry { get; set;  }
+                public String Resource { get; set; }
+                public System.String Tenant { get; set; }
+                public System.String UserId { get; set; }
+                public string ClientSecret { get; set; }
+            }
+"@
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
         }
 
         switch ($Subtype) {
@@ -150,7 +202,7 @@ function New-DbaAzAccessToken {
                         Headers = @{ Metadata = "true" }
                     }
                     $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
-                    $token = ($response.Content | ConvertFrom-Json).access_token
+                    return ($response.Content | ConvertFrom-Json).access_token
                 }
                 ServicePrincipal {
                     if ($script:core) {
@@ -168,22 +220,20 @@ function New-DbaAzAccessToken {
                     $result = $context.AcquireTokenAsync($Config.Resource, $cred)
 
                     if ($result.Result.AccessToken) {
-                        $token = $result.Result.AccessToken
+                        return $result.Result.AccessToken
                     } else {
                         throw ($result.Exception | ConvertTo-Json | ConvertFrom-Json).InnerException.Message
                     }
                 }
-            }
-
-            # caching and reauth not supported yet but will in future version
-            if ($token -notin $script:aztokens.Token) {
-                $script:aztokens += [pscustomobject]@{
-                    SqlInstance   = $null
-                    PSBoundParams = $PSBoundParameters
-                    Token         = $token
+                RenewableServicePrincipal {
+                    New-Object PSObjectIRenewableToken -Property @{
+                        ClientSecret = $Credential.GetNetworkCredential().Password
+                        Resource     = "https://database.windows.net/"
+                        Tenant       = $Tenant
+                        UserID       = $Credential.UserName
+                    }
                 }
             }
-            return $token
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
