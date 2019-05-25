@@ -18,10 +18,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_rename1'
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filemove'
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_logicname'
+        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filegroupname'
+        $FileGroupName = @"
+        ALTER DATABASE dbatoolsci_filegroupname
+        ADD FILEGROUP Dbatoolsci_filegroupname
+"@
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $FileGroupName
         $date = (Get-Date).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
     }
 
     Context "Should preview a rename of a database" {
@@ -222,6 +228,25 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have a Status of Full" {
             $results.Status | Should Be "Full"
+        }
+    }
+
+    Context "Should rename the filegroupname name" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_filegroupname"
+            FileGroupName          = "<FGN>_<DATE>_<DBN>"
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have renamed the database files" {
+            $results.FileGroupsRenames | Should BeLike "Dbatoolsci_filegroupname --> *"
+        }
+        It "Should have the previous database name" {
+            $results.FGN.Keys | Should BE @('Dbatoolsci_filegroupname')
         }
     }
 }
