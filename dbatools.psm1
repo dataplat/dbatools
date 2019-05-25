@@ -966,9 +966,4 @@ if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 's
         Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
 }
-
-if (-not $script:aztokens) {
-    $script:aztokens = @()
-}
-
 #endregion Post-Import Cleanup
