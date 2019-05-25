@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $date = (Get-Date).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Databases "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname" -Confirm:$false
     }
 
     Context "Should preview a rename of a database" {
