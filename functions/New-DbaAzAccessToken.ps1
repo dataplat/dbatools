@@ -86,6 +86,9 @@ function New-DbaAzAccessToken {
         [object]$Config,
         [pscredential]$Credential,
         [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
+        [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
+        [ValidateSet('CurrentUser', 'LocalMachine')]
+        [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
         [switch]$EnableException
     )
     begin {

@@ -141,7 +141,7 @@ function Connect-DbaInstance {
         AD - Password
         AD - Integrated
 
-    .PARAMETER TenantId
+    .PARAMETER Tenant
         The TenantId for an Azure Instance
 
     .PARAMETER Thumbprint
@@ -278,7 +278,7 @@ function Connect-DbaInstance {
         [string]$AzureDomain = "database.windows.net",
         [ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
         [string]$AuthenticationType = "Auto",
-        [string]$TenantId = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
+        [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
         [ValidateSet('CurrentUser', 'LocalMachine')]
         [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
@@ -287,7 +287,8 @@ function Connect-DbaInstance {
     begin {
         $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
         #region Utility functions
-        if ($TenantId -and ($null -eq $azurevm)) {
+        if ($Tenant -and ($null -eq $azurevm)) {
+            Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
             # Do an Azure check - this will occur just once
             try {
                 $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true"} -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
@@ -403,7 +404,6 @@ function Connect-DbaInstance {
                         continue
                     }
                 }
-
                 $isAzure = $true
 
                 # Use available command to build the proper connection string
@@ -424,17 +424,31 @@ function Connect-DbaInstance {
                     $azureconnstring = New-DbaConnectionString @boundparams
                 }
 
-                if ($TenantId) {
+                if ($Tenant) {
+                    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
+                        $script:net472 = $true
+                    }
+
+                    $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
+                    $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
+
+                    if (($appid -and $clientsecret) -and -not $SqlCredential) {
+                        $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
+                    }
+
                     if ($script:net472 -and $AuthenticationType -in "Auto") {
                         if (-not $azurevm) {
-                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$TenantId;AppKey=$($Credential.GetNetworkCredential().Password)"
+                            Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
+                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
                         }
+                        Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
                         $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     } else {
+                        Write-Message -Level Verbose -Message "Creating renewable token"
                         $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb)
                     }
                 }
-
+                Write-warning $azureconnstring
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017

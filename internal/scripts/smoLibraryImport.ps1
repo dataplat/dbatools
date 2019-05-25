@@ -96,7 +96,6 @@ $scriptBlock = {
     # https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
     if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
         Write-Verbose -Message "Adding Azure DLLs"
-        $script:net472 = $true
         $names += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
     }
 
@@ -115,19 +114,6 @@ $scriptBlock = {
     }
 }
 
-# if .net 4.7.2 load new sql auth config
-if ($script:net472) {
-    Write-Verbose -Message "Loading app.config"
-    # Load app.config that supports MFA
-    $configpath = "$script:PSModuleRoot\bin\app.config"
-    [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
-    Add-Type -AssemblyName System.Configuration
-    # Clear some cache to make sure it loads
-    [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
-    [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
-    ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
-}
-
 $script:serialImport = $true
 if ($script:serialImport) {
     $scriptBlock.Invoke($script:PSModuleRoot, "$(Join-Path $script:DllRoot smo)", $script:copyDllMode)
@@ -139,4 +125,17 @@ if ($script:serialImport) {
     }
     $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument("$(Join-Path $script:DllRoot smo)").AddArgument((-not $script:strictSecurityMode))
     $script:smoRunspace.BeginInvoke()
+}
+
+# if .net 4.7.2 load new sql auth config
+if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
+    Write-Verbose -Message "Loading app.config"
+    # Load app.config that supports MFA
+    $configpath = "$script:PSModuleRoot\bin\app.config"
+    [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
+    Add-Type -AssemblyName System.Configuration
+    # Clear some cache to make sure it loads
+    [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
+    [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
+    ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
 }
