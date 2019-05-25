@@ -4,14 +4,15 @@ function New-DbaAzAccessToken {
         Simplifies the generation of Azure oauth2 tokens.
 
     .DESCRIPTION
-        Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.
-
-        SqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.
+        Generates an oauth2 access token. Currently supports Managed Identities, Service Principals and IRenewableToken.
 
         Want to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
 
-        .PARAMETER Type
-        The type of request: ManagedIdentity or ServicePrincipal.
+    .PARAMETER Type
+        The type of request:
+        ManagedIdentity
+        ServicePrincipal
+        RenewableServicePrincipal
 
     .PARAMETER Subtype
         The subtype. Options include:
@@ -35,7 +36,7 @@ function New-DbaAzAccessToken {
         https://docs.microsoft.com/en-us/azure/active-directory/user-help/multi-factor-authentication-end-user-app-passwords
 
     .PARAMETER Tenant
-        hen using the ServicePrincipal type, a tenant name or ID is required. This field works with both.
+        When using the ServicePrincipal or RenewableServicePrincipal types, a tenant name or ID is required. This field works with both.
 
     .PARAMETER EnableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -84,13 +85,20 @@ function New-DbaAzAccessToken {
         [string]$Subtype = "AzureSqlDb",
         [object]$Config,
         [pscredential]$Credential,
-        [string]$Tenant,
+        [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
         [switch]$EnableException
     )
     begin {
         if ($Type -notin "ServicePrincipal", "RenewableServicePrincipal") {
+            $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
+            $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
+
+            if (($appid -and $clientsecret) -and -not $Credential) {
+                $Credential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
+            }
+
             if (-not $Credential -and -not $Tenant) {
-                Stop-Function -Message "You must specify a Credential and Tenant when using ServicePrincipal"
+                Stop-Function -Message "You must specify a Credential and Tenant when using ServicePrincipal or RenewableServicePrincipal"
                 return
             }
         }
