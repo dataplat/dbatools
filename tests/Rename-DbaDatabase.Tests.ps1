@@ -17,10 +17,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_rename1'
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filemove'
+        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_logicname'
         $date = (Get-Date).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Databases "test_dbatoolsci_rename2_$($date)","Dbatoolsci_filemove" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Databases "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname" -Confirm:$false
     }
 
     Context "Should preview a rename of a database" {
@@ -106,7 +107,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Should preview renaming a database files" {
+    Context "Should preview renaming database files" {
         $variables = @{SqlInstance = $script:instance2
             Database               = "dbatoolsci_filemove"
             FileName               = "<DBN>_<FGN>_<FNN>"
@@ -128,6 +129,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Status | Should Be "Partial"
         }
     }
+
     Context "Should rename database files and move them" {
         $variables = @{SqlInstance = $script:instance2
             Database               = "dbatoolsci_filemove"
@@ -150,6 +152,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Status | Should Be "Full"
         }
     }
+
     Context "Should rename database files and forces the move" {
         $variables = @{SqlInstance = $script:instance2
             Database               = "dbatoolsci_filemove"
@@ -173,6 +176,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Status | Should Be "Partial"
         }
     }
+
     Context "Should rename database files and set the database offline" {
         $variables = @{SqlInstance = $script:instance2
             Database               = "dbatoolsci_filemove"
@@ -196,6 +200,28 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have a Status of Partial" {
             $results.Status | Should Be "Partial"
+        }
+    }
+
+    Context "Should rename the logical name" {
+        $variables = @{SqlInstance = $script:instance2
+            Database               = "dbatoolsci_logicname"
+            LogicalName            = "<LGN>_<DATE>_<DBN>"
+        }
+
+        $results = Rename-DbaDatabase @variables
+
+        It "Should have Results" {
+            $results | Should Not BeNullOrEmpty
+        }
+        It "Should have renamed the database files" {
+            $results.LogicalNameRenames | Should BeLike "dbatoolsci_logicname --> *"
+        }
+        It "Should have the previous database name" {
+            $results.LGN.Keys | Should BE @('dbatoolsci_logicname', 'dbatoolsci_logicname_log')
+        }
+        It "Should have a Status of Full" {
+            $results.Status | Should Be "Full"
         }
     }
 }
