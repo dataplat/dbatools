@@ -258,6 +258,9 @@ function Connect-DbaInstance {
         [string]$AppendConnectionString,
         [switch]$SqlConnectionOnly,
         [string]$AzureDomain = "database.windows.net",
+        [ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        [string]$AuthenticationType = "Auto",
+        [string]$Tenant,
         [switch]$DisableException
     )
     begin {
@@ -330,21 +333,6 @@ function Connect-DbaInstance {
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
         if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
-
-        if ($AccessToken -or $SqlInstance.InputObject -match "Active Directory Interactive") {
-            if (([enum]::GetValues('System.Data.SqlClient.SqlAuthenticationMethod') -notcontains 'ActiveDirectoryInteractive')) {
-                Stop-Function ".NET version 4.7.2 required to use AccessTokens and MFA. Please download it at https://dotnet.microsoft.com/download/dotnet-framework"
-                return
-            }
-            # Load app.config that supports MFA
-            $configpath = "$script:PSModuleRoot\bin\app.config"
-            [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
-            Add-Type -AssemblyName System.Configuration
-            # Clear some cache to make sure it loads
-            [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
-            [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
-            ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
