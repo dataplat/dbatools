@@ -15,12 +15,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDiskAlignment -ComputerName $env:COMPUTERNAME
+            $results = Test-DbaDiskAlignment -ComputerName $script:dbatoolsci_computer
             $results | Should -Not -Be $null
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $env:COMPUTERNAME
+            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $script:dbatoolsci_computer
             $results | Should -Not -Be $null
         }
     }
