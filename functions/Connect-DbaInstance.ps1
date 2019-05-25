@@ -287,7 +287,7 @@ function Connect-DbaInstance {
     begin {
         $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
         #region Utility functions
-        if ($Tenant -and ($null -eq $azurevm)) {
+        if ($Tenant -or $AuthenticationType -in 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated' -and ($null -eq $azurevm)) {
             Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
             # Do an Azure check - this will occur just once
             try {
@@ -405,7 +405,6 @@ function Connect-DbaInstance {
                     }
                 }
                 $isAzure = $true
-
                 # Use available command to build the proper connection string
                 # but first, clean up passed params so that they match
                 $boundparams = $PSBoundParameters
@@ -424,19 +423,19 @@ function Connect-DbaInstance {
                     $azureconnstring = New-DbaConnectionString @boundparams
                 }
 
-                if ($Tenant) {
+                if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
                     $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
                     $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
 
                     if (($appid -and $clientsecret) -and -not $SqlCredential) {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
                     }
-
                     if (((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
                         if (-not $azurevm) {
                             Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
                             $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
                         }
+
                         Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
                         $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     } else {
