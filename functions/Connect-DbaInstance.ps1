@@ -285,12 +285,14 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
+        $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
         #region Utility functions
-        if ($TenantId -and ($null -eq (Get-DbatoolsConfigValue -FullName azure.vm))) {
-            # Do an Azure check - this will be slow just once
+        if ($TenantId -and ($null -eq $azurevm)) {
+            # Do an Azure check - this will occur just once
             try {
-                $azurevm = Invoke-RestMethod -Headers @{"Metadata" = "true"} -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
-                if ($azurevm.compute.azEnvironment) {
+                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true"} -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
+                if ($azurevmcheck.compute.azEnvironment) {
+                    $azurevm = $true
                     $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
                 } else {
                     $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
@@ -372,10 +374,6 @@ function Connect-DbaInstance {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            #region Safely convert input into instance parameters
-            # removed for now
-            #endregion Safely convert input into instance parameters
-
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
                 $isconnectionstring = $true
@@ -428,7 +426,9 @@ function Connect-DbaInstance {
 
                 if ($TenantId) {
                     if ($script:net472 -and $AuthenticationType -in "Auto") {
-                        $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$TenantId;AppKey=$($Credential.GetNetworkCredential().Password)"
+                        if (-not $azurevm) {
+                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$TenantId;AppKey=$($Credential.GetNetworkCredential().Password)"
+                        }
                         $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     } else {
                         $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb)
