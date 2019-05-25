@@ -247,7 +247,7 @@ function Connect-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [string]$Database,
+        [string]$Database = (Get-DbatoolsConfigValue -FullName 'sql.connection.database'),
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
@@ -535,11 +535,6 @@ function Connect-DbaInstance {
                     continue
                 } else {
                     if (-not $server.ComputerName) {
-                        if (-not $server.NetName -or $instance -match '\.') {
-                            $parsedcomputername = $instance.ComputerName
-                        } else {
-                            $parsedcomputername = $server.NetName
-                        }
                         Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                         Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
