@@ -234,8 +234,9 @@ function New-DbaAzAccessToken {
                     }
                 }
                 RenewableServicePrincipal {
+                    $null = $Credential.GetNetworkCredential().Password
                     New-Object PSObjectIRenewableToken -Property @{
-                        ClientSecret = $Credential.GetNetworkCredential().Password
+                        ClientSecret = $null
                         Resource     = "https://database.windows.net/"
                         Tenant       = $Tenant
                         UserID       = $Credential.UserName
