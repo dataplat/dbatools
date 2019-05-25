@@ -425,10 +425,6 @@ function Connect-DbaInstance {
                 }
 
                 if ($Tenant) {
-                    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
-                        $script:net472 = $true
-                    }
-
                     $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
                     $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
 
@@ -436,7 +432,7 @@ function Connect-DbaInstance {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
                     }
 
-                    if ($script:net472 -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
+                    if (((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
                         if (-not $azurevm) {
                             Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
                             $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
