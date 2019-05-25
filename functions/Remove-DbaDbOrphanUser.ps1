@@ -14,7 +14,7 @@ function Remove-DbaDbOrphanUser {
         If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
 
         If a login of the same name exists (which could be re-mapped with Repair-DbaDbOrphanUser)  the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaDbOrphanUser.
-a
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
