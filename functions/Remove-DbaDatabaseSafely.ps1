@@ -470,57 +470,58 @@ function Remove-DbaDatabaseSafely {
             }
 
             if ($Pscmdlet.ShouldProcess($source, "Backing up $dbname")) {
+
+
                 Write-Message -Level Verbose -Message "Starting Backup for $dbname on $source."
                 ## Take a Backup
                 try {
                     $timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
-                    $backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
-                    $backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
-                    $backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
-                    $backup.Database = $dbname
-                    $backup.Checksum = $True
-                    if ($sourceserver.versionMajor -gt 9) {
-                        $backup.CompressionOption = $BackupCompression
-                    }
-                    if ($force -and $dbccgood -eq $false) {
+                    #$backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
+                    #$backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
+                    #$backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
+                    #$backup.Database = $dbname
+                    #$backup.Checksum = $True
 
+                    if ($force -and $dbccgood -ne "Success") {
                         $filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
                     } else {
                         $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
                     }
 
-                    $devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
-                    $backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
+                    Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup:$BackupCompression -Verify
 
-                    $backup.Devices.Add($backupDevice)
-                    #Progress
-                    $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                        Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-                    }
-                    $backup.add_PercentComplete($percent)
-                    $backup.add_Complete($complete)
-                    Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                    $backup.SqlBackup($sourceserver)
-                    $null = $backup.Devices.Remove($backupDevice)
-                    Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
-                    Write-Message -Level Verbose -Message "Backup Completed for $dbname on $source."
-
-                    Write-Message -Level Verbose -Message "Running Restore Verify only on Backup of $dbname on $source."
-                    try {
-                        $restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-                        $restoreverify.Database = $dbname
-                        $restoreverify.Devices.AddDevice($filename, $devicetype)
-                        $result = $restoreverify.SqlVerify($sourceserver)
-
-                        if ($result -eq $false) {
-                            Write-Message -Level Warning -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database."
-                            continue
-                        }
-
-                        Write-Message -Level Verbose -Message "Restore Verify Only for $filename succeeded."
-                    } catch {
-                        Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
-                    }
+                    #$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
+                    #$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
+#
+                    #$backup.Devices.Add($backupDevice)
+                    ##Progress
+                    #$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                    #    Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    #}
+                    #$backup.add_PercentComplete($percent)
+                    #$backup.add_Complete($complete)
+                    #Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                    #$backup.SqlBackup($sourceserver)
+                    #$null = $backup.Devices.Remove($backupDevice)
+                    #Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
+                    #Write-Message -Level Verbose -Message "Backup Completed for $dbname on $source."
+#
+                    #Write-Message -Level Verbose -Message "Running Restore Verify only on Backup of $dbname on $source."
+                    #try {
+                    #    $restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
+                    #    $restoreverify.Database = $dbname
+                    #    $restoreverify.Devices.AddDevice($filename, $devicetype)
+                    #    $result = $restoreverify.SqlVerify($sourceserver)
+#
+                    #    if ($result -eq $false) {
+                    #        Write-Message -Level Warning -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database."
+                    #        continue
+                    #    }
+#
+                    #    Write-Message -Level Verbose -Message "Restore Verify Only for $filename succeeded."
+                    #} catch {
+                    #    Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
+                    #}
                 } catch {
                     Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
                 }
