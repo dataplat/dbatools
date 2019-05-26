@@ -203,6 +203,12 @@ function Connect-DbaInstance {
         Logs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.
 
     .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.
+
+    .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance "myserver.public.cust123.database.windows.net,3342" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
@@ -221,6 +227,36 @@ function Connect-DbaInstance {
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
         ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from a non-Azure worksatation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -AuthenticationType 'AD Universal with MFA Support'
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from an Azure VM with .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig
+        PS C:\> Connect-DbaInstance -SqlInstance psdbatools.database.windows.net
+
+        Permenently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig
+        When connecting from a non-Azure worksatation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certifiate will be used instead.
 
     #>
     [CmdletBinding()]
