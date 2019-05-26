@@ -227,39 +227,39 @@ function Remove-DbaDatabaseSafely {
         #    }
         #}
 
-        function Start-DbccCheck {
-            <#
-            .SYNOPSIS
-
-            #>
-
-            [CmdletBinding(SupportsShouldProcess)]
-            param (
-                [object]$server,
-                [string]$dbname
-            )
-
-            $servername = $server.name
-            $db = $server.databases[$dbname]
-
-            if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
-                try {
-                    $null = $db.CheckTables('None')
-                    Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
-                }
-
-                catch {
-                    Write-Message -Level Warning -Message "DBCC CHECKDB failed."
-                    Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
-
-                    if ($force) {
-                        return $true
-                    } else {
-                        return $false
-                    }
-                }
-            }
-        }
+        #function Start-DbccCheck {
+        #    <#
+        #    .SYNOPSIS
+#
+        #    #>
+#
+        #    [CmdletBinding(SupportsShouldProcess)]
+        #    param (
+        #        [object]$server,
+        #        [string]$dbname
+        #    )
+#
+        #    $servername = $server.name
+        #    $db = $server.databases[$dbname]
+#
+        #    if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
+        #        try {
+        #            $null = $db.CheckTables('None')
+        #            Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
+        #        }
+#
+        #        catch {
+        #            Write-Message -Level Warning -Message "DBCC CHECKDB failed."
+        #            Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
+#
+        #            if ($force) {
+        #                return $true
+        #            } else {
+        #                return $false
+        #            }
+        #        }
+        #    }
+        #}
 
         function New-SqlAgentJobCategory {
             <#
@@ -456,11 +456,11 @@ function Remove-DbaDatabaseSafely {
             if ($NoDbccCheckDb -eq $false) {
                 if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $source")) {
                     Write-Message -Level Verbose -Message "Starting DBCC CHECKDB for $dbname on $source."
-                    $dbccgood = Start-DbccCheck -Server $sourceserver -DBName $dbname
+                    $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbname -table
 
-                    if ($dbccgood -eq $false) {
+                    if ($dbccgood -ne "Success") {
                         if ($force -eq $false) {
-                            Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that).  Aborting routine for this database."
+                            Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that). Aborting routine for this database."
                             continue
                         } else {
                             Write-Message -Level Verbose -Message "DBCC failed, but Force specified. Continuing."
@@ -656,7 +656,13 @@ function Remove-DbaDatabaseSafely {
             ## Run a Dbcc No choice here
             if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination")) {
                 Write-Message -Level Verbose -Message "Starting Dbcc CHECKDB for $dbname on $destination."
-                $null = Start-DbccCheck -Server $destserver -DbName $dbname
+                $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbname -table
+
+                if ($dbccgood -ne "Success") {
+                    Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
+                } else {
+                    Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that). Continuing."
+                }
             }
 
             if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
