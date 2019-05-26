@@ -130,13 +130,7 @@ function Connect-DbaInstance {
         Terminate if the target SQL Server instance version does not meet version requirements
 
     .PARAMETER AuthenticationType
-        We try to automatically detect the authentication type but if you'd like to state it explicitly, the options are as follows:
-        Auto
-        Windows Authentication
-        SQL Server Authentication
-        AD Universal with MFA Support
-        AD - Password
-        AD - Integrated
+        Basically used to force AD Universal with MFA Support when other types have been detected
 
     .PARAMETER Tenant
         The TenantId for an Azure Instance
@@ -209,6 +203,12 @@ function Connect-DbaInstance {
         Logs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.
 
     .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.
+
+    .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance "myserver.public.cust123.database.windows.net,3342" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
@@ -227,6 +227,36 @@ function Connect-DbaInstance {
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
         ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from a non-Azure worksatation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -AuthenticationType 'AD Universal with MFA Support'
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from an Azure VM with .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig
+        PS C:\> Connect-DbaInstance -SqlInstance psdbatools.database.windows.net
+
+        Permenently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig
+        When connecting from a non-Azure worksatation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certifiate will be used instead.
 
     #>
     [CmdletBinding()]
@@ -263,7 +293,8 @@ function Connect-DbaInstance {
         [string]$AppendConnectionString,
         [switch]$SqlConnectionOnly,
         [string]$AzureDomain = "database.windows.net",
-        [ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        #[ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        [ValidateSet('Auto', 'AD Universal with MFA Support')]
         [string]$AuthenticationType = "Auto",
         [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
@@ -425,7 +456,7 @@ function Connect-DbaInstance {
                     }
 
                     if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed, even if client certificates are used; just specify the AppId as the credential username."
                         return
                     }
 
@@ -436,8 +467,13 @@ function Connect-DbaInstance {
 
                     if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core) {
                         if (-not $azurevm) {
-                            Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
-                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            if ($Thumbprint) {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with Certificate'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;CertificateThumbprint=$Thumbprint;CertificateStoreLocation=$Store"
+                            } else {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with appid/client'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            }
                         }
 
                         Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
