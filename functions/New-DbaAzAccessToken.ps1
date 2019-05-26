@@ -92,7 +92,7 @@ function New-DbaAzAccessToken {
         [switch]$EnableException
     )
     begin {
-        if ($Type -notin "ServicePrincipal", "RenewableServicePrincipal") {
+        if ($Type -in "ServicePrincipal", "RenewableServicePrincipal") {
             $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
             $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
 
