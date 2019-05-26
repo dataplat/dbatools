@@ -27,9 +27,6 @@ function Connect-DbaInstance {
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server.
 
-    .PARAMETER AccessToken
-        Gets or sets the access token for the connection.
-
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
 
@@ -217,22 +214,14 @@ function Connect-DbaInstance {
 
         Logs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.
 
-        .EXAMPLE
-        PS C:\> $token = New-DbaAzAccessToken -Type ManagedIdentity -Subtype AzureSqlDb
-        PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -AccessToken $token -DisableException
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
-
-        Generates a token then uses it to connect to Azure SQL DB then connects to an Azure SQL Db.
-        The connection is subsequently used to perform a sample query.
-
-        .EXAMPLE
+    .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
         In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
         This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
-        .EXAMPLE
+    .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
         PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
 
@@ -248,7 +237,6 @@ function Connect-DbaInstance {
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string]$Database = (Get-DbatoolsConfigValue -FullName 'sql.connection.database'),
-        [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
         [switch]$AzureUnsupported,
@@ -424,12 +412,20 @@ function Connect-DbaInstance {
                 }
 
                 if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
-                    $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
-                    $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
+                    $newway = ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808)
+
+                    $appid = Get-DbatoolsConfigValue -FullName 'azure.appid'
+                    $clientsecret = Get-DbatoolsConfigValue -FullName 'azure.clientsecret'
 
                     if (($appid -and $clientsecret) -and -not $SqlCredential) {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
                     }
+
+                    if ((-not $newway -and -not $SqlCredential) -and $tenant) {
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
+                        return
+                    }
+
                     if (((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
                         if (-not $azurevm) {
                             Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
