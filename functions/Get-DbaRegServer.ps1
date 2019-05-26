@@ -91,7 +91,7 @@ function Get-DbaRegServer {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     param (
         [parameter(ValueFromPipeline)]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance = (Get-DbatoolsConfigValue -FullName 'commands.get-dbaregserver.defaultcms'),
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
@@ -100,7 +100,7 @@ function Get-DbaRegServer {
         [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ResolveNetworkName,
-        [switch]$IncludeLocal,
+        [switch]$IncludeLocal = (Get-DbatoolsConfigValue -FullName 'commands.get-dbaregserver.includelocal'),
         [switch]$EnableException
     )
     begin {
