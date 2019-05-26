@@ -105,9 +105,9 @@ function Get-DbaRegServer {
     )
     begin {
         if ($ResolveNetworkName) {
-            $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description'
+            $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description', 'Source'
         }
-        $defaults = 'Name', 'ServerName', 'Group', 'Description'
+        $defaults = 'Name', 'ServerName', 'Group', 'Description', 'Source'
         # thank you forever https://social.msdn.microsoft.com/Forums/sqlserver/en-US/57811d43-a2b9-4179-a97b-a9936ddb188e/how-to-retrieve-a-password-saved-by-sql-server?forum=sqltools
         function Unprotect-String([string] $base64String) {
             return [System.Text.Encoding]::Unicode.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.Convert]::FromBase64String($base64String), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser))
@@ -145,7 +145,9 @@ function Get-DbaRegServer {
                     $initMethod = $class.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
                     $store = ($initMethod.Invoke($null, @($file)))
                     # Local Reg Servers
-                    $servers += $store.DatabaseEngineServerGroup.GetDescendantRegisteredServers()
+                    foreach ($tempserver in $store.DatabaseEngineServerGroup.GetDescendantRegisteredServers()) {
+                        $servers += $tempserver | Add-Member -Force -Name Source -Value "Local Server Groups" -MemberType NoteProperty -PassThru
+                    }
                     # Azure Reg Servers
                     $azureids = @()
                     if ($store.AzureDataStudioConnectionStore.Groups) {
@@ -173,6 +175,7 @@ function Get-DbaRegServer {
                                 $tempserver.ConnectionString = $adsconn.ConnectionString
                             }
                             # update read-only or problematic properties
+                            $tempserver | Add-Member -Force -Name Source -Value "Azure Data Studio" -MemberType NoteProperty
                             $tempserver | Add-Member -Force -Name ServerName -Value $server.Options['server'] -MemberType NoteProperty
                             $tempserver | Add-Member -Force -Name Id -Value $server.Id -MemberType NoteProperty
                             $tempserver | Add-Member -Force -Name CredentialPersistenceType -Value 1 -MemberType NoteProperty
@@ -230,6 +233,10 @@ function Get-DbaRegServer {
                     Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ConnectionString -Value $connstring
                     Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SecureConnectionString -Value (ConvertTo-SecureString -String $connstring -AsPlainText -Force)
                 }
+            }
+
+            if (-not $server.Source) {
+                Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Source -value "Central Management Servers"
             }
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
