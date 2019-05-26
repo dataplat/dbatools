@@ -148,6 +148,7 @@ $option.DoDotSource
 #endregion Dot Sourcing
 
 #region Copy DLL Mode
+# copy dll mode adds mess but is useful for installations using install.ps1
 $script:copyDllMode = $dbatools_copydllmode -or
 $dbatoolsSystemSystemNode.CopyDllMode -or
 $dbatoolsSystemUserNode.CopyDllMode -or
@@ -194,20 +195,6 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 
 
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
-
-<#
-# Removed this because it doesn't seem to work well xplat and on win7 and it doesn't provide enough value
-# Define folder in which to copy dll files before importing
-if (-not $script:copyDllMode) { $script:DllRoot = (Resolve-Path "$script:PSModuleRoot\bin\") }
-else {
-    $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
-    while (Test-Path -Path $libraryTempPath) {
-        $libraryTempPath = (Resolve-Path "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)")
-    }
-    $script:DllRoot = $libraryTempPath
-    $null = New-Item -Path $libraryTempPath -ItemType Directory
-}
-#>
 
 if (-not ('Microsoft.SqlServer.Management.Smo.Server' -as [type])) {
     . $script:psScriptRoot\internal\scripts\smoLibraryImport.ps1
