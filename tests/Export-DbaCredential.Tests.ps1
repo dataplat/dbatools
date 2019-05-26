@@ -45,9 +45,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should export a specific credential" {
-        $path = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcred' -Path $path
-        $results = Get-Content -Path $path
+        $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
+        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcred' -Path $filepath
+        $results = Get-Content -Path $filepath
 
         It "Should have information" {
             $results | Should Not Be Null
@@ -63,9 +63,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should export a specific credential and append it to exisiting export" {
-        $path = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -Path $path -Append
-        $results = Get-Content -Path $path
+        $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
+        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -Path $filepath -Append
+        $results = Get-Content -Path $filepath
 
         It "Should have information" {
             $results | Should Not Be Null
@@ -81,9 +81,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should export a specific credential excluding the password" {
-        $path = "$env:USERPROFILE\Documents\temp-credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -Path $path -ExcludePassword
-        $results = Get-Content -Path $path
+        $filepath = "$env:USERPROFILE\Documents\temp-credential.sql"
+        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -Path $filepath -ExcludePassword
+        $results = Get-Content -Path $filepath
 
         It "Should have information" {
             $results | Should Not Be $null
