@@ -38,6 +38,12 @@ function New-DbaAzAccessToken {
     .PARAMETER Tenant
         When using the ServicePrincipal or RenewableServicePrincipal types, a tenant name or ID is required. This field works with both.
 
+    .PARAMETER Thumbprint
+        Thumbprint for connections to Azure MSI
+
+    .PARAMETER Store
+        Store where the Azure MSI certificate is stored
+
     .PARAMETER EnableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
