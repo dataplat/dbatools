@@ -434,7 +434,7 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    if ($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
+                    if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core) {
                         if (-not $azurevm) {
                             Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
                             $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
@@ -625,7 +625,7 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
                 }
                 if (Test-Bound -ParameterName 'TrustServerCertificate') {
-                    $server.ConnectionContext.TrustServerCertificate = $true
+                    $server.ConnectionContext.TrustServerCertificate = $TrustServerCertificate
                 }
                 if (Test-Bound -ParameterName 'WorkstationId') {
                     $server.ConnectionContext.WorkstationId = $WorkstationId
@@ -770,12 +770,6 @@ function Connect-DbaInstance {
                 continue
             } else {
                 if (-not $server.ComputerName) {
-                    # Make ComputerName easily available in the server object
-                    if (-not $server.NetName -or $instance -match '\.') {
-                        $parsedcomputername = $instance.ComputerName
-                    } else {
-                        $parsedcomputername = $server.NetName
-                    }
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
