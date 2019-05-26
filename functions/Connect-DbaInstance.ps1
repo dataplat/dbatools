@@ -232,7 +232,7 @@ function Connect-DbaInstance {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "Connstring", "ConnectionString")]
+        [Alias("Connstring", "ConnectionString")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
