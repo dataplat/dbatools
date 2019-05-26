@@ -420,7 +420,7 @@ function Connect-DbaInstance {
                     }
 
                     if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed, even if client certificates are used; just specify the AppId as the credential username."
                         return
                     }
 
@@ -431,8 +431,13 @@ function Connect-DbaInstance {
 
                     if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core) {
                         if (-not $azurevm) {
-                            Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
-                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            if ($Thumbprint) {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with Certificate'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;CertificateThumbprint=$Thumbprint;CertificateStoreLocation=$Store"
+                            } else {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with appid/client'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            }
                         }
 
                         Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
