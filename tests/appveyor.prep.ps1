@@ -19,6 +19,12 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
     Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
 }
 
+#Setup DbatoolsConfig Path.DbatoolsExport path
+Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
+if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
+    New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
+}
+
 
 #Get opencover.portable (to run DLL tests)
 Write-Host -Object "appveyor.prep: Install opencover.portable" -ForegroundColor DarkGreen
