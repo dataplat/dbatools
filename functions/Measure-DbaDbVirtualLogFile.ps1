@@ -1,4 +1,4 @@
-function Test-DbaDbVirtualLogFile {
+function Measure-DbaDbVirtualLogFile {
     <#
     .SYNOPSIS
         Returns calculations on the database virtual log files for database on a SQL instance.
@@ -43,25 +43,25 @@ function Test-DbaDbVirtualLogFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbVirtualLogFile
+        https://dbatools.io/Measure-DbaDbVirtualLogFile
 
     .EXAMPLE
-        PS C:\> Test-DbaDbVirtualLogFile -SqlInstance sqlcluster
+        PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlcluster
 
         Returns all user database virtual log file counts for the sqlcluster instance.
 
     .EXAMPLE
-        PS C:\> Test-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+        PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
         Returns user databases that have 50 or more VLFs.
 
     .EXAMPLE
-        PS C:\> @('sqlserver','sqlcluster') | Test-DbaDbVirtualLogFile
+        PS C:\> @('sqlserver','sqlcluster') | Measure-DbaDbVirtualLogFile
 
         Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
     .EXAMPLE
-        PS C:\> Test-DbaDbVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
+        PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
         Returns VLF counts for the db1 and db2 databases on sqlcluster.
 
@@ -69,14 +69,11 @@ function Test-DbaDbVirtualLogFile {
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param ([parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -126,8 +123,5 @@ function Test-DbaDbVirtualLogFile {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaVirtualLogFile
     }
 }

@@ -85,7 +85,6 @@ function Invoke-DbaDbDecryptObject {
     [CmdletBinding()]
     param(
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]

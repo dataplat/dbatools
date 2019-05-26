@@ -67,7 +67,6 @@ function Remove-DbaRegServer {
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
@@ -104,8 +103,5 @@ function Remove-DbaRegServer {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServer
     }
 }

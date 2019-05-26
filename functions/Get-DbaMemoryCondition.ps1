@@ -39,11 +39,10 @@ function Get-DbaMemoryCondition {
         PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a -Group GroupName | Get-DbaMemoryCondition | Out-GridView
 
         Returns the memory conditions for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
-       #>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException

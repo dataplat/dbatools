@@ -80,7 +80,6 @@ function Copy-DbaAgentServer {
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -173,9 +172,5 @@ function Copy-DbaAgentServer {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerAgent
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }

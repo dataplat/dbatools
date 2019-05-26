@@ -57,16 +57,13 @@ function Get-DbaAgentJobCategory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

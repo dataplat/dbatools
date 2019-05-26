@@ -49,9 +49,7 @@ function Register-DbaRunspace {
         [String]
         $Name,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLowerInvariant())) {

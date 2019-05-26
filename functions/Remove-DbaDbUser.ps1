@@ -74,13 +74,10 @@ function Remove-DbaDbUser {
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess)]
     param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'User')]
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = 'User')]
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(ParameterSetName = 'User')]
         [object[]]$ExcludeDatabase,
@@ -91,7 +88,6 @@ function Remove-DbaDbUser {
         [parameter(ParameterSetName = 'User')]
         [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

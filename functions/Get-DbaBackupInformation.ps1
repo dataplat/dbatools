@@ -128,7 +128,6 @@ function Get-DbaBackupInformation {
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [parameter(Mandatory, ParameterSetName = "Create")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]
         [PSCredential]$SqlCredential,

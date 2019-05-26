@@ -75,7 +75,6 @@ function Find-DbaBackup {
         [parameter(Mandatory, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
         [string]$RetentionPeriod ,
         [switch]$CheckArchiveBit = $false ,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

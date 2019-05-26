@@ -47,12 +47,10 @@ function Get-DbaManagementObject {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]
         $Credential,
         [int]$VersionNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -147,8 +145,5 @@ function Get-DbaManagementObject {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlManagementObject
     }
 }

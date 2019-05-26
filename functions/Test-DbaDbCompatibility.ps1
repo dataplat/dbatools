@@ -18,9 +18,6 @@ function Test-DbaDbCompatibility {
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-    .PARAMETER Detailed
-        Will be deprecated in 1.0.0 release.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -62,20 +59,12 @@ function Test-DbaDbCompatibility {
     [OutputType("System.Collections.ArrayList")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -108,8 +97,5 @@ function Test-DbaDbCompatibility {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCompatibility
     }
 }

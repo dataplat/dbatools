@@ -70,7 +70,6 @@ function Dismount-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
@@ -79,7 +78,6 @@ function Dismount-DbaDatabase {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

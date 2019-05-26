@@ -112,12 +112,9 @@ function Remove-DbaDatabaseSafely {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [DbaInstanceParameter]$Destination = $sqlinstance,
         [PSCredential]
@@ -133,7 +130,6 @@ function Remove-DbaDatabaseSafely {
         [string]$BackupCompression = 'Default',
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -678,7 +674,5 @@ function Remove-DbaDatabaseSafely {
             $Duration = $End - $start
             Write-Message -Level Verbose -Message "Script Duration: $Duration."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlDatabaseSafely
     }
 }

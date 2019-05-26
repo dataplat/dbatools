@@ -76,7 +76,6 @@ function Remove-DbaAgentSchedule {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory, ParameterSetName = "instance")]
@@ -85,7 +84,6 @@ function Remove-DbaAgentSchedule {
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

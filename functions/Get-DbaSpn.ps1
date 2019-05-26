@@ -55,7 +55,6 @@ function Get-DbaSpn {
         [string[]]$ComputerName,
         [string[]]$AccountName,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

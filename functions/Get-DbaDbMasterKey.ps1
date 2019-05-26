@@ -53,7 +53,6 @@ function Get-DbaDbMasterKey {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -88,8 +87,5 @@ function Get-DbaDbMasterKey {
 
             Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }

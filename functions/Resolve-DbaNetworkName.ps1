@@ -86,12 +86,10 @@ function Resolve-DbaNetworkName {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias('FastParrot')]
         [switch]$Turbo,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -130,7 +128,7 @@ function Resolve-DbaNetworkName {
             }
             return
         }
-        
+
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true

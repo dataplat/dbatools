@@ -111,8 +111,7 @@ function Find-DbaAgentJob {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
@@ -132,7 +131,6 @@ function Find-DbaAgentJob {
         [string[]]$Category,
         [string]$Owner,
         [datetime]$Since,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

@@ -49,10 +49,8 @@ function Clear-DbaWaitStatistics {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

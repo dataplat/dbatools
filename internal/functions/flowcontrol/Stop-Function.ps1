@@ -101,7 +101,6 @@ function Stop-Function {
         $Message,
 
         [bool]
-        [Alias('Silent')]
         $EnableException = $EnableException,
 
         [Parameter(ParameterSetName = 'Plain')]

@@ -76,7 +76,6 @@ function Remove-DbaAgentJob {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Job,
@@ -85,7 +84,6 @@ function Remove-DbaAgentJob {
         [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

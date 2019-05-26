@@ -1,36 +1,5 @@
 # got this from here
 # https://vimalshekar.github.io/scriptsamples/Getting-Stored-Windows-Credentials-using-PowerShell
-function Invoke-ADSCsharpCompile () {
-    param(
-        [String] $code,
-        [Array] $References
-    )
-
-    $cp = new-object Microsoft.CSharp.CSharpCodeProvider
-    $framework = $([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
-
-    # Optional Array of Reference assemblies to be added
-    $refs = New-Object Collections.ArrayList
-    $refs.AddRange( @("${framework}\System.dll"))
-    if ($references.Count -ge 1) {
-        $refs.AddRange($References)
-    }
-
-    $cpar = New-Object System.CodeDom.Compiler.CompilerParameters
-    $cpar.GenerateInMemory = $true
-    $cpar.GenerateExecutable = $false
-    $cr = $cp.CompileAssemblyFromSource($cpar, $code)
-
-    if ( $cr.Errors.Count) {
-        $codeLines = $code.Split("`n");
-        foreach ($ce in $cr.Errors) {
-            Write-Host "Error: $($codeLines[$($ce.Line - 1)])"
-            $ce |out-default
-        }
-        Throw "INVALID DATA: Errors encountered while compiling code"
-    }
-}
-
 Function Get-ADSConnection {
 
     # Defining C# code to enum credman creds
@@ -202,7 +171,7 @@ namespace CredEnum {
 
     try {
         # Attempt to create an instance of this class
-        Invoke-ADSCsharpCompile $CredEnumWrapperClass
+        Add-Type $CredEnumWrapperClass
     } catch {
         throw "unable to compile"
     }

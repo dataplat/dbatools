@@ -18,9 +18,6 @@ function Test-DbaDbCollation {
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,19 +58,12 @@ function Test-DbaDbCollation {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$Detailed,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
-    }
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
@@ -106,8 +96,5 @@ function Test-DbaDbCollation {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseCollation
     }
 }

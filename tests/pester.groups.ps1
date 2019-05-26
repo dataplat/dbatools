@@ -47,7 +47,7 @@ $TestsRunGroups = @{
         'Test-DbaDeprecatedFeature',
         'Test-DbaServerName',
         'Test-DbaTempDbConfig',
-        'Test-DbaDbVirtualLogFile',
+        'Measure-DbaDbVirtualLogFile',
         'Test-DbaAgentJobOwner',
         'Resume-DbaAgDbDataMovement',
         'Get-DbaDbMasterKey',

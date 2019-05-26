@@ -234,7 +234,6 @@ function Connect-DbaInstance {
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("Connstring", "ConnectionString")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string]$Database = (Get-DbatoolsConfigValue -FullName 'sql.connection.database'),
         [ValidateSet('ReadOnly', 'ReadWrite')]

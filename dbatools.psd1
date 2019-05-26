@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.831'
+    ModuleVersion          = '0.9.832'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -113,7 +113,7 @@
         'Set-DbaDbOwner',
         'Test-DbaAgentJobOwner',
         'Set-DbaAgentJobOwner',
-        'Test-DbaDbVirtualLogFile',
+        'Measure-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',

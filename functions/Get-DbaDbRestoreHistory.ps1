@@ -75,23 +75,17 @@ function Get-DbaDbRestoreHistory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -EnableException:$false -Parameter 'Force'
-
         if ($Since -ne $null) {
             $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
         }

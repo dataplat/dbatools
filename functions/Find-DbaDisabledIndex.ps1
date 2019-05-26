@@ -70,16 +70,13 @@ function Find-DbaDisabledIndex {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$NoClobber,
         [switch]$Append,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -145,8 +142,5 @@ function Find-DbaDisabledIndex {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDisabledIndex
     }
 }

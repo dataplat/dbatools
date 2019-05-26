@@ -65,14 +65,11 @@ function Repair-DbaServerName {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$AutoFix,
         [switch]$Force,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {

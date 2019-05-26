@@ -69,11 +69,8 @@ function Get-DbaDbFileGroup {
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,

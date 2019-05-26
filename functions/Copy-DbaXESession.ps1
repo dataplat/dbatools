@@ -87,11 +87,9 @@ function Copy-DbaXESession {
         [object[]]$XeSession,
         [object[]]$ExcludeXeSession,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaExtendedEvent
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
@@ -188,8 +186,5 @@ function Copy-DbaXESession {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlExtendedEvent
     }
 }

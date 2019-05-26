@@ -71,13 +71,11 @@ function Get-DbaFile {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [int]$Depth = 1,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

@@ -44,10 +44,10 @@ function Get-DbaMaxMemory {
         PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize
 
         Scans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.
-       #>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException

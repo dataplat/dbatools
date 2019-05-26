@@ -132,7 +132,7 @@ function Invoke-DbaDbMirroring {
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$Primary,
@@ -143,7 +143,6 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -152,8 +151,6 @@ function Invoke-DbaDbMirroring {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackup')
         $null = $params.Remove('Force')

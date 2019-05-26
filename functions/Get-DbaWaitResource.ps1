@@ -54,7 +54,6 @@ function Get-DbaWaitResource {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]

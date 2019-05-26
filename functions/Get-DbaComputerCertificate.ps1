@@ -59,7 +59,6 @@ function Get-DbaComputerCertificate {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string[]]$Store = "LocalMachine",

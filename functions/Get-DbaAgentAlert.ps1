@@ -41,12 +41,10 @@ function Get-DbaAgentAlert {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "Instance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -163,7 +163,7 @@ function Get-DbaRandomizedValue {
 
         <# if ($Min -gt $Max) {
             Stop-Function -Message "Min value cannot be greater than max value" -Continue -Target $Min
-        } #>
+        }        #>
     }
 
     process {

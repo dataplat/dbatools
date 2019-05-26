@@ -674,8 +674,5 @@ function Import-DbaCsv {
         # Script is finished. Show elapsed time.
         $totaltime = [math]::Round($scriptelapsed.Elapsed.TotalSeconds, 2)
         Write-Message -Level Verbose -Message "Total Elapsed Time for everything: $totaltime seconds"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaCsvtoSql
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }

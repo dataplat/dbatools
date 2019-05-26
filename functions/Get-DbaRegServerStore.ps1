@@ -43,10 +43,8 @@ function Get-DbaRegServerStore {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -69,8 +67,5 @@ function Get-DbaRegServerStore {
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ParentServer -value $server
             Select-DefaultView -InputObject $store -ExcludeProperty ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerStore
     }
 }

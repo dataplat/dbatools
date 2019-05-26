@@ -44,8 +44,7 @@ function Get-DbaAgentProxy {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "Instance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Proxy,

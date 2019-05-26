@@ -58,11 +58,9 @@ function Get-DbaUptime {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -71,8 +69,8 @@ function Get-DbaUptime {
     }
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($instance in $SqlInstance) {
             if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
                 $servername = $instance.SqlInstance

@@ -207,7 +207,5 @@ function Show-DbaServerFileSystem {
             $drive = $textbox.Text + '\'
             return $drive
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlServerFileSystem
     }
 }

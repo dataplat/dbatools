@@ -59,7 +59,6 @@ function Get-DbaDbObjectTrigger {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
