@@ -130,13 +130,7 @@ function Connect-DbaInstance {
         Terminate if the target SQL Server instance version does not meet version requirements
 
     .PARAMETER AuthenticationType
-        We try to automatically detect the authentication type but if you'd like to state it explicitly, the options are as follows:
-        Auto
-        Windows Authentication
-        SQL Server Authentication
-        AD Universal with MFA Support
-        AD - Password
-        AD - Integrated
+        Basically used to force AD Universal with MFA Support when other types have been detected
 
     .PARAMETER Tenant
         The TenantId for an Azure Instance
@@ -263,7 +257,8 @@ function Connect-DbaInstance {
         [string]$AppendConnectionString,
         [switch]$SqlConnectionOnly,
         [string]$AzureDomain = "database.windows.net",
-        [ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        #[ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        [ValidateSet('Auto', 'AD Universal with MFA Support')]
         [string]$AuthenticationType = "Auto",
         [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
