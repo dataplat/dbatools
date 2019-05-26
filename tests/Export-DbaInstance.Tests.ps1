@@ -13,16 +13,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    AfterAll {
+        $ExportedItems = Get-ChildItem "$env:USERPROFILE\Documents" | Where-Object { $_.Name -match "-\d{14}" -and $_.Attributes -eq 'Directory' }
+        $null = Remove-Item -Path $($ExportedItems.FullName) -Force -Recurse -ErrorAction SilentlyContinue
+    }
+
     Context "Should Export all items from an instance" {
         $results = Export-DbaInstance -SqlInstance $script:instance2
-        #$null = Remove-Item -Path $results -Force -Recurse
         It "Should execute with default settings" {
             $results | Should Not Be Null
         }
     }
     Context "Should exclude some items from an Export" {
         $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects
-        #$null = Remove-Item -Path $results -Force -Recurse
         It "Should execute with parameters excluding objects" {
             $results | Should Not Be Null
         }
