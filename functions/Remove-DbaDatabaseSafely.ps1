@@ -200,12 +200,12 @@ function Remove-DbaDatabaseSafely {
         #            $serviceName = "SQLAgent`$$($instance)"
         #        }
         #    }
-#
+        #
         #    if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent")) {
         #        try {
         #            $ipaddr = Resolve-SqlIpAddress $destserver
         #            $agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
-#
+        #
         #            if ($agentservice.Status -ne 'Running') {
         #                $agentservice.Start()
         #                $timeout = New-Timespan -seconds 60
@@ -216,11 +216,11 @@ function Remove-DbaDatabaseSafely {
         #                }
         #            }
         #        }
-#
+        #
         #        catch {
         #            throw $_
         #        }
-#
+        #
         #        if ($agentservice.Status -ne 'Running') {
         #            throw "Cannot start Agent Service on $destination - Aborting."
         #        }
@@ -230,28 +230,28 @@ function Remove-DbaDatabaseSafely {
         #function Start-DbccCheck {
         #    <#
         #    .SYNOPSIS
-#
+        #
         #    #>
-#
+        #
         #    [CmdletBinding(SupportsShouldProcess)]
         #    param (
         #        [object]$server,
         #        [string]$dbname
         #    )
-#
+        #
         #    $servername = $server.name
         #    $db = $server.databases[$dbname]
-#
+        #
         #    if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
         #        try {
         #            $null = $db.CheckTables('None')
         #            Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
         #        }
-#
+        #
         #        catch {
         #            Write-Message -Level Warning -Message "DBCC CHECKDB failed."
         #            Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
-#
+        #
         #            if ($force) {
         #                return $true
         #            } else {
@@ -261,31 +261,31 @@ function Remove-DbaDatabaseSafely {
         #    }
         #}
 
-        function New-SqlAgentJobCategory {
-            <#
-                .SYNOPSIS
-
-            #>
-            [CmdletBinding(SupportsShouldProcess)]
-            param ([string]$categoryname,
-                [object]$jobServer)
-
-            if (!$jobServer.JobCategories[$categoryname]) {
-                if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Creating Agent Job Category $categoryname."
-                        $category = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory
-                        $category.Parent = $jobServer
-                        $category.Name = $categoryname
-                        $category.Create()
-                        Write-Message -Level Verbose -Message "Created Agent Job Category $categoryname."
-                    } catch {
-                        Stop-Function -Message "FAILED : To Create Agent Job Category - $categoryname - Aborting." -Target $categoryname -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-        }
+        #function New-SqlAgentJobCategory {
+        #    <#
+        #        .SYNOPSIS
+#
+        #    #>
+        #    [CmdletBinding(SupportsShouldProcess)]
+        #    param ([string]$categoryname,
+        #        [object]$jobServer)
+#
+        #    if (!$jobServer.JobCategories[$categoryname]) {
+        #        if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver")) {
+        #            try {
+        #                Write-Message -Level Verbose -Message "Creating Agent Job Category $categoryname."
+        #                $category = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory
+        #                $category.Parent = $jobServer
+        #                $category.Name = $categoryname
+        #                $category.Create()
+        #                Write-Message -Level Verbose -Message "Created Agent Job Category $categoryname."
+        #            } catch {
+        #                Stop-Function -Message "FAILED : To Create Agent Job Category - $categoryname - Aborting." -Target $categoryname -ErrorRecord $_
+        #                return
+        #            }
+        #        }
+        #    }
+        #}
 
         function Restore-Database {
             <#
@@ -492,7 +492,7 @@ function Remove-DbaDatabaseSafely {
 
                     #$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
                     #$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
-#
+                    #
                     #$backup.Devices.Add($backupDevice)
                     ##Progress
                     #$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
@@ -505,19 +505,19 @@ function Remove-DbaDatabaseSafely {
                     #$null = $backup.Devices.Remove($backupDevice)
                     #Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
                     #Write-Message -Level Verbose -Message "Backup Completed for $dbname on $source."
-#
+                    #
                     #Write-Message -Level Verbose -Message "Running Restore Verify only on Backup of $dbname on $source."
                     #try {
                     #    $restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
                     #    $restoreverify.Database = $dbname
                     #    $restoreverify.Devices.AddDevice($filename, $devicetype)
                     #    $result = $restoreverify.SqlVerify($sourceserver)
-#
+                    #
                     #    if ($result -eq $false) {
                     #        Write-Message -Level Warning -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database."
                     #        continue
                     #    }
-#
+                    #
                     #    Write-Message -Level Verbose -Message "Restore Verify Only for $filename succeeded."
                     #} catch {
                     #    Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
@@ -530,26 +530,28 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination")) {
                 Write-Message -Level Verbose -Message "Creating Automated Restore Job from Golden Backup for $dbname on $destination."
                 try {
-                    if ($force -eq $true -and $dbccgood -eq $false) {
+                    if ($force -eq $true -and $dbccgood -ne "Success") {
                         $jobName = $jobname -replace "Rationalised", "DBCC ERROR"
                     }
 
-                    ## Create an agent job to restore the database
-                    $job = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job $jobServer, $jobname
-                    $job.Name = $jobname
-                    $job.OwnerLoginName = $jobowner
-                    $job.Description = "This job will restore the $dbname database using the final backup located at $filename."
-
                     ## Create a Job Category
-                    if (!$jobServer.JobCategories[$categoryname]) {
-                        New-SqlAgentJobCategory -JobServer $jobServer -categoryname $categoryname
+                    if (!(Get-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationCredential -Category $categoryname)) {
+                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationCredential -Category $categoryname
                     }
 
-                    $job.Category = $categoryname
                     try {
-                        if ($Pscmdlet.ShouldProcess($destination, "Creating Agent Job on $destination")) {
+                        if ($Pscmdlet.ShouldProcess($destination, "Creating Agent Job $jobname on $destination")) {
+                            $jobParams = @{
+                                SqlInstance   = $destination
+                                SqlCredential = $DestinationCredential
+                                Job           = $jobname
+                                Category      = $categoryname
+                                Description   = "This job will restore the $dbname database using the final backup located at $filename."
+                                Owner         = $jobowner
+                            }
+                            New-DbaAgentJob @jobParams
+
                             Write-Message -Level Verbose -Message "Created Agent Job $jobname on $destination."
-                            $job.Create()
                         }
                     } catch {
                         Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for this database." -Target $categoryname -ErrorRecord $_ -Continue
