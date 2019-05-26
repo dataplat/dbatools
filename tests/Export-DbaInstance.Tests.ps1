@@ -14,18 +14,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
-        $ExportedItems = Get-ChildItem "C:\Users\appveyor\Documents" | Where-Object { $_.Name -match "-\d{14}" -and $_.Attributes -eq 'Directory' }
+        $timenow = (Get-Date -uformat "%m%d%Y%H")
+        $ExportedItems = Get-ChildItem "$($env:USERPROFILE)\Documents" | Where-Object { $_.Name -match "-$timenow\d{4}" -and $_.Attributes -eq 'Directory' }
+        Write-Host $ExportedItems -Verbose
         $null = Remove-Item -Path $($ExportedItems.FullName) -Force -Recurse -ErrorAction SilentlyContinue
     }
 
     Context "Should Export all items from an instance" {
-        $results = Export-DbaInstance -SqlInstance $script:instance2
+        $results = Export-DbaInstance -SqlInstance $script:instance2 -Verbose
         It "Should execute with default settings" {
             $results | Should Not Be Null
         }
     }
     Context "Should exclude some items from an Export" {
-        $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects
+        $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects -Verbose
         It "Should execute with parameters excluding objects" {
             $results | Should Not Be Null
         }
