@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
-        $ExportedItems = Get-ChildItem "$env:USERPROFILE\Documents" | Where-Object { $_.Name -match "-\d{14}" -and $_.Attributes -eq 'Directory' }
+        $ExportedItems = Get-ChildItem "C:\Users\appveyor\Documents" | Where-Object { $_.Name -match "-\d{14}" -and $_.Attributes -eq 'Directory' }
         $null = Remove-Item -Path $($ExportedItems.FullName) -Force -Recurse -ErrorAction SilentlyContinue
     }
 
