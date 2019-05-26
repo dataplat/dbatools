@@ -113,12 +113,10 @@ function Remove-DbaDatabaseSafely {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [DbaInstanceParameter]$Destination = $sqlinstance,
-        [PSCredential]
-        $DestinationCredential,
+        [PSCredential]$DestinationCredential,
         [Alias("NoCheck")]
         [switch]$NoDbccCheckDb,
         [parameter(Mandatory)]
@@ -165,7 +163,7 @@ function Remove-DbaDatabaseSafely {
         $destination = $destserver.DomainInstanceName
 
         if (!$jobowner) {
-            $jobowner = Get-SqlSaLogin $destserver
+            $jobowner = Get-SqlSaLogin -SqlInstance $destserver
         }
 
         if ($alldatabases -or !$Database) {
@@ -177,6 +175,7 @@ function Remove-DbaDatabaseSafely {
             Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }
 
+        #TODO: Test
         $jobname = "Rationalised Final Database Restore for $dbname"
         $jobStepName = "Restore the $dbname database from Final Backup"
 
@@ -184,49 +183,49 @@ function Remove-DbaDatabaseSafely {
             Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting." -ErrorRecord $_ -Target $jobowner
         }
 
-        function Start-SqlAgent {
-            <#
-                .SYNOPSIS
-            #>
-            [CmdletBinding(SupportsShouldProcess)]
-            param ()
-            if ($destserver.VersionMajor -eq 8) {
-                $serviceName = 'MSSQLSERVER'
-            } else {
-                $instance = $destserver.InstanceName
-                if ($instance.length -eq 0) {
-                    $instance = "MSSQLSERVER"
-                    $serviceName = "SQLSERVERAGENT"
-                } else {
-                    $serviceName = "SQLAgent`$$($instance)"
-                }
-            }
-
-            if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent")) {
-                try {
-                    $ipaddr = Resolve-SqlIpAddress $destserver
-                    $agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
-
-                    if ($agentservice.Status -ne 'Running') {
-                        $agentservice.Start()
-                        $timeout = New-Timespan -seconds 60
-                        $sw = [diagnostics.stopwatch]::StartNew()
-                        $agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-                        while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
-                            $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-                        }
-                    }
-                }
-
-                catch {
-                    throw $_
-                }
-
-                if ($agentservice.Status -ne 'Running') {
-                    throw "Cannot start Agent Service on $destination - Aborting."
-                }
-            }
-        }
+        #function Start-SqlAgent {
+        #    <#
+        #        .SYNOPSIS
+        #    #>
+        #    [CmdletBinding(SupportsShouldProcess)]
+        #    param ()
+        #    if ($destserver.VersionMajor -eq 8) {
+        #        $serviceName = 'MSSQLSERVER'
+        #    } else {
+        #        $instance = $destserver.InstanceName
+        #        if ($instance.length -eq 0) {
+        #            $instance = "MSSQLSERVER"
+        #            $serviceName = "SQLSERVERAGENT"
+        #        } else {
+        #            $serviceName = "SQLAgent`$$($instance)"
+        #        }
+        #    }
+#
+        #    if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent")) {
+        #        try {
+        #            $ipaddr = Resolve-SqlIpAddress $destserver
+        #            $agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
+#
+        #            if ($agentservice.Status -ne 'Running') {
+        #                $agentservice.Start()
+        #                $timeout = New-Timespan -seconds 60
+        #                $sw = [diagnostics.stopwatch]::StartNew()
+        #                $agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+        #                while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
+        #                    $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+        #                }
+        #            }
+        #        }
+#
+        #        catch {
+        #            throw $_
+        #        }
+#
+        #        if ($agentservice.Status -ne 'Running') {
+        #            throw "Cannot start Agent Service on $destination - Aborting."
+        #        }
+        #    }
+        #}
 
         function Start-DbccCheck {
             <#
@@ -373,7 +372,24 @@ function Remove-DbaDatabaseSafely {
             return
         }
         try {
-            Start-SqlAgent
+            #Start-SqlAgent
+
+            $agentService = Get-DbaService -SqlInstance $destination -Type Agent
+
+            if ($agentService.Status -ne 'Running') {
+                Stop-Function -Message "SQL Server Agent is not running. Please start the service." -ErrorAction $agentService.Name
+                #$agentservice.Start()
+                #$timeout = New-Timespan -seconds 60
+                #$sw = [diagnostics.stopwatch]::StartNew()
+                #$agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+                #while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
+                #    $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
+                #}
+            }
+            #if ($agentservice.Status -ne 'Running') {
+            #    throw "Cannot start Agent Service on $destination - Aborting."
+            #}
+
         } catch {
             Stop-Function -Message "Failure starting SQL Agent" -ErrorRecord $_
             return
