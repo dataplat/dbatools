@@ -408,7 +408,11 @@ function Connect-DbaInstance {
                 if ($connstring) {
                     $azureconnstring = $connstring
                 } else {
-                    $azureconnstring = New-DbaConnectionString @boundparams
+                    if ($Tenant) {
+                        $azureconnstring = New-DbaConnectionString -SqlInstance $instance -AccessToken None -Database $Database
+                    } else {
+                        $azureconnstring = New-DbaConnectionString @boundparams
+                    }
                 }
 
                 if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
@@ -421,22 +425,31 @@ function Connect-DbaInstance {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
                     }
 
-                    if ((-not $newway -and -not $SqlCredential) -and $tenant) {
+                    if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
                         return
                     }
 
-                    if (((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
+                    if (-not $Database) {
+                        Stop-Function -Message "When using AD Universal with MFA Support, database must be specified unless .net 4.7.2 or above is installed"
+                        return
+                    }
+
+                    if ($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") {
                         if (-not $azurevm) {
                             Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString'
-                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$appid;TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
                         }
 
                         Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
                         $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     } else {
+                        if (-not $SqlCredential) {
+                            Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
+                            return
+                        }
                         Write-Message -Level Verbose -Message "Creating renewable token"
-                        $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb)
+                        $accesstoken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential)
                     }
                 }
 
@@ -444,9 +457,9 @@ function Connect-DbaInstance {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
-                    Write-Message -Level Debug -Message $sqlconn.ConnectionString
-                    if ($PSBoundParameters.AccessToken) {
-                        $sqlconn.AccessToken = $AccessToken
+                    Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    if ($accesstoken) {
+                        $sqlconn.AccessToken = $accesstoken
                     }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
