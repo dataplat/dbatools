@@ -162,6 +162,10 @@ function New-DbaDbUser {
                 $databases = $databases | Where-Object IsSystemObject -NE $true
             }
 
+            if ($null -eq $databases -or $databases.Count -eq 0) {
+                Stop-Function -Message "Error occurred while establishing a connection to $Database" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
             foreach ($db in $databases) {
                 Write-Message -Level Verbose -Message "Add users to Database $db on target $server"
 
