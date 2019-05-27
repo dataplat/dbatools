@@ -18,28 +18,28 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $instance = Connect-DbaInstance -SqlInstance $script:instance2
 
         $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
-        $testLogin = 'getDbaServerRoleMemberLogin'
+        $testLogin = 'getDbaInstanceRoleMemberLogin'
         $null = New-DbaLogin -SqlInstance $instance -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $instance -Login $testLogin -AddRole 'dbcreator'
     }
 
     Context "Functionality" {
         It 'Returns all role membership for server roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance
+            $result = Get-DbaInstanceRoleMember -SqlInstance $instance
 
             # should have at least $testLogin and a sysadmin
             $result.Count | Should -BeGreaterOrEqual 2
         }
 
         It 'Accepts a list of roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ServerRole 'sysadmin'
+            $result = Get-DbaInstanceRoleMember -SqlInstance $instance -ServerRole 'sysadmin'
 
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Be 'sysadmin'
         }
 
         It 'Excludes roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeServerRole 'dbcreator'
+            $result = Get-DbaInstanceRoleMember -SqlInstance $instance -ExcludeServerRole 'dbcreator'
 
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'dbcreator'
@@ -47,13 +47,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Excludes fixed roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeFixedRole
+            $result = Get-DbaInstanceRoleMember -SqlInstance $instance -ExcludeFixedRole
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'sysadmin'
         }
 
         It 'Filters by a specific login' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -Login $testLogin
+            $result = Get-DbaInstanceRoleMember -SqlInstance $instance -Login $testLogin
 
             $uniqueLogins = $result.Name | Select-Object -Unique
             $uniqueLogins.Count | Should -BeExactly 1

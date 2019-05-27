@@ -45,7 +45,7 @@ $TestsRunGroups = @{
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Test-DbaDeprecatedFeature',
-        'Test-DbaServerName',
+        'Test-DbaInstanceName',
         'Test-DbaTempDbConfig',
         'Measure-DbaDbVirtualLogFile',
         'Test-DbaAgentJobOwner',

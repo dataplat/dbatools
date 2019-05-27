@@ -194,7 +194,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting server roles"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
-                $null = Get-DbaServerRole -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-serverroles.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaInstanceRole -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-serverroles.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-serverroles.sql"
                 if (-not (Test-Path "$Path\$fileCounter-serverroles.sql")) {
                     $fileCounter--
@@ -264,7 +264,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
-                $null = Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-servertriggers.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaInstanceTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-servertriggers.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $triggers = Get-Content -Path "$Path\$fileCounter-servertriggers.sql" -Raw -ErrorAction Ignore
                 if ($triggers) {
                     $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "GO`r`nCREATE TRIGGER"
@@ -302,7 +302,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Audits"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Audits"
-                $null = Get-DbaServerAudit -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-audits.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaInstanceAudit -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-audits.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-audits.sql"
                 if (-not (Test-Path "$Path\$fileCounter-audits.sql")) {
                     $fileCounter--
@@ -313,7 +313,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Server Audit Specifications"
-                $null = Get-DbaServerAuditSpecification -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-auditspecs.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaInstanceAuditSpecification -SqlInstance $server | Export-DbaScript -Path "$Path\$fileCounter-auditspecs.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-auditspecs.sql"
                 if (-not (Test-Path "$Path\$fileCounter-auditspecs.sql")) {
                     $fileCounter--

@@ -323,7 +323,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'SystemTriggers') {
             Write-Message -Level Verbose -Message "Migrating System Triggers"
-            Copy-DbaServerTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'Databases') {
@@ -365,12 +365,12 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'Audits') {
             Write-Message -Level Verbose -Message "Migrating Audits"
-            Copy-DbaServerAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'ServerAuditSpecifications') {
             Write-Message -Level Verbose -Message "Migrating Server Audit Specifications"
-            Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'Endpoints') {

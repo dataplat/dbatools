@@ -1,4 +1,4 @@
-function Show-DbaServerFileSystem {
+function Show-DbaInstanceFileSystem {
     <#
     .SYNOPSIS
         Shows file system on remote SQL Server in a local GUI and returns the selected directory name
@@ -6,7 +6,7 @@ function Show-DbaServerFileSystem {
     .DESCRIPTION
         Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
 
-        Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+        Show-DbaInstanceFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -28,15 +28,15 @@ function Show-DbaServerFileSystem {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Show-DbaServerFileSystem
+        https://dbatools.io/Show-DbaInstanceFileSystem
 
     .EXAMPLE
-        PS C:\> Show-DbaServerFileSystem -SqlInstance sql2017
+        PS C:\> Show-DbaInstanceFileSystem -SqlInstance sql2017
 
         Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
 
     .EXAMPLE
-        PS C:\> Show-DbaServerFileSystem -SqlInstance sql2017 -SqlCredential $cred
+        PS C:\> Show-DbaInstanceFileSystem -SqlInstance sql2017 -SqlCredential $cred
 
         Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
 

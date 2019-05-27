@@ -35,11 +35,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaServerAudit -SqlInstance $script:instance2
+            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2
             $results | Should -Not -Be $null
         }
         It "returns some results" {
-            $results = Get-DbaServerAudit -SqlInstance $script:instance2 -Audit LoginAudit
+            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit
             $results.Name | Should -Be 'LoginAudit'
             $results.Enabled | Should -Be $true
         }

@@ -1,7 +1,7 @@
-function Copy-DbaServerAudit {
+function Copy-DbaInstanceAudit {
     <#
     .SYNOPSIS
-        Copy-DbaServerAudit migrates server audits from one SQL Server to another.
+        Copy-DbaInstanceAudit migrates server audits from one SQL Server to another.
 
     .DESCRIPTION
         By default, all audits are copied. The -Audit parameter is auto-populated for command-line completion and can be used to copy only specific audits.
@@ -54,25 +54,25 @@ function Copy-DbaServerAudit {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaServerAudit
+        https://dbatools.io/Copy-DbaInstanceAudit
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaInstanceAudit -Source sqlserver2014a -Destination sqlcluster
 
         Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaInstanceAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
 
         Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaInstanceAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -Path 'C:\audit1'
+        PS C:\> Copy-DbaInstanceAudit -Source sqlserver-0 -Destination sqlserver-1 -Audit audit1 -Path 'C:\audit1'
 
         Copies audit audit1 from sqlserver-0 to sqlserver-1. The file path on sqlserver-1 will be set to 'C:\audit1'.
     #>

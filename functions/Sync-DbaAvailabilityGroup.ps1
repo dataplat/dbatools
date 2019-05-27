@@ -275,7 +275,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "SystemTriggers") {
                 if ($PSCmdlet.ShouldProcess("Syncing System Triggers from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
-                    Copy-DbaServerTrigger -Source $server -Destination $secondaries -Force:$Force
+                    Copy-DbaInstanceTrigger -Source $server -Destination $secondaries -Force:$Force
                 }
             }
 

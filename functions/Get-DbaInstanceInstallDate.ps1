@@ -1,4 +1,4 @@
-function Get-DbaServerInstallDate {
+function Get-DbaInstanceInstallDate {
     <#
     .SYNOPSIS
         Returns the install date of a SQL Instance and Windows Server.
@@ -34,30 +34,30 @@ function Get-DbaServerInstallDate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerInstallDate
+        https://dbatools.io/Get-DbaInstanceInstallDate
 
     .EXAMPLE
-        PS C:\> Get-DbaServerInstallDate -SqlInstance SqlBox1\Instance2
+        PS C:\> Get-DbaInstanceInstallDate -SqlInstance SqlBox1\Instance2
 
         Returns an object with SQL Instance Install date as a string.
 
     .EXAMPLE
-        PS C:\> Get-DbaServerInstallDate -SqlInstance winserver\sqlexpress, sql2016
+        PS C:\> Get-DbaInstanceInstallDate -SqlInstance winserver\sqlexpress, sql2016
 
         Returns an object with SQL Instance Install date as a string for both SQLInstances that are passed to the cmdlet.
 
     .EXAMPLE
-        PS C:\> 'sqlserver2014a', 'sql2016' | Get-DbaServerInstallDate
+        PS C:\> 'sqlserver2014a', 'sql2016' | Get-DbaInstanceInstallDate
 
         Returns an object with SQL Instance Install date as a string for both SQLInstances that are passed to the cmdlet via the pipeline.
 
     .EXAMPLE
-        PS C:\> Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
+        PS C:\> Get-DbaInstanceInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 
         Returns an object with the Windows Install date and the SQL install date as a string.
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Get-DbaServerInstallDate
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Get-DbaInstanceInstallDate
 
         Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 
