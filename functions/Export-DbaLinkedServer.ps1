@@ -18,7 +18,10 @@ function Export-DbaLinkedServer {
         Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the exported sql file.
+        The path to the directory that will contain exported sql file.
+
+    .PARAMETER FilePath
+       The specific path to a file which will contain the output.
 
     .PARAMETER LinkedServer
         The linked server(s) to export. If unspecified, all linked servers will be processed.
@@ -64,6 +67,7 @@ function Export-DbaLinkedServer {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
@@ -103,8 +107,22 @@ function Export-DbaLinkedServer {
             }
 
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
+            if (-not $FilePath) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+            }
 
+            if (Test-Path $Path -PathType Container) {
+                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+            } elseif (Test-Path $Path -PathType Leaf) {
+                if ($SqlInstance.Count -gt 1) {
+                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                    $PathData = Get-ChildItem $Path
+                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                } else {
+                    $filepath = $Path
+                }
+            }
             $sql = @()
 
             if ($ExcludePassword) {
@@ -134,13 +152,13 @@ function Export-DbaLinkedServer {
             }
             try {
                 if ($Append) {
-                    Add-Content -Path $path -Value $sql
+                    Add-Content -Path $FilePath -Value $sql
                 } else {
-                    Set-Content -Path $path -Value $sql
+                    Set-Content -Path $FilePath -Value $sql
                 }
-                Get-ChildItem -Path $path
+                Get-ChildItem -Path $FilePath
             } catch {
-                Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
         }
     }

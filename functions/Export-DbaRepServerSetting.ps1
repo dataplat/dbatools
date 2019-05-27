@@ -13,7 +13,10 @@ function Export-DbaRepServerSetting {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the path to a file which will contain the output.
+        Specifies the directory to a file which will contain the output.
+
+    .PARAMETER FilePath
+        The specific path to a file which will contain the output.
 
     .PARAMETER Passthru
         Output script to console
@@ -72,6 +75,7 @@ function Export-DbaRepServerSetting {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
@@ -90,26 +94,25 @@ function Export-DbaRepServerSetting {
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.replace('\', '$'))-$timenow-replication.sql"
+
+            if (-not $FilePath) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-replication.sql"
+            }
 
             if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-replication.sql"
+                $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-replication.sql"
             } elseif (Test-Path $Path -PathType Leaf) {
                 if ($SqlInstance.Count -gt 1) {
                     $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                     $PathData = Get-ChildItem $Path
-                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
                 } else {
-                    $filepath = $Path
+                    $FilePath = $Path
                 }
             }
 
-            If (-not $filepath) {
-                $filepath = $Path
-            }
-
-            $topdir = Split-Path -Path $filepath
+            $topdir = Split-Path -Path $FilePath
 
             if (-not (Test-Path -Path $topdir)) {
                 New-Item -Path $topdir -ItemType Directory
@@ -133,10 +136,10 @@ function Export-DbaRepServerSetting {
                 $out | Out-String
             }
 
-            if ($filepath) {
+            if ($FilePath) {
 
-                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $filepath -Encoding $encoding -Append
-                $out | Out-File -FilePath $filepath -Encoding $encoding -Append:$Append
+                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $FilePath -Encoding $encoding -Append
+                $out | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append
             }
         }
     }

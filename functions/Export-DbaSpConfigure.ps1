@@ -14,9 +14,12 @@ function Export-DbaSpConfigure {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
+        Specifies the directory to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
         If not specified will output to My Documents folder with default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
         If a directory is passed then uses default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
+
+    .PARAMETER FilePath
+        Specifies the specific file instead of a directory path.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -68,6 +71,7 @@ function Export-DbaSpConfigure {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
         [switch]$EnableException
     )
     process {
@@ -78,26 +82,25 @@ function Export-DbaSpConfigure {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $filepath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+
+            if (-not $FilePath) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+            }
 
             if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+                $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             } elseif (Test-Path $Path -PathType Leaf) {
                 if ($SqlInstance.Count -gt 1) {
                     $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                     $PathData = Get-ChildItem $Path
-                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
                 } else {
-                    $filepath = $Path
+                    $FilePath = $Path
                 }
             }
 
-            If (-not $filepath) {
-                $filepath = $Path
-            }
-
-            $topdir = Split-Path -Path $filepath
+            $topdir = Split-Path -Path $FilePath
 
             if (-not (Test-Path -Path $topdir)) {
                 New-Item -Path $topdir -ItemType Directory
@@ -115,25 +118,25 @@ function Export-DbaSpConfigure {
             }
 
             try {
-                Set-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
+                Set-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
             } catch {
-                Stop-Function -Message "Can't write to $filepath" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
 
             foreach ($sourceprop in $server.Configuration.Properties) {
                 $displayname = $sourceprop.DisplayName
                 $configvalue = $sourceprop.ConfigValue
-                Add-Content -Path $filepath "EXEC sp_configure '$displayname' , $configvalue;"
+                Add-Content -Path $FilePath "EXEC sp_configure '$displayname' , $configvalue;"
             }
 
             if ($ShowAdvancedOptions -eq 0) {
-                Add-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 0;"
-                Add-Content -Path $filepath "RECONFIGURE WITH OVERRIDE"
+                Add-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 0;"
+                Add-Content -Path $FilePath "RECONFIGURE WITH OVERRIDE"
 
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 $server.Configuration.Alter($true)
             }
-            Get-ChildItem -Path $filepath
+            Get-ChildItem -Path $FilePath
         }
     }
     end {

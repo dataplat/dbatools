@@ -18,7 +18,10 @@ function Export-DbaCredential {
         Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the exported sql file.
+        The path to the directory that will contain the exported sql file.
+
+    .PARAMETER FilePath
+       The specific path to a file which will contain the output.
 
     .PARAMETER Identity
         The credentials to export. If unspecified, all credentials will be exported.
@@ -58,6 +61,7 @@ function Export-DbaCredential {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
         [Parameter(ValueFromPipeline)]
