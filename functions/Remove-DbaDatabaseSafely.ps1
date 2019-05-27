@@ -196,9 +196,8 @@ function Remove-DbaDatabaseSafely {
 
             if ($agentService.State -ne 'Running') {
                 Stop-Function -Message "SQL Server Agent is not running. Please start the service." -ErrorAction $agentService.Name
-            }
-            else {
-                 Write-Message -Level Verbose -Message "SQL Server Agent $($agentService.Name) is running."
+            } else {
+                Write-Message -Level Verbose -Message "SQL Server Agent $($agentService.Name) is running."
             }
         } catch {
             Stop-Function -Message "Failure getting SQL Agent service" -ErrorRecord $_
@@ -296,8 +295,7 @@ function Remove-DbaDatabaseSafely {
                     if ($BackupCompression -eq "Default") {
                         if ($DefaultCompression -eq 1) {
                             $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup -Checksum
-                        }
-                        else {
+                        } else {
                             $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -Checksum
                         }
                     } elseif ($BackupCompression -eq "On") {
