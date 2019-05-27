@@ -28,6 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Command actually works" {
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
+        $results
         It "Should have database name of $db1" {
             foreach ($result in $results) {
                 $result.DatabaseName | Should Be $db1
