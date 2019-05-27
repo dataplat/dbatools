@@ -284,6 +284,20 @@ function Invoke-DbatoolsRenameHelper {
             'Move-DbaCmsRegServerGroup'         = 'Move-DbaRegServerGroup'
             'Remove-DbaCmsRegServer'            = 'Remove-DbaRegServer'
             'Remove-DbaCmsRegServerGroup'       = 'Remove-DbaRegServerGroup'
+            'Copy-DbaServerAuditSpecification'  = 'Copy-DbaInstanceAuditSpecification'
+            'Copy-DbaInstanceAudit'             = 'Copy-DbaServerAudit'
+            'Copy-DbaServerRole'                = 'Copy-DbaInstanceRole'
+            'Copy-DbaServerTrigger'             = 'Copy-DbaInstanceTrigger'
+            'Test-DbaServerName'                = 'Repair-DbaServerName'
+            'Test-DbaInstanceName'              = 'Repair-DbaInstanceName'
+            'Get-DbaServerTrigger'              = 'Get-DbaInstanceTrigger'
+            'Get-DbaServerAudit'                = 'Get-DbaServerAuditSpecification'
+            'Get-DbaInstanceAudit'              = 'Get-DbaInstanceAuditSpecification'
+            'Get-DbaServerInstallDate'          = 'Get-DbaInstanceInstallDate'
+            'Get-DbaServerRole'                 = 'Get-DbaInstanceRole'
+            'Show-DbaServerFileSystem'          = 'Show-DbaInstanceFileSystem'
+            'Install-DbaWatchUpdate'            = 'Install-DbatoolsWatchUpdate'
+            'Uninstall-DbaWatchUpdate'          = 'Uninstall-DbatoolsWatchUpdate'
         }
 
         $allrenames = $commandrenames + $paramrenames
