@@ -131,7 +131,7 @@ function Start-DbaXESession {
                     $time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime $time -Force
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StopAt -StartTime $time
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
