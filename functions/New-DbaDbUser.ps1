@@ -163,7 +163,7 @@ function New-DbaDbUser {
             }
 
             if ($null -eq $databases -or $databases.Count -eq 0) {
-                Stop-Function -Message "Error occurred while establishing a connection to $databases" -Category ConnectionError -ErrorRecord $_ -Target $databases -Continue
+                Stop-Function -Message "Error occurred while establishing a connection to $Database" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($db in $databases) {
