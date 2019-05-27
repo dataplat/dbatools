@@ -1,7 +1,7 @@
-function Copy-DbaServerAuditSpecification {
+function Copy-DbaInstanceAuditSpecification {
     <#
     .SYNOPSIS
-        Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another.
+        Copy-DbaInstanceAuditSpecification migrates server audit specifications from one SQL Server to another.
 
     .DESCRIPTION
         By default, all audits are copied. The -AuditSpecification parameter is auto-populated for command-line completion and can be used to copy only specific audits.
@@ -51,20 +51,20 @@ function Copy-DbaServerAuditSpecification {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaServerAuditSpecification
+        https://dbatools.io/Copy-DbaInstanceAuditSpecification
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
+        PS C:\> Copy-DbaInstanceAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 
         Copies all server audits from sqlserver2014a to sqlcluster using Windows credentials to connect. If audits with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -AuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
+        PS C:\> Copy-DbaInstanceAuditSpecification -Source sqlserver2014a -Destination sqlcluster -AuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
 
         Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster. If an audit specification with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
     .EXAMPLE
-        PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        PS C:\> Copy-DbaInstanceAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
         Shows what would happen if the command were executed using force.
 
