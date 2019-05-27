@@ -1,4 +1,3 @@
-#ValidationTags#FlowControl,Pipeline#
 function Set-DbaSpn {
     <#
     .SYNOPSIS
@@ -82,7 +81,6 @@ function Set-DbaSpn {
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [switch]$NoDelegation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

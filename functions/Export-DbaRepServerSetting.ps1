@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaRepServerSetting {
     <#
     .SYNOPSIS
@@ -70,10 +69,9 @@ function Export-DbaRepServerSetting {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
@@ -91,11 +89,32 @@ function Export-DbaRepServerSetting {
 
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
-            if (-not (Test-Bound -ParameterName Path)) {
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.replace('\', '$'))-$timenow-replication.sql"
+
+            if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
+                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-replication.sql"
+            } elseif (Test-Path $Path -PathType Leaf) {
+                if ($SqlInstance.Count -gt 1) {
+                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                    $PathData = Get-ChildItem $Path
+                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                } else {
+                    $filepath = $Path
+                }
             }
+
+            If (-not $filepath) {
+                $filepath = $Path
+            }
+
+            $topdir = Split-Path -Path $filepath
+
+            if (-not (Test-Path -Path $topdir)) {
+                New-Item -Path $topdir -ItemType Directory
+            }
+
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
@@ -114,10 +133,10 @@ function Export-DbaRepServerSetting {
                 $out | Out-String
             }
 
-            if ($Path) {
+            if ($filepath) {
 
-                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $path -Encoding $encoding -Append
-                $out | Out-File -FilePath $path -Encoding $encoding -Append:$Append
+                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $filepath -Encoding $encoding -Append
+                $out | Out-File -FilePath $filepath -Encoding $encoding -Append:$Append
             }
         }
     }

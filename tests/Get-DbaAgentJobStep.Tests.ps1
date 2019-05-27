@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Job','ExcludeJob','ExcludeDisabledJobs','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'ExcludeDisabledJobs', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -64,7 +64,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-sqlserver
+            } #mock connect-SqlInstance
 
             It "Honors the Job parameter" {
                 $Results = @()
@@ -80,5 +80,37 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results.Name | Should Match 'Job[23]Step[12]'
             }
         }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Gets a job step" {
+        BeforeAll {
+            $jobName = "dbatoolsci_job_$(get-random)"
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance sqlpomf\sql2016 -Job $jobName -Confirm:$false
+        }
+
+        It "Successfully gets job when not using Job param" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance2
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully gets job when using Job param" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully gets job when excluding some jobs" {
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -ExcludeJob 'syspolicy_purge_history'
+            $results.Name | should contain 'dbatoolsci_jobstep1'
+        }
+        It "Successfully excludes disabled jobs" {
+            $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Disabled
+            $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -ExcludeDisabledJobs
+            $results.Name | should not contain 'dbatoolsci_jobstep1'
+        }
+
     }
 }

@@ -120,24 +120,20 @@ function Export-DbaLogin {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [Alias("Databases")]
         [object[]]$Database,
         [Alias("OutFile", "FilePath", "FileName")]
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$ExcludeDatabases,
         [string]$DefaultDatabase,
         [switch]$ExcludeJobs,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$ExcludeGoBatchSeparator,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
@@ -484,6 +480,5 @@ function Export-DbaLogin {
         } else {
             $sql
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }

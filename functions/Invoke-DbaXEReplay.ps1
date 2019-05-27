@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaXeReplay {
     <#
     .SYNOPSIS
@@ -66,9 +65,7 @@ function Invoke-DbaXeReplay {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Event = @('sql_batch_completed', 'rcp_completed'),

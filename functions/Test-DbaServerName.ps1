@@ -18,9 +18,6 @@ function Test-DbaServerName {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER ExcludeSsrs
         If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
@@ -66,20 +63,11 @@ function Test-DbaServerName {
     [OutputType([System.Collections.ArrayList])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
-        [Alias("NoWarning")]
         [switch]$ExcludeSsrs,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoWarning
-    }
     process {
 
         foreach ($instance in $SqlInstance) {

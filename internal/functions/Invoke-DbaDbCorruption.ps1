@@ -54,15 +54,12 @@ function Invoke-DbaDbCorruption {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     # For later if we want to do bit flipping.
@@ -151,7 +148,7 @@ function Invoke-DbaDbCorruption {
         #Dbcc-ReadPage -SqlInstance $Server -Database $Database -PageId $pages.PagePID -FileId $pages.PageFID
         Write-Message -Level Verbose -Message "Setting single-user mode."
         $null = Stop-DbaProcess -SqlInstance $Server -Database $Database
-        $null = Set-DbaDbState -SqlServer $Server -Database $Database -SingleUser -Force
+        $null = Set-DbaDbState -SqlInstance $Server -Database $Database -SingleUser -Force
 
         try {
             Write-Message -Level Verbose -Message "Stopping processes in target database."
@@ -161,7 +158,7 @@ function Invoke-DbaDbCorruption {
         } catch {
             $Server.ConnectionContext.Disconnect()
             $Server.ConnectionContext.Connect()
-            $null = Set-DbaDbState -SqlServer $Server -Database $Database -MultiUser -Force
+            $null = Set-DbaDbState -SqlInstance $Server -Database $Database -MultiUser -Force
             Stop-Function -EnableException:$EnableException -Message "Failed to write page" -Category WriteError -ErrorRecord $_ -Target $instance
             return
         }
@@ -170,7 +167,7 @@ function Invoke-DbaDbCorruption {
         # If you do not disconnect and reconnect, multiuser fails.
         $Server.ConnectionContext.Disconnect()
         $Server.ConnectionContext.Connect()
-        $null = Set-DbaDbState -SqlServer $Server -Database $Database -MultiUser -Force
+        $null = Set-DbaDbState -SqlInstance $Server -Database $Database -MultiUser -Force
 
         [pscustomobject]@{
             ComputerName = $Server.ComputerName

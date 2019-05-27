@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaXEFile {
     <#
     .SYNOPSIS
@@ -55,8 +54,7 @@ function Read-DbaXEFile {
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         foreach ($file in $path) {

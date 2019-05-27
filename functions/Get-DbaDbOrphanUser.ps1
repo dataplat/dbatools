@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbOrphanUser {
     <#
     .SYNOPSIS
@@ -60,13 +59,10 @@ function Get-DbaDbOrphanUser {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -123,8 +119,5 @@ function Get-DbaDbOrphanUser {
                 Write-Message -Level VeryVerbose -Message "There are no databases to analyse."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Get-DbaOrphanUser
     }
 }

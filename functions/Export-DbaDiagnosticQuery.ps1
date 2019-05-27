@@ -60,11 +60,10 @@ function Export-DbaDiagnosticQuery {
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
-        [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
+        [System.IO.FileInfo]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
         [switch]$NoQueryExport,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -106,10 +105,10 @@ function Export-DbaDiagnosticQuery {
             }
 
             $queryname = Remove-InvalidFileNameChars -Name $Name
-            $excelfilename = "$Path\$SqlInstance-DQ-$Suffix.xlsx"
-            $exceldbfilename = "$Path\$SqlInstance-DQ-$dbname-$Suffix.xlsx"
-            $csvdbfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
-            $csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
+            $excelfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$Suffix.xlsx"
+            $exceldbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbname-$Suffix.xlsx"
+            $csvdbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+            $csvfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 
             $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan", "query_plan_xml"
             if (($result | Get-Member | Where-Object Name -in $columnnameoptions).Count -gt 0) {
@@ -118,9 +117,9 @@ function Export-DbaDiagnosticQuery {
                 foreach ($plan in $result."$columnname") {
                     $plannr += 1
                     if ($row.DatabaseSpecific) {
-                        $planfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     } else {
-                        $planfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     }
 
                     if (!$NoPlanExport) {
@@ -139,9 +138,9 @@ function Export-DbaDiagnosticQuery {
                 foreach ($sql in $result."$columnname") {
                     $sqlnr += 1
                     if ($row.DatabaseSpecific) {
-                        $sqlfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     } else {
-                        $sqlfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     }
 
                     if (!$NoQueryExport) {

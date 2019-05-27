@@ -26,14 +26,10 @@ function Get-BackupAncientHistory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [string]$FileNameStub,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

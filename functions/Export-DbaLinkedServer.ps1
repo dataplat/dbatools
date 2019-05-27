@@ -59,12 +59,11 @@ function Export-DbaLinkedServer {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$LinkedServer,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
@@ -103,11 +102,8 @@ function Export-DbaLinkedServer {
                 return
             }
 
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
 
             $sql = @()
 

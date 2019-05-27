@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaSpConfigure {
     <#
     .SYNOPSIS
@@ -66,10 +65,9 @@ function Export-DbaSpConfigure {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$EnableException
     )
     process {
@@ -79,12 +77,8 @@ function Export-DbaSpConfigure {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $filepath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            }
+            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $filepath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
 
             if (Test-Path $Path -PathType Container) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
@@ -142,10 +136,7 @@ function Export-DbaSpConfigure {
             Get-ChildItem -Path $filepath
         }
     }
-
     end {
         Write-Message -Level Verbose -Message "Server configuration export finished"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }

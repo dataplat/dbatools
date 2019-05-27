@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbCertificate {
     <#
     .SYNOPSIS
@@ -132,8 +131,5 @@ function Restore-DbaDbCertificate {
             }
             Get-DbaDbCertificate -SqlInstance $server -Database $Database -Certificate $smocert.Name
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
     }
 }

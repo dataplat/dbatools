@@ -277,15 +277,11 @@ function New-DbaConnectionString {
 
                             if ($username -like "*\*") {
                                 $username = $username.Split("\")[1]
-                                #Variable marked as unused by PSScriptAnalyzer
-                                #$authtype = "Windows Authentication with Credential"
                                 $server.ConnectionContext.LoginSecure = $true
                                 $server.ConnectionContext.ConnectAsUser = $true
                                 $server.ConnectionContext.ConnectAsUserName = $username
                                 $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
                             } else {
-                                #Variable marked as unused by PSScriptAnalyzer
-                                #$authtype = "SQL Authentication"
                                 $server.ConnectionContext.LoginSecure = $false
                                 $server.ConnectionContext.set_Login($username)
                                 $server.ConnectionContext.set_SecurePassword($Credential.Password)
@@ -324,8 +320,5 @@ function New-DbaConnectionString {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionString
     }
 }

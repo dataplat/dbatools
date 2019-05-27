@@ -95,9 +95,7 @@ function Stop-DbaProcess {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,
@@ -107,7 +105,6 @@ function Stop-DbaProcess {
         [string[]]$Program,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
         [object[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
