@@ -55,14 +55,14 @@ CREATE RULE dbo.dbatoolsci_range_rule
 AS
 @range>= $1000 AND @range <$20000;
 "@
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $Function
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $TableFunction
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $Rule
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Function
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $TableFunction
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Rule
     }
     AfterAll {
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
     Context "Should Copy Objects to the same instance" {
