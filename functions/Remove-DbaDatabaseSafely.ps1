@@ -124,7 +124,7 @@ function Remove-DbaDatabaseSafely {
         [string]$CategoryName = 'Rationalisation',
         [string]$JobOwner,
         [switch]$AllDatabases,
-        [ValidateSet("Default", "On", "Of")]
+        [ValidateSet("Default", "On", "Off")]
         [string]$BackupCompression = 'Default',
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
@@ -182,216 +182,26 @@ function Remove-DbaDatabaseSafely {
         if (!($destserver.Logins | Where-Object { $_.Name -eq $jobowner })) {
             Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting." -ErrorRecord $_ -Target $jobowner
         }
-
-        #function Start-SqlAgent {
-        #    <#
-        #        .SYNOPSIS
-        #    #>
-        #    [CmdletBinding(SupportsShouldProcess)]
-        #    param ()
-        #    if ($destserver.VersionMajor -eq 8) {
-        #        $serviceName = 'MSSQLSERVER'
-        #    } else {
-        #        $instance = $destserver.InstanceName
-        #        if ($instance.length -eq 0) {
-        #            $instance = "MSSQLSERVER"
-        #            $serviceName = "SQLSERVERAGENT"
-        #        } else {
-        #            $serviceName = "SQLAgent`$$($instance)"
-        #        }
-        #    }
-        #
-        #    if ($Pscmdlet.ShouldProcess($destination, "Starting Sql Agent")) {
-        #        try {
-        #            $ipaddr = Resolve-SqlIpAddress $destserver
-        #            $agentservice = Get-Service -ComputerName $ipaddr -Name $serviceName
-        #
-        #            if ($agentservice.Status -ne 'Running') {
-        #                $agentservice.Start()
-        #                $timeout = New-Timespan -seconds 60
-        #                $sw = [diagnostics.stopwatch]::StartNew()
-        #                $agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-        #                while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
-        #                    $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-        #                }
-        #            }
-        #        }
-        #
-        #        catch {
-        #            throw $_
-        #        }
-        #
-        #        if ($agentservice.Status -ne 'Running') {
-        #            throw "Cannot start Agent Service on $destination - Aborting."
-        #        }
-        #    }
-        #}
-
-        #function Start-DbccCheck {
-        #    <#
-        #    .SYNOPSIS
-        #
-        #    #>
-        #
-        #    [CmdletBinding(SupportsShouldProcess)]
-        #    param (
-        #        [object]$server,
-        #        [string]$dbname
-        #    )
-        #
-        #    $servername = $server.name
-        #    $db = $server.databases[$dbname]
-        #
-        #    if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
-        #        try {
-        #            $null = $db.CheckTables('None')
-        #            Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
-        #        }
-        #
-        #        catch {
-        #            Write-Message -Level Warning -Message "DBCC CHECKDB failed."
-        #            Stop-Function -Message "Error occurred: $_" -Target $agentservice -ErrorRecord $_ -Continue
-        #
-        #            if ($force) {
-        #                return $true
-        #            } else {
-        #                return $false
-        #            }
-        #        }
-        #    }
-        #}
-
-        #function New-SqlAgentJobCategory {
-        #    <#
-        #        .SYNOPSIS
-        #
-        #    #>
-        #    [CmdletBinding(SupportsShouldProcess)]
-        #    param ([string]$categoryname,
-        #        [object]$jobServer)
-        #
-        #    if (!$jobServer.JobCategories[$categoryname]) {
-        #        if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver")) {
-        #            try {
-        #                Write-Message -Level Verbose -Message "Creating Agent Job Category $categoryname."
-        #                $category = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory
-        #                $category.Parent = $jobServer
-        #                $category.Name = $categoryname
-        #                $category.Create()
-        #                Write-Message -Level Verbose -Message "Created Agent Job Category $categoryname."
-        #            } catch {
-        #                Stop-Function -Message "FAILED : To Create Agent Job Category - $categoryname - Aborting." -Target $categoryname -ErrorRecord $_
-        #                return
-        #            }
-        #        }
-        #    }
-        #}
-
-        #function Restore-Database {
-        #    <#
-        #        .SYNOPSIS
-        #            Internal function. Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
-        #        a custom object that contains logical and physical file locations.
-        #    #>
-        #
-        #    param (
-        #        [Parameter(Mandatory)]
-        #        [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
-        #        [object]$server,
-        #        [Parameter(Mandatory)]
-        #        [ValidateNotNullOrEmpty()]
-        #        [string]$dbname,
-        #        [Parameter(Mandatory)]
-        #        [string]$backupfile,
-        #        [string]$filetype = 'Database',
-        #        [Parameter(Mandatory)]
-        #        [object]$filestructure,
-        #        [switch]$norecovery,
-        #        [PSCredential]$sqlCredential,
-        #        [switch]$TSql = $false
-        #    )
-        #
-        #    $server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlCredential
-        #    $servername = $server.name
-        #    $server.ConnectionContext.StatementTimeout = 0
-        #    $restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-        #    $restore.ReplaceDatabase = $true
-        #
-        #    foreach ($file in $filestructure.values) {
-        #        $movefile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
-        #        $movefile.LogicalFileName = $file.logical
-        #        $movefile.PhysicalFileName = $file.physical
-        #        $null = $restore.RelocateFiles.Add($movefile)
-        #    }
-        #
-        #    try {
-        #        if ($TSql) {
-        #            $restore.PercentCompleteNotification = 1
-        #            $restore.add_Complete($complete)
-        #            $restore.ReplaceDatabase = $true
-        #            $restore.Database = $dbname
-        #            $restore.Action = $filetype
-        #            $restore.NoRecovery = $norecovery
-        #            $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-        #            $device.name = $backupfile
-        #            $device.devicetype = 'File'
-        #            $restore.Devices.Add($device)
-        #            $restorescript = $restore.script($server)
-        #            return $restorescript
-        #        } else {
-        #            $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-        #                Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-        #            }
-        #            $restore.add_PercentComplete($percent)
-        #            $restore.PercentCompleteNotification = 1
-        #            $restore.add_Complete($complete)
-        #            $restore.ReplaceDatabase = $true
-        #            $restore.Database = $dbname
-        #            $restore.Action = $filetype
-        #            $restore.NoRecovery = $norecovery
-        #            $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-        #            $device.name = $backupfile
-        #            $device.devicetype = 'File'
-        #            $restore.Devices.Add($device)
-        #
-        #            Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-        #            $restore.sqlrestore($server)
-        #            Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status 'Complete' -Completed
-        #
-        #            return $true
-        #        }
-        #    } catch {
-        #        Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
-        #        return $false
-        #    }
-        #}
-
     }
     process {
         if (Test-FunctionInterrupt) {
             return
         }
         try {
-            #Start-SqlAgent
-
-            $agentService = Get-DbaService -SqlInstance $destination -Type Agent
-
-            if ($agentService.Status -ne 'Running') {
-                Stop-Function -Message "SQL Server Agent is not running. Please start the service." -ErrorAction $agentService.Name
-                #$agentservice.Start()
-                #$timeout = New-Timespan -seconds 60
-                #$sw = [diagnostics.stopwatch]::StartNew()
-                #$agentstatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-                #while ($AgentStatus -ne 'Running' -and $sw.elapsed -lt $timeout) {
-                #    $agentStatus = (Get-Service -ComputerName $ipaddr -Name $serviceName).Status
-                #}
+            $destInstanceName = $destserver.InstanceName
+            if ($destserver.InstanceName -eq '') {
+                $destInstanceName = "MSSQLSERVER"
             }
-            #if ($agentservice.Status -ne 'Running') {
-            #    throw "Cannot start Agent Service on $destination - Aborting."
-            #}
+            $agentService = Get-DbaService -ComputerName $destserver.ComputerName -InstanceName $destInstanceName -Type Agent
 
+            if ($agentService.State -ne 'Running') {
+                Stop-Function -Message "SQL Server Agent is not running. Please start the service." -ErrorAction $agentService.Name
+            }
+            else {
+                 Write-Message -Level Verbose -Message "SQL Server Agent $($agentService.Name) is running."
+            }
         } catch {
-            Stop-Function -Message "Failure starting SQL Agent" -ErrorRecord $_
+            Stop-Function -Message "Failure getting SQL Agent service" -ErrorRecord $_
             return
         }
 
@@ -446,7 +256,6 @@ function Remove-DbaDatabaseSafely {
                     if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $destination")) {
                         Write-Message -Level Verbose -Message "Dropping $jobname on $destination."
                         $checkJob.Drop()
-                        #$jobServer.Jobs.Refresh()
                     }
                 }
             }
@@ -472,16 +281,10 @@ function Remove-DbaDatabaseSafely {
 
             if ($Pscmdlet.ShouldProcess($source, "Backing up $dbname")) {
 
-
                 Write-Message -Level Verbose -Message "Starting Backup for $dbname on $source."
                 ## Take a Backup
                 try {
                     $timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
-                    #$backup = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Backup
-                    #$backup.Action = [Microsoft.SqlServer.Management.SMO.BackupActionType]::Database
-                    #$backup.BackupSetDescription = "Final Full Backup of $dbname Prior to Dropping"
-                    #$backup.Database = $dbname
-                    #$backup.Checksum = $True
 
                     if ($force -and $dbccgood -ne "Success") {
                         $filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
@@ -489,40 +292,20 @@ function Remove-DbaDatabaseSafely {
                         $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
                     }
 
-                    Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup:$BackupCompression -Verify -Checksum
+                    $DefaultCompression = $sourceserver.Configuration.DefaultBackupCompression.ConfigValue
+                    if ($BackupCompression -eq "Default") {
+                        if ($DefaultCompression -eq 1) {
+                            $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup -Checksum
+                        }
+                        else {
+                            $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -Checksum
+                        }
+                    } elseif ($BackupCompression -eq "On") {
+                        $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup -Checksum
+                    } else {
+                        $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -Checksum
+                    }
 
-                    #$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
-                    #$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
-                    #
-                    #$backup.Devices.Add($backupDevice)
-                    ##Progress
-                    #$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    #    Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-                    #}
-                    #$backup.add_PercentComplete($percent)
-                    #$backup.add_Complete($complete)
-                    #Write-Progress -id 1 -activity "Backing up database $dbname on $source to $filename" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                    #$backup.SqlBackup($sourceserver)
-                    #$null = $backup.Devices.Remove($backupDevice)
-                    #Write-Progress -id 1 -activity "Backing up database $dbname  on $source to $filename" -status "Complete" -Completed
-                    #Write-Message -Level Verbose -Message "Backup Completed for $dbname on $source."
-                    #
-                    #Write-Message -Level Verbose -Message "Running Restore Verify only on Backup of $dbname on $source."
-                    #try {
-                    #    $restoreverify = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-                    #    $restoreverify.Database = $dbname
-                    #    $restoreverify.Devices.AddDevice($filename, $devicetype)
-                    #    $result = $restoreverify.SqlVerify($sourceserver)
-                    #
-                    #    if ($result -eq $false) {
-                    #        Write-Message -Level Warning -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database."
-                    #        continue
-                    #    }
-                    #
-                    #    Write-Message -Level Verbose -Message "Restore Verify Only for $filename succeeded."
-                    #} catch {
-                    #    Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
-                    #}
                 } catch {
                     Stop-Function -Message "FAILED : Restore Verify Only failed for $filename on $server - aborting routine for this database. Exception: $_" -Target $filename -ErrorRecord $_ -Continue
                 }
@@ -563,21 +346,7 @@ function Remove-DbaDatabaseSafely {
                     ## Suggestion check for disk space before restore
                     ## Create Restore Script
                     try {
-                        #$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-                        #$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $filename, 'FILE'
-                        #$restore.Devices.Add($device)
-                        #try {
-                        #    $filelist = $restore.ReadFileList($destserver)
-                        #}
-                        #
-                        #catch {
-                        #    throw 'File list could not be determined. This is likely due to connectivity issues or tiemouts with the Sql Server, the database version is incorrect, or the Sql Server service account does not have access to the file share. Script terminating.'
-                        #}
-                        #
-                        #$filestructure = Get-OfflineSqlFileStructure $destserver $dbname $filelist $ReuseSourceFolderStructure
-                        #
-                        #$jobStepCommand = Restore-Database $destserver $dbname $filename "Database" $filestructure -TSql -ErrorAction Stop
-                        $jobStepCommand = (Restore-DbaDatabase -SqlInstance $destserver -BackupFileName $filename -OutputScriptOnly).Tsql
+                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly
 
                         $jobStepParams = @{
                             SqlInstance     = $destination
@@ -594,22 +363,12 @@ function Remove-DbaDatabaseSafely {
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination")) {
                             $jobStep = New-DbaAgentJobStep @jobStepParams
                         }
-                        #$jobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $job, $jobStepName
-                        #$jobStep.SubSystem = 'TransactSql' # 'PowerShell'
-                        #$jobStep.DatabaseName = 'master'
-                        #$jobStep.Command = $jobStepCommand
-                        #$jobStep.OnSuccessAction = 'QuitWithSuccess'
-                        #$jobStep.OnFailAction = 'QuitWithFailure'
-                        #if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination")) {
-                        #    $null = $jobStep.Create()
-                        #}
                         $jobStartStepid = $jobStep.ID
                         Write-Message -Level Verbose -Message "Created Agent JobStep $jobStepName on $destination."
                     } catch {
                         Stop-Function -Message "FAILED : To Create Agent JobStep $jobStepName on $destination - Aborting." -Target $jobStepName -ErrorRecord $_ -Continue
                     }
                     if ($Pscmdlet.ShouldProcess($destination, "Applying Agent Job $jobname to $destination")) {
-                        $job.ApplyToTargetServer($destination)
                         $job.StartStepID = $jobStartStepid
                         $job.Alter()
                     }
@@ -632,8 +391,6 @@ function Remove-DbaDatabaseSafely {
                 ## Run the restore job to restore it
                 Write-Message -Level Verbose -Message "Starting $jobname on $destination."
                 try {
-                    $job = Get-DbaAgentJob -SqlInstance $destserver -Job $jobname
-                    #$destserver.JobServer.Jobs[$jobname]
                     $job.Start()
                     $job.Refresh()
                     $status = $job.CurrentRunStatus
@@ -656,26 +413,26 @@ function Remove-DbaDatabaseSafely {
                     # LOL, love the plug.
                     Write-Message -Level Warning -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname."
                     Write-Message -Level Warning -Message "Check the Agent Job History on $destination - if you have SSMS2016 July release or later."
-                    Write-Message -Level Warning -Message "Get-SqlAgentJobHistory -JobName '$jobname' -ServerInstance $destination -OutcomesType Failed."
+                    Write-Message -Level Warning -Message "Get-DbaAgentJobHistory -SqlInstance $destination -Job '$jobname'."
+
                     continue
                 }
+
+                $refreshRetries = 1
+
+                $destserver.Databases.Refresh()
+                $restoredDatabase = Get-DbaDatabase -SqlInstance $destserver -Database $dbname
+                while ($null -eq $restoredDatabase -and $refreshRetries -lt 6) {
+                    Write-Message -Level verbose -Message "Database $dbname not found! Refreshing collection."
+
+                    #refresh database list, otherwise the next step (DBCC) can fail
+                    $restoredDatabase.Parent.Databases.Refresh()
+
+                    Start-Sleep -Seconds 1
+
+                    $refreshRetries += 1
+                }
             }
-
-            $refreshRetries = 1
-
-            $restoredDatabase = Get-DbaDatabase -SqlInstance $destserver - Name $dbname
-            while ($null -eq $restoredDatabase -and $refreshRetries -lt 6) {
-                Write-Message -Level verbose -Message "Database $dbname not found! Refreshing collection."
-
-                #refresh database list, otherwise the next step (DBCC) can fail
-                $restoredDatabase.Parent.Databases.Refresh()
-                #$destserver.Databases.Refresh()
-
-                Start-Sleep -Seconds 1
-
-                $refreshRetries += 1
-            }
-
 
             ## Run a Dbcc No choice here
             if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination")) {
@@ -692,7 +449,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
                 ## Drop the database
                 try {
-                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
+                    $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname database on $destination."
                 } catch {
                     Stop-Function -Message "FAILED : To Drop database $dbname on $destination - Aborting. Exception: $_" -Target $dbname -ErrorRecord $_ -Continue
