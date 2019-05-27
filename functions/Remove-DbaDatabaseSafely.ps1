@@ -264,12 +264,12 @@ function Remove-DbaDatabaseSafely {
         #function New-SqlAgentJobCategory {
         #    <#
         #        .SYNOPSIS
-#
+        #
         #    #>
         #    [CmdletBinding(SupportsShouldProcess)]
         #    param ([string]$categoryname,
         #        [object]$jobServer)
-#
+        #
         #    if (!$jobServer.JobCategories[$categoryname]) {
         #        if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $sourceserver")) {
         #            try {
@@ -436,16 +436,17 @@ function Remove-DbaDatabaseSafely {
 
             $jobname = "Rationalised Database Restore Script for $dbname"
             $jobStepName = "Restore the $dbname database from Final Backup"
-            $jobServer = $destserver.JobServer
+            $checkJob = Get-DbaAgentJob -SqlInstance $destserver -Job $jobname
+            #$jobServer = $destserver.JobServer
 
-            if ($jobServer.Jobs[$jobname].count -gt 0) {
+            if ($checkJob.count -gt 0) {
                 if ($force -eq $false) {
                     Stop-Function -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate." -Continue
                 } else {
-                    if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $source")) {
-                        Write-Message -Level Verbose -Message "Dropping $jobname on $source."
-                        $jobServer.Jobs[$jobname].Drop()
-                        $jobServer.Jobs.Refresh()
+                    if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $destination")) {
+                        Write-Message -Level Verbose -Message "Dropping $jobname on $destination."
+                        $checkJob.Drop()
+                        #$jobServer.Jobs.Refresh()
                     }
                 }
             }
@@ -614,7 +615,8 @@ function Remove-DbaDatabaseSafely {
                 ## Run the restore job to restore it
                 Write-Message -Level Verbose -Message "Starting $jobname on $destination."
                 try {
-                    $job = $destserver.JobServer.Jobs[$jobname]
+                    $job = Get-DbaAgentJob -SqlInstance $destserver -Job $jobname
+                    #$destserver.JobServer.Jobs[$jobname]
                     $job.Start()
                     $job.Refresh()
                     $status = $job.CurrentRunStatus
@@ -644,11 +646,13 @@ function Remove-DbaDatabaseSafely {
 
             $refreshRetries = 1
 
-            while ($null -eq ($destserver.databases[$dbname]) -and $refreshRetries -lt 6) {
+            $restoredDatabase = Get-DbaDatabase -SqlInstance $destserver - Name $dbname
+            while ($null -eq $restoredDatabase -and $refreshRetries -lt 6) {
                 Write-Message -Level verbose -Message "Database $dbname not found! Refreshing collection."
 
                 #refresh database list, otherwise the next step (DBCC) can fail
-                $destserver.Databases.Refresh()
+                $restoredDatabase.Parent.Databases.Refresh()
+                #$destserver.Databases.Refresh()
 
                 Start-Sleep -Seconds 1
 
