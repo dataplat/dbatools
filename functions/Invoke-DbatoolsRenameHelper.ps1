@@ -90,7 +90,7 @@ function Invoke-DbatoolsRenameHelper {
             'Backup-DbaDatabaseCertificate'     = 'Backup-DbaDbCertificate'
             'Backup-DbaDatabaseMasterKey'       = 'Backup-DbaDbMasterKey'
             'Clear-DbaSqlConnectionPool'        = 'Clear-DbaConnectionPool'
-            'Connect-DbaInstance'                 = 'Connect-DbaInstance'
+            'Connect-DbaInstance'               = 'Connect-DbaInstance'
             'Copy-DbaAgentCategory'             = 'Copy-DbaAgentJobCategory'
             'Copy-DbaAgentProxyAccount'         = 'Copy-DbaAgentProxy'
             'Copy-DbaAgentSharedSchedule'       = 'Copy-DbaAgentSchedule'
