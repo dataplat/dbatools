@@ -1,4 +1,4 @@
-function Get-DbaServerTrigger {
+function Get-DbaInstanceTrigger {
     <#
     .SYNOPSIS
         Get all existing server triggers on one or more SQL instances.
@@ -26,10 +26,10 @@ function Get-DbaServerTrigger {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerTrigger
+        https://dbatools.io/Get-DbaInstanceTrigger
 
     .EXAMPLE
-        PS C:\> Get-DbaServerTrigger -SqlInstance sql2017
+        PS C:\> Get-DbaInstanceTrigger -SqlInstance sql2017
 
         Returns all server triggers on sql2017
 

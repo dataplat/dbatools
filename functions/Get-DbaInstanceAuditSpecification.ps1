@@ -1,10 +1,10 @@
-function Get-DbaServerAuditSpecification {
+function Get-DbaInstanceAuditSpecification {
     <#
     .SYNOPSIS
         Gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Get-DbaServerAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
+        The Get-DbaInstanceAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -27,15 +27,15 @@ function Get-DbaServerAuditSpecification {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerAuditSpecification
+        https://dbatools.io/Get-DbaInstanceAuditSpecification
 
     .EXAMPLE
-        PS C:\> Get-DbaServerAuditSpecification -SqlInstance localhost
+        PS C:\> Get-DbaInstanceAuditSpecification -SqlInstance localhost
 
         Returns all Security Audit Specifications on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaServerAuditSpecification -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaInstanceAuditSpecification -SqlInstance localhost, sql2016
 
         Returns all Security Audit Specifications for the local and sql2016 SQL Server instances
 

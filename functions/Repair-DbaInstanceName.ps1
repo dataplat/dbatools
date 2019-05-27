@@ -1,4 +1,4 @@
-function Repair-DbaServerName {
+function Repair-DbaInstanceName {
     <#
     .SYNOPSIS
         Renames @@SERVERNAME to match with the Windows name.
@@ -44,20 +44,20 @@ function Repair-DbaServerName {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Repair-DbaServerName
+        https://dbatools.io/Repair-DbaInstanceName
 
     .EXAMPLE
-        PS C:\> Repair-DbaServerName -SqlInstance sql2014
+        PS C:\> Repair-DbaInstanceName -SqlInstance sql2014
 
         Checks to see if the server name is updatable and changes the name with a number of prompts.
 
     .EXAMPLE
-        PS C:\> Repair-DbaServerName -SqlInstance sql2014 -AutoFix
+        PS C:\> Repair-DbaInstanceName -SqlInstance sql2014 -AutoFix
 
         Checks to see if the server name is updatable and automatically performs the change. Replication or mirroring will be broken if necessary.
 
     .EXAMPLE
-        PS C:\> Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
+        PS C:\> Repair-DbaInstanceName -SqlInstance sql2014 -AutoFix -Force
 
         Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
 
@@ -94,7 +94,7 @@ function Repair-DbaServerName {
 
             # Check to see if we can easily proceed
 
-            $nametest = Test-DbaServerName $server -EnableException | Select-Object *
+            $nametest = Test-DbaInstanceName $server -EnableException | Select-Object *
             $oldserverinstancename = $nametest.ServerName
             $SqlInstancename = $nametest.SqlInstance
 
@@ -103,7 +103,7 @@ function Repair-DbaServerName {
             }
 
             if (-not $nametest.updatable) {
-                Write-Message -Level Output -Message "Test-DbaServerName reports that the rename cannot proceed with a rename in this $instance's current state."
+                Write-Message -Level Output -Message "Test-DbaInstanceName reports that the rename cannot proceed with a rename in this $instance's current state."
 
                 foreach ($nametesterror in $nametest.Blockers) {
                     if ($nametesterror -like '*replication*') {
@@ -238,7 +238,7 @@ function Repair-DbaServerName {
 
             if ($renamed -eq $true) {
                 Write-Message -Level Verbose -Message "$instance successfully renamed from $oldserverinstancename to $SqlInstancename."
-                Test-DbaServerName -SqlInstance $server
+                Test-DbaInstanceName -SqlInstance $server
             }
 
             if ($needsrestart -eq $true) {

@@ -1,4 +1,4 @@
-function Get-DbaServerProtocol {
+function Get-DbaInstanceProtocol {
     <#
     .SYNOPSIS
         Gets the SQL Server related server protocols on a computer.
@@ -29,25 +29,25 @@ function Get-DbaServerProtocol {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerProtocol
+        https://dbatools.io/Get-DbaInstanceProtocol
 
     .EXAMPLE
-        PS C:\> Get-DbaServerProtocol -ComputerName sqlserver2014a
+        PS C:\> Get-DbaInstanceProtocol -ComputerName sqlserver2014a
 
         Gets the SQL Server related server protocols on computer sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> 'sql1','sql2','sql3' | Get-DbaServerProtocol
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaInstanceProtocol
 
         Gets the SQL Server related server protocols on computers sql1, sql2 and sql3.
 
     .EXAMPLE
-        PS C:\> Get-DbaServerProtocol -ComputerName sql1,sql2 | Out-GridView
+        PS C:\> Get-DbaInstanceProtocol -ComputerName sql1,sql2 | Out-GridView
 
         Gets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.
 
     .EXAMPLE
-        PS C:\> (Get-DbaServerProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq 'Named Pipes' }).Disable()
+        PS C:\> (Get-DbaInstanceProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq 'Named Pipes' }).Disable()
 
         Disables the VIA ServerNetworkProtocol on computer sql1.
         If successful, return code 0 is shown.

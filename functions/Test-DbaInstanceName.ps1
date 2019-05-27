@@ -1,4 +1,4 @@
-function Test-DbaServerName {
+function Test-DbaInstanceName {
     <#
     .SYNOPSIS
         Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
@@ -35,25 +35,25 @@ function Test-DbaServerName {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaServerName
+        https://dbatools.io/Test-DbaInstanceName
 
     .EXAMPLE
-        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a
+        PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a
 
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
+        PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a, sql2016
 
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
     .EXAMPLE
-        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs
+        PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs
 
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016, but skips validating if SSRS is installed on both instances.
 
     .EXAMPLE
-        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 | Select-Object *
+        PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a, sql2016 | Select-Object *
 
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
         If a Rename is required, it will also show Updatable, and Reasons if the server name is not updatable.
