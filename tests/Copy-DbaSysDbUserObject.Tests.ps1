@@ -12,8 +12,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Should Copy Objects to the same instance" {
+        $results = Copy-DbaSysDbUserObject -Source $script:instance2 -Destination $script:instance2
+        It "Should execute with default parameters" {
+            $results | Should Not Be Null
+        }
+        $results = Copy-DbaSysDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
+        It "Should execute with -Classic parameter" {
+            $results | Should Not Be Null
+        }
+    }
+}
