@@ -287,84 +287,84 @@ function Remove-DbaDatabaseSafely {
         #    }
         #}
 
-        function Restore-Database {
-            <#
-                .SYNOPSIS
-                    Internal function. Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
-                a custom object that contains logical and physical file locations.
-            #>
-
-            param (
-                [Parameter(Mandatory)]
-                [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
-                [object]$server,
-                [Parameter(Mandatory)]
-                [ValidateNotNullOrEmpty()]
-                [string]$dbname,
-                [Parameter(Mandatory)]
-                [string]$backupfile,
-                [string]$filetype = 'Database',
-                [Parameter(Mandatory)]
-                [object]$filestructure,
-                [switch]$norecovery,
-                [PSCredential]$sqlCredential,
-                [switch]$TSql = $false
-            )
-
-            $server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlCredential
-            $servername = $server.name
-            $server.ConnectionContext.StatementTimeout = 0
-            $restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
-            $restore.ReplaceDatabase = $true
-
-            foreach ($file in $filestructure.values) {
-                $movefile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
-                $movefile.LogicalFileName = $file.logical
-                $movefile.PhysicalFileName = $file.physical
-                $null = $restore.RelocateFiles.Add($movefile)
-            }
-
-            try {
-                if ($TSql) {
-                    $restore.PercentCompleteNotification = 1
-                    $restore.add_Complete($complete)
-                    $restore.ReplaceDatabase = $true
-                    $restore.Database = $dbname
-                    $restore.Action = $filetype
-                    $restore.NoRecovery = $norecovery
-                    $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    $device.name = $backupfile
-                    $device.devicetype = 'File'
-                    $restore.Devices.Add($device)
-                    $restorescript = $restore.script($server)
-                    return $restorescript
-                } else {
-                    $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                        Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-                    }
-                    $restore.add_PercentComplete($percent)
-                    $restore.PercentCompleteNotification = 1
-                    $restore.add_Complete($complete)
-                    $restore.ReplaceDatabase = $true
-                    $restore.Database = $dbname
-                    $restore.Action = $filetype
-                    $restore.NoRecovery = $norecovery
-                    $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    $device.name = $backupfile
-                    $device.devicetype = 'File'
-                    $restore.Devices.Add($device)
-
-                    Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                    $restore.sqlrestore($server)
-                    Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status 'Complete' -Completed
-
-                    return $true
-                }
-            } catch {
-                Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
-                return $false
-            }
-        }
+        #function Restore-Database {
+        #    <#
+        #        .SYNOPSIS
+        #            Internal function. Restores .bak file to Sql database. Creates db if it doesn't exist. $filestructure is
+        #        a custom object that contains logical and physical file locations.
+        #    #>
+        #
+        #    param (
+        #        [Parameter(Mandatory)]
+        #        [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
+        #        [object]$server,
+        #        [Parameter(Mandatory)]
+        #        [ValidateNotNullOrEmpty()]
+        #        [string]$dbname,
+        #        [Parameter(Mandatory)]
+        #        [string]$backupfile,
+        #        [string]$filetype = 'Database',
+        #        [Parameter(Mandatory)]
+        #        [object]$filestructure,
+        #        [switch]$norecovery,
+        #        [PSCredential]$sqlCredential,
+        #        [switch]$TSql = $false
+        #    )
+        #
+        #    $server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlCredential
+        #    $servername = $server.name
+        #    $server.ConnectionContext.StatementTimeout = 0
+        #    $restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
+        #    $restore.ReplaceDatabase = $true
+        #
+        #    foreach ($file in $filestructure.values) {
+        #        $movefile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
+        #        $movefile.LogicalFileName = $file.logical
+        #        $movefile.PhysicalFileName = $file.physical
+        #        $null = $restore.RelocateFiles.Add($movefile)
+        #    }
+        #
+        #    try {
+        #        if ($TSql) {
+        #            $restore.PercentCompleteNotification = 1
+        #            $restore.add_Complete($complete)
+        #            $restore.ReplaceDatabase = $true
+        #            $restore.Database = $dbname
+        #            $restore.Action = $filetype
+        #            $restore.NoRecovery = $norecovery
+        #            $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+        #            $device.name = $backupfile
+        #            $device.devicetype = 'File'
+        #            $restore.Devices.Add($device)
+        #            $restorescript = $restore.script($server)
+        #            return $restorescript
+        #        } else {
+        #            $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+        #                Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+        #            }
+        #            $restore.add_PercentComplete($percent)
+        #            $restore.PercentCompleteNotification = 1
+        #            $restore.add_Complete($complete)
+        #            $restore.ReplaceDatabase = $true
+        #            $restore.Database = $dbname
+        #            $restore.Action = $filetype
+        #            $restore.NoRecovery = $norecovery
+        #            $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+        #            $device.name = $backupfile
+        #            $device.devicetype = 'File'
+        #            $restore.Devices.Add($device)
+        #
+        #            Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+        #            $restore.sqlrestore($server)
+        #            Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status 'Complete' -Completed
+        #
+        #            return $true
+        #        }
+        #    } catch {
+        #        Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
+        #        return $false
+        #    }
+        #}
 
     }
     process {
@@ -489,7 +489,7 @@ function Remove-DbaDatabaseSafely {
                         $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
                     }
 
-                    Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup:$BackupCompression -Verify
+                    Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup:$BackupCompression -Verify -Checksum
 
                     #$devicetype = [Microsoft.SqlServer.Management.Smo.DeviceType]::File
                     #$backupDevice = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem($filename, $devicetype)
@@ -550,7 +550,7 @@ function Remove-DbaDatabaseSafely {
                                 Description   = "This job will restore the $dbname database using the final backup located at $filename."
                                 Owner         = $jobowner
                             }
-                            New-DbaAgentJob @jobParams
+                            $job = New-DbaAgentJob @jobParams
 
                             Write-Message -Level Verbose -Message "Created Agent Job $jobname on $destination."
                         }
@@ -563,29 +563,46 @@ function Remove-DbaDatabaseSafely {
                     ## Suggestion check for disk space before restore
                     ## Create Restore Script
                     try {
-                        $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-                        $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $filename, 'FILE'
-                        $restore.Devices.Add($device)
-                        try {
-                            $filelist = $restore.ReadFileList($destserver)
+                        #$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+                        #$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem $filename, 'FILE'
+                        #$restore.Devices.Add($device)
+                        #try {
+                        #    $filelist = $restore.ReadFileList($destserver)
+                        #}
+                        #
+                        #catch {
+                        #    throw 'File list could not be determined. This is likely due to connectivity issues or tiemouts with the Sql Server, the database version is incorrect, or the Sql Server service account does not have access to the file share. Script terminating.'
+                        #}
+                        #
+                        #$filestructure = Get-OfflineSqlFileStructure $destserver $dbname $filelist $ReuseSourceFolderStructure
+                        #
+                        #$jobStepCommand = Restore-Database $destserver $dbname $filename "Database" $filestructure -TSql -ErrorAction Stop
+                        $jobStepCommand = (Restore-DbaDatabase -SqlInstance $destserver -BackupFileName $filename -OutputScriptOnly).Tsql
+
+                        $jobStepParams = @{
+                            SqlInstance     = $destination
+                            SqlCredential   = $DestinationCredential
+                            Job             = $job
+                            StepName        = $jobStepName
+                            SubSystem       = 'TransactSql'
+                            Command         = $jobStepCommand
+                            Database        = 'master'
+                            OnSuccessAction = 'QuitWithSuccess'
+                            OnFailAction    = 'QuitWithFailure'
+                            StepId          = 1
                         }
-
-                        catch {
-                            throw 'File list could not be determined. This is likely due to connectivity issues or tiemouts with the Sql Server, the database version is incorrect, or the Sql Server service account does not have access to the file share. Script terminating.'
-                        }
-
-                        $filestructure = Get-OfflineSqlFileStructure $destserver $dbname $filelist $ReuseSourceFolderStructure
-
-                        $jobStepCommand = Restore-Database $destserver $dbname $filename "Database" $filestructure -TSql -ErrorAction Stop
-                        $jobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $job, $jobStepName
-                        $jobStep.SubSystem = 'TransactSql' # 'PowerShell'
-                        $jobStep.DatabaseName = 'master'
-                        $jobStep.Command = $jobStepCommand
-                        $jobStep.OnSuccessAction = 'QuitWithSuccess'
-                        $jobStep.OnFailAction = 'QuitWithFailure'
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination")) {
-                            $null = $jobStep.Create()
+                            $jobStep = New-DbaAgentJobStep @jobStepParams
                         }
+                        #$jobStep = new-object Microsoft.SqlServer.Management.Smo.Agent.JobStep $job, $jobStepName
+                        #$jobStep.SubSystem = 'TransactSql' # 'PowerShell'
+                        #$jobStep.DatabaseName = 'master'
+                        #$jobStep.Command = $jobStepCommand
+                        #$jobStep.OnSuccessAction = 'QuitWithSuccess'
+                        #$jobStep.OnFailAction = 'QuitWithFailure'
+                        #if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination")) {
+                        #    $null = $jobStep.Create()
+                        #}
                         $jobStartStepid = $jobStep.ID
                         Write-Message -Level Verbose -Message "Created Agent JobStep $jobStepName on $destination."
                     } catch {
