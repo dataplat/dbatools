@@ -5315,11 +5315,11 @@ GO
     }
     AfterAll {
         Remove-Item -Path $testfilepath, $testzippath, "$testtemp\who_MOCKED_is_active_v11_32.sql", "$DbatoolsData\spwhoisactive.zip" -Force -ErrorAction SilentlyContinue
-        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should Install SPWhoisActive with Mock" {
         AfterAll {
-            Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
 
         $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -Database Master
@@ -5329,7 +5329,7 @@ GO
     }
     Context "Should Install SPWhoisActive from File" {
         AfterAll {
-            Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
         $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testfilepath -Database Master
         It "Should install against .sql file" {
@@ -5338,7 +5338,7 @@ GO
     }
     Context "Should Install SPWhoisActive from Zip" {
         AfterAll {
-            Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
         $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database tempdb
         It "Should install against ZIP" {
