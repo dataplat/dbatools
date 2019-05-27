@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
     }
     Context "Command actually works" {
-        $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -Verbose
+        $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
         It "Should have database name of $db1" {
             foreach ($result in $results) {
                 $result.DatabaseName | Should Be $db1
