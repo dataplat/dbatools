@@ -13,16 +13,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    AfterAll {
+        $timenow = (Get-Date -uformat "%m%d%Y%H")
+        $ExportedItems = Get-ChildItem "$($env:USERPROFILE)\Documents" -Recurse | Where-Object { $_.Name -match "-$timenow\d{4}" -and $_.Attributes -eq 'Directory' }
+        $null = Remove-Item -Path $($ExportedItems.FullName) -Force -Recurse -ErrorAction SilentlyContinue
+    }
+
     Context "Should Export all items from an instance" {
         $results = Export-DbaInstance -SqlInstance $script:instance2
-        #$null = Remove-Item -Path $results -Force -Recurse
         It "Should execute with default settings" {
             $results | Should Not Be Null
         }
     }
     Context "Should exclude some items from an Export" {
-        $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects
-        #$null = Remove-Item -Path $results -Force -Recurse
+        $results = Export-DbaInstance -SqlInstance $script:instance2 -Exclude Databases, Logins, SysDbUserObjects, ReplicationSettings
         It "Should execute with parameters excluding objects" {
             $results | Should Not Be Null
         }
