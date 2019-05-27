@@ -30,13 +30,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
         It "Should have database name of $db1" {
             foreach ($result in $results) {
-                $result.DatabaseName | Should -Be $db1
+                $result.DatabaseName | Should Be $db1
             }
         }
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
         It "should warn and quit" {
             $results | Should -Be $null
-            $warn -match 'Failure starting SQL Agent' | Should -Be $true
+            $warn -match 'Failure getting SQL Agent service' | Should Be $true
         }
 
         # Add back after rewrite, this should work
@@ -44,8 +44,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
             $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance2
             foreach ($result in $results) {
-                $result.SqlInstance | Should -Be $script:instance1
-                $result.TestingInstance | Should -Be $script:instance2
+                $result.SqlInstance | Should Be $script:instance1
+                $result.TestingInstance | Should Be $script:instance2
             }
         }
     }
