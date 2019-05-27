@@ -1,100 +1,88 @@
 function Get-DbaAgReplica {
-	<#
-		.SYNOPSIS
-			Outputs the Availability Group(s)' Replica object found on the server.
+    <#
+    .SYNOPSIS
+        Returns the availability group replica object found on the server.
 
-		.DESCRIPTION
-			Default view provides most common set of properties for information on the Availability Group(s)' Replica.
+    .DESCRIPTION
+        Returns the availability group replica object found on the server.
 
-		.PARAMETER SqlInstance
-			The SQL Server instance. Server version must be SQL Server version 2012 or higher.
+   .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+    .PARAMETER SqlCredential
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-		.PARAMETER AvailabilityGroup
-			Specify the Availability Group name that you want to get information on.
+    .PARAMETER AvailabilityGroup
+        Specify the availability groups to query.
 
-		.PARAMETER Replica
-			Specify the replica to pull information on, is dependent up name that you want to get information on.
+    .PARAMETER Replica
+        Return only specific replicas.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAvailabilityGroup.
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.LINK
-			https://dbatools.io/Get-DbaAgReplica
+    .NOTES
+        Tags: AvailabilityGroup, AG, HA, Replica
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
-		.EXAMPLE
-			Get-DbaAgReplica -SqlInstance sqlserver2014a
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-			Returns basic information on all the Availability Group(s) replica(s) found on sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaAgReplica
 
-		.EXAMPLE
-			Get-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a
 
-			Shows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a
+        Returns basic information on all the availability group replicas found on sql2017a
 
-		.EXAMPLE
-			Get-DbaAgReplica -SqlInstance sqlserver2014a | Select *
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint
 
-			Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
-		[parameter(ValueFromPipeline = $true)]
-		[object[]]$AvailabilityGroup,
-		[object[]]$Replica,
-		[switch][Alias('Silent')]$EnableException
-	)
+        Shows basic information on the replicas found on availability group SharePoint on sql2017a
 
-	process {
-		foreach ($serverName in $SqlInstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
 
-			if ($server.IsHadrEnabled -eq $false) {
-				Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName" -Target $serverName -Continue
-			}
+        Returns full object properties on all availability group replicas found on sql2017a
 
-			$ags = $server.AvailabilityGroups
-			if ($AvailabilityGroup) {
-				$ags = $ags | Where-Object Name -in $AvailabilityGroup
-			}
+    #>
+    [CmdletBinding()]
+    param (
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$AvailabilityGroup,
+        [string[]]$Replica,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [switch]$EnableException
+    )
+    process {
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        }
 
-			foreach ($ag in $ags) {
-				$replicas = $ag.AvailabilityReplicas
-				foreach ($currentReplica in $replicas) {
-					if ($Replica -and $currentReplica.Name -notmatch $Replica) {
-						continue
-					}
+        $availabilityReplicas = $InputObject.AvailabilityReplicas
+        if ($Replica) {
+            $availabilityReplicas = $InputObject.AvailabilityReplicas | Where-Object { $_.Name -in $Replica }
+        }
 
-					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name ComputerName -value $server.NetName
-					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
 
-					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','Role','ConnectionState','RollupSynchronizationState','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
-					Select-DefaultView -InputObject $currentReplica -Property $defaults
-				}
-			}
-		}
-	}
+        foreach ($agreplica in $availabilityReplicas) {
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
+
+            Select-DefaultView -InputObject $agreplica -Property $defaults
+        }
+    }
 }

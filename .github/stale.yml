@@ -1,0 +1,24 @@
+issues:
+  daysUntilStale: 60
+  daysUntilClose: 30
+  markComment: >
+    This issue has been automatically marked as stale because it has not had
+    recent activity. If you would like this issue to remain open:
+      * Verify that you can still reproduce the issue in the latest version of dbatools
+      * Comment that the issue is still reproducible and include:
+         * What version of dbatools you reproduced the issue on
+         * What OS and version you reproduced the issue on
+         * What steps you followed to reproduce the issue
+  closeComment: >
+    This issue has been automatically closed because it has not had activity in the
+    last three months. If this issue is still valid, please add a comment
+  exemptLabels:
+    - Feature
+    - Availability Groups
+    - Discussion
+    - Documentation
+    - Question
+    - Confirmed
+    - Solution Provided
+# Label to use when marking an issue as stale
+staleLabel: stale

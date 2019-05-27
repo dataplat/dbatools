@@ -7,6 +7,7 @@
  - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1)
  - [ ] Adding code coverage to existing functionality
  - [ ] Pester test is included
+ - [ ] If new file reference added for test, has is been added to github.com/sqlcollaborative/appveyor-lab ?
  - [ ] Nunit test is included
  - [ ] Documentation
  - [ ] Build system

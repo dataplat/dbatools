@@ -626,7 +626,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
             // Do not try to use disabled protocols
 
-            throw new PSInvalidOperationException("No connectiontypes left to try.");
+            throw new PSInvalidOperationException("Multiple protocol connections were attempted, but no successful connections could be established with the specified computer.");
         }
 
         /// <summary>

@@ -2,105 +2,127 @@ function Install-DbaMaintenanceSolution {
     <#
     .SYNOPSIS
         Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
+
     .DESCRIPTION
         This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
-    
+
     .PARAMETER SqlInstance
-        The target SQL Server instance
-    
+        The target SQL Server instance onto which the Maintenance Solution will be installed.
+
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-        To connect as a different Windows user, run PowerShell as that user.        
-   
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
     .PARAMETER Database
-        The database where Ola Hallengren's solution will be installed. Defaults to master
-    
+        The database where Ola Hallengren's solution will be installed. Defaults to master.
+
     .PARAMETER BackupLocation
         Location of the backup root directory. If this is not supplied, the default backup directory will be used.
-    
+
     .PARAMETER CleanupTime
-        Time in hours, after which backup files are deleted
-    
+        Time in hours, after which backup files are deleted.
+
     .PARAMETER OutputFileDirectory
-        Specify the output file directory
-    
+        Specify the output file directory where the Maintenance Solution will write to.
+
     .PARAMETER ReplaceExisting
-        If the objects are already present in the chosen database, we drop and recreate them
- 
+        If this switch is enabled, objects already present in the target database will be dropped and recreated.
+
     .PARAMETER LogToTable
-        Log commands to a table
+        If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
 
     .PARAMETER Solution
-        You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
+        Specifies which portion of the Maintenance solution to install. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.
 
     .PARAMETER InstallJobs
-        Create SQL Agent Jobs
-        
+        If this switch is enabled, the corresponding SQL Agent Jobs will be created.
+
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install Ola's solution from. This *should* be the zipfile as distributed by the maintainers.
+        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
+
+    .PARAMETER Force
+        If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
+
     .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed.
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
     .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command.
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
+        Tags: Ola, Maintenance
+        Author: Viorel Ciucu, cviorel.com
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         http://dbatools.io/Install-DbaMaintenanceSolution
-    
+
     .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
-    
-        Installs Ola Hallengren's Solution objects on RES14224 in the DBA database. 
-        Backups will default to the default Backup Directory. 
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
+
+        Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
+        Backups will default to the default Backup Directory.
         If the Maintenance Solution already exists, the script will be halted.
-   
+
     .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs
-        
-    .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
-    
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
-       
+
+
     .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
-       
+        PS C:\> $params = @{
+                >> SqlInstance = 'MyServer'
+                >> Database = 'maintenance'
+                >> ReplaceExisting = $true
+                >> InstallJobs = $true
+                >> LogToTable = $true
+                >> BackupLocation = 'C:\Data\Backup'
+                >> CleanupTime = 65
+                >> Verbose = $true
+                >> }
+                >> Install-DbaMaintenanceSolution @params
+
+        Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
+
+    .EXAMPLE
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
+
         This will drop and then recreate the Ola Hallengren's Solution objects
         The cleanup script will drop and recreate:
-            - TABLE [dbo].[CommandLog]
-            - STORED PROCEDURE [dbo].[CommandExecute]
-            - STORED PROCEDURE [dbo].[DatabaseBackup]
-            - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
-            - STORED PROCEDURE [dbo].[IndexOptimize]
+        - TABLE [dbo].[CommandLog]
+        - STORED PROCEDURE [dbo].[CommandExecute]
+        - STORED PROCEDURE [dbo].[DatabaseBackup]
+        - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
+        - STORED PROCEDURE [dbo].[IndexOptimize]
 
-        The follwing SQL Agent jobs will be deleted:
-            - 'Output File Cleanup'
-            - 'IndexOptimize - USER_DATABASES'
-            - 'sp_delete_backuphistory'
-            - 'DatabaseBackup - USER_DATABASES - LOG'
-            - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-            - 'DatabaseBackup - USER_DATABASES - FULL'
-            - 'sp_purge_jobhistory'
-            - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
-            - 'CommandLog Cleanup'
-            - 'DatabaseIntegrityCheck - USER_DATABASES'
-            - 'DatabaseBackup - USER_DATABASES - DIFF'
+        The following SQL Agent jobs will be deleted:
+        - 'Output File Cleanup'
+        - 'IndexOptimize - USER_DATABASES'
+        - 'sp_delete_backuphistory'
+        - 'DatabaseBackup - USER_DATABASES - LOG'
+        - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+        - 'DatabaseBackup - USER_DATABASES - FULL'
+        - 'sp_purge_jobhistory'
+        - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
+        - 'CommandLog Cleanup'
+        - 'DatabaseIntegrityCheck - USER_DATABASES'
+        - 'DatabaseBackup - USER_DATABASES - DIFF'
 
     #>
-    
-    
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias('ServerInstance', 'SqlServer')]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object]$Database = "master",
         [string]$BackupLocation,
@@ -111,58 +133,184 @@ function Install-DbaMaintenanceSolution {
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
         [string]$Solution = 'All',
         [switch]$InstallJobs,
-        [switch][Alias('Silent')]$EnableException
+        [string]$LocalFile,
+        [switch]$Force,
+        [switch]$EnableException
     )
-    
+
+    begin {
+        if ($InstallJobs -and $Solution -ne 'All') {
+            Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
+            return
+        }
+
+        if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
+            Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
+            return
+        }
+
+        if ($ReplaceExisting -eq $true) {
+            Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+        }
+
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+
+        $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
+
+        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+        $zipfile = "$temp\ola-sql-server-maintenance-solution.zip"
+        $zipfolder = "$temp\ola-sql-server-maintenance-solution\"
+        $OLALocation = "OLA_SQL_MAINT_master"
+        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $OLALocation
+        if ($LocalFile) {
+            if (-not (Test-Path $LocalFile)) {
+                Stop-Function -Message "$LocalFile doesn't exist"
+                return
+            }
+            if (-not ($LocalFile.EndsWith('.zip'))) {
+                Stop-Function -Message "$LocalFile should be a zip file"
+                return
+            }
+        }
+
+        if ($Force -or -not (Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
+            # Force was passed, or we don't have a local copy, or $LocalFile was passed
+            if ($zipfile | Test-Path) {
+                Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
+            }
+            if ($zipfolder | Test-Path) {
+                Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
+            }
+
+            $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
+            if ($LocalFile) {
+                Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
+            } else {
+                Write-Message -Level Verbose -Message "Downloading and unzipping Ola's maintenance solution zip file."
+
+                try {
+                    try {
+                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    }
+
+                    # Unblock if there's a block
+                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+
+                    Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
+
+                    Remove-Item -Path $zipfile
+                } catch {
+                    Stop-Function -Message "Couldn't download Ola's maintenance solution. Download and install manually from https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip." -ErrorRecord $_
+                    return
+                }
+            }
+
+            ## Copy it into local area
+            if (Test-Path -Path $LocalCachedCopy -PathType Container) {
+                Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
+            } else {
+                $null = New-Item -Path $LocalCachedCopy -ItemType Container
+            }
+            Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
+        }
+
+        function Get-DbaOlaWithParameters($listOfFiles) {
+
+            $fileContents = @{ }
+            foreach ($file in $listOfFiles) {
+                $fileContents[$file] = Get-Content -Path $file -Raw
+            }
+
+            foreach ($file in $($fileContents.Keys)) {
+                # In which database we install
+                if ($Database -ne 'master') {
+                    $findDB = 'USE [master]'
+                    $replaceDB = 'USE [' + $Database + ']'
+                    $fileContents[$file] = $fileContents[$file].Replace($findDB, $replaceDB)
+                }
+
+                # Backup location
+                if ($BackupLocation) {
+                    $findBKP = 'SET @BackupDirectory     = NULL'
+                    $replaceBKP = 'SET @BackupDirectory     = N''' + $BackupLocation + ''''
+                    $fileContents[$file] = $fileContents[$file].Replace($findBKP, $replaceBKP)
+                }
+
+                # CleanupTime
+                if ($CleanupTime -ne 0) {
+                    $findCleanupTime = 'SET @CleanupTime         = NULL'
+                    $replaceCleanupTime = 'SET @CleanupTime         = ' + $CleanupTime
+                    $fileContents[$file] = $fileContents[$file].Replace($findCleanupTime, $replaceCleanupTime)
+                }
+
+                # OutputFileDirectory
+                if ($OutputFileDirectory) {
+                    $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
+                    $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
+                    $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
+                }
+
+                # LogToTable
+                if (!$LogToTable) {
+                    $findLogToTable = "SET @LogToTable          = 'Y'"
+                    $replaceLogToTable = "SET @LogToTable          = 'N'"
+                    $fileContents[$file] = $fileContents[$file].Replace($findLogToTable, $replaceLogToTable)
+                }
+
+                # Create Jobs
+                if (-not $InstallJobs) {
+                    $findCreateJobs = "SET @CreateJobs          = 'Y'"
+                    $replaceCreateJobs = "SET @CreateJobs          = 'N'"
+                    $fileContents[$file] = $fileContents[$file].Replace($findCreateJobs, $replaceCreateJobs)
+                }
+            }
+            return $fileContents
+        }
+    }
+
     process {
-        
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
-            if ((Test-Bound -Parameter ReplaceExisting -Not)) {
-                $procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs  | where Database -eq $Database
-                
+
+            if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
+                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+
                 if ($null -ne $procs -or $null -ne $table) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
                     return
                 }
             }
-            
-            if ((Test-Bound -Parameter BackupLocation -Not)) {
+
+            if ((Test-Bound -ParameterName BackupLocation -Not)) {
                 $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
-            
-            Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database: $Database"
-            
+
+            Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database $Database."
+
             $db = $server.Databases[$Database]
-            
-            if ($InstallJobs -and $Solution -ne 'All') {
-                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-InstallJobs Create'"
-                return
+
+            if (-not ($Solution -match 'All')) {
+                $required = @('CommandExecute.sql')
             }
-            
-            if ($ReplaceExisting -eq $true) {
-                Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
-            }
-            
-            if ($CleanupTime -ne 0 -and $InstallJobs -eq $false) {
-                Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
-            }
-    
-            # Required
-            $required = @('CommandExecute.sql')
-                    
+
             if ($LogToTable) {
                 $required += 'CommandLog.sql'
             }
-            
+
             if ($Solution -match 'Backup') {
                 $required += 'DatabaseBackup.sql'
             }
@@ -170,103 +318,26 @@ function Install-DbaMaintenanceSolution {
             if ($Solution -match 'IntegrityCheck') {
                 $required += 'DatabaseIntegrityCheck.sql'
             }
-            
+
             if ($Solution -match 'IndexOptimize') {
                 $required += 'IndexOptimize.sql'
             }
-            
+
             if ($Solution -match 'All') {
                 $required += 'MaintenanceSolution.sql'
             }
-                                   
-            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-            $shell = New-Object -ComObject Shell.Application
-            $zipfile = "$temp\ola.zip"
-            
-            # Start the download
-            $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
-            try {
-                $job = Start-BitsTransfer -Source $url -DisplayName 'Downloading SQL Server Maintenance Solution - https://ola.hallengren.com' -Destination $zipfile -ErrorAction Stop
-            }
-            catch {
-                Stop-Function -Message "You need to re-run the script, there is a problem with the proxy or the download link has changed." -ErrorRecord $_
-            }
-            
-            # Unblock if there's a block
-            Unblock-File $zipfile -ErrorAction SilentlyContinue
-            
-            $path = "$temp\sql-server-maintenance-solution-master"
-            
-            # We don't like default parameters messed with so we start clean
-            if ((Test-Path $path)) {
-                Remove-Item -Path $temp\sql-server-maintenance-solution-master -Recurse -Force -ErrorAction SilentlyContinue
-            }
 
-            # internal if it doesn't exist          
-            Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-            Remove-Item -Path $zipfile          
-            
-            $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $path | Select-Object -ExpandProperty FullName
-            
-            # In which database we install
-            if ($Database -ne 'master') {
-                $findDB = 'USE [master]'
-                $replaceDB = 'USE [' + $Database + ']'
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findDB, $replaceDB) | Set-Content -Path $file
-                }
-            }
-            
-            # Backup location
-            if ($BackupLocation) {
-                $findBKP = 'C:\Backup'
-                $replaceBKP = $BackupLocation
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findBKP, $replaceBKP) | Set-Content -Path $file
-                }
-            }
-            
-            # CleanupTime
-            if ($CleanupTime -ne 0) {
-                $findCleanupTime = 'SET @CleanupTime         = NULL'
-                $replaceCleanupTime = 'SET @CleanupTime         = ' + $CleanupTime
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findCleanupTime, $replaceCleanupTime) | Set-Content -Path $file
-                }
-            }
-            
-            # OutputFileDirectory
-            if ($OutputFileDirectory.Length -gt 0) {
-                $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
-                $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findOutputFileDirectory, $replaceOutputFileDirectory) | Set-Content -Path $file
-                }
-                
-            }
-            
-            # LogToTable
-            if (!$LogToTable) {
-                $findLogToTable = "SET @LogToTable          = 'Y'"
-                $replaceLogToTable = "SET @LogToTable          = 'N'"
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findLogToTable, $replaceLogToTable) | Set-Content -Path $file
-                }       
-            }
-            
-            # Create Jobs
-            if ($InstallJobs -eq $false) {
-                $findCreateJobs = "SET @CreateJobs          = 'Y'"
-                $replaceCreateJobs = "SET @CreateJobs          = 'N'"
-                foreach ($file in $listOfFiles) {
-                    (Get-Content -Path $file -Raw).Replace($findCreateJobs, $replaceCreateJobs) | Set-Content -Path $file
-                }
-            }
-                   
+            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+            $zipfile = "$temp\ola.zip"
+
+            $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+
+            $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
+
             $CleanupQuery = $null
             if ($ReplaceExisting) {
                 [string]$CleanupQuery = $("
-                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL 
+                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
@@ -277,47 +348,57 @@ function Install-DbaMaintenanceSolution {
                             IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
-                
-                Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
-                $null = $db.Query($CleanupQuery)
-                                
-                # Remove Ola's Jobs                     
+
+                if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
+                    Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
+                    $null = $db.Query($CleanupQuery)
+                }
+
+                # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
-                    Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
+                    Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution."
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
-                        $jobs | foreach { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
-                    }
-                }   
-            }
-            
-            try {
-                Write-Message -Level Output -Message "Installing on server $SqlInstance, database $Database"
-				
-				foreach ($file in $listOfFiles) {
-					$shortFileName = Split-Path $file -Leaf
-					if ($required.Contains($shortFileName)) {
-						Write-Message -Level Output -Message "Installing $file"
-                        $sql = [IO.File]::ReadAllText($file)
-                        try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
+                        $jobs | ForEach-Object {
+                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
+                                Remove-DbaAgentJob -SqlInstance $server -Job $_.name
                             }
-                        }
-                        catch {
-                            Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
             }
-            catch {
-                Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+
+            try {
+                Write-Message -Level Output -Message "Installing on server $instance, database $Database."
+
+                foreach ($file in $fileContents.Keys) {
+                    $shortFileName = Split-Path $file -Leaf
+                    if ($required.Contains($shortFileName)) {
+                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                            Write-Message -Level Output -Message "Installing $shortFileName."
+                            $sql = $fileContents[$file]
+                            try {
+                                foreach ($query in ($sql -Split "\nGO\b")) {
+                                    $null = $db.Query($query)
+                                }
+                            } catch {
+                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
+                            }
+                        }
+                    }
+                }
+            } catch {
+                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
             }
         }
-        
-        if ((Test-Path $path)) {
-            Remove-Item -Path $temp\sql-server-maintenance-solution-master -Recurse -Force -ErrorAction SilentlyContinue
+        # Only here due to need for non-pooled connection in this command
+        try {
+            $server.ConnectionContext.Disconnect()
+        } catch {
+            # here to avoid an empty catch
+            $null = 1
         }
-        Write-Message -Level Output -Message "Installation complete"
+
+        Write-Message -Level Output -Message "Installation complete."
     }
 }

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Types>
+<!--Microsoft.SqlServer.Management.Smo.Database -->
+<Type>
+<Name>Microsoft.SqlServer.Management.Smo.Database</Name>
+<Members>
+<ScriptMethod>
+<Name>Query</Name>
+<Script>
+param (
+    $Query,
+    $AllTables = $false
+)
+if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
+else { ($this.ExecuteWithResults($Query)).Tables[0] }
+</Script>
+</ScriptMethod>
+<ScriptMethod>
+<Name>Invoke</Name>
+<Script>
+param (
+    $Command
+)
+$this.ExecuteNonQuery($Command)
+</Script>
+</ScriptMethod>
+</Members>
+</Type>
+
+<!--Microsoft.SqlServer.Management.Smo.Server -->
+<Type>
+<Name>Microsoft.SqlServer.Management.Smo.Server</Name>
+<Members>
+<ScriptMethod>
+<Name>Query</Name>
+<Script>
+param (
+    $Query,
+    $Database,
+    $AllTables = $false
+)
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.DatabaseName
+        }
+    }
+    if (-not $Database) {
+        $Database = "master"
+    }
+}
+if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
+</Script>
+</ScriptMethod>
+<ScriptMethod>
+<Name>Invoke</Name>
+<Script>
+param (
+    $Command,
+    $Database
+)
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.DatabaseName
+        }
+    }
+    if (-not $Database) {
+        $Database = "master"
+    }
+}
+$this.Databases[$Database].ExecuteNonQuery($Command)
+</Script>
+</ScriptMethod>
+</Members>
+</Type>
+<Type>
+<Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException</Name>
+<Members>
+<MemberSet>
+<Name>PSStandardMembers</Name>
+<Members>
+<NoteProperty>
+<Name>SerializationDepth</Name>
+<Value>2</Value>
+</NoteProperty>
+</Members>
+</MemberSet>
+</Members>
+</Type>
+<Type>
+<Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord</Name>
+<Members>
+<MemberSet>
+<Name>PSStandardMembers</Name>
+<Members>
+<NoteProperty>
+<Name>SerializationDepth</Name>
+<Value>2</Value>
+</NoteProperty>
+</Members>
+</MemberSet>
+</Members>
+</Type>
+</Types>

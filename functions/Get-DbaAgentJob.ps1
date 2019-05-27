@@ -1,114 +1,131 @@
-FUNCTION Get-DbaAgentJob {
-	<#
-		.SYNOPSIS
-			Gets SQL Agent Job information for each instance(s) of SQL Server.
+function Get-DbaAgentJob {
+    <#
+    .SYNOPSIS
+        Gets SQL Agent Job information for each instance(s) of SQL Server.
 
-		.DESCRIPTION
-			The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+    .DESCRIPTION
+        The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
 
-		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-		.PARAMETER Job
-			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+    .PARAMETER Job
+        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
-		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto-populated from the server.
+    .PARAMETER ExcludeJob
+        The job(s) to exclude - this list is auto-populated from the server.
 
-		.PARAMETER NoDisabledJobs
-			Switch will exclude disabled jobs from the output.
+    .PARAMETER ExcludeDisabledJobs
+        Switch will exclude disabled jobs from the output.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Tags: Job, Agent
-			Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+    .PARAMETER Database
+        Return jobs with T-SQL job steps associated with specific databases
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER Category
+        Return jobs associated with specific category
 
-		.LINK
-			https://dbatools.io/Get-DbaAgentJob
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost
+    .NOTES
+        Tags: Job, Agent
+        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-			Returns all SQL Agent Jobs on the local default SQL Server instance
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost, sql2016
+    .LINK
+        https://dbatools.io/Get-DbaAgentJob
 
-			Returns all SQl Agent Jobs for the local and sql2016 SQL Server instances
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost
 
-		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
+        Returns all SQL Agent Jobs on the local default SQL Server instance
 
-			Returns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost, sql2016
 
-		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
+        Returns all SQl Agent Jobs for the local and sql2016 SQL Server instances
 
-			Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
-			
-		.EXAMPLE
-			Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
 
-			Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
-	
-		.EXAMPLE
-			$servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
-	
-			Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
-		[object[]]$Job,
-		[object[]]$ExcludeJob,
-		[switch]$NoDisabledJobs,
-		[switch][Alias('Silent')]$EnableException
-	)
+        Returns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
 
-			$jobs = $server.JobServer.Jobs
-			
-			if ($Job) {
-				$jobs = $jobs | Where-Object Name -In $Job
-			}
-			if ($ExcludeJob) {
-				$jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
-			}
-			if ($NoDisabledJobs) {
-				$jobs = $Jobs | Where-Object IsEnabled -eq $true
-			}
-			
-			foreach ($agentJob in $jobs) {
-				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
-				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
-				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
-				
-				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
-			}
-		}
-	}
+        Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs
+
+        Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
+
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
+
+        Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
+    .EXAMPLE
+       PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
+
+        Exports all SSRS jobs from SQL instance sqlserver2014a to a file.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Job,
+        [string[]]$ExcludeJob,
+        [string[]]$Database,
+        [string[]]$Category,
+        [switch]$ExcludeDisabledJobs,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $jobs = $server.JobServer.Jobs
+
+            if ($Job) {
+                $jobs = $jobs | Where-Object Name -In $Job
+            }
+            if ($ExcludeJob) {
+                $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
+            }
+            if ($ExcludeDisabledJobs) {
+                $jobs = $Jobs | Where-Object IsEnabled -eq $true
+            }
+            if ($Database) {
+                $jobs = $jobs | Where-Object {
+                    $_.JobSteps.DatabaseName -in $Database
+                }
+            }
+            if ($Category) {
+                $jobs = $jobs | Where-Object Category -in $Category
+            }
+
+            foreach ($agentJob in $jobs) {
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.ComputerName
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
+
+                Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
+            }
+        }
+    }
 }

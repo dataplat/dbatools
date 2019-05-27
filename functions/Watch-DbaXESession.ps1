@@ -1,128 +1,156 @@
 function Watch-DbaXESession {
- <#
-	.SYNOPSIS
-	Watch live XEvent Data as it happens
+    <#
+    .SYNOPSIS
+        Watch live XEvent Data as it happens
 
-	.DESCRIPTION
-	Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.
-	
-	Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
+    .DESCRIPTION
+        Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.
 
-	.PARAMETER SqlInstance
-	The SQL Instances that you're connecting to.
+        Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
-	.PARAMETER SqlCredential
-	Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-	.PARAMETER Session
-	Only return a specific session. This parameter is auto-populated.
-		
-	.PARAMETER Raw
-	Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
-	
-	.PARAMETER SessionObject
-	Internal parameter
-	
-	.PARAMETER EnableException
-	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-	
-	.NOTES
-	Tags: Xevent
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-	.LINK
-	https://dbatools.io/Watch-DbaXESession
+    .PARAMETER Session
+        Only return a specific session. Options for this parameter are auto-populated from the server.
 
-	.EXAMPLE
-	Watch-DbaXESession -SqlInstance ServerA\sql987 -Session system_health
+    .PARAMETER Raw
+        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object is returned.
 
-	Shows events for the system_health session as it happens
+    .PARAMETER InputObject
+        Accepts an XESession object returned by Get-DbaXESession.
 
-	.EXAMPLE
-	Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
-	
-	Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
-	
-	Name                Type                                   Value
-	----                ----                                   -----
-	id                  System.UInt32                              0
-	timestamp           System.UInt64                              0
-	process_utilization System.UInt32                              0
-	system_idle         System.UInt32                             99
-	user_mode_time      System.UInt64                        8906250
-	kernel_mode_time    System.UInt64                         468750
-	page_faults         System.UInt32                             60
-	working_set_delta   System.Int64                               0
-	memory_utilization  System.UInt32                             99
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-#>
-	[CmdletBinding(DefaultParameterSetName="Default")]
-	param (
-		[parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[string]$Session,
-		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-		[Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
-		[switch]$Raw,
-		[switch][Alias('Silent')]$EnableException
-	)
-	process {
-		if (-not $SqlInstance) {
-			$server = $SessionObject.Parent
-		}
-		else {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-				$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
-			}
-			$SqlConn = $server.ConnectionContext.SqlConnectionObject
-			$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-			$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-			Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
-			$SessionObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
-		}
-		
-		if ($SessionObject) {
-			try {
-				$xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
-					($server.ConnectionContext.ConnectionString),
-					($SessionObject.Name),
-					[Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
-					[Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
-				)
-				
-				if ($raw) {
-					foreach ($row in $xevent) {
-						$row
-					}
-				}
-				else {
-					# make it pretty
-					foreach ($row in $xevent) {
-						Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
-					}
-				}
-			}
-			catch {
-				Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
-			}
-			finally {
-				if ($xevent -is [IDisposable]) {
-					$xevent.Dispose()
-				}
-			}
-		}
-		else {
-			Stop-Function -Message "Session not found" -Target $session
-		}
-	}
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Watch-DbaXESession
+
+    .EXAMPLE
+        PS C:\> Watch-DbaXESession -SqlInstance sql2017 -Session system_health
+
+        Shows events for the system_health session as it happens.
+
+    .EXAMPLE
+        PS C:\> Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
+
+        Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
+
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
+
+        Exports live events to CSV. Ctrl-C may not not cancel out of this. The fastest way to do so is to stop the session.
+
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string]$Session,
+        [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
+        [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
+        [switch]$Raw,
+        [switch]$EnableException
+    )
+    process {
+        if (-not $SqlInstance) {
+
+        } else {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+            }
+            $SqlConn = $server.ConnectionContext.SqlConnectionObject
+            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+            $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
+            $InputObject += $XEStore.sessions | Where-Object Name -eq $Session
+        }
+
+        foreach ($xesession in $InputObject) {
+            $server = $xesession.Parent
+            $sessionname = $xesession.Name
+            Write-Message -Level Verbose -Message "Watching $sessionname on $($server.Name)."
+
+            if (-not $xesession.IsRunning -and -not $xesession.IsRunning) {
+                Stop-Function -Message "$($xesession.Name) is not running on $($server.Name)" -Continue
+            }
+
+            # Setup all columns for csv but do it in an order
+            $columns = @("name", "timestamp")
+            $newcolumns = @()
+
+            $fields = ($xesession.Events.EventFields.Name | Select-Object -Unique)
+            foreach ($column in $fields) {
+                $newcolumns += $column.TrimStart("collect_")
+            }
+
+            $actions = ($xesession.Events.Actions.Name | Select-Object -Unique)
+            foreach ($action in $actions) {
+                $newcolumns += ($action -Split '\.')[-1]
+            }
+
+            $newcolumns = $newcolumns | Sort-Object
+            $columns = ($columns += $newcolumns) | Select-Object -Unique
+
+            try {
+                $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
+                    ($server.ConnectionContext.ConnectionString),
+                    ($xesession.Name),
+                    [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
+                    [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
+                )
+
+                if ($raw) {
+                    return $xevent
+                }
+
+                # Format output
+                foreach ($event in $xevent) {
+                    $hash = [ordered]@{}
+
+                    foreach ($column in $columns) {
+                        $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls
+                    }
+
+                    foreach ($action in $event.Actions) {
+                        $hash[$action.Name] = $action.Value
+                    }
+
+                    foreach ($field in $event.Fields) {
+                        $hash[$field.Name] = $field.Value
+                    }
+
+                    [PSCustomObject]($hash)
+                }
+            } catch {
+                Start-Sleep 1
+                $status = Get-DbaXESession -SqlInstance $server -Session $sessionname
+                if ($status.Status -ne "Running") {
+                    Stop-Function -Message "$($xesession.Name) was stopped."
+                } else {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $sessionname
+                }
+            } finally {
+                if ($xevent -is [IDisposable]) {
+                    $xevent.Dispose()
+                }
+            }
+        }
+    }
 }

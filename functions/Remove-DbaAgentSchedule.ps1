@@ -1,181 +1,186 @@
-
 function Remove-DbaAgentSchedule {
-	<#
-.SYNOPSIS 
-Remove-DbaAgentJobSchedule removes a job schedule.
+    <#
+    .SYNOPSIS
+        Remove-DbaAgentJobSchedule removes a job schedule.
 
-.DESCRIPTION
-Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
+    .DESCRIPTION
+        Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Schedule
-The name of the job schedule. 
+    .PARAMETER Schedule
+        The name of the job schedule.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER InputObject
+        A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.NOTES 
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step, Schedule
-	
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.LINK
-https://dbatools.io/Remove-DbaAgentJobSchedule
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        It will also remove the any present schedules with the same name for the specific job.
 
-.EXAMPLE   
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
-Remove the schedule weekly 
+    .NOTES
+        Tags: Agent, Job, Schedule
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-.EXAMPLE   
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force 
-Remove the schedule weekly from the job even if the schedule is being used by another job.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE   
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly
-Remove multiple schedule 
+    .LINK
+        https://dbatools.io/Remove-DbaAgentJobSchedule
 
-.EXAMPLE   
-Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
-Remove the schedule on multiple servers for multiple schedules
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
 
-.EXAMPLE   
-sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
-Remove the schedule on multiple servers using pipe line
+        Remove the schedule weekly
 
-#>  
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force
 
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-    
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+        Remove the schedule weekly from the job even if the schedule is being used by another job.
 
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object[]]$Schedule,
+        Remove multiple schedule
 
-		[switch][Alias('Silent')]$EnableException,
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
+        Remove the schedule on multiple servers for multiple schedules
 
-		[switch]$Force
-	) 
+    .EXAMPLE
+        sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
+        Remove the schedule on multiple servers using pipe line
 
-	process {
+    .EXAMPLE
+        Get-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule
 
-		foreach ($instance in $sqlinstance) {
-			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
-			}
+        Remove the schedules using a pipeline
 
-			foreach ($s in $Schedule) {
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [Parameter(Mandatory, ParameterSetName = "instance")]
+        [ValidateNotNullOrEmpty()]
+        [Alias("Schedules")]
+        [object[]]$Schedule,
+        [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
+        [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
+        [switch]$EnableException,
+        [switch]$Force
+    )
 
-				if ($Server.JobServer.SharedSchedules.Name -contains $s) {
-					# Get job count
-					$jobCount = $Server.JobServer.SharedSchedules[$s].JobCount
+    process {
 
-					# Check if the schedule is shared among other jobs
-					if ($jobCount -ge 1 -and -not $Force) {
-						Stop-Function -Message "The schedule $s is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
-					}
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-					# Remove the job schedule
-					if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $s on $instance")) {
-						# Loop through each of the schedules and drop them
-						Write-Message -Message "Removing schedule $s on $instance" -Level Output
+            $InputObject += $server.JobServer.SharedSchedules
 
-						#Check if jobs use the schedule
-						if ($jobCount -ge 1) {
-							# Get the job object
-							$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s)}
-                            
-							Write-Message -Message "Schedule $sched is used in one or more jobs. Removing it for each job." -Level Output
+            if ($Schedule) {
+                $InputObject = $InputObject | Where-Object Name -in $Schedule
+            }
 
-							# Loop through each if the schedules
-							foreach ($smoSchedule in $smoSchedules) {
+        } # foreach object instance
 
-								# Get the job ids 
-								$jobGuids = $Server.JobServer.SharedSchedules[$smoSchedule].EnumJobReferences()
+        foreach ($currentschedule in $InputObject) {
+            $server = $currentschedule.Parent.Parent
 
-								if (($jobCount -gt 1 -and $Force) -or $jobCount -eq 1) {
+            if (-not $server) {
+                $server = $currentschedule.Parent
+            }
 
-									# Loop though each of the jobs
-									foreach ($guid in $jobGuids) {
-										# Get the job object
-										$smoJob = $Server.JobServer.GetJobByID($guid)
+            $server.JobServer.SharedSchedules.Refresh()
+            $schedulename = $currentschedule.Name
+            $jobCount = $server.JobServer.SharedSchedules[$currentschedule].JobCount
 
-										# Get the job schedule
-										$jobSchedules = $Server.JobServer.Jobs[$smoJob].JobSchedules | Where-Object {$_.Name -eq $smoSchedule}
-                                        
-										foreach ($jobSchedule in $jobSchedules) {
-											try {
-												Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+            # Check if the schedule is shared among other jobs
+            if ($jobCount -ge 1 -and -not $Force) {
+                Stop-Function -Message "The schedule $schedulename is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
+            }
 
-												$jobSchedule.Drop()
-											}
-											catch {
-												Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-											}
-										}
-									} # foreach guid
-								} # if jobcount
+            # Remove the job schedule
+            if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentschedule on $instance")) {
+                # Loop through each of the schedules and drop them
+                Write-Message -Message "Removing schedule $schedulename on $instance" -Level Verbose
 
-							} # foreach smoschedule	
-						} # if jobcount ge 1
+                #Check if jobs use the schedule
+                if ($jobCount -ge 1) {
+                    # Get the job object
+                    $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) }
 
-						Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Output
+                    Write-Message -Message "Schedule $schedulename is used in one or more jobs. Removing it for each job." -Level Verbose
 
-						# Get the schedules
-						$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s) -and ($_.JobCount -eq 0)}
+                    # Loop through each if the schedules
+                    foreach ($smoSchedule in ($smoSchedules)) {
 
-						# Remove the schedules that have no jobs
-						foreach ($smoSchedule in $smoSchedules) {
-							try {
-								$smoSchedule.Drop()
-							}
-							catch {
-								Stop-Function -Message  "Something went wrong removing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-							}
-						} # foreach schedule
-					} # should process
-				} # if contains schedule
-				else {
-					Stop-Function -Message "Schedule $s is not present on instance $instance" -Target $instance -Continue
-				}
-			} #foreach object schedule
-		} # foreach object instance
-	} # process
+                        # Get the job ids
+                        $jobGuids = $Server.JobServer.SharedSchedules[$smoSchedule].EnumJobReferences()
 
-	end {
-		Write-Message -Message "Finished removing jobs schedule(s)." -Level Output
-	}
+                        if (($jobCount -gt 1 -and $Force) -or $jobCount -eq 1) {
+
+                            # Loop though each of the jobs
+                            foreach ($guid in $jobGuids) {
+                                # Get the job object
+                                $smoJob = $Server.JobServer.GetJobByID($guid)
+
+                                # Get the job schedule
+                                $jobSchedules = $Server.JobServer.Jobs[$smoJob].JobSchedules | Where-Object { $_.Name -eq $smoSchedule }
+
+                                foreach ($jobSchedule in ($jobSchedules)) {
+                                    try {
+                                        Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Verbose
+
+                                        $jobSchedule.Drop()
+                                    } catch {
+                                        Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Verbose
+                $server.JobServer.SharedSchedules.Refresh()
+                # Get the schedules
+                $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) -and ($_.JobCount -eq 0) }
+
+                # Remove the schedules that have no jobs
+                foreach ($smoSchedule in $smoSchedules) {
+                    try {
+                        $smoSchedule.Drop()
+                    } catch {
+                        Stop-Function -Message "Something went wrong removing the schedule" -Target $instance -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+        }
+    }
+    end {
+        Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
+    }
 }
