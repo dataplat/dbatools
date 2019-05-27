@@ -4,11 +4,23 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+    Context "Should error out if the database does not exist" {
+        Mock -CommandName Connect-SqlInstance {
+            [PSCustomObject]@{
+                Databases    = [String]::Empty
+                IsAccessible = $false
+            }
+        }
+
+        It -Skip "errors out when the databases does not exist and -EnableException is specified" {
+            { New-DbaDbUser -SqlInstance localhost -Database 'NotAtAllReal' -Username $userName -EnableException } | Should -Throw
         }
     }
 }
