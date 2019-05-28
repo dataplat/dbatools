@@ -43,6 +43,9 @@ function Export-DbaUser {
     .PARAMETER Append
         Append to file
 
+    .PARAMETER Passthru
+        Output script to console, useful with | clip
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -132,6 +135,7 @@ function Export-DbaUser {
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
+        [switch]$Passthru,
         [switch]$EnableException,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
         [switch]$ExcludeGoBatchSeparator
@@ -164,7 +168,7 @@ function Export-DbaUser {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if ($PSBoundParameters.$SqlInstance) {
+        if ($PSBoundParameters.SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
@@ -415,8 +419,9 @@ function Export-DbaUser {
 
             $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 
-            if ($PSBoundParameters.Path -or $PSBoundParameters.FilePath) {
+            if (-not $Passthru) {
                 $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                Get-ChildITem -Path $FilePath
             } else {
                 $sql
             }
