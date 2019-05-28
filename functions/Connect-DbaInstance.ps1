@@ -506,11 +506,8 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
-                    $hasharray = @()
-                    foreach ($db in (Get-DbaDatabase -SqlInstance $server)) {
-                        $hasharray += @{ $db.Name = $db }
-                    }
-                    Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue $hasharray -Force -Passthru
+                    $currentdb = $server.Databases | Where Name -eq $Database | Select-Object First 1
+                    Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force -Passthru
                     continue
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
