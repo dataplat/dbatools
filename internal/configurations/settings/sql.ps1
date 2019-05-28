@@ -24,3 +24,6 @@ Set-DbatoolsConfig -FullName 'sql.alwaysencrypted.enable' -Value $false -Initial
 
 # Enclave Attesettation URL for the server-side enclave, for use with Always Encrypted with secure enclaves
 Set-DbatoolsConfig -FullName 'sql.alwaysencrypted.enclave' -Value $null -Initialize -Validation string -Handler { } -Description "Not yet implemented"
+
+# The default client name
+Set-DbatoolsConfig -FullName 'sql.connection.clientname' -Value "dbatools PowerShell module - dbatools.io" -Initialize -Validation string -Handler { } -Description "The client name - defaults to 'dbatools PowerShell module - dbatools.io'"
