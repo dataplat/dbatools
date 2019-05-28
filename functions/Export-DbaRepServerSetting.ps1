@@ -13,7 +13,10 @@ function Export-DbaRepServerSetting {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the path to a file which will contain the output.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Passthru
         Output script to console
@@ -72,6 +75,8 @@ function Export-DbaRepServerSetting {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
@@ -82,38 +87,17 @@ function Export-DbaRepServerSetting {
         [switch]$Append,
         [switch]$EnableException
     )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
         }
 
         foreach ($repserver in $InputObject) {
-            $server = $repserver.SqlServerName
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.replace('\', '$'))-$timenow-replication.sql"
-
-            if (Test-Path $Path -PathType Container) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-replication.sql"
-            } elseif (Test-Path $Path -PathType Leaf) {
-                if ($SqlInstance.Count -gt 1) {
-                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData = Get-ChildItem $Path
-                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                } else {
-                    $filepath = $Path
-                }
-            }
-
-            If (-not $filepath) {
-                $filepath = $Path
-            }
-
-            $topdir = Split-Path -Path $filepath
-
-            if (-not (Test-Path -Path $topdir)) {
-                New-Item -Path $topdir -ItemType Directory
-            }
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $repserver.SqlServerName
 
             try {
                 if (-not $ScriptOption) {
@@ -131,13 +115,11 @@ function Export-DbaRepServerSetting {
             if ($Passthru) {
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
+                continue
             }
 
-            if ($filepath) {
-
-                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $filepath -Encoding $encoding -Append
-                $out | Out-File -FilePath $filepath -Encoding $encoding -Append:$Append
-            }
+            "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $FilePath -Encoding $encoding -Append
+            $out | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append
         }
     }
 }

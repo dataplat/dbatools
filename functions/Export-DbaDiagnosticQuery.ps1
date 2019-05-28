@@ -60,6 +60,7 @@ function Export-DbaDiagnosticQuery {
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
+        # No file path because this needs a directory
         [System.IO.FileInfo]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
@@ -80,16 +81,15 @@ function Export-DbaDiagnosticQuery {
             }
         }
 
-        if (!$(Test-Path $Path)) {
-            try {
-                New-Item $Path -ItemType Directory -ErrorAction Stop | Out-Null
-                Write-Message -Level Output -Message "Created directory $Path"
-            } catch {
-                Stop-Function -Message "Failed to create directory $Path" -Continue
+        if (-not (Test-Path -Path $Path)) {
+            $null = New-Item -ItemType Directory -Path $Path
+        } else {
+            if ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo]) {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -122,8 +122,8 @@ function Export-DbaDiagnosticQuery {
                         $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     }
 
-                    if (!$NoPlanExport) {
-                        Write-Message -Level Output -Message "Exporting $planfilename"
+                    if (-not $NoPlanExport) {
+                        Write-Message -Level Verbose -Message "Exporting $planfilename"
                         if ($plan) {$plan | Out-File -FilePath $planfilename}
                     }
                 }
@@ -143,9 +143,12 @@ function Export-DbaDiagnosticQuery {
                         $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     }
 
-                    if (!$NoQueryExport) {
-                        Write-Message -Level Output -Message "Exporting $sqlfilename"
-                        if ($sql) {$sql | Out-File -FilePath $sqlfilename}
+                    if (-not $NoQueryExport) {
+                        Write-Message -Level Verbose -Message "Exporting $sqlfilename"
+                        if ($sql) {
+                            $sql | Out-File -FilePath $sqlfilename
+                            Get-ChildItem -Path $sqlfilename
+                        }
                     }
                 }
 
@@ -155,20 +158,24 @@ function Export-DbaDiagnosticQuery {
             switch ($ConvertTo) {
                 "Excel" {
                     if ($row.DatabaseSpecific) {
-                        Write-Message -Level Output -Message "Exporting $exceldbfilename"
+                        Write-Message -Level Verbose -Message "Exporting $exceldbfilename"
                         $result | Export-Excel -Path $exceldbfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
+                        Get-ChildItem -Path $exceldbfilename
                     } else {
-                        Write-Message -Level Output -Message "Exporting $excelfilename"
+                        Write-Message -Level Verbose -Message "Exporting $excelfilename"
                         $result | Export-Excel -Path $excelfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
+                        Get-ChildItem -Path $excelfilename
                     }
                 }
                 "csv" {
                     if ($row.DatabaseSpecific) {
-                        Write-Message -Level Output -Message "Exporting $csvdbfilename"
+                        Write-Message -Level Verbose -Message "Exporting $csvdbfilename"
                         $result | Export-Csv -Path $csvdbfilename -NoTypeInformation -Append
+                        Get-ChildItem -Path $csvdbfilename
                     } else {
-                        Write-Message -Level Output -Message "Exporting $csvfilename"
+                        Write-Message -Level Verbose -Message "Exporting $csvfilename"
                         $result | Export-Csv -Path $csvfilename -NoTypeInformation -Append
+                        Get-ChildItem -Path $csvfilename
                     }
                 }
             }

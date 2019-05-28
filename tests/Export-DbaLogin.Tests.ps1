@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'Database', 'Path', 'NoClobber', 'Append', 'ExcludeDatabases', 'ExcludeJobs', 'EnableException', 'ExcludeGoBatchSeparator', 'DestinationVersion', 'InputObject', 'DefaultDatabase'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'Database', 'Path', 'FilePath', 'NoClobber', 'Append', 'ExcludeDatabases', 'ExcludeJobs', 'EnableException', 'ExcludeGoBatchSeparator', 'DestinationVersion', 'InputObject', 'DefaultDatabase'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -14,7 +14,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 
-<#
 $outputFile = "dbatoolsci_exportdbalogin.sql"
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
@@ -67,19 +66,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     $output = Export-DbaLogin -SqlInstance $script:instance2 -WarningAction SilentlyContinue
-    It "Doesn't filter specific databases" {
+
+    It -Skip "Doesn't filter specific databases" {
         ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 0
     }
 
-    It "Exports disabled logins" {
+    It -Skip "Exports disabled logins" {
         [regex]::matches($output, "ALTER LOGIN \[.*?\] DISABLE").Count | Should BeGreaterThan 0
     }
 
-    It "Exports deny connects" {
+    It -Skip "Exports deny connects" {
         [regex]::matches($output, "DENY CONNECT SQL TO \[.*?\]").Count | Should BeGreaterThan 0
     }
 
-    It "Exports system role memberships" {
+    It -Skip "Exports system role memberships" {
         if ($server.VersionMajor -lt 11) {
             [regex]::matches($output, "EXEC sys.sp_addsrvrolemember @rolename=N'dbcreator', @loginame=N'$login2'").Count | Should BeGreaterThan 0
         } else {
@@ -88,9 +88,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Exports to the specified file" {
-        Export-DbaLogin -SqlInstance $script:instance2 -Path $outputFile -WarningAction SilentlyContinue
+        Export-DbaLogin -SqlInstance $script:instance2 -FilePath $outputFile -WarningAction SilentlyContinue
 
         Test-Path -Path $outputFile | Should Be $true
     }
 }
-#>
