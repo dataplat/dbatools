@@ -13,10 +13,10 @@ function Export-DbaRepServerSetting {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the directory to a file which will contain the output.
+        Specifies the directory where the file or files will be exported.
 
     .PARAMETER FilePath
-        The specific path to a file which will contain the output.
+        Specifies the full file path of the output file.
 
     .PARAMETER Passthru
         Output script to console
@@ -75,6 +75,7 @@ function Export-DbaRepServerSetting {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
         [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
@@ -86,6 +87,15 @@ function Export-DbaRepServerSetting {
         [switch]$Append,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential

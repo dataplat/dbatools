@@ -16,7 +16,10 @@ function Export-DbaRegServer {
         Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
 
     .PARAMETER Path
-        The path to the exported files. If no path is specified, one will be created. This is expected to be a directory.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaRegServer, Get-DbaRegServerGroup, CSVs and other objects.
@@ -65,16 +68,18 @@ function Export-DbaRegServer {
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
         [string]$CredentialPersistenceType = "None",
         [switch]$EnableException
     )
     begin {
-        if (-not (test-path $Path)) {
-            New-Item -Path $Path -ItemType Directory
-        } else {
-            if ( -not (Get-Item -Path $Path).PSIsContainer) {
-                Stop-function  -Message "Path provided is an already-existing file. Please provide a directory name."
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
             }
         }
         $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")

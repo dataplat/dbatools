@@ -44,10 +44,10 @@ function Export-DbaInstance {
         Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the export file
+        Specifies the directory where the file or files will be exported.
 
-    .PARAMETER SharedPath
-        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER WithReplace
         If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
@@ -127,6 +127,8 @@ function Export-DbaInstance {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
@@ -137,8 +139,12 @@ function Export-DbaInstance {
         [switch]$EnableException
     )
     begin {
-        if (-not ((Get-Item $Path -ErrorAction Ignore) -is [System.IO.DirectoryInfo])) {
-            Stop-Function -Message "Path must be a directory"
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
         }
 
         if (-not $ScriptingOption) {

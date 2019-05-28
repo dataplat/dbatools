@@ -60,6 +60,7 @@ function Export-DbaDiagnosticQuery {
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
+        # No file path becuase this needs a directory
         [System.IO.FileInfo]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,

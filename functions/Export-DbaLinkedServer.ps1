@@ -18,10 +18,10 @@ function Export-DbaLinkedServer {
         Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the directory that will contain exported sql file.
+        Specifies the directory where the file or files will be exported.
 
     .PARAMETER FilePath
-       The specific path to a file which will contain the output.
+        Specifies the full file path of the output file.
 
     .PARAMETER LinkedServer
         The linked server(s) to export. If unspecified, all linked servers will be processed.
@@ -67,12 +67,22 @@ function Export-DbaLinkedServer {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
         [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -107,22 +117,24 @@ function Export-DbaLinkedServer {
             }
 
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            if (-not $FilePath) {
-                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
-            }
 
-            if (Test-Path $Path -PathType Container) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
-            } elseif (Test-Path $Path -PathType Leaf) {
-                if ($SqlInstance.Count -gt 1) {
+            if (-not $FilePath -and (Test-Bound -Parameter Path)) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+            } elseif (-not $FilePath) {
+                if (Test-Path $Path -PathType Container) {
                     $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData = Get-ChildItem $Path
-                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                } else {
-                    $filepath = $Path
+                    $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+                } elseif (Test-Path $Path -PathType Leaf) {
+                    if ($SqlInstance.Count -gt 1) {
+                        $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                        $PathData = Get-ChildItem $Path
+                        $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    } else {
+                        $FilePath = $Path
+                    }
                 }
             }
+
             $sql = @()
 
             if ($ExcludePassword) {

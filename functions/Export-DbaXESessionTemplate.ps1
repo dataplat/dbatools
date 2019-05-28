@@ -16,7 +16,10 @@ function Export-DbaXESessionTemplate {
         The Name of the session(s) to export.
 
     .PARAMETER Path
-        The path to export the file into. Can be .xml or directory.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER InputObject
         Specifies an XE Session output by Get-DbaXESession.
@@ -53,6 +56,7 @@ function Export-DbaXESessionTemplate {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Session,
+        # intentionally left because this is where SSMS defaults
         [string]$Path = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates",
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,

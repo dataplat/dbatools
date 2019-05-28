@@ -18,7 +18,10 @@ function Export-DbaPfDataCollectorSetTemplate {
         The name of the collector set(s) to export.
 
     .PARAMETER Path
-        The path to export the file. Can be .xml or directory.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER InputObject
         Accepts the object output by Get-DbaPfDataCollectorSetTemplate via the pipeline.
@@ -56,11 +59,22 @@ function Export-DbaPfDataCollectorSetTemplate {
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
-        [string]$Path = "$home\Documents\Performance Monitor Templates",
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
+    }
     process {
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential

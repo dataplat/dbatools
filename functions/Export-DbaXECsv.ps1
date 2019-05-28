@@ -7,7 +7,10 @@ function Export-DbaXECsv {
         Exports Extended Events to a CSV file.
 
     .PARAMETER Path
-        Specifies the InputObject to the output CSV file
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -46,9 +49,18 @@ function Export-DbaXECsv {
         [object[]]$InputObject,
         [parameter(Mandatory)]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [switch]$EnableException
     )
     begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
         } catch {
@@ -113,28 +125,26 @@ function Export-DbaXECsv {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            if (-not (Test-Path $Path)) {
-                if ([String]::IsNullOrEmpty([IO.Path]::GetExtension($Path))) {
-                    New-Item $Path -ItemType directory | Out-Null
-                    $outDir = $Path
-                    $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                } else {
-                    $outDir = [IO.Path]::GetDirectoryName($Path)
-                    $outFile = [IO.Path]::GetFileName($Path)
-                }
-            } else {
-                if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
-                    $outDir = $Path
-                    $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
-                } else {
-                    $outDir = [IO.Path]::GetDirectoryName($Path)
-                    $outFile = [IO.Path]::GetFileName($Path)
+            if (-not $FilePath -and (Test-Bound -Parameter Path)) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow.csv"
+            } elseif (-not $FilePath) {
+                if (Test-Path $Path -PathType Container) {
+                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                    $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow.csv"
+                } elseif (Test-Path $Path -PathType Leaf) {
+                    if ($SqlInstance.Count -gt 1) {
+                        $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                        $PathData = Get-ChildItem $Path
+                        $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    } else {
+                        $FilePath = $Path
+                    }
                 }
             }
 
             $adapter = New-Object XESmartTarget.Core.Utils.XELFileCSVAdapter
             $adapter.InputFile = $currentfile
-            $adapter.OutputFile = (Join-Path $outDir $outFile)
+            $adapter.OutputFile = (Join-Path $outDir $FilePath)
 
             try {
                 $adapter.Convert()

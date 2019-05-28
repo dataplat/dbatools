@@ -39,7 +39,7 @@ function Export-DbaExecutionPlan {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER PipedObject
+    .PARAMETER InputObject
         Internal parameter
 
     .PARAMETER EnableException
@@ -87,15 +87,17 @@ function Export-DbaExecutionPlan {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ParameterSetName = 'Piped', Mandatory)]
-        [parameter(ParameterSetName = 'NotPiped', Mandatory)]
+        [parameter(ParameterSetName = 'Piped')]
+        [parameter(ParameterSetName = 'NotPiped')]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceCreation,
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
-        [object[]]$PipedObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -148,8 +150,8 @@ function Export-DbaExecutionPlan {
             $null = New-Item -ItemType Directory -Path $Path
         }
 
-        if ($PipedObject) {
-            foreach ($object in $pipedobject) {
+        if ($InputObject) {
+            foreach ($object in $InputObject) {
                 Export-Plan $object
                 return
             }

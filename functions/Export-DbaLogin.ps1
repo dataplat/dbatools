@@ -22,7 +22,10 @@ function Export-DbaLogin {
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Path
-        The file to write to.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER NoClobber
         If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
@@ -126,8 +129,9 @@ function Export-DbaLogin {
         [object[]]$Login,
         [object[]]$ExcludeLogin,
         [object[]]$Database,
-        [Alias("OutFile", "FilePath", "FileName")]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -143,15 +147,11 @@ function Export-DbaLogin {
     )
 
     begin {
-        if ($Path) {
-            if ($Path -notlike "*\*") {
-                $Path = ".\$Path"
-            }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Write-Message -Level Warning -Message "Parent directory $directory does not exist"
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
             }
         }
 

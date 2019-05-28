@@ -29,7 +29,10 @@ function Export-DbaUser {
         To say to which version the script should be generated. If not specified will use database compatibility level
 
     .PARAMETER Path
-        Specifies the full path of a file to write the script to.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER NoClobber
         Do not overwrite file
@@ -119,8 +122,9 @@ function Export-DbaUser {
         [object[]]$User,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
-        [Alias("OutFile", "FilePath", "FileName")]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -130,17 +134,13 @@ function Export-DbaUser {
     )
 
     begin {
-        if ($Path) {
-            if ($Path -notlike "*\*") { $Path = ".\$Path" }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Stop-Function -Message "Parent directory $directory does not exist"
-                return
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
             }
         }
-
         $outsql = @()
 
         $versions = @{
@@ -447,8 +447,26 @@ function Export-DbaUser {
             $sql += "`r`nGO"
         }
 
-        if ($Path) {
-            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
+        if (-not $FilePath -and (Test-Bound -Parameter Path)) {
+                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+            } elseif (-not $FilePath) {
+                if (Test-Path $Path -PathType Container) {
+                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                    $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
+                } elseif (Test-Path $Path -PathType Leaf) {
+                    if ($SqlInstance.Count -gt 1) {
+                        $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                        $PathData = Get-ChildItem $Path
+                        $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    } else {
+                        $FilePath = $Path
+                    }
+                }
+            }
+        }
+
+        if ($Path -or $FilePath) {
+            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
         } else {
             $sql
         }

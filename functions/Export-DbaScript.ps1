@@ -8,9 +8,11 @@ function Export-DbaScript {
 
     .PARAMETER InputObject
         A SQL Management Object such as the one returned from Get-DbaLogin
-
     .PARAMETER Path
-        The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Encoding
         Specifies the file encoding. The default is UTF8.
@@ -130,6 +132,8 @@ function Export-DbaScript {
         [Alias("ScriptingOptionObject")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [string]$BatchSeparator = '',
@@ -139,8 +143,14 @@ function Export-DbaScript {
         [switch]$Append,
         [switch]$EnableException
     )
-
     begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
         $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         $commandName = $MyInvocation.MyCommand.Name
         $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")

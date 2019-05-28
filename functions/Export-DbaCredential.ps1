@@ -61,6 +61,7 @@ function Export-DbaCredential {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
         [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
@@ -69,6 +70,13 @@ function Export-DbaCredential {
         [switch]$EnableException
     )
     begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
         $serverArray = @()
         $credentialArray = @{}
         $credentialCollection = New-Object System.Collections.ArrayList
@@ -151,8 +159,6 @@ function Export-DbaCredential {
                 $key = $input.Parent.Name + '::[' + $input.Name + ']'
                 $credentialArray.add( $key, $true )
             }
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-credential.sql"
         }
     }
 
@@ -160,14 +166,10 @@ function Export-DbaCredential {
         $sql = @()
         foreach ($cred in $credentialCollection) {
             Write-Message -Level Verbose -Message "Credentials in object = $($cred.Count)"
-            if (-not (Test-Bound -ParameterName Path)) {
-                $time = (Get-Date -Format yyyMMddHHmmss)
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $serverName = $($cred[0].SqlInstance.replace('\', '$'))
-                $path = Join-DbaPath -Path $mydocs "$serverName-$time-credential.sql"
-            }
 
             foreach ($currentCred in $creds) {
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -ServerName $currentCred.SqlInstance
+
                 $key = $currentCred.SqlInstance + '::' + $currentCred.Name
                 if ( $credentialArray.ContainsKey($key) ) {
                     $name = $currentCred.Name.Replace("'", "''")
@@ -185,16 +187,15 @@ function Export-DbaCredential {
 
             try {
                 if ($Append) {
-                    Add-Content -Path $path -Value $sql
+                    Add-Content -Path $FilePath -Value $sql
                 } else {
-                    Set-Content -Path $path -Value $sql
+                    Set-Content -Path $FilePath -Value $sql
                 }
             } catch {
-                Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
 
-            Write-Message -Level Verbose -Message "Credentials exported to $path"
+            Write-Message -Level Verbose -Message "Credentials exported to $FilePath"
         }
     }
-
 }

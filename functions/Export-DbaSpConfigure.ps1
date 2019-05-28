@@ -14,12 +14,10 @@ function Export-DbaSpConfigure {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the directory to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
-        If not specified will output to My Documents folder with default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
-        If a directory is passed then uses default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
+        Specifies the directory where the file or files will be exported.
 
     .PARAMETER FilePath
-        Specifies the specific file instead of a directory path.
+        Specifies the full file path of the output file.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,9 +69,19 @@ function Export-DbaSpConfigure {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
         [string]$FilePath,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+            Stop-Function -Message "Path ($Path) must be a directory"
+            }
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
