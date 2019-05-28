@@ -144,14 +144,7 @@ function Export-DbaScript {
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
-            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
-                $null = New-Item -ItemType Directory -Path $Path
-            } else {
-                Stop-Function -Message "Path ($Path) must be a directory"
-                return
-            }
-        }
+        $null = Test-ExportDirectory -Path $Path
         $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         $commandName = $MyInvocation.MyCommand.Name
         $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")

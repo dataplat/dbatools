@@ -70,14 +70,7 @@ function Export-DbaCredential {
         [switch]$EnableException
     )
     begin {
-        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
-            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
-                $null = New-Item -ItemType Directory -Path $Path
-            } else {
-                Stop-Function -Message "Path ($Path) must be a directory"
-                return
-            }
-        }
+        $null = Test-ExportDirectory -Path $Path
         $serverArray = @()
         $credentialArray = @{}
         $credentialCollection = New-Object System.Collections.ArrayList
@@ -129,7 +122,7 @@ function Export-DbaCredential {
                         $creds | Add-Member -MemberType NoteProperty -Name 'ExcludePassword' -Value $ExcludePassword
                         $credentialCollection.Add($credObject) | Out-Null
                     } else {
-                        if (!(Test-SqlSa -SqlInstance $server)) {
+                        if (-not (Test-SqlSa -SqlInstance $server)) {
                             Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
                         }
 
@@ -197,7 +190,7 @@ function Export-DbaCredential {
             } catch {
                 Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
-
+            Get-ChildItem -Path $FilePath
             Write-Message -Level Verbose -Message "Credentials exported to $FilePath"
         }
     }
