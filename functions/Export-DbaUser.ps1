@@ -120,13 +120,13 @@ function Export-DbaUser {
     [OutputType([String])]
     param (
         [parameter(ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [object[]]$User,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$User,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -143,7 +143,8 @@ function Export-DbaUser {
 
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $outsql = @()
+
+        $outsql = $pathcollection = @()
 
         $versions = @{
             'SQLServer2000'        = 'Version80'
@@ -168,11 +169,20 @@ function Export-DbaUser {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if ($PSBoundParameters.SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        foreach ($instance in $SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
         foreach ($db in $InputObject) {
+
+            if (-not ($pathcollection | Where Name -eq $db.Parent.Name)) {
+                $pathcollection += [pscustomobject]@{
+                    Name = $db.Parent.Name
+                    Path = (Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name)
+                }
+            }
+
+            $FilePath = ($pathcollection | Where Name -eq $db.Parent.Name).Path
             if ([string]::IsNullOrEmpty($destinationVersion)) {
                 #Get compatibility level for scripting the objects
                 $scriptVersion = $db.CompatibilityLevel
@@ -411,15 +421,12 @@ function Export-DbaUser {
                 #add the final GO
                 $sql += "`r`nGO"
             }
-
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-
             if (-not $Passthru) {
                 $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                Get-ChildItem -Path $FilePath
             } else {
                 $sql
             }
         }
+        Get-ChildItem -Path $pathcollection.Path | Sort-Object -Unique
     }
 }
