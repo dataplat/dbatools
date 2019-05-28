@@ -16,6 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         Get-ChildItem "C:\temp\dbatoolsci" -Recurse | Remove-Item -ErrorAction Ignore
+        Get-Item "C:\temp\dbatoolsci" | Remove-Item -ErrorAction Ignore
     }
     Context "Verifying output" {
         It "exports results to one file and creates directory if required" {
