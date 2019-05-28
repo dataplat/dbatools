@@ -262,7 +262,7 @@ function Export-DbaLogin {
                 }
 
                 if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
-                    if ($Path) {
+                    if ($Path -or $FilePath) {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
@@ -473,8 +473,9 @@ function Export-DbaLogin {
             $sql += "`r`nGO"
         }
 
-        if ($Path) {
-            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
+        if ($Path -Or $FilePath) {
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
             Get-ChildItem $Path
         } else {
             $sql

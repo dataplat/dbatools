@@ -95,19 +95,14 @@ function Export-DbaPfDataCollectorSetTemplate {
                 return
             }
 
-            $csname = Remove-InvalidFileNameChars -Name $object.Name
-
-            if ($path.EndsWith(".xml")) {
-                $filename = $path
-            } else {
-                $filename = "$path\$csname.xml"
-                if (-not (Test-Path -Path $path)) {
-                    $null = New-Item -Type Directory -Path $path
-                }
+            if (-not $FilePath) {
+                $csname = Remove-InvalidFileNameChars -Name $object.Name
+                $FilePath = "$Path\$csname.xml"
             }
+
             Write-Message -Level Verbose -Message "Wrote $csname to $filename."
-            Set-Content -Path $filename -Value $object.Xml -Encoding Unicode
-            Get-ChildItem -Path $filename
+            Set-Content -Path $FilePath -Value $object.Xml -Encoding Unicode
+            Get-ChildItem -Path $FilePath
         }
     }
 }

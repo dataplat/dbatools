@@ -58,11 +58,24 @@ function Export-DbaXESessionTemplate {
         [object[]]$Session,
         # intentionally left because this is where SSMS defaults
         [string]$Path = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates",
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
+            }
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
@@ -78,14 +91,12 @@ function Export-DbaXESessionTemplate {
                 Stop-Function -Message "$Path does not exist." -Target $Path
             }
 
-            if ($path.EndsWith(".xml")) {
-                $filename = $path
-            } else {
-                $filename = "$path\$xesname.xml"
+            if (-not $PSBoundParameters.FilePath) {
+                $FilePath = "$Path\$xesname.xml"
             }
-            Write-Message -Level Verbose -Message "Wrote $xesname to $filename"
-            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
-            Get-ChildItem -Path $filename
+            Write-Message -Level Verbose -Message "Wrote $xesname to $FilePath"
+            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $FilePath, $true)
+            Get-ChildItem -Path $FilePath
         }
     }
 }

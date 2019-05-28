@@ -206,12 +206,8 @@ function Export-DbaScript {
                     $scripter.Options = $ScriptingOptionsObject
                 }
 
-                if (!$passthru) {
-                    if ($path) {
-                        $actualPath = $path
-                    } else {
-                        $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
-                    }
+                if (-not $passthru) {
+                    $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $serverName
                 }
 
                 if ($NoPrefix) {
@@ -223,18 +219,17 @@ function Export-DbaScript {
                 if ($passthru) {
                     $prefix | Out-String
                 } else {
-                    if ($prefixArray -notcontains $actualPath) {
-
-                        if ((Test-Path -Path $actualPath) -and $NoClobber) {
-                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $actualPath -Continue
+                    if ($prefixArray -notcontains $FilePath) {
+                        if ((Test-Path -Path $FilePath) -and $NoClobber) {
+                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $FilePath -Continue
                         }
                         #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
-                        $prefix | Out-File -FilePath $actualPath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
-                        $prefixArray += $actualPath
+                        $prefix | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
+                        $prefixArray += $FilePath
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualPath")) {
+                if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $FilePath")) {
                     Write-Message -Level Verbose -Message "Exporting $object"
 
                     if ($passthru) {
@@ -262,14 +257,14 @@ function Export-DbaScript {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
-                                $ScriptingOptionsObject.FileName = $actualPath
+                                $ScriptingOptionsObject.FileName = $FilePath
                                 $object.Script($ScriptingOptionsObject)
                             } else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
                                         $script = "$script`r`n$BatchSeparator`r`n"
                                     }
-                                    $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                                    $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
                                 }
                             }
 
@@ -282,13 +277,13 @@ function Export-DbaScript {
                             if ($BatchSeparator -ne "") {
                                 $script = "$script`r`n$BatchSeparator`r`n"
                             }
-                            $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                            $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
                         }
                     }
 
                     if (-not $passthru) {
-                        Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $actualPath"
-                        Get-ChildItem -Path $actualPath
+                        Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $FilePath"
+                        Get-ChildItem -Path $FilePath
                     }
                 }
             } catch {

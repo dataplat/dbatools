@@ -104,31 +104,7 @@ function Export-DbaRepServerSetting {
         }
 
         foreach ($repserver in $InputObject) {
-            $server = $repserver.SqlServerName
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-
-            if (-not $FilePath) {
-                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-replication.sql"
-            }
-
-            if (Test-Path $Path -PathType Container) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-replication.sql"
-            } elseif (Test-Path $Path -PathType Leaf) {
-                if ($SqlInstance.Count -gt 1) {
-                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData = Get-ChildItem $Path
-                    $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                } else {
-                    $FilePath = $Path
-                }
-            }
-
-            $topdir = Split-Path -Path $FilePath
-
-            if (-not (Test-Path -Path $topdir)) {
-                New-Item -Path $topdir -ItemType Directory
-            }
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $repserver.SqlServerName
 
             try {
                 if (-not $ScriptOption) {
@@ -146,13 +122,11 @@ function Export-DbaRepServerSetting {
             if ($Passthru) {
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
+                continue
             }
 
-            if ($FilePath) {
-
-                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $FilePath -Encoding $encoding -Append
-                $out | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append
-            }
+            "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $FilePath -Encoding $encoding -Append
+            $out | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append
         }
     }
 }

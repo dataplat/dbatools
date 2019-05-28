@@ -91,31 +91,8 @@ function Export-DbaSpConfigure {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 
-            if (-not $FilePath) {
-                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            }
-
-            if (Test-Path $Path -PathType Container) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            } elseif (Test-Path $Path -PathType Leaf) {
-                if ($SqlInstance.Count -gt 1) {
-                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData = Get-ChildItem $Path
-                    $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                } else {
-                    $FilePath = $Path
-                }
-            }
-
-            $topdir = Split-Path -Path $FilePath
-
-            if (-not (Test-Path -Path $topdir)) {
-                New-Item -Path $topdir -ItemType Directory
-            }
-
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
             $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
 
             if ($ShowAdvancedOptions -eq 0) {

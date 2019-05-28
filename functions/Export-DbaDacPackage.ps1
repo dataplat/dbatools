@@ -208,7 +208,15 @@ function Export-DbaDacPackage {
                 }
 
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
-                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $Type -ServerName $instance
+
+                if ($Type -eq 'Dacpac') {
+                    $ext = 'dacpac'
+                }
+                elseif ($Type -eq 'Bacpac') {
+                    $ext = 'bacpac'
+                }
+
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $ext -ServerName $instance
 
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {

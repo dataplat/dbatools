@@ -118,24 +118,7 @@ function Export-DbaLinkedServer {
                 return
             }
 
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-
-            if (-not $FilePath -and (Test-Bound -Parameter Path)) {
-                $FilePath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
-            } elseif (-not $FilePath) {
-                if (Test-Path $Path -PathType Container) {
-                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-linkedservers.sql"
-                } elseif (Test-Path $Path -PathType Leaf) {
-                    if ($SqlInstance.Count -gt 1) {
-                        $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                        $PathData = Get-ChildItem $Path
-                        $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                    } else {
-                        $FilePath = $Path
-                    }
-                }
-            }
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 
             $sql = @()
 
