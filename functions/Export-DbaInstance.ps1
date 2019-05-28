@@ -296,7 +296,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -Path "$Path\$fileCounter-logins.sql" -Append:$Append -WarningAction SilentlyContinue
+                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -WarningAction SilentlyContinue
                 if (-not (Test-Path "$Path\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
