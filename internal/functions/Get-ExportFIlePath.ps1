@@ -1,11 +1,15 @@
 #$FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName) {
-    if ($FilePath) { return $FilePath }
+    if ($FilePath) {
+        return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath))
+    }
+
     if (-not $Path) {
         $Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')
     }
     if (-not $Type) {
         Write-Warning "You forgot -Type"
+        return
     }
     $type = $type.ToLower()
 
@@ -20,5 +24,7 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName) {
     if ($caller -eq "RepServerSetting") {
         $caller = "replication"
     }
-    return (Join-DbaPath -Path $Path -Child "$servername-$timenow-$caller.$Type")
+
+    $finalpath = Join-DbaPath -Path $Path -Child "$servername-$timenow-$caller.$Type"
+    return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($finalpath))
 }

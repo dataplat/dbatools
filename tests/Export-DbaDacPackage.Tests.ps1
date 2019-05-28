@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports dacpac with a table list" {
                 $relativePath = '.\extract.dacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -100,7 +100,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports bacpac with a table list" {
                 $relativePath = '.\extract.bacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example -Type Bacpac
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
