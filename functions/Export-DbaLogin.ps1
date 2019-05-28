@@ -22,7 +22,10 @@ function Export-DbaLogin {
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Path
-        The file to write to.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER NoClobber
         If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
@@ -126,8 +129,9 @@ function Export-DbaLogin {
         [object[]]$Login,
         [object[]]$ExcludeLogin,
         [object[]]$Database,
-        [Alias("OutFile", "FilePath", "FileName")]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -143,24 +147,11 @@ function Export-DbaLogin {
     )
 
     begin {
-        if ($Path) {
-            if ($Path -notlike "*\*") {
-                $Path = ".\$Path"
-            }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Write-Message -Level Warning -Message "Parent directory $directory does not exist"
-            }
-        }
-
+        $null = Test-ExportDirectory -Path $Path
         $outsql = @()
     }
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a login, database, or server or specify a SqlInstance"
@@ -263,7 +254,7 @@ function Export-DbaLogin {
                 }
 
                 if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
-                    if ($Path) {
+                    if ($Path -or $FilePath) {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
@@ -474,9 +465,10 @@ function Export-DbaLogin {
             $sql += "`r`nGO"
         }
 
-        if ($Path) {
-            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-            Get-ChildItem $Path
+        if ($Path -Or $FilePath) {
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+            Get-ChildItem $FilePath
         } else {
             $sql
         }

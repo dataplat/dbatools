@@ -10,7 +10,10 @@ function Export-DbaDbTableData {
         Pipeline input from Get-DbaDbTable
 
     .PARAMETER Path
-        The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Encoding
         Specifies the file encoding. The default is UTF8.
@@ -83,6 +86,8 @@ function Export-DbaDbTableData {
         [parameter(Mandatory, ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [string]$BatchSeparator = '',
