@@ -147,7 +147,6 @@ function Export-DbaScript {
         $null = Test-ExportDirectory -Path $Path
         $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         $commandName = $MyInvocation.MyCommand.Name
-        $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
         $prefixArray = @()
     }
 

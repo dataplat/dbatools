@@ -1,5 +1,5 @@
 #$FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName) {
+function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, [switch]$Unique) {
     if ($FilePath) {
         return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath))
     }
@@ -26,5 +26,19 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName) {
     }
 
     $finalpath = Join-DbaPath -Path $Path -Child "$servername-$timenow-$caller.$Type"
+
+    if ($Unique) {
+        if ($null -eq $script:pathcollection) {
+            $script:pathcollection = @()
+        }
+        if (-not ($script:pathcollection | Where-Object Name -eq $ServerName)) {
+            $script:pathcollection += [pscustomobject]@{
+                Name = $ServerName
+                Path = ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($finalpath))
+            }
+            return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($finalpath))
+        }
+    }
+
     return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($finalpath))
 }

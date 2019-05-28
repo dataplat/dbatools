@@ -144,7 +144,7 @@ function Export-DbaUser {
     begin {
         $null = Test-ExportDirectory -Path $Path
 
-        $outsql = $pathcollection = @()
+        $outsql = $script:pathcollection = @()
 
         $versions = @{
             'SQLServer2000'        = 'Version80'
@@ -174,15 +174,8 @@ function Export-DbaUser {
         }
 
         foreach ($db in $InputObject) {
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
 
-            if (-not ($pathcollection | Where Name -eq $db.Parent.Name)) {
-                $pathcollection += [pscustomobject]@{
-                    Name = $db.Parent.Name
-                    Path = (Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name)
-                }
-            }
-
-            $FilePath = ($pathcollection | Where Name -eq $db.Parent.Name).Path
             if ([string]::IsNullOrEmpty($destinationVersion)) {
                 #Get compatibility level for scripting the objects
                 $scriptVersion = $db.CompatibilityLevel
@@ -427,6 +420,6 @@ function Export-DbaUser {
                 $sql
             }
         }
-        Get-ChildItem -Path $pathcollection.Path | Sort-Object -Unique
+        Get-ChildItem -Path $script:pathcollection.Path
     }
 }
