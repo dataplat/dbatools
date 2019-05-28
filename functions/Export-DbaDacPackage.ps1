@@ -204,8 +204,7 @@ function Export-DbaDacPackage {
 
                 if ($Type -eq 'Dacpac') {
                     $ext = 'dacpac'
-                }
-                elseif ($Type -eq 'Bacpac') {
+                } elseif ($Type -eq 'Bacpac') {
                     $ext = 'bacpac'
                 }
 
