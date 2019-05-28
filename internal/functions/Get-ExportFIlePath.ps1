@@ -1,4 +1,5 @@
 function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName) {
+    return "C:\temp\test.txt"
     #$FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type dacpac -ServerName $instance
 
     $cleaninstance = $instance.ToString().Replace('\', '-')

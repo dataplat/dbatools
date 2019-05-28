@@ -79,12 +79,15 @@ function Export-DbaRegServer {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
-            Stop-Function -Message "Path ($Path) must be a directory"
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
         $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
         }

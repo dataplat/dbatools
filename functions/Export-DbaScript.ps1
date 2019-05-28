@@ -148,7 +148,8 @@ function Export-DbaScript {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
-            Stop-Function -Message "Path ($Path) must be a directory"
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
         $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
@@ -158,6 +159,7 @@ function Export-DbaScript {
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($object in $InputObject) {
 
             $typename = $object.GetType().ToString()

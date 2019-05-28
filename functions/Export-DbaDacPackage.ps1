@@ -118,10 +118,13 @@ function Export-DbaDacPackage {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
                 Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
             return

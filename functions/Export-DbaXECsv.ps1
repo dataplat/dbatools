@@ -58,7 +58,8 @@ function Export-DbaXECsv {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
-            Stop-Function -Message "Path ($Path) must be a directory"
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
         try {

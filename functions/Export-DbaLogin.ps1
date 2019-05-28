@@ -151,16 +151,15 @@ function Export-DbaLogin {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
-            Stop-Function -Message "Path ($Path) must be a directory"
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
 
         $outsql = @()
     }
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a login, database, or server or specify a SqlInstance"

@@ -74,7 +74,8 @@ function Export-DbaCredential {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
-            Stop-Function -Message "Path ($Path) must be a directory"
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
         $serverArray = @()
@@ -82,6 +83,8 @@ function Export-DbaCredential {
         $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a Credential or specify a SqlInstance"
             return
@@ -168,7 +171,7 @@ function Export-DbaCredential {
             Write-Message -Level Verbose -Message "Credentials in object = $($cred.Count)"
 
             foreach ($currentCred in $creds) {
-                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -ServerName $currentCred.SqlInstance
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -ServerName $currentCred.SqlInstance -Type Sql
 
                 $key = $currentCred.SqlInstance + '::' + $currentCred.Name
                 if ( $credentialArray.ContainsKey($key) ) {

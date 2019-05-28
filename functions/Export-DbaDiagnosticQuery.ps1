@@ -60,7 +60,7 @@ function Export-DbaDiagnosticQuery {
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
-        # No file path becuase this needs a directory
+        # No file path because this needs a directory
         [System.IO.FileInfo]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
@@ -81,12 +81,12 @@ function Export-DbaDiagnosticQuery {
             }
         }
 
-        if (!$(Test-Path $Path)) {
-            try {
-                New-Item $Path -ItemType Directory -ErrorAction Stop | Out-Null
-                Write-Message -Level Output -Message "Created directory $Path"
-            } catch {
-                Stop-Function -Message "Failed to create directory $Path" -Continue
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
     }
@@ -123,7 +123,7 @@ function Export-DbaDiagnosticQuery {
                         $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     }
 
-                    if (!$NoPlanExport) {
+                    if (-not $NoPlanExport) {
                         Write-Message -Level Output -Message "Exporting $planfilename"
                         if ($plan) {$plan | Out-File -FilePath $planfilename}
                     }
@@ -144,7 +144,7 @@ function Export-DbaDiagnosticQuery {
                         $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     }
 
-                    if (!$NoQueryExport) {
+                    if (-not $NoQueryExport) {
                         Write-Message -Level Output -Message "Exporting $sqlfilename"
                         if ($sql) {$sql | Out-File -FilePath $sqlfilename}
                     }
