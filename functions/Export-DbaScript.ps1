@@ -203,21 +203,25 @@ function Export-DbaScript {
                 }
 
                 if ($NoPrefix) {
-                    $prefix = ""
+                    $prefix = $null
                 } else {
                     $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
                 }
 
                 if ($passthru) {
-                    $prefix | Out-String
+                    if ($null -ne $prefix) {
+                        $prefix | Out-String
+                    }
                 } else {
                     if ($prefixArray -notcontains $FilePath) {
                         if ((Test-Path -Path $FilePath) -and $NoClobber) {
                             Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $FilePath -Continue
                         }
                         #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
-                        $prefix | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
-                        $prefixArray += $FilePath
+                        if ($null -ne $prefix) {
+                            $prefix | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
+                            $prefixArray += $FilePath
+                        }
                     }
                 }
 
