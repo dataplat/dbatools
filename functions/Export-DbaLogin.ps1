@@ -46,7 +46,7 @@ function Export-DbaLogin {
         Output script to console
 
     .PARAMETER BatchSeparator
-        If specified, will NOT script the 'GO' batch separator.
+        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
 
     .PARAMETER NoClobber
         If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
