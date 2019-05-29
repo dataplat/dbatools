@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
     }
-    Context "Command actually works" {
+    #Context "Command actually works" {
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
         It "Should have database name of $db1" {
             foreach ($result in $results) {
@@ -51,5 +51,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.TestingInstance | Should Be $script:instance3
             }
         }
-    }
+    #}
 }
