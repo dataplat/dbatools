@@ -5295,10 +5295,12 @@ END;
 GO
 "@
         $testfilepath = "$env:USERPROFILE\Documents\who_MOCKED_is_active_v11_32.sql"
+        $testzippath = "$env:USERPROFILE\Documents\spWhoisActive.zip"
 
-        $Null = Out-file -FilePath $testfilepath -Encoding utf8 -InputObject $spWhoisActive -Force
-        $Null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testfilepath -Database Master
-        $Null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testfilepath -Database Tempdb -Force
+        Out-file -FilePath $testfilepath -Encoding utf8 -InputObject $spWhoisActive -Force
+        Compress-Archive -Path $testfilepath -DestinationPath $testzippath -CompressionLevel Fastest -Force
+        $null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database Master
+        $null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database tempdb
     }
     AfterAll {
         Remove-Item -Path $testfilepath -Force -ErrorAction SilentlyContinue
@@ -5306,24 +5308,44 @@ GO
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database Tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should Execute SPWhoisActive" {
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Help
+        It "Should execute and return Help" {
+            $results | Should Not Be $null
+        }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1
-        It "Should invoke with no parameters in default location" {
-            $results | Should Not Be Null
+        It "Should execute with no parameters in default location" {
+            $results | Should Be $Null
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Database Tempdb
-        It "Should invoke with no parameters against alternate install location" {
-            $results | Should Not Be Null
+        It "Should execute with no parameters against alternate install location" {
+            $results | Should Be $Null
+        }
+
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowOwnSpid
+        It "Should execute with ShowOwnSpid" {
+            $results | Should Not Be $Null
+        }
+
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowSystemSpids
+        It "Should execute with ShowSystemSpids" {
+            $results | Should Not Be $Null
+        }
+
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowSleepingSpids 2
+        It "Should execute with ShowSleepingSpids" {
+            $results | Should Not Be $Null
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Database Tempdb -GetAverageTime
-        It "Should retrieve averagetime" {
-            $results | Should Not Be Null
+        It "Should execute with averagetime" {
+            $results | Should Not Be $Null
         }
+
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -GetOuterCommand -FindBlockLeaders
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
-            $results | Should Not Be Null
+            $results | Should Not Be $Null
         }
     }
 }
