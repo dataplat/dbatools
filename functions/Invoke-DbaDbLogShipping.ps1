@@ -1318,7 +1318,7 @@ function Invoke-DbaDbLogShipping {
                             Write-Message -Message "No path to the full backup is set. Trying to retrieve the last full backup for $db from $SourceSqlInstance" -Level Verbose
 
                             # Get the last full backup
-                            $LastBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
+                            $LastBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -Database $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                             # Check if there was a last backup
                             if ($null -eq $LastBackup) {
@@ -1420,7 +1420,7 @@ function Invoke-DbaDbLogShipping {
                                     -SqlCredential $SourceSqlCredential `
                                     -BackupDirectory $DatabaseBackupNetworkPath `
                                     -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
-                                    -Databases $($db.Name) `
+                                    -Database $($db.Name) `
                                     -Type Full
 
                                 Write-Message -Message "Backup completed." -Level Verbose
