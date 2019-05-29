@@ -17,14 +17,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $null = Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $db1 = "dbatoolsci_safely"
+        $db2 = "dbatoolsci_safely_otherInstance"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $db1")
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $server.Query("CREATE DATABASE $db1")
+        $server.Query("CREATE DATABASE $db2")
     }
     AfterAll {
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1, $script:instance2 -Database $db1
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1, $script:instance2 -Database $db1, $db2
+        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely', 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
     }
     Context "Command actually works" {
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
@@ -33,16 +35,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.DatabaseName | Should Be $db1
             }
         }
+
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
         It "should warn and quit" {
-            $results | Should -Be $null
-            $warn -match 'Failure getting SQL Agent service' | Should Be $true
+            $results | Should Be $null
+            $warn -match 'Express Edition' | Should Be $true
         }
 
-        # Add back after rewrite, this should work
+        #This will not work because -BackupFolder is not a shared folder
         It -Skip "Should restore to another server" {
-            Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance2
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db2 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance2
             foreach ($result in $results) {
                 $result.SqlInstance | Should Be $script:instance1
                 $result.TestingInstance | Should Be $script:instance2
