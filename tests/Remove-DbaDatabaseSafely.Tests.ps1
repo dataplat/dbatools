@@ -25,8 +25,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE DATABASE $db2")
     }
     AfterAll {
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1, $db2
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
     }
@@ -48,7 +48,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance3
             foreach ($result in $results) {
                 $result.SqlInstance | Should Be $script:instance2
-                $result.TestingInstance | Should Be $script:instance2
+                $result.TestingInstance | Should Be $script:instance3
             }
         }
     }
