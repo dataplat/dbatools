@@ -17,7 +17,7 @@
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     # Author of this module
-    Author                 = 'Chrissy LeMaire'
+    Author                 = 'the dbatools team'
 
     # Company or vendor of this module
     CompanyName            = 'dbatools.io'
