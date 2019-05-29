@@ -393,8 +393,8 @@ function Install-DbaMaintenanceSolution {
             [pscustomobject]@{
                 ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
-                SqlInstance = $instance
-                Results = "Success"
+                SqlInstance  = $instance
+                Results      = "Success"
             }
         }
         # Only here due to need for non-pooled connection in this command
