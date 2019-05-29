@@ -257,7 +257,6 @@ function Import-DbaCsv {
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding,
         [string]$NullValue,
-        [int]$Threshold = 60,
         [int]$MaxQuotedFieldLength,
         [switch]$SkipEmptyLine,
         [switch]$SupportsMultiline,
@@ -577,7 +576,7 @@ function Import-DbaCsv {
                             Add-Member -Type NoteProperty -Name BufferSize -Value $BufferSize -Force -InputObject $reader
                         }
                         if ($PSBoundParameters.NullValue) {
-                           Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
+                            Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
                         }
                         if ($PSBoundParameters.FirstRowHeader) {
                             $reader.hasHeaders = $FirstRowHeader
@@ -595,7 +594,7 @@ function Import-DbaCsv {
                             Add-Member -Type NoteProperty -Name Comment -Value $Comment -Force -InputObject $reader
                         }
                         if ($PSBoundParameters.TrimmingOption) {
-                             Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
+                            Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
                         }
 
                         # Add rowcount output
