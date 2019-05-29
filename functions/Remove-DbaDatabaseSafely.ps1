@@ -115,7 +115,7 @@ function Remove-DbaDatabaseSafely {
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
-        [DbaInstanceParameter]$Destination = $sqlinstance,
+        [DbaInstanceParameter]$Destination = $SqlInstance,
         [PSCredential]$DestinationCredential,
         [Alias("NoCheck")]
         [switch]$NoDbccCheckDb,
@@ -140,11 +140,11 @@ function Remove-DbaDatabaseSafely {
         $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential
 
         if (-not $destination) {
-            $destination = $sqlinstance
+            $destination = $SqlInstance
             $DestinationCredential = $SqlCredential
         }
 
-        if ($sqlinstance -ne $destination) {
+        if ($SqlInstance -ne $destination) {
 
             $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 
@@ -189,7 +189,13 @@ function Remove-DbaDatabaseSafely {
         }
         try {
             $destInstanceName = $destserver.InstanceName
-            if ($destserver.InstanceName -eq '') {
+
+            if ($destserver.EngineEdition -match "Express") {
+                Write-Message -Level Warning -Message "$destInstanceName is Express Edition which does not support SQL Server Agent."
+                return
+            }
+
+            if ($destInstanceName -eq '') {
                 $destInstanceName = "MSSQLSERVER"
             }
             $agentService = Get-DbaService -ComputerName $destserver.ComputerName -InstanceName $destInstanceName -Type Agent
@@ -249,7 +255,7 @@ function Remove-DbaDatabaseSafely {
             #$jobServer = $destserver.JobServer
 
             if ($checkJob.count -gt 0) {
-                if ($force -eq $false) {
+                if ($Force -eq $false) {
                     Stop-Function -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate." -Continue
                 } else {
                     if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $destination")) {
@@ -268,7 +274,7 @@ function Remove-DbaDatabaseSafely {
                     $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbname -table
 
                     if ($dbccgood -ne "Success") {
-                        if ($force -eq $false) {
+                        if ($Force -eq $false) {
                             Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that). Aborting routine for this database."
                             continue
                         } else {
@@ -285,23 +291,39 @@ function Remove-DbaDatabaseSafely {
                 try {
                     $timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
 
-                    if ($force -and $dbccgood -ne "Success") {
+                    if ($Force -and $dbccgood -ne "Success") {
                         $filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
                     } else {
                         $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
                     }
 
                     $DefaultCompression = $sourceserver.Configuration.DefaultBackupCompression.ConfigValue
+                    $backupWithCompressionParams = @{
+                        SqlInstance = $SqlInstance
+                        SqlCredential = $SqlCredential
+                        Database = $dbname
+                        BackupFileName = $filename
+                        CompressBackup = $true
+                        Checksum = $true
+                    }
+
+                    $backupWithoutCompressionParams = @{
+                        SqlInstance = $SqlInstance
+                        SqlCredential = $SqlCredential
+                        Database = $dbname
+                        BackupFileName = $filename
+                        Checksum = $true
+                    }
                     if ($BackupCompression -eq "Default") {
                         if ($DefaultCompression -eq 1) {
-                            $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup -Checksum
+                            $null = Backup-DbaDatabase @backupWithCompressionParams
                         } else {
-                            $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -Checksum
+                            $null = Backup-DbaDatabase @backupWithoutCompressionParams
                         }
                     } elseif ($BackupCompression -eq "On") {
-                        $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -CompressBackup -Checksum
+                        $null = Backup-DbaDatabase @backupWithCompressionParams
                     } else {
-                        $null = Backup-DbaDatabase -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $dbname -BackupFileName $filename -Checksum
+                        $null = Backup-DbaDatabase @backupWithoutCompressionParams
                     }
 
                 } catch {
@@ -312,7 +334,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination")) {
                 Write-Message -Level Verbose -Message "Creating Automated Restore Job from Golden Backup for $dbname on $destination."
                 try {
-                    if ($force -eq $true -and $dbccgood -ne "Success") {
+                    if ($Force -eq $true -and $dbccgood -ne "Success") {
                         $jobName = $jobname -replace "Rationalised", "DBCC ERROR"
                     }
 
