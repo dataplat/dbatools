@@ -18,7 +18,7 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, [switch]$Uniq
     }
 
     $ServerName = $ServerName.ToString().Replace('\', '$')
-    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+    $timenow = (Get-Date -uformat (Get-DbatoolsConfigValue -FullName 'Formatting.UFormat'))
     $caller = (Get-PSCallStack)[1].Command.ToString().Replace("Export-Dba", "").ToLower()
 
     if ($caller -eq "RepServerSetting") {
