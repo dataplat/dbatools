@@ -133,9 +133,6 @@ function Import-DbaCsv {
     .PARAMETER NullValue
         The value which denotes a DbNull-value.
 
-    .PARAMETER Threshold
-        Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
-
     .PARAMETER MaxQuotedFieldLength
         The maxmimum length (in bytes) for any quoted field.
 
@@ -257,7 +254,8 @@ function Import-DbaCsv {
         [int]$BufferSize = 4096,
         [ValidateSet('AdvanceToNextLine', 'ThrowException')]
         [string]$ParseErrorAction = 'ThrowException',
-        [System.Text.Encoding]$Encoding,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding,
         [string]$NullValue,
         [int]$Threshold = 60,
         [int]$MaxQuotedFieldLength,
@@ -398,7 +396,7 @@ function Import-DbaCsv {
             }
 
             # Automatically generate Table name if not specified, then prompt user to confirm
-            if (-not (Test-Bound -ParameterName Table)) {
+            if (-not ($PSBoundParameters.Table)) {
                 $table = [IO.Path]::GetFileNameWithoutExtension($file)
                 Write-Message -Level Verbose -Message "Table name not specified, using $table"
             }
@@ -555,36 +553,49 @@ function Import-DbaCsv {
                     try {
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                             (New-Object System.IO.StreamReader($file)),
-                            $FirstRowHeader,
-                            $Delimiter,
-                            $Quote,
-                            $Escape,
-                            $Comment,
-                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                            $BufferSize,
-                            $NullValue
+                            [System.Text.Encoding]::$Encoding
                         )
 
-                        if (Test-Bound -ParameterName Encoding) {
-                            $reader.Encoding = $Encoding
-                        }
-                        if (Test-Bound -ParameterName Threshold) {
-                            $reader.Threshold = $Threshold
-                        }
-                        if (Test-Bound -ParameterName MaxQuotedFieldLength) {
+                        if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
-                        if (Test-Bound -ParameterName SkipEmptyLine) {
+                        if ($PSBoundParameters.SkipEmptyLine) {
                             $reader.SkipEmptyLines = $SkipEmptyLine
                         }
-                        if (Test-Bound -ParameterName SupportsMultiline) {
+                        if ($PSBoundParameters.SupportsMultiline) {
                             $reader.SupportsMultiline = $SupportsMultiline
                         }
-                        if (Test-Bound -ParameterName UseColumnDefault) {
+                        if ($PSBoundParameters.UseColumnDefault) {
                             $reader.UseColumnDefaults = $UseColumnDefault
                         }
-                        if (Test-Bound -ParameterName ParseErrorAction) {
+                        if ($PSBoundParameters.ParseErrorAction) {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
+                        }
+
+                        # constructors were misleading so here's some brute forcing of readonly (get;) properties. it works :O
+                        if ($PSBoundParameters.BufferSize) {
+                            Add-Member -Type NoteProperty -Name BufferSize -Value $BufferSize -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.NullValue) {
+                           Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.FirstRowHeader) {
+                            $reader.hasHeaders = $FirstRowHeader
+                        }
+                        if ($PSBoundParameters.Delimiter) {
+                            Add-Member -Type NoteProperty -Name Delimiter -Value $Delimiter -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Quote) {
+                            Add-Member -Type NoteProperty -Name Quote -Value $Quote -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Escape) {
+                            Add-Member -Type NoteProperty -Name Escape -Value $Escape -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Comment) {
+                            Add-Member -Type NoteProperty -Name Comment -Value $Comment -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.TrimmingOption) {
+                             Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
                         }
 
                         # Add rowcount output
