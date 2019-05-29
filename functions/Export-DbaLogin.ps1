@@ -39,7 +39,7 @@ function Export-DbaLogin {
         Will default to Path.DbatoolsExport Configuration entry
 
     .PARAMETER FilePath
-        Specifies the full file path of the output file. If left blank then filename based on Instance name and date is created. 
+        Specifies the full file path of the output file. If left blank then filename based on Instance name and date is created.
         If more than one instance is input then this parameter should be blank.
 
     .PARAMETER Passthru
@@ -494,7 +494,7 @@ function Export-DbaLogin {
     end {
         foreach ($login in $logonCollection) {
             if ($NoPrefix) {
-                $prefix = ""
+                $prefix = $null
             } else {
                 $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
             }
@@ -510,10 +510,13 @@ function Export-DbaLogin {
 
 
             if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = $prefix + $sql
+                }
                 $sql
             } elseif ($Path -Or $FilePath) {
                 if ($instanceArray -notcontains $($login.Instance)) {
-                    if (!$NoPrefix) {
+                    if ($null -ne $prefix) {
                         $sql = $prefix + $sql
                     }
                     $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $login.Instance
