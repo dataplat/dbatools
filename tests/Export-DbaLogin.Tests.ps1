@@ -13,11 +13,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-
-$outputFile = "dbatoolsci_exportdbalogin.sql"
-
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $DefaultExportPath = Get-DbatoolsConfigValue -FullName path.dbatoolsexport
+        $AltExportPath = "$env:USERPROFILE\Documents"
         try {
             $random = Get-Random
             $dbname1 = "dbatoolsci_exportdbalogin1$random"
@@ -50,46 +49,88 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+        try {
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
+            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
 
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Confirm:$false
-
-        Remove-Item -Path $outputFile
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -Confirm:$false
+            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Confirm:$false
+        } catch { }
+        $timenow = (Get-Date -uformat "%m%d%Y%H")
+        $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
+        $null = Remove-Item -Path $($ExportedCredential.FullName) -ErrorAction SilentlyContinue
     }
 
-    It "Doesn't include database details when using NoDatabase" {
-        $output = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -WarningAction SilentlyContinue
-
-        ([regex]::matches($output, 'USE \[.*?\]')).Count | Should Be 0
-    }
-
-    $output = Export-DbaLogin -SqlInstance $script:instance2 -WarningAction SilentlyContinue
-
-    It -Skip "Doesn't filter specific databases" {
-        ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 0
-    }
-
-    It -Skip "Exports disabled logins" {
-        [regex]::matches($output, "ALTER LOGIN \[.*?\] DISABLE").Count | Should BeGreaterThan 0
-    }
-
-    It -Skip "Exports deny connects" {
-        [regex]::matches($output, "DENY CONNECT SQL TO \[.*?\]").Count | Should BeGreaterThan 0
-    }
-
-    It -Skip "Exports system role memberships" {
-        if ($server.VersionMajor -lt 11) {
-            [regex]::matches($output, "EXEC sys.sp_addsrvrolemember @rolename=N'dbcreator', @loginame=N'$login2'").Count | Should BeGreaterThan 0
-        } else {
-            [regex]::matches($output, "ALTER SERVER ROLE \[.*?\] ADD MEMBER \[.*?\]").Count | Should BeGreaterThan 0
+    Context "Executes with Exclude Parameters" {
+        It "Should exclude databases when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Match '\nGo\r'
+        }
+        It "Should exclude Jobs when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeJobs -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match 'Job'
+        }
+        It "Should exclude Go when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -ExcludeGoBatchSeparator -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match 'Go'
+        }
+        It "Should exclude a specific login" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match "$login1"
         }
     }
-
-    It "Exports to the specified file" {
-        Export-DbaLogin -SqlInstance $script:instance2 -FilePath $outputFile -WarningAction SilentlyContinue
-
-        Test-Path -Path $outputFile | Should Be $true
+    Context "Executes for various users, databases, and environments" {
+        It "Should Export a specific user" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match "$login2|$dbname2"
+            $results | Should Match "$login1|$dbname1"
+        }
+        foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
+            It "Should Export for the SQLVersion $version" {
+                $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
+                $results = Get-Content -Path $file -Raw
+                $allfiles += $file.FullName
+                $results | Should Match "$login2|$dbname2"
+                $results | Should Not Match "$login1|$dbname1"
+            }
+        }
+    }
+    Context "Exports file to random and specified paths" {
+        It "Should export file to the configured path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -WarningAction SilentlyContinue
+            $results = $file.DirectoryName
+            $allfiles += $file.FullName
+            $results | Should Be $DefaultExportPath
+        }
+        It "Should export file to custom folder path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Path $AltExportPath -ExcludeDatabases -WarningAction SilentlyContinue
+            $results = $file.DirectoryName
+            $allfiles += $file.FullName
+            $results | Should Be $AltExportPath
+        }
+        It "Should export file to custom file path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabases -WarningAction SilentlyContinue
+            $results = $file.Name
+            $allfiles += $file.FullName
+            $results | Should Be "Dbatoolsci_login_CustomFile.sql"
+        }
+        It "Should export file to custom file path and Append" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabases -WarningAction SilentlyContinue
+            $allfiles += $file.FullName
+            $file.CreationTimeUtc.Ticks | Should BeLessThan $file.LastWriteTimeUtc.Ticks
+        }
+        It "Should not export file to custom file path with NoClobber" {
+            { Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should Throw
+        }
     }
 }
