@@ -27,8 +27,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1, $db2
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
+        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely', 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
     }
     Context "Command actually works" {
         $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
@@ -45,10 +44,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should restore to another server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance3
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance3 -Database $db2 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance2
             foreach ($result in $results) {
-                $result.SqlInstance | Should Be $script:instance2
-                $result.TestingInstance | Should Be $script:instance3
+                $result.SqlInstance | Should Be $script:instance3
+                $result.TestingInstance | Should Be $script:instance2
             }
         }
     }
