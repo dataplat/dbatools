@@ -187,6 +187,9 @@ function Remove-DbaDatabaseSafely {
         if (Test-FunctionInterrupt) {
             return
         }
+
+        $start = Get-Date
+
         try {
             $destInstanceName = $destserver.InstanceName
 
@@ -210,7 +213,6 @@ function Remove-DbaDatabaseSafely {
             return
         }
 
-        $start = Get-Date
         Write-Message -Level Verbose -Message "Starting Rationalisation Script at $start."
 
         foreach ($dbname in $Database) {
@@ -252,7 +254,6 @@ function Remove-DbaDatabaseSafely {
             $jobname = "Rationalised Database Restore Script for $dbname"
             $jobStepName = "Restore the $dbname database from Final Backup"
             $checkJob = Get-DbaAgentJob -SqlInstance $destserver -Job $jobname
-            #$jobServer = $destserver.JobServer
 
             if ($checkJob.count -gt 0) {
                 if ($Force -eq $false) {
@@ -366,7 +367,7 @@ function Remove-DbaDatabaseSafely {
                     ## Suggestion check for disk space before restore
                     ## Create Restore Script
                     try {
-                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly
+                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly -WithReplace
 
                         $jobStepParams = @{
                             SqlInstance     = $destination
