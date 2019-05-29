@@ -95,7 +95,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Match "$login2|$dbname2"
             $results | Should Match "$login1|$dbname1"
         }
-        foreach ($version in @('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')) {
+        foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
             It "Should Export for the SQLVersion $version" {
                 $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
                 $results = Get-Content -Path $file -Raw
