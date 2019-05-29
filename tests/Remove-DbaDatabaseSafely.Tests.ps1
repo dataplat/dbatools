@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should restore to another server" {
             $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder C:\temp -NoDbccCheckDb -Destination $script:instance3
             foreach ($result in $results) {
-                $result.SqlInstance | Should Be $script:instance1
+                $result.SqlInstance | Should Be $script:instance2
                 $result.TestingInstance | Should Be $script:instance2
             }
         }
