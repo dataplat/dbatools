@@ -300,20 +300,20 @@ function Remove-DbaDatabaseSafely {
 
                     $DefaultCompression = $sourceserver.Configuration.DefaultBackupCompression.ConfigValue
                     $backupWithCompressionParams = @{
-                        SqlInstance = $SqlInstance
-                        SqlCredential = $SqlCredential
-                        Database = $dbname
+                        SqlInstance    = $SqlInstance
+                        SqlCredential  = $SqlCredential
+                        Database       = $dbname
                         BackupFileName = $filename
                         CompressBackup = $true
-                        Checksum = $true
+                        Checksum       = $true
                     }
 
                     $backupWithoutCompressionParams = @{
-                        SqlInstance = $SqlInstance
-                        SqlCredential = $SqlCredential
-                        Database = $dbname
+                        SqlInstance    = $SqlInstance
+                        SqlCredential  = $SqlCredential
+                        Database       = $dbname
                         BackupFileName = $filename
-                        Checksum = $true
+                        Checksum       = $true
                     }
                     if ($BackupCompression -eq "Default") {
                         if ($DefaultCompression -eq 1) {
