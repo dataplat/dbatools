@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 11, 2019
+-- Last Modified: May 17, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -91,7 +91,6 @@ AS
 (SELECT DB_NAME(database_id) AS [Database Name],
 CAST(SUM(num_of_bytes_read + num_of_bytes_written)/1048576 AS DECIMAL(12, 2)) AS io_in_mb
 FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS [DM_IO_STATS]
-WHERE database_id NOT IN (4, 5, 32767)
 GROUP BY database_id)
 SELECT ROW_NUMBER() OVER(ORDER BY io_in_mb DESC) AS [I/O Rank], [Database Name], 
       CAST(io_in_mb/ SUM(io_in_mb) OVER() * 100.0 AS DECIMAL(5,2)) AS [I/O Percent],
@@ -111,7 +110,6 @@ AS
 CAST(COUNT(*) * 8/1024.0 AS DECIMAL (10,2))  AS [CachedSize],
 AVG(read_microsec) AS [Avg Read Time (microseconds)]
 FROM sys.dm_os_buffer_descriptors WITH (NOLOCK)
-WHERE database_id NOT IN (4, 5, 32767)
 GROUP BY DB_NAME(database_id))
 SELECT ROW_NUMBER() OVER(ORDER BY CachedSize DESC) AS [Buffer Pool Rank], [Database Name], 
        CAST(CachedSize / SUM(CachedSize) OVER() * 100.0 AS DECIMAL(5,2)) AS [Buffer Pool Percent],
@@ -192,7 +190,8 @@ ON t1.lock_owner_address = t2.resource_address OPTION (RECOMPILE);
 
 
 -- Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 10) (PLE by NUMA Node)
-SELECT @@SERVERNAME AS [Server Name], RTRIM([object_name]) AS [Object Name], instance_name, cntr_value AS [Page Life Expectancy]
+SELECT @@SERVERNAME AS [Server Name], RTRIM([object_name]) AS [Object Name], 
+       instance_name, cntr_value AS [Page Life Expectancy]
 FROM sys.dm_os_performance_counters WITH (NOLOCK)
 WHERE [object_name] LIKE N'%Buffer Node%' -- Handles named instances
 AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
@@ -317,7 +316,7 @@ OPTION (RECOMPILE);
 -- Look at log file size and usage, along with the log reuse wait description for the current database
 
 
--- Get VLF Counts for current database (Query 17) (VLF Counts)
+-- Get VLF Count for current database (Query 17) (VLF Counts)
 SELECT [name] AS [Database Name], [VLF Count]
 FROM sys.databases AS db WITH (NOLOCK)
 CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count]
@@ -361,20 +360,20 @@ db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_c
 db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_memory_optimized_elevate_to_snapshot_on, 
 db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
 db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
-db.is_encrypted  
+db.is_encrypted, is_result_set_caching_on, is_accelerated_database_recovery_on, is_tempdb_spill_to_remote_store  
 FROM sys.databases AS db WITH (NOLOCK)
 WHERE db.[name] <> N'master'
 ORDER BY db.[name] OPTION (RECOMPILE);
 ------
 
 -- Things to look at:
--- What recovery models are you using?
+-- What recovery model are you using?
 -- What is the log reuse wait description?
--- What compatibility level are the databases on? 
+-- What compatibility level is the database on? 
 -- What is the Page Verify Option? (should be CHECKSUM)
 -- Is Auto Update Statistics Asynchronously enabled?
 -- Is Delayed Durability enabled?
--- Make sure auto_shrink and auto_close are not enabled!
+
 
 
 
@@ -415,8 +414,10 @@ ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);
 
 
 -- Get recent resource usage (Query 22) (Recent Resource Usage)
-SELECT dtu_limit, cpu_limit, avg_cpu_percent, avg_data_io_percent, avg_log_write_percent, avg_memory_usage_percent, xtp_storage_percent,
-       max_worker_percent, max_session_percent,  avg_login_rate_percent, end_time 
+SELECT end_time, dtu_limit, cpu_limit, avg_cpu_percent, avg_memory_usage_percent, 
+       avg_data_io_percent, avg_log_write_percent,  xtp_storage_percent,
+       max_worker_percent, max_session_percent,  avg_login_rate_percent,  
+	   avg_instance_cpu_percent, avg_instance_memory_percent
 FROM sys.dm_db_resource_stats WITH (NOLOCK) 
 ORDER BY end_time DESC OPTION (RECOMPILE);
 ------
@@ -430,14 +431,14 @@ ORDER BY end_time DESC OPTION (RECOMPILE);
 
 
 -- Get recent resource usage (Query 23) (Avg/Max Resource Usage)
-SELECT AVG(avg_cpu_percent) AS [Average CPU Utilization In Percent],   
-       MAX(avg_cpu_percent) AS [Maximum CPU Utilization In Percent],   
-       AVG(avg_data_io_percent) AS [Average Data IO In Percent],   
-       MAX(avg_data_io_percent) AS [Maximum Data IO In Percent],   
-       AVG(avg_log_write_percent) AS [Average Log Write Utilization In Percent],   
-       MAX(avg_log_write_percent) AS [Maximum Log Write Utilization In Percent],   
-       AVG(avg_memory_usage_percent) AS [Average Memory Usage In Percent],   
-       MAX(avg_memory_usage_percent) AS [Maximum Memory Usage In Percent]   
+SELECT CAST(AVG(avg_cpu_percent) AS DECIMAL(10,2)) AS [Average CPU Utilization In Percent],   
+       CAST(MAX(avg_cpu_percent) AS DECIMAL(10,2)) AS [Maximum CPU Utilization In Percent],   
+       CAST(AVG(avg_data_io_percent) AS DECIMAL(10,2)) AS [Average Data IO In Percent],   
+       CAST(MAX(avg_data_io_percent) AS DECIMAL(10,2)) AS [Maximum Data IO In Percent],   
+       CAST(AVG(avg_log_write_percent) AS DECIMAL(10,2)) AS [Average Log Write Utilization In Percent],   
+       CAST(MAX(avg_log_write_percent) AS DECIMAL(10,2)) AS [Maximum Log Write Utilization In Percent],   
+       CAST(AVG(avg_memory_usage_percent) AS DECIMAL(10,2)) AS [Average Memory Usage In Percent],   
+       CAST(MAX(avg_memory_usage_percent) AS DECIMAL(10,2)) AS [Maximum Memory Usage In Percent]   
 FROM sys.dm_db_resource_stats WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
 
@@ -517,11 +518,8 @@ OPTION (RECOMPILE);
 -- Wait statistics, or please tell me where it hurts
 -- https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
 
--- SQL Server 2005 Performance Tuning using the Waits and Queues
--- http://technet.microsoft.com/en-us/library/cc966413.aspx
-
--- sys.dm_os_wait_stats (Transact-SQL)
--- http://msdn.microsoft.com/en-us/library/ms179984(v=sql.120).aspx
+-- sys.dm_db_wait_stats (Azure SQL Database)
+-- https://bit.ly/2HoJOoT
 
 
 
@@ -783,18 +781,23 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 
 
 -- Possible Bad NC Indexes (writes > reads)  (Query 36) (Bad NC Indexes)
-SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
+SELECT SCHEMA_NAME(o.[schema_id]) AS [Schema Name], 
+OBJECT_NAME(s.[object_id]) AS [Table Name],
+i.name AS [Index Name], i.index_id, 
 i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
-user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
-user_updates - (user_seeks + user_scans + user_lookups) AS [Difference]
+s.user_updates AS [Total Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads],
+s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
 FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON s.[object_id] = i.[object_id]
 AND i.index_id = s.index_id
+INNER JOIN sys.objects AS o WITH (NOLOCK)
+ON i.[object_id] = o.[object_id]
 WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND s.database_id = DB_ID()
-AND user_updates > (user_seeks + user_scans + user_lookups)
-AND i.index_id > 1
+AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
+AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
+AND i.is_primary_key = 0 AND i.is_unique_constraint = 0 AND i.is_unique = 0
 ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
 ------
 
@@ -892,8 +895,7 @@ ORDER BY SUM(p.Rows) DESC OPTION (RECOMPILE);
 -- Get some key table properties (Query 41) (Table Properties)
 SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.index_id, 
        p.data_compression_desc AS [Index Data Compression],
-       t.create_date, t.lock_on_bulk_load,  
-       t.is_tracked_by_cdc, t.lock_escalation_desc, t.is_filetable, 
+       t.create_date, t.lock_on_bulk_load, t.lock_escalation_desc, 
 	   t.is_memory_optimized, t.durability_desc, 
 	   t.temporal_type_desc
 FROM sys.tables AS t WITH (NOLOCK)
@@ -1098,11 +1100,12 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- Get QueryStore Options for this database (Query 51) (QueryStore Options)
 SELECT actual_state_desc, desired_state_desc,
        current_storage_size_mb, [max_storage_size_mb], 
-	   query_capture_mode_desc, size_based_cleanup_mode_desc
+	   query_capture_mode_desc, size_based_cleanup_mode_desc, 
+	   wait_stats_capture_mode_desc, [flush_interval_seconds]
 FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
--- New for SQL Server 2016
+-- Added in SQL Server 2016
 -- Requires that QueryStore is enabled for this database
 
 -- Tuning Workload Performance with Query Store
