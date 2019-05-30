@@ -1283,10 +1283,10 @@ function Copy-DbaDatabase {
                                 if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
-                                Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
-                                $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
-                                if ($OwnerResult.Length -eq 0) {
-                                    Write-Message -Level Verbose -Message "Failed to update database owner."
+                                try {
+                                    $ownerResult = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
+                                } catch {
+                                    Stop-Function -Message "Failure setting $dbname to read-write on destination server" -ErrorRecord $_
                                 }
                             }
                         }
