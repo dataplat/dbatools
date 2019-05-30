@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 22, 2019
+-- Last Modified: April 19, 2019
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -332,9 +332,9 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- File names and paths for all user and system databases on instance   (Query 16) (Database Filenames and Paths)
 SELECT DB_NAME([database_id]) AS [Database Name], 
        [file_id], [name], physical_name, [type_desc], state_desc,
-	   is_percent_growth, growth,
+	   is_percent_growth, growth, 
 	   CONVERT(bigint, growth/128.0) AS [Growth in MB], 
-       CONVERT(bigint, size/128.0) AS [Total Size in MB]
+       CONVERT(bigint, size/128.0) AS [Total Size in MB], max_size
 FROM sys.master_files WITH (NOLOCK)
 ORDER BY DB_NAME([database_id]), [file_id] OPTION (RECOMPILE);
 ------

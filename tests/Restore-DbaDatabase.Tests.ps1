@@ -287,7 +287,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 2
 
     Context "RestoreTime setup checks" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -296,11 +296,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored 5 files" {
             $results.count | Should be 5
         }
-        It "Should have restored from 2017-06-01 12:59:12" {
-            $sqlResults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        It "Should have restored from 2019-05-02 21:00:55" {
+            $sqlResults.mindt | Should be (get-date "2019-05-02 21:00:55")
         }
-        It "Should have restored to 2017-06-01 13:28:43" {
-            $sqlResults.maxdt | Should be (get-date "2017-06-01 13:28:43")
+        It "Should have restored to 2019-05-02 13:28:43" {
+            $sqlResults.maxdt | Should be (get-date "2019-05-02 21:30:26")
         }
     }
 
@@ -318,16 +318,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -WarningVariable warnvar -ErrorVariable errvar
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
-        It "Should have restored from 2017-06-01 12:59:12" {
-            $sqlResults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        It "Should have restored from 2019-05-02 21:00:55" {
+            $sqlResults.mindt | Should be (get-date "2019-05-02 21:00:55")
         }
-        It "Should have restored to 2017-06-01 13:28:43" {
-            $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
+        It "Should have restored to 2019-05-02 21:12:26" {
+            $sqlResults.maxdt | Should be (get-date "2019-05-02 21:12:26")
         }
     }
 
@@ -377,12 +377,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2019-05-02 21:23:58") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:12:27") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         $warnvar
-        It "Should not warn or error" {
-            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'warnvar'}) -or '' -eq $warmvar | Should Be $True
-            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'errvar'}) | Should Be $True
+        It "Should not warn" {
+            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'warnvar'}) -or '' -eq $warnvar | Should Be $True
         }
         It "Should have restored 4 files" {
             $results.count | Should be 4
@@ -390,13 +389,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored from 05/02/2019 21:00:55" {
             $sqlResults.mindt | Should be (get-date "02 May 2019 21:00:55")
         }
-        It "Should have restored to 05/02/2019 21:23:56" {
-            $sqlResults.maxdt | Should be (get-date "02 May 2019 21:23:56")
+        # Note, actual time is lower than target time due to how the db was built.
+        It "Should have restored to 05/02/2019 21:12:26" {
+            $sqlResults.maxdt | Should be (get-date "02 May 2019 21:12:26")
         }
-        $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -Continue
+        $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
-        It "Should have restored 2 files" {
-            $results2.count | Should be 2
+        It "Should have restored 4 files" {
+            $results2.count | Should be 4
         }
         It "Should have restored from 02 May 2019 21:00:55" {
             $sqlResults2.mindt | Should be (get-date "02 May 2019 21:00:55")
@@ -418,7 +418,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
@@ -429,7 +429,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored to 05/02/2019 21:23:56" {
             $sqlResults.maxdt | Should be (get-date "02 May 2019 21:23:56")
         }
-        $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -Continue
+        $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
@@ -515,7 +515,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Backup DB For next test" {
-        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016\restoretimeclean.bak
         $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database RestoreTimeClean -BackupDirectory C:\temp
         It "Should return successful backup" {
             $results.BackupComplete | Should Be $true
@@ -812,7 +812,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
-        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean2016\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
         }
@@ -889,4 +889,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
+    #>
 }
