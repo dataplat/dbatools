@@ -114,8 +114,7 @@ function Get-DbaRegServer {
         }
     }
     process {
-        write-warning $IsMacOs
-        if (-not $PSBoundParameters.SqlInstance -and -not (($IsLinux -or $IsMacOs))) {
+        if (-not $PSBoundParameters.SqlInstance -and -not ($IsLinux -or $IsMacOs)) {
             $null = Get-ChildItem -Recurse "$home\AppData\Roaming\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
