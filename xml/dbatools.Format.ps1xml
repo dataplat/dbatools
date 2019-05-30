@@ -522,7 +522,44 @@
                 </TableRowEntries>
             </TableControl>
         </View>
-        
+        <!-- Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -->
+        <View>
+            <Name>Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer</Name>
+            <ViewSelectedBy>
+                <TypeName>Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize/>
+                <TableHeaders>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>ServerName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Group</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Description</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Source</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
         <!-- Sqlcollaborative.Dbatools.Validation.LinkedServerResult -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</Name>

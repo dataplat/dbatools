@@ -222,6 +222,11 @@ function Get-DbaRegServer {
                     $groupname = ($groupname -join "\")
                 }
             }
+            # ugly way around it but it works
+            $badform = "$($server.Name.Split("\")[0])\$($server.Name.Split("\")[0])"
+            if ($groupname -eq $badform) {
+                $groupname = $null
+            }
 
 
             if ($server.ConnectionStringWithEncryptedPassword) {
