@@ -521,8 +521,8 @@
                     </TableRowEntry>
                 </TableRowEntries>
             </TableControl>
-        </View> 
-		<!-- Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -->
+        </View>
+        <!-- Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -->
         <View>
             <Name>Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer</Name>
             <ViewSelectedBy>
