@@ -1264,18 +1264,30 @@ function Copy-DbaDatabase {
                             }
                         }
 
+                        if ($SetSourceReadOnly) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to read-write after source was set to read only")) {
+                                try {
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -ReadWrite -EnableException -Force
+                                } catch {
+                                    Stop-Function -Message "Couldn't set $dbName to read-write on $($destserver.Name)" -ErrorRecord $_
+                                }
+                            }
+                        }
+
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
-                            # needed because the newly restored database doesn't show up
-                            $destServer.Databases.Refresh()
-                            $dbOwner = $sourceServer.Databases[$dbName].Owner
-                            if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
-                                $dbOwner = Get-SaLoginName -SqlInstance $destServer
-                            }
-                            Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
-                            $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
-                            if ($OwnerResult.Length -eq 0) {
-                                Write-Message -Level Verbose -Message "Failed to update database owner."
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $dbName")) {
+                                # needed because the newly restored database doesn't show up
+                                $destServer.Databases.Refresh()
+                                $dbOwner = $sourceServer.Databases[$dbName].Owner
+                                if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
+                                    $dbOwner = Get-SaLoginName -SqlInstance $destServer
+                                }
+                                try {
+                                    $ownerResult = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
+                                } catch {
+                                    Stop-Function -Message "Failure setting $dbname to read-write on destination server" -ErrorRecord $_
+                                }
                             }
                         }
                     }
