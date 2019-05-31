@@ -188,7 +188,7 @@ function New-DbaDbSnapshot {
                 }
             }
 
-            if ($PSBoundParameters.InputObject -and $Name) {
+            if ($InputObject.Count -gt 1 -and $Name) {
                 Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -EnableException $EnableException
             }
         }
