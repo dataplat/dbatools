@@ -306,10 +306,8 @@ function ConvertTo-DbaDataTable {
 
             #Handle rows already being System.Data.DataRow
             if ($object.GetType().FullName -eq 'System.Data.DataRow') {
-                if ($ShouldCreateColumns) {
-                    $datatable = $object.Table.Copy()
-                    $ShouldCreateColumns = $false
-                }
+                $datatable.Merge($object.Table)
+                $datatable = $datatable.DefaultView.ToTable($true)
                 continue
             }
 
