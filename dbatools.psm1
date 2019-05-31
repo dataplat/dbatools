@@ -180,7 +180,7 @@ $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
 if ($dbatools_enabledebug -or
     $option.Debug -or
     $DebugPreference -ne 'silentlycontinue' -or
-    ([IO.Directory]::Exists($gitDir) -and -not $serialImport)) {
+    [IO.Directory]::Exists($gitDir)) {
     $script:multiFileImport, $script:SerialImport, $script:doDotSource = $true, $true, $true
 }
 #endregion Multi File Import
