@@ -338,12 +338,13 @@ function Invoke-DbaDbDataMasking {
 
                         $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
 
                         # Loop through each of the rows and change them
-                        $rowNumber = 0
+                        $rowNumber = $stepcounter = 0
 
                         foreach ($row in $data.Rows) {
+                            Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+
                             $updates = $wheres = @()
                             $newValue = $null
 
