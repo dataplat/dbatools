@@ -125,7 +125,7 @@ function New-DbaDbCertificate {
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
-
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Credential -value $Credential
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     } catch {
                         $ErrorActionPreference = $eap
