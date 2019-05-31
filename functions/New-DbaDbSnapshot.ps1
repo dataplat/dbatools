@@ -175,7 +175,9 @@ function New-DbaDbSnapshot {
 
             ## double check for gotchas
             foreach ($db in $dbs) {
-                if ($db.IsDatabaseSnapshot) {
+                if ($db.IsMirroringEnabled) {
+                    $InputObject += $db
+                } elseif ($db.IsDatabaseSnapshot) {
                     Write-Message -Level Warning -Message "$($db.name) is a snapshot, skipping"
                 } elseif ($db.name -in $NoSupportForSnap) {
                     Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
@@ -186,7 +188,7 @@ function New-DbaDbSnapshot {
                 }
             }
 
-            if ($InputObject.Length -gt 1 -and $Name) {
+            if ($PSBoundParameters.InputObject -and $Name) {
                 Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -EnableException $EnableException
             }
         }
