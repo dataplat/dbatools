@@ -195,6 +195,7 @@ function Invoke-DbaDbDataMasking {
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $stepcounter = $nullmod = 0
+                $data = New-Object System.Data.DataTable
 
                 foreach ($tableobject in $tables.Tables) {
                     $uniqueValues = @()
@@ -216,7 +217,12 @@ function Invoke-DbaDbDataMasking {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        $data = $db.Query($query) | ConvertTo-DbaDataTable
+
+                        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn)
+                        $adapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcmd)
+                        $null = $adapter.fill($data)
+                        [System.Collections.ArrayList]$changes = @()
+
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -325,7 +331,7 @@ function Invoke-DbaDbDataMasking {
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
 
-                        $transaction = $sqlconn.BeginTransaction()
+                        #$transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         # Loop through each of the rows and change them
@@ -458,7 +464,7 @@ function Invoke-DbaDbDataMasking {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
-
+                            $wherecols = @()
                             foreach ($item in $rowItems) {
                                 $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLowerInvariant()
 
@@ -492,19 +498,44 @@ function Invoke-DbaDbDataMasking {
                                     $oldValue = ($row.$item).Tostring().Replace("'", "''")
                                     $wheres += "[$item] = '$oldValue'"
                                 }
+                                $wherecols += $item
                             }
 
                             $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND '); ")
-
                             # Increase the row number
                             $rowNumber++
+
+                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ');"
+
+                            $colcollection = $wherecollection = @()
+                            foreach ($c in $tableobject.Columns.Name) {
+                                $colcollection += "$c=@$c"
+                            }
+
+                            foreach ($w in $wherecols) {
+                                $wherecollection += "$w=@Where$w"
+                            }
+
+                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($colcollection -join ', ') WHERE $($wherecollection -join ' AND ');"
+                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($colcollection -join ', ') WHERE CustomerID=@WhereCustomerID;"
+                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET CustomerName=@CustomerName, PhoneNumber=@PhoneNumber, FaxNumber=@FaxNumber WHERE CustomerID=@WhereCustomerID;"
+
+                            $adapter.UpdateCommand = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn)
+                            $null = $adapter.UpdateCommand.Parameters.Add("@CustomerName", 'adfadfafd, Bechtelar and Botsford')
+                            $null = $adapter.UpdateCommand.Parameters.Add("@PhoneNumber", '(804) 266-2254')
+                            $null = $adapter.UpdateCommand.Parameters.Add("@FaxNumber", '(168) 599-9023')
+                            $null = $adapter.UpdateCommand.Parameters.Add("@WhereCustomerID", 1)
+                            $null = $adapter.UpdateCommand.UpdatedRowSource = "None"
+                            $null = $adapter.Update($data)
+                            $null = $changes.Add($adapter.UpdateCommand)
                         }
 
                         try {
-
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
-                            $null = $sqlcmd.ExecuteNonQuery()
+                            $null = $adapter.UpdateBatchSize = 1000
+                            $null = $changes.ExecuteNonQuery()
+                            #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                            #$null = $sqlcmd.ExecuteNonQuery()
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
@@ -566,17 +597,17 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             try {
-                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
-                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                Write-Message -Level output -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
                         try {
-                            $null = $transaction.Commit()
+                            #$null = $transaction.Commit()
                             [pscustomobject]@{
                                 ComputerName = $db.Parent.ComputerName
                                 InstanceName = $db.Parent.ServiceName
@@ -596,9 +627,6 @@ function Invoke-DbaDbDataMasking {
 
                     # Empty the unique values array
                     $uniqueValues = $null
-
-
-
                 }
 
                 try {
