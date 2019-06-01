@@ -325,7 +325,9 @@ function Get-DbaRandomizedValue {
                     $faker.Database.$RandomizerSubType()
                 }
                 'date' {
-                    if ($randSubType -eq 'past') {
+                    if ($Min -or $Max) {
+                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } elseif ($randSubType -eq 'past') {
                         $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'future') {
                         $faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")

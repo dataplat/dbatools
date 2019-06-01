@@ -279,7 +279,7 @@ function New-DbaAvailabilityGroup {
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+            Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
 
@@ -590,13 +590,7 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         $dbdone = $false
         do {
-            $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
             foreach ($second in $secondaries) {
-                if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
-                    if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                        $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
-                    }
-                }
                 if ($SeedingMode -eq 'Automatic') {
                     $done = $false
                     try {
@@ -617,6 +611,9 @@ function New-DbaAvailabilityGroup {
                         # Log the exception but keep going
                         Stop-Function -Message "Failure" -ErrorRecord $_
                     }
+                }
+                if ($Database) {
+                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
                 }
             }
 

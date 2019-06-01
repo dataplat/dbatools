@@ -338,12 +338,13 @@ function Invoke-DbaDbDataMasking {
 
                         $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
 
                         # Loop through each of the rows and change them
-                        $rowNumber = 0
+                        $rowNumber = $stepcounter = 0
 
                         foreach ($row in $data.Rows) {
+                            Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+
                             $updates = $wheres = @()
                             $newValue = $null
 
@@ -418,9 +419,9 @@ function Invoke-DbaDbDataMasking {
                                         $newValue = $null
 
                                         if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                            $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
+                                            $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
-                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Locale $Locale
+                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
 
                                     } catch {
