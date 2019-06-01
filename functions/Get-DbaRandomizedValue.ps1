@@ -157,17 +157,13 @@ function Get-DbaRandomizedValue {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
-
-            $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
-
+            if (-not $randomizerSubTypes) {
+                $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
+            }
             if ($RandomizerSubType -notin $randomizerSubTypes) {
                 Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
             }
         }
-
-        <# if ($Min -gt $Max) {
-            Stop-Function -Message "Min value cannot be greater than max value" -Continue -Target $Min
-        }        #>
     }
 
     process {
