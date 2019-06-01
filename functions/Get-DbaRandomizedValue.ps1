@@ -111,6 +111,9 @@ function Get-DbaRandomizedValue {
             $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
         }
 
+        if (-not $script:uniquesubtypes) {
+            $script:uniquesubtypes = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
+        }
         # Create faker object
         if (-not $script:faker) {
             $script:faker = New-Object Bogus.Faker($Locale)
@@ -126,7 +129,7 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
+            $RandomizerType = $script:uniquesubtypes
         }
 
         if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
