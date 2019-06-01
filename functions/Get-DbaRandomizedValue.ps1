@@ -157,12 +157,15 @@ function Get-DbaRandomizedValue {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
-            if (-not $randomizerSubTypes) {
-                $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
-            }
-            if ($RandomizerSubType -notin $randomizerSubTypes) {
-                Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
-            }
+
+            <# cant get this to work and it's expensive
+                if (-not $randomizerSubTypes) {
+                    $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
+                }
+                if ($RandomizerSubType -notin $randomizerSubTypes) {
+                    Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
+                }
+            #>
         }
     }
 

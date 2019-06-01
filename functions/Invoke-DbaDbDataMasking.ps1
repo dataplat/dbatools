@@ -430,7 +430,7 @@ function Invoke-DbaDbDataMasking {
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
                                     }
                                 }
-                                $newvalue = ""
+
                                 if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
                                     $updates += "[$($columnobject.Name)] = NULL"
                                 } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
