@@ -124,6 +124,10 @@ function Get-DbaRandomizedValue {
             $script:uniquerandomizertypes = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
         }
 
+        if (-not $script:uniquerandomizersubtype) {
+            $script:uniquerandomizersubtype = ($script:randomizerTypes.Group.SubType | Select-Object -Unique)
+        }
+
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         # Check the variables
@@ -150,7 +154,7 @@ function Get-DbaRandomizedValue {
 
         # Check the sub type
         if ($RandomizerSubType) {
-            if ($RandomizerSubType -notin ($script:randomizerTypes.Group.SubType | Select-Object -Unique)) {
+            if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
