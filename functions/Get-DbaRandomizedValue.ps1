@@ -41,6 +41,9 @@ function Get-DbaRandomizedValue {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
+    .PARAMETER NoLoad
+        Skip the loading of the DLL.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -107,22 +110,16 @@ function Get-DbaRandomizedValue {
 
     begin {
         # Get all the random possibilities
-        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
-
-        # Create the faker objects
-        $typePath = Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll"
-
-        if ([AppDomain]::CurrentDomain.GetAssemblies().Location -notcontains $typePath.Path) {
-            Write-Message -Level Verbose -Message "Randomizer type not loaded yet. Loading it"
-            try {
-                Add-Type -Path (Resolve-Path -Path $typePath)
-            } catch {
-                Stop-Function -Message "Couldn't load randomizer dll" -Target $typePath -ErrorRecord $_ -Continue
-            }
+        if (-not $script:randomizerTypes) {
+            $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
+            $script:uniques = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
+            $script:subuniques = ($script:randomizerTypes.Group.SubType | Select-Object -Unique)
         }
 
         # Create faker object
-        $faker = New-Object Bogus.Faker($Locale)
+        if (-not $script:faker) {
+            $script:faker = New-Object Bogus.Faker($Locale)
+        }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
@@ -134,7 +131,7 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
+            $RandomizerType = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
         }
 
         if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
@@ -143,19 +140,17 @@ function Get-DbaRandomizedValue {
 
         # Check the bogus type
         if ($RandomizerType) {
-            if ($RandomizerType -notin ($randomizerTypes.Group.Type | Select-Object -Unique)) {
+            if ($RandomizerType -notin $script:uniques) {
                 Stop-Function -Message "Invalid randomizer type" -Continue -Target $RandomizerType
             }
         }
 
         # Check the sub type
         if ($RandomizerSubType) {
-            if ($RandomizerSubType -notin ($randomizerTypes.Group.SubType | Select-Object -Unique)) {
+            if ($RandomizerSubType -notin $script:subuniques) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
-
-            $randomizerSubTypes = $randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
-
+return
             if ($RandomizerSubType -notin $randomizerSubTypes) {
                 Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
             }
@@ -167,7 +162,7 @@ function Get-DbaRandomizedValue {
     }
 
     process {
-
+        return ""
         if (Test-FunctionInterrupt) { return }
 
         if ($DataType) {
@@ -186,7 +181,7 @@ function Get-DbaRandomizedValue {
                 }
 
                 { $psitem -in 'bit', 'bool' } {
-                    if ($faker.System.Random.Bool()) {
+                    if ( $script:faker.System.Random.Bool()) {
                         1
                     } else {
                         0
@@ -194,27 +189,27 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ( $script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ( $script:faker.Date.Past()).ToString("yyyy-MM-dd")
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ( $script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ( $script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ( $script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ( $script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
-                    $faker.Finance.Amount($Min, $Max, $Precision)
+                    $script:faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
                     if ($Min -lt -2147483648) {
@@ -227,14 +222,14 @@ function Get-DbaRandomizedValue {
                         Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.System.Random.Int($Min, $Max)
 
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ( $script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ( $script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 }
                 'smallint' {
@@ -248,10 +243,10 @@ function Get-DbaRandomizedValue {
                         Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.System.Random.Int($Min, $Max)
                 }
                 'time' {
-                    ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
+                    ( $script:faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
                     if ($Min -lt 0) {
@@ -264,14 +259,14 @@ function Get-DbaRandomizedValue {
                         Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.System.Random.Int($Min, $Max)
                 }
                 { $psitem -in 'uniqueidentifier', 'guid' } {
-                    $faker.System.Random.Guid().Guid
+                    $script:faker.System.Random.Guid().Guid
                 }
                 'userdefineddatatype' {
                     if ($Max -eq 1) {
-                        if ($faker.System.Random.Bool()) {
+                        if ( $script:faker.System.Random.Bool()) {
                             1
                         } else {
                             0
@@ -281,7 +276,7 @@ function Get-DbaRandomizedValue {
                     }
                 }
                 { $psitem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
-                    $faker.Random.String2($Min, $Max, $CharacterString)
+                    $script:faker.Random.String2($Min, $Max, $CharacterString)
                 }
 
             }
@@ -294,69 +289,69 @@ function Get-DbaRandomizedValue {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
-                        $faker.Address.Latitude($Min, $Max)
+                        $script:faker.Address.Latitude($Min, $Max)
                     } elseif ($randSubType -eq 'zipcode') {
                         if ($Format) {
-                            $faker.Address.ZipCode("$($Format)")
+                            $script:faker.Address.ZipCode("$($Format)")
                         } else {
-                            $faker.Address.ZipCode()
+                            $script:faker.Address.ZipCode()
                         }
                     } else {
-                        $faker.Address.$RandomizerSubType()
+                        $script:faker.Address.$RandomizerSubType()
                     }
 
                 }
                 'commerce' {
                     if ($randSubType -eq 'categories') {
-                        $faker.Commerce.Categories($Max)
+                        $script:faker.Commerce.Categories($Max)
                     } elseif ($randSubType -eq 'departments') {
-                        $faker.Commerce.Department($Max)
+                        $script:faker.Commerce.Department($Max)
                     } elseif ($randSubType -eq 'price') {
-                        $faker.Commerce.Price($min, $Max, $Precision, $Symbol)
+                        $script:faker.Commerce.Price($min, $Max, $Precision, $Symbol)
                     } else {
-                        $faker.Commerce.$RandomizerSubType()
+                        $script:faker.Commerce.$RandomizerSubType()
                     }
 
                 }
                 'company' {
-                    $faker.Company.$RandomizerSubType()
+                    $script:faker.Company.$RandomizerSubType()
                 }
                 'database' {
-                    $faker.Database.$RandomizerSubType()
+                    $script:faker.Database.$RandomizerSubType()
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ( $script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'past') {
-                        $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'future') {
-                        $faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'recent') {
-                        $faker.Recent.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Recent.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
-                        $faker.Date.$RandomizerSubType()
+                        $script:faker.Date.$RandomizerSubType()
                     }
                 }
                 'finance' {
                     if ($randSubType -eq 'account') {
-                        $faker.Finance.Account($Max)
+                        $script:faker.Finance.Account($Max)
                     } elseif ($randSubType -eq 'amount') {
-                        $faker.Finance.Amount($Min, $Max, $Precision)
+                        $script:faker.Finance.Amount($Min, $Max, $Precision)
                     } else {
-                        $faker.Finance.$RandomizerSubType()
+                        $script:faker.Finance.$RandomizerSubType()
                     }
                 }
                 'hacker' {
-                    $faker.Hacker.$RandomizerSubType()
+                    $script:faker.Hacker.$RandomizerSubType()
                 }
                 'image' {
-                    $faker.Image.$RandomizerSubType()
+                    $script:faker.Image.$RandomizerSubType()
                 }
                 'internet' {
                     if ($randSubType -eq 'password') {
-                        $faker.Internet.Password($Max)
+                        $script:faker.Internet.Password($Max)
                     } else {
-                        $faker.Internet.$RandomizerSubType()
+                        $script:faker.Internet.$RandomizerSubType()
                     }
                 }
                 'lorem' {
@@ -366,7 +361,7 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraph($Min)
+                        $script:faker.Lorem.Paragraph($Min)
 
                     } elseif ($randSubType -eq 'paragraphs') {
                         if ($Min -lt 1) {
@@ -374,19 +369,19 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraphs($Min)
+                        $script:faker.Lorem.Paragraphs($Min)
 
                     } elseif ($randSubType -eq 'letter') {
-                        $faker.Lorem.Letter($Max)
+                        $script:faker.Lorem.Letter($Max)
                     } elseif ($randSubType -eq 'lines') {
-                        $faker.Lorem.Lines($Max)
+                        $script:faker.Lorem.Lines($Max)
                     } elseif ($randSubType -eq 'sentence') {
                         if ($Min -lt 1) {
                             $Min = 1
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentence($Min, $Max)
+                        $script:faker.Lorem.Sentence($Min, $Max)
 
                     } elseif ($randSubType -eq 'sentences') {
                         if ($Min -lt 1) {
@@ -394,49 +389,49 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentences($Min, $Max)
+                        $script:faker.Lorem.Sentences($Min, $Max)
 
                     } elseif ($randSubType -eq 'slug') {
-                        $faker.Lorem.Slug($Max)
+                        $script:faker.Lorem.Slug($Max)
                     } elseif ($randSubType -eq 'words') {
-                        $faker.Lorem.Words($Max)
+                        $script:faker.Lorem.Words($Max)
                     } else {
-                        $faker.Lorem.$RandomizerSubType()
+                        $script:faker.Lorem.$RandomizerSubType()
                     }
                 }
                 'name' {
-                    $faker.Name.$RandomizerSubType()
+                    $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $faker.Person.$RandomizerSubType
+                    $script:faker.Person.$RandomizerSubType
                 }
                 'phone' {
                     if ($Format) {
-                        $faker.Phone.PhoneNumber($Format)
+                        $script:faker.Phone.PhoneNumber($Format)
                     } else {
-                        $faker.Phone.PhoneNumber()
+                        $script:faker.Phone.PhoneNumber()
                     }
                 }
                 'random' {
                     if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
-                        $faker.Random.$RandomizerSubType($Min, $Max)
+                        $script:faker.Random.$RandomizerSubType($Min, $Max)
                     } elseif ($randSubType -eq 'bytes') {
-                        $faker.Random.Bytes($Max)
+                        $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
-                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                        $script:faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
                     } else {
-                        $faker.Random.$RandomizerSubType()
+                        $script:faker.Random.$RandomizerSubType()
                     }
                 }
                 'rant' {
                     if ($randSubType -eq 'reviews') {
-                        $faker.Rant.Review($faker.Commerce.Product())
+                        $script:faker.Rant.Review( $script:faker.Commerce.Product())
                     } elseif ($randSubType -eq 'reviews') {
-                        $faker.Rant.Reviews($faker.Commerce.Product(), $Max)
+                        $script:faker.Rant.Reviews( $script:faker.Commerce.Product(), $Max)
                     }
                 }
                 'system' {
-                    $faker.System.$RandomizerSubType()
+                    $script:faker.System.$RandomizerSubType()
                 }
             }
         }

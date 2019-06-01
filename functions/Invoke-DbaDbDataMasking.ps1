@@ -191,7 +191,7 @@ function Invoke-DbaDbDataMasking {
                 }
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $stepcounter = $nullmod = 0
@@ -199,7 +199,7 @@ function Invoke-DbaDbDataMasking {
                 foreach ($tableobject in $tables.Tables) {
                     $uniqueValues = @()
                     $uniqueValueColumns = @()
-
+                    $stringbuilder = [System.Text.StringBuilder]''
                     if ($tableobject.Name -in $ExcludeTable) {
                         Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
@@ -341,10 +341,11 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         $rowNumber = $stepcounter = 0
-
+                        $rowItems = $data.Rows[0] | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
                         foreach ($row in $data.Rows) {
-                            Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-
+                            if ((($stepcounter++) % 100) -eq 0) {
+                                Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                            }
                             $updates = $wheres = @()
                             $newValue = $null
 
@@ -429,7 +430,7 @@ function Invoke-DbaDbDataMasking {
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
                                     }
                                 }
-
+                                $newvalue = ""
                                 if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
                                     $updates += "[$($columnobject.Name)] = NULL"
                                 } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
@@ -469,7 +470,6 @@ function Invoke-DbaDbDataMasking {
                                 }
                             }
 
-                            $rowItems = $row | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
                             foreach ($item in $rowItems) {
                                 $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLowerInvariant()
 
@@ -505,21 +505,24 @@ function Invoke-DbaDbDataMasking {
                                 }
                             }
 
-                            $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
-
-                            try {
-                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
-                                $null = $sqlcmd.ExecuteNonQuery()
-                            } catch {
-                                Write-Message -Level VeryVerbose -Message "$updatequery"
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                            }
+                            $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND '); ")
 
                             # Increase the row number
                             $rowNumber++
                         }
 
+                        try {
+
+                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                            #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                            #$null = $sqlcmd.ExecuteNonQuery()
+                        } catch {
+                            Write-Message -Level VeryVerbose -Message "$updatequery"
+                            $errormessage = $_.Exception.Message.ToString()
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                        }
+
+                        $stringbuilder = [System.Text.StringBuilder]''
                         $columnsWithComposites = @()
                         $columnsWithComposites += $tableobject.Columns | Where-Object Composite -ne $null
 
@@ -570,16 +573,16 @@ function Invoke-DbaDbDataMasking {
                                     $_
                                 }
 
-                                $updatequery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')"
+                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
+                            }
 
-                                try {
-                                    $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($updatequery, $sqlconn, $transaction)
-                                    $null = $sqlcmd.ExecuteNonQuery()
-                                } catch {
-                                    Write-Message -Level VeryVerbose -Message "$updatequery"
-                                    $errormessage = $_.Exception.Message.ToString()
-                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                                }
+                            try {
+                                #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                                #$null = $sqlcmd.ExecuteNonQuery()
+                            } catch {
+                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
