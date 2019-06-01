@@ -106,6 +106,11 @@ function Get-DbaRandomizedValue {
 
 
     begin {
+        # Create faker object
+        if (-not $script:faker) {
+            $script:faker = New-Object Bogus.Faker($Locale)
+        }
+
         # Get all the random possibilities
         if (-not $script:randomizerTypes) {
             $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
@@ -114,9 +119,9 @@ function Get-DbaRandomizedValue {
         if (-not $script:uniquesubtypes) {
             $script:uniquesubtypes = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
         }
-        # Create faker object
-        if (-not $script:faker) {
-            $script:faker = New-Object Bogus.Faker($Locale)
+
+        if (-not $script:uniquerandomizertypes) {
+            $script:uniquerandomizertypes = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
@@ -138,7 +143,7 @@ function Get-DbaRandomizedValue {
 
         # Check the bogus type
         if ($RandomizerType) {
-            if ($RandomizerType -notin ($script:randomizerTypes.Group.Type | Select-Object -Unique)) {
+            if ($RandomizerType -notin $script:uniquerandomizertypes) {
                 Stop-Function -Message "Invalid randomizer type" -Continue -Target $RandomizerType
             }
         }
