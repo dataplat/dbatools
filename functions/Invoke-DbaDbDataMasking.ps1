@@ -290,27 +290,16 @@ function Invoke-DbaDbDataMasking {
                                                     if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
                                                         $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
                                                     }
-
                                                 }
-
-                                            } # End for each index column
-
-                                        } # End while loop
-
-                                        <# } # End if unique value count #>
-
-                                    } # End if identity
-
+                                            }
+                                        }
+                                    }
                                     # Add the row value to the array
                                     $uniqueValues += $rowValue
-
-                                } # End for each index column
-
-                            } # End for each index
-
-                        } # End for each data row
-
-                    } # End if had unique index
+                                }
+                            }
+                        }
+                    }
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
