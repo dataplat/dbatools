@@ -86,11 +86,9 @@ function Find-DbaSimilarTable {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string]$SchemaName,
@@ -98,7 +96,6 @@ function Find-DbaSimilarTable {
         [switch]$ExcludeViews,
         [switch]$IncludeSystemDatabases,
         [int]$MatchPercentThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

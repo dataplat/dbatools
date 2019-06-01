@@ -68,17 +68,13 @@ function Remove-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("Databases")]
         [object[]]$Database,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

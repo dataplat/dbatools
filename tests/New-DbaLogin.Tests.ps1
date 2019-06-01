@@ -8,7 +8,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Login','InputObject','LoginRenameHashtable','SecurePassword','HashedPassword','MapToCertificate','MapToAsymmetricKey','MapToCredential','Sid','DefaultDatabase','Language','PasswordExpiration','PasswordPolicy','Disabled','NewSid','Force','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'InputObject', 'LoginRenameHashtable', 'SecurePassword', 'HashedPassword', 'MapToCertificate', 'MapToAsymmetricKey', 'MapToCredential', 'Sid', 'DefaultDatabase', 'Language', 'PasswordExpiration', 'PasswordPolicy', 'Disabled', 'NewSid', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -175,7 +175,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
                 $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-                $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+                $s = Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $cred
                 $s.Name | Should Be $script:instance1
                 Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
             }

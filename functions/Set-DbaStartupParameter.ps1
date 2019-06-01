@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaStartupParameter {
     <#
     .SYNOPSIS
@@ -171,7 +170,6 @@ function Set-DbaStartupParameter {
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param ([parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
@@ -192,7 +190,6 @@ function Set-DbaStartupParameter {
         [object]$StartupConfig,
         [switch]$Offline,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

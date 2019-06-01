@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaAgFailover {
     <#
     .SYNOPSIS
@@ -34,7 +33,7 @@ function Invoke-DbaAgFailover {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AG, AvailabilityGroup, HA
+        Tags: AvailabilityGroup, HA, AG, Failover
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

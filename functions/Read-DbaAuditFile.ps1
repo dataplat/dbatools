@@ -42,7 +42,7 @@ function Read-DbaAuditFile {
         Returns events from all .sqlaudit files in C:\temp\audit.
 
     .EXAMPLE
-        PS C:\> Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
+        PS C:\> Get-DbaInstanceAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
 
         Reads remote Audit details by accessing the file over the admin UNC share.
 

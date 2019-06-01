@@ -77,9 +77,7 @@ function Get-DbaProcess {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,
@@ -88,7 +86,6 @@ function Get-DbaProcess {
         [string[]]$Hostname,
         [string[]]$Program,
         [switch]$ExcludeSystemSpids,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

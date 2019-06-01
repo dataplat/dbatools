@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbSnapshot {
     <#
     .SYNOPSIS
@@ -82,18 +81,14 @@ function Restore-DbaDbSnapshot {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -194,8 +189,5 @@ function Restore-DbaDbSnapshot {
                 Get-DbaDatabase -SqlInstance $server -Database $db.Name
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
     }
 }

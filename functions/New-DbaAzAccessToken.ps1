@@ -4,14 +4,15 @@ function New-DbaAzAccessToken {
         Simplifies the generation of Azure oauth2 tokens.
 
     .DESCRIPTION
-        Generates an oauth2 access token. Currently supports Managed Identities and Service Principals.
-
-        SqlConnection.AccessToken is currently supported only in .NET Framework 4.6 and above, as well as .NET Core 2.2, not in .NET Core 2.1.
+        Generates an oauth2 access token. Currently supports Managed Identities, Service Principals and IRenewableToken.
 
         Want to know more about Access Tokens? This page explains it well: https://dzone.com/articles/using-managed-identity-to-securely-access-azure-re
 
-        .PARAMETER Type
-        The type of request: ManagedIdentity or ServicePrincipal.
+    .PARAMETER Type
+        The type of request:
+        ManagedIdentity
+        ServicePrincipal
+        RenewableServicePrincipal
 
     .PARAMETER Subtype
         The subtype. Options include:
@@ -35,7 +36,13 @@ function New-DbaAzAccessToken {
         https://docs.microsoft.com/en-us/azure/active-directory/user-help/multi-factor-authentication-end-user-app-passwords
 
     .PARAMETER Tenant
-        hen using the ServicePrincipal type, a tenant name or ID is required. This field works with both.
+        When using the ServicePrincipal or RenewableServicePrincipal types, a tenant name or ID is required. This field works with both.
+
+    .PARAMETER Thumbprint
+        Thumbprint for connections to Azure MSI
+
+    .PARAMETER Store
+        Store where the Azure MSI certificate is stored
 
     .PARAMETER EnableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -78,21 +85,83 @@ function New-DbaAzAccessToken {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [ValidateSet("ManagedIdentity", "ServicePrincipal")]
+        [ValidateSet("ManagedIdentity", "ServicePrincipal", "RenewableServicePrincipal")]
         [string]$Type,
         [ValidateSet("AzureSqlDb", "ResourceManager", "DataLake", "EventHubs", "KeyVault", "ResourceManager", "ServiceBus", "Storage")]
         [string]$Subtype = "AzureSqlDb",
         [object]$Config,
         [pscredential]$Credential,
-        [string]$Tenant,
+        [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
+        [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
+        [ValidateSet('CurrentUser', 'LocalMachine')]
+        [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
         [switch]$EnableException
     )
     begin {
-        if ($Type -eq "ServicePrincipal") {
+        if ($Type -in "ServicePrincipal", "RenewableServicePrincipal") {
+            $appid = (Get-DbatoolsConfigValue -FullName 'azure.appid')
+            $clientsecret = (Get-DbatoolsConfigValue -FullName 'azure.clientsecret')
+
+            if (($appid -and $clientsecret) -and -not $Credential) {
+                $Credential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
+            }
+
             if (-not $Credential -and -not $Tenant) {
-                Stop-Function -Message "You must specify a Credential and Tenant when using ServicePrincipal"
+                Stop-Function -Message "You must specify a Credential and Tenant when using ServicePrincipal or RenewableServicePrincipal"
                 return
             }
+        }
+
+        if ($Type -eq "RenewableServicePrincipal") {
+            $source = @"
+            using System;
+            using Microsoft.SqlServer.Management.Common;
+            using System.Management.Automation;
+            using System.Collections.ObjectModel;
+            using System.Management.Automation.Runspaces;
+
+            public class PsObjectIRenewableToken : IRenewableToken {
+                public String GetAccessToken() {
+                    PowerShell psCmd = PowerShell.Create().AddScript(@"param(`$this)$({
+                    $authority = "https://login.microsoftonline.com/$($this.Tenant)/oauth2/token"
+                    $parameter = @{
+                        grant_type='client_credentials'
+                        client_id=$this.UserID
+                        client_secret=$this.ClientSecret
+                        resource=$this.Resource
+                    }
+
+                    $body = (@(foreach ($param in $parameter.GetEnumerator()) {
+                        "$($param.key)=$([Uri]::EscapeDataString($param.Value.ToString()))"
+                    }) -join '&')
+
+                    $bearerInfo = Invoke-RestMethod -Uri $authority -Method Post -Body $body
+                    $this.TokenExpiry = [DateTimeOffset]::FromUnixTimeSeconds($BearerInfo.expires_on)
+                    return $bearerInfo.access_token
+                    }.ToString().Replace('"','""'))").AddArgument(this);
+
+                    Collection<string> results = psCmd.Invoke<string>();
+                    if (psCmd.Streams.Error.Count > 0) {
+                        throw psCmd.Streams.Error[0].Exception;
+                    }
+
+                    psCmd.Dispose();
+
+                    if (results.Count == 1) {
+                        return results[0];
+                    } else {
+                        return String.Empty;
+                    }
+                }
+
+                public System.DateTimeOffset TokenExpiry { get; set;  }
+                public String Resource { get; set; }
+                public System.String Tenant { get; set; }
+                public System.String UserId { get; set; }
+                public string ClientSecret { get; set; }
+            }
+"@
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
         }
 
         switch ($Subtype) {
@@ -150,7 +219,7 @@ function New-DbaAzAccessToken {
                         Headers = @{ Metadata = "true" }
                     }
                     $response = Invoke-TlsWebRequest @params -UseBasicParsing -ErrorAction Stop
-                    $token = ($response.Content | ConvertFrom-Json).access_token
+                    return ($response.Content | ConvertFrom-Json).access_token
                 }
                 ServicePrincipal {
                     if ($script:core) {
@@ -168,22 +237,20 @@ function New-DbaAzAccessToken {
                     $result = $context.AcquireTokenAsync($Config.Resource, $cred)
 
                     if ($result.Result.AccessToken) {
-                        $token = $result.Result.AccessToken
+                        return $result.Result.AccessToken
                     } else {
                         throw ($result.Exception | ConvertTo-Json | ConvertFrom-Json).InnerException.Message
                     }
                 }
-            }
-
-            # caching and reauth not supported yet but will in future version
-            if ($token -notin $script:aztokens.Token) {
-                $script:aztokens += [pscustomobject]@{
-                    SqlInstance   = $null
-                    PSBoundParams = $PSBoundParameters
-                    Token         = $token
+                RenewableServicePrincipal {
+                    New-Object PSObjectIRenewableToken -Property @{
+                        ClientSecret = $Credential.GetNetworkCredential().Password
+                        Resource     = "https://database.windows.net/"
+                        Tenant       = $Tenant
+                        UserID       = $Credential.UserName
+                    }
                 }
             }
-            return $token
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }

@@ -68,18 +68,15 @@ function Find-DbaView {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

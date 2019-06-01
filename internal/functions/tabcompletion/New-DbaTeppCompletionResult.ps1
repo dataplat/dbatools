@@ -28,16 +28,16 @@ function global:New-DbaTeppCompletionResult {
             Returns a CompletionResult with the text and tooltip 'master'
     #>
     param (
-        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $CompletionText,
 
-        [Parameter(Position = 1, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Position = 1, ValueFromPipelineByPropertyName)]
         [string]
         $ToolTip,
 
-        [Parameter(Position = 2, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Position = 2, ValueFromPipelineByPropertyName)]
         [string]
         $ListItemText,
 

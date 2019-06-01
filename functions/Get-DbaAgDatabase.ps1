@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgDatabase {
     <#
     .SYNOPSIS
@@ -32,7 +31,7 @@ function Get-DbaAgDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Hadr, HA, AG, AvailabilityGroup, Replica
+        Tags: AvailabilityGroup, HA, AG, Database
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io

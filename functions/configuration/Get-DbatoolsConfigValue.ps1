@@ -47,7 +47,7 @@ function Get-DbatoolsConfigValue {
         [object]$Fallback,
         [switch]$NotNull
     )
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfigValue
+
     $FullName = $FullName.ToLowerInvariant()
 
     $temp = $null

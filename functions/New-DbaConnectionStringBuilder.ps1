@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaConnectionStringBuilder {
     <#
     .SYNOPSIS
@@ -119,8 +118,5 @@ function New-DbaConnectionStringBuilder {
                 $builder
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionStringBuilder
     }
 }

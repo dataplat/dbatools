@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
@@ -145,7 +144,7 @@ function New-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HA
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -227,7 +226,6 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$Force,
@@ -255,9 +253,6 @@ function New-DbaAvailabilityGroup {
         [switch]$Dhcp,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-    }
     process {
         $stepCounter = $wait = 0
 

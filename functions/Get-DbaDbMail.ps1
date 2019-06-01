@@ -48,9 +48,7 @@ function Get-DbaDbMail {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )

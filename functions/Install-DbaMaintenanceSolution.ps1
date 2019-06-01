@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaMaintenanceSolution {
     <#
     .SYNOPSIS
@@ -151,7 +150,7 @@ function Install-DbaMaintenanceSolution {
         }
 
         if ($ReplaceExisting -eq $true) {
-            Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
         }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
@@ -188,7 +187,7 @@ function Install-DbaMaintenanceSolution {
                 Unblock-File $LocalFile -ErrorAction SilentlyContinue
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
             } else {
-                Write-Message -Level Verbose -Message "Downloading and unzipping Ola's maintenance solution zip file."
+                Write-ProgressHelper -ExcludePercent -Message "Downloading and unzipping Ola's maintenance solution zip file."
 
                 try {
                     try {
@@ -299,8 +298,7 @@ function Install-DbaMaintenanceSolution {
             if ((Test-Bound -ParameterName BackupLocation -Not)) {
                 $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
-
-            Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database $Database."
+            Write-ProgressHelper -ExcludePercent -Message "Ola Hallengren's solution will be installed on database $Database"
 
             $db = $server.Databases[$Database]
 
@@ -351,18 +349,18 @@ function Install-DbaMaintenanceSolution {
                             ")
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
-                    Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
+                    Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
                     $null = $db.Query($CleanupQuery)
                 }
 
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
-                    Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution."
+                    Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                Remove-DbaAgentJob -SqlInstance $server -Job $_.name
+                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name
                             }
                         }
                     }
@@ -370,26 +368,33 @@ function Install-DbaMaintenanceSolution {
             }
 
             try {
-                Write-Message -Level Output -Message "Installing on server $instance, database $Database."
+                Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
                 foreach ($file in $fileContents.Keys) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
                         if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
-                            Write-Message -Level Output -Message "Installing $shortFileName."
+                            Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
                             $sql = $fileContents[$file]
                             try {
                                 foreach ($query in ($sql -Split "\nGO\b")) {
                                     $null = $db.Query($query)
                                 }
                             } catch {
-                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
+                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                             }
                         }
                     }
                 }
             } catch {
                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
+            }
+
+            [pscustomobject]@{
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $instance
+                Results      = "Success"
             }
         }
         # Only here due to need for non-pooled connection in this command
@@ -400,6 +405,6 @@ function Install-DbaMaintenanceSolution {
             $null = 1
         }
 
-        Write-Message -Level Output -Message "Installation complete."
+        Write-ProgressHelper -ExcludePercent -Message "Installation complete"
     }
 }

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaPfDataCollectorSet {
     <#
     .SYNOPSIS
@@ -89,8 +88,8 @@ function Start-DbaPfDataCollectorSet {
         }
     }
     process {
-        
-        
+
+
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet

@@ -57,14 +57,12 @@ function Get-DbaAgentOperator {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
         [object[]]$Operator,
         [object[]]$ExcludeOperator,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
