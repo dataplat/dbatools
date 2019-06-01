@@ -337,15 +337,24 @@ function Invoke-DbaDbDataMasking {
                         # Loop through each of the rows and change them
                         $rowNumber = $stepcounter = 0
                         $rowItems = $data.Rows[0] | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+                        $columncollection = $wherecollection = @()
+                        foreach ($c in $tableobject.Columns.Name) {
+                            $columncollection += "$c=@$c"
+                            $wherecollection += "$c=@Where$c"
+                        }
+
+                        $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columncollection -join ', ') WHERE $($wherecollection -join ' AND ')"
+
                         foreach ($row in $data.Rows) {
                             if ((($stepcounter++) % 100) -eq 0) {
                                 Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             }
+                            $null = $adapter.UpdateCommand = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn)
+
                             $updates = $wheres = @()
                             $newValue = $null
 
                             foreach ($columnobject in $tablecolumns) {
-
                                 if ($columnobject.ColumnType -notin $supportedDataTypes) {
                                     Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                 }
@@ -419,9 +428,7 @@ function Invoke-DbaDbDataMasking {
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
-
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
                                     }
                                 }
@@ -464,67 +471,43 @@ function Invoke-DbaDbDataMasking {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
-                            $wherecols = @()
+
                             foreach ($item in $rowItems) {
                                 $itemColumnType = $dbTable.Columns[$item].DataType.SqlDataType.ToString().ToLowerInvariant()
 
                                 if (($row.$($item)).GetType().Name -match 'DBNull') {
-                                    $wheres += "[$item] IS NULL"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", 'IS NULL')
                                 } elseif ($itemColumnType -in 'bit', 'bool') {
                                     if ($row.$item) {
-                                        $wheres += "[$item] = 1"
+                                        $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", 1)
                                     } else {
-                                        $wheres += "[$item] = 0"
+                                        $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", 0)
                                     }
                                 } elseif ($itemColumnType -like '*int*' -or $itemColumnType -in 'decimal') {
-                                    $oldValue = $row.$item
-                                    $wheres += "[$item] = $oldValue"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", $row.$item)
                                 } elseif ($itemColumnType -in 'text', 'ntext') {
-                                    $oldValue = ($row.$item).Tostring().Replace("'", "''")
-                                    $wheres += "CAST([$item] AS VARCHAR(MAX)) = '$oldValue'"
+                                    # might be problematic since CAST is lost
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", $row.$item)
                                 } elseif ($itemColumnType -eq 'datetime') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
-                                    $wheres += "[$item] = '$oldValue'"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fff"))
                                 } elseif ($itemColumnType -eq 'datetime2') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
-                                    $wheres += "[$item] = '$oldValue'"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff"))
                                 } elseif ($itemColumnType -like 'date') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd")
-                                    $wheres += "[$item] = '$oldValue'"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", ($row.$item).Tostring("yyyy-MM-dd"))
                                 } elseif ($itemColumnType -like '*date*') {
-                                    $oldValue = ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss")
-                                    $wheres += "[$item] = '$oldValue'"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", ($row.$item).Tostring("yyyy-MM-dd HH:mm:ss"))
                                 } else {
-                                    $oldValue = ($row.$item).Tostring().Replace("'", "''")
-                                    $wheres += "[$item] = '$oldValue'"
+                                    $null = $adapter.UpdateCommand.Parameters.Add("@Where$item", ($row.$item).Tostring().Replace("'", "''"))
                                 }
-                                $wherecols += $item
                             }
 
-                            $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND '); ")
                             # Increase the row number
                             $rowNumber++
 
-                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ');"
-
-                            $colcollection = $wherecollection = @()
                             foreach ($c in $tableobject.Columns.Name) {
-                                $colcollection += "$c=@$c"
+                                $null = $adapter.UpdateCommand.Parameters.Add("@$c", '123')
                             }
 
-                            foreach ($w in $wherecols) {
-                                $wherecollection += "$w=@Where$w"
-                            }
-
-                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($colcollection -join ', ') WHERE $($wherecollection -join ' AND ');"
-                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($colcollection -join ', ') WHERE CustomerID=@WhereCustomerID;"
-                            $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET CustomerName=@CustomerName, PhoneNumber=@PhoneNumber, FaxNumber=@FaxNumber WHERE CustomerID=@WhereCustomerID;"
-
-                            $adapter.UpdateCommand = New-Object System.Data.SqlClient.SqlCommand($query, $sqlconn)
-                            $null = $adapter.UpdateCommand.Parameters.Add("@CustomerName", 'adfadfafd, Bechtelar and Botsford')
-                            $null = $adapter.UpdateCommand.Parameters.Add("@PhoneNumber", '(804) 266-2254')
-                            $null = $adapter.UpdateCommand.Parameters.Add("@FaxNumber", '(168) 599-9023')
-                            $null = $adapter.UpdateCommand.Parameters.Add("@WhereCustomerID", 1)
                             $null = $adapter.UpdateCommand.UpdatedRowSource = "None"
                             $null = $adapter.Update($data)
                             $null = $changes.Add($adapter.UpdateCommand)
@@ -534,8 +517,6 @@ function Invoke-DbaDbDataMasking {
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $null = $adapter.UpdateBatchSize = 1000
                             $null = $changes.ExecuteNonQuery()
-                            #$sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
-                            #$null = $sqlcmd.ExecuteNonQuery()
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
