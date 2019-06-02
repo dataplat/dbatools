@@ -94,8 +94,8 @@ function Get-DbaRandomizedValue {
         [string]$DataType,
         [string]$RandomizerType,
         [string]$RandomizerSubType,
-        [object]$Min = 1,
-        [object]$Max = 255,
+        [object]$Min,
+        [object]$Max,
         [int]$Precision = 2,
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
@@ -166,6 +166,18 @@ function Get-DbaRandomizedValue {
                     Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
                 }
             #>
+        }
+
+        if (-not $Min) {
+            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+                $Min = 1
+            }
+        }
+
+        if (-not $Max) {
+            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+                $Max = 255
+            }
         }
     }
 
@@ -328,8 +340,21 @@ function Get-DbaRandomizedValue {
                     $faker.Database.$RandomizerSubType()
                 }
                 'date' {
-                    if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    if ($randSubType -eq 'between') {
+
+                        if (-not $Min) {
+                            Stop-Function -Message "Please set the minimum value for the date" -Continue -Target $Min
+                        }
+
+                        if (-not $Max) {
+                            Stop-Function -Message "Please set the maximum value for the date" -Continue -Target $Max
+                        }
+
+                        if ($Min -gt $Max) {
+                            Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
+                        } else {
+                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        }
                     } elseif ($randSubType -eq 'past') {
                         $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'future') {
