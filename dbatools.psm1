@@ -711,7 +711,19 @@ $script:xplat = @(
     'Backup-DbaServiceMasterKey',
     'Invoke-DbaDbPiiScan',
     'New-DbaAzAccessToken',
-    'Get-DbatoolsChangeLog'
+    'Get-DbatoolsChangeLog',
+    'Add-DbaDbRoleMember',
+    'Disable-DbaStartupProcedure',
+    'Enable-DbaStartupProcedure',
+    'Get-DbaDbFilegroup',
+    'Get-DbaDbObjectTrigger',
+    'Get-DbaStartupProcedure',
+    'Get-DbatoolsChangeLog',
+    'Get-DbaXESessionTargetFile',
+    'New-DbaDbTable',
+    'New-DbaDiagnosticAdsNotebook',
+    'Remove-DbaDbRole',
+    'Remove-DbaDbRoleMember'
 )
 
 $script:noncoresmo = @(
@@ -833,10 +845,10 @@ $script:windowsonly = @(
     'Get-DbaCmObject',
     'Set-DbaStartupParameter',
     'Get-DbaNetworkActivity',
-    'Get-DbaInstanceProtocol'
-    'Watch-DbaUpdate',
-    'Uninstall-DbaWatchUpdate',
-    'Install-DbaWatchUpdate',
+    'Get-DbaInstanceProtocol',
+    'Install-DbatoolsWatchUpdate',
+    'Uninstall-DbatoolsWatchUpdate',
+    'Watch-DbatoolsUpdate',
     'Get-DbaPrivilege',
     'Get-DbaMsdtc',
     'Get-DbaPageFileSetting',
