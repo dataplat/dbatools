@@ -67,7 +67,6 @@ Hacker,IngVerb
 Hacker,Noun
 Hacker,Phrase
 Hacker,Verb
-Hacker,Random
 Hashids,Decode
 Hashids,DecodeHex
 Hashids,DecodeLong
@@ -93,7 +92,6 @@ Image,People
 Image,Sports
 Image,Technics
 Image,Transport
-Image,Random
 IndexFaker,CompareTo
 IndexFaker,GetTypeCode
 IndexFaker,ToBoolean
@@ -171,7 +169,6 @@ Lorem,Slug
 Lorem,Text
 Lorem,Word
 Lorem,Words
-Lorem,Random
 Name,FindName
 Name,FirstName
 Name,FullName
@@ -183,7 +180,6 @@ Name,LastName
 Name,Prefix
 Name,Suffix
 Name,HasFirstNameList
-Name,Random
 Name,SupportsGenderFirstNames
 Name,SupportsGenderLastNames
 Name,SupportsGenderPrefixes
@@ -198,12 +194,10 @@ Person,FullName
 Person,Gender
 Person,LastName
 Person,Phone
-Person,Random
 Person,UserName
 Person,Website
 Phone,PhoneNumber
 Phone,PhoneNumberFormat
-Phone,Random
 Random,AlphaNumeric
 Random,Bool
 Random,Byte
@@ -246,7 +240,6 @@ Random,Words
 Random,WordsArray
 Rant,Review
 Rant,Reviews
-Rant,Random
 System,AndroidId
 System,ApplePushToken
 System,BlackBerryPin
