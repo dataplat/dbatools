@@ -382,6 +382,20 @@ function Get-DbaRandomizedValue {
 
                     } elseif ($randSubType -eq 'recent') {
                         $faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                    } elseif ($randSubType -eq 'random') {
+                        if ($Min -or $Max) {
+                            if (-not $Min) {
+                                $Min = Get-Date
+                            }
+
+                            if (-not $Max) {
+                                $Max = (Get-Date).AddYears(1)
+                            }
+
+                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        } else {
+                            ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        }
                     } else {
                         $faker.Date.$RandomizerSubType()
                     }
