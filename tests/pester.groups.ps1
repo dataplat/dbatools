@@ -56,7 +56,9 @@ $TestsRunGroups = @{
         'Get-DbaPrivilege',
         'Find-DbaAgentJob', # strange pester issue
         'Remove-DbaDatabaseSafely', # strange pester issue
-        'Set-DbaDbOwner' # fails so often
+        'Set-DbaDbOwner',
+        'Test-DbaManagementObject',
+        'Test-DbaMaxDop'
     )
     # do not run everywhere
     "disabled"          = @()
