@@ -154,7 +154,7 @@ function Get-DbaRandomizedValue {
 
         # Check the sub type
         if ($RandomizerSubType) {
-            if ($RandomizerSubType -notin $script:uniquerandomizersubtype -and ($RandomizerType -ne 'Random' -and $RandomizerSubType -ne 'Date')) {
+            if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
