@@ -109,20 +109,14 @@ function Invoke-DbaDbDataGenerator {
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-
         $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
-
         $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
-
         $supportedFakerSubTypes += "Date"
-
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
@@ -155,7 +149,7 @@ function Invoke-DbaDbDataGenerator {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -Database $Database
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -253,24 +247,19 @@ function Invoke-DbaDbDataGenerator {
                                             $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
                                             $uniqueValueColumns += $indexColumn.Name
                                         }
-
                                     }
                                 }
-
                             }
-
                             # Add the row value to the array
                             $uniqueValues += $rowValue
-
                         }
-
                     }
-
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $sqlconn.ChangeDatabase($db.Name)
-
+                    if (-not $server.IsAzure) {
+                        $sqlconn.ChangeDatabase($db.Name)
+                    }
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
