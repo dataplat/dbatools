@@ -194,6 +194,7 @@ function Invoke-DbaDbDataMasking {
                 $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
+                $transaction = $sqlconn.BeginTransaction()
                 $stepcounter = $nullmod = 0
 
                 foreach ($tableobject in $tables.Tables) {
@@ -324,8 +325,6 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
-
-                        $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         # Loop through each of the rows and change them
@@ -576,7 +575,6 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-                            $null = $transaction.Commit()
                             [pscustomobject]@{
                                 ComputerName = $db.Parent.ComputerName
                                 InstanceName = $db.Parent.ServiceName
@@ -596,12 +594,10 @@ function Invoke-DbaDbDataMasking {
 
                     # Empty the unique values array
                     $uniqueValues = $null
-
-
-
                 }
 
                 try {
+                    $null = $transaction.Commit()
                     $sqlconn.Close()
                 } catch {
                     Stop-Function -Message "Failure" -Continue -ErrorRecord $_
