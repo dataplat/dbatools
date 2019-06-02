@@ -356,11 +356,32 @@ function Get-DbaRandomizedValue {
                             ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'past') {
-                        $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        if ($Max) {
+                            if ($Min) {
+                                $yearsToGoBack = [math]::round((([datetime]$Max - [datetime]$Min).Days / 365), 0)
+                            } else {
+                                $yearsToGoBack = 1
+                            }
+
+                            $faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        } else {
+                            $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        }
                     } elseif ($randSubType -eq 'future') {
-                        $faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        if ($Min) {
+                            if ($Max) {
+                                $yearsToGoForward = [math]::round((([datetime]$Max - [datetime]$Min).Days / 365), 0)
+                            } else {
+                                $yearsToGoForward = 1
+                            }
+
+                            $faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        } else {
+                            $faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        }
+
                     } elseif ($randSubType -eq 'recent') {
-                        $faker.Recent.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
                         $faker.Date.$RandomizerSubType()
                     }
