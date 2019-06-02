@@ -58,6 +58,7 @@ $scriptBlock = {
         )
     } else {
         $names = @(
+            'Bogus',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -98,6 +99,20 @@ $scriptBlock = {
         if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
             Write-Verbose -Message "Adding Azure DLLs"
             $names += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
+        }
+    } else {
+        $shared = "bogus"
+        foreach ($name in $shared) {
+            $assemblyPath = "$dllRoot([IO.Path]::DirectorySeparatorChar)$name.dll"
+            $null = try {
+                Import-Module $assemblyPath
+            } catch {
+                try {
+                    [Reflection.Assembly]::LoadFrom($assemblyPath)
+                } catch {
+                    Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
+                }
+            }
         }
     }
 
