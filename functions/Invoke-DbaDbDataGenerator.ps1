@@ -278,7 +278,6 @@ function Invoke-DbaDbDataGenerator {
                     $insertQuery = ""
 
                     if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
-                        $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
@@ -442,6 +441,7 @@ function Invoke-DbaDbDataGenerator {
                         }
 
                         try {
+                            $transaction = $sqlconn.BeginTransaction()
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
