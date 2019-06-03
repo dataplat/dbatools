@@ -622,7 +622,8 @@
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
-        'Test-DbaManagementObject'
+        'Test-DbaManagementObject',
+        'Update-DbatoolsRemote'
     )
 
     # Cmdlets to export from this module
