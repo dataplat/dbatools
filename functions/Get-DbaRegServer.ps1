@@ -271,7 +271,7 @@ function Get-DbaRegServer {
             }
 
             # this is a bit dirty and should be addressed by someone who better knows recursion and regex
-            if (-not ($server.Source -eq "Central Management Servers")) {
+            if ($server.Source -ne "Central Management Servers") {
                 if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
                 if ($PSBoundParameters.ExcludeGroup -and $groupname -in $PSBoundParameters.ExcludeGroup) { continue }
             }
