@@ -270,6 +270,8 @@ function Get-DbaRegServer {
                 }
             }
             if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
+            if ($PSBoundParameters.ExcludeGroup -and $groupname -in $PSBoundParameters.ExcludeGroup) { continue }
+
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
