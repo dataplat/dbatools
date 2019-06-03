@@ -95,8 +95,8 @@ function Get-DbaRegServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [object[]]$Group,
-        [object[]]$ExcludeGroup,
+        [string[]]$Group,
+        [string[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ResolveNetworkName,
@@ -269,6 +269,7 @@ function Get-DbaRegServer {
                     }
                 }
             }
+            if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
