@@ -153,15 +153,15 @@ function Get-DbaRegServer {
                     if ($store.AzureDataStudioConnectionStore.Groups) {
                         $adsconnection = Get-ADSConnection
                     }
-                    foreach ($group in $store.AzureDataStudioConnectionStore.Groups) {
-                        $groupname = $group.Name
+                    foreach ($azuregroup in $store.AzureDataStudioConnectionStore.Groups) {
+                        $groupname = $azuregroup.Name
                         if ($groupname -eq 'ROOT' -or $groupname -eq '') {
                             $groupname = $null
                         }
                         $tempgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $groupname
-                        $tempgroup.Description = $group.Description
+                        $tempgroup.Description = $azuregroup.Description
 
-                        foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $group.Id)) {
+                        foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $azuregroup.Id)) {
                             $azureids += [pscustomobject]@{ id = $server.Id; group = $groupname }
                             $connname = $server.Options['connectionName']
                             if (-not $connname) {
