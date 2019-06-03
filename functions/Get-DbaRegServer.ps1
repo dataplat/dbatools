@@ -269,8 +269,12 @@ function Get-DbaRegServer {
                     }
                 }
             }
-            if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
-            if ($PSBoundParameters.ExcludeGroup -and $groupname -in $PSBoundParameters.ExcludeGroup) { continue }
+
+            # this is a bit dirty and should be addressed by someone who better knows recursion and regex
+            if (-not ($server.Source -eq "Central Management Servers")) {
+                if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
+                if ($PSBoundParameters.ExcludeGroup -and $groupname -in $PSBoundParameters.ExcludeGroup) { continue }
+            }
 
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
