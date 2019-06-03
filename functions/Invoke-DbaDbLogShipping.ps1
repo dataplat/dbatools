@@ -48,11 +48,11 @@ function Invoke-DbaDbLogShipping {
     .PARAMETER Database
         Database to set up log shipping for.
 
-    .PARAMETER BackupNetworkPath
+    .PARAMETER SharedPath
         The backup unc path to place the backup files. This is the root directory.
         A directory with the name of the database will be created in this path.
 
-    .PARAMETER BackupLocalPath
+    .PARAMETER LocalPath
         If the backup path is locally for the source server you can also set this value.
 
     .PARAMETER BackupJob
@@ -348,8 +348,8 @@ function Invoke-DbaDbLogShipping {
         >> SourceSqlInstance = 'sql1'
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
-        >> BackupNetworkPath= '\\sql1\logshipping'
-        >> BackupLocalPath= 'D:\Data\logshipping'
+        >> SharedPath= '\\sql1\logshipping'
+        >> LocalPath= 'D:\Data\logshipping'
         >> BackupScheduleFrequencyType = 'daily'
         >> BackupScheduleFrequencyInterval = 1
         >> CompressBackup = $true
@@ -374,7 +374,7 @@ function Invoke-DbaDbLogShipping {
         >> SourceSqlInstance = 'sql1'
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
-        >> BackupNetworkPath= '\\sql1\logshipping'
+        >> SharedPath= '\\sql1\logshipping'
         >> GenerateFullBackup = $true
         >> Force = $true
         >> }
@@ -414,9 +414,10 @@ function Invoke-DbaDbLogShipping {
         [object[]]$Database,
 
         [parameter(Mandatory)]
-        [string]$BackupNetworkPath,
-
-        [string]$BackupLocalPath,
+        [Alias("BackupNetworkPath")]
+        [string]$SharedPath,
+        [Alias("BackupLocalPath")]
+        [string]$LocalPath,
 
         [string]$BackupJob,
 
@@ -608,12 +609,12 @@ function Invoke-DbaDbLogShipping {
         }
 
         # Check the backup network path
-        Write-Message -Message "Testing backup network path $BackupNetworkPath" -Level Verbose
-        if ((Test-DbaPath -Path $BackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-            Stop-Function -Message "Backup network path $BackupNetworkPath is not valid or can't be reached." -Target $SourceSqlInstance
+        Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
+        if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+            Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
             return
-        } elseif ($BackupNetworkPath -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $BackupNetworkPath has to be in the form of \\server\share." -Target $SourceSqlInstance
+        } elseif ($SharedPath -notmatch $RegexUnc) {
+            Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
             return
         }
 
@@ -1115,43 +1116,43 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the local backup path
-                if ($BackupLocalPath) {
-                    if ($BackupLocalPath.EndsWith("\")) {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
+                if ($LocalPath) {
+                    if ($LocalPath.EndsWith("\")) {
+                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
                     } else {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
                     }
                 } else {
-                    $BackupLocalPath = $BackupNetworkPath
+                    $LocalPath = $SharedPath
 
-                    if ($BackupLocalPath.EndsWith("\")) {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
+                    if ($LocalPath.EndsWith("\")) {
+                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
                     } else {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
                     }
                 }
-                Write-Message -Message "Backup local path set to $DatabaseBackupLocalPath." -Level Verbose
+                Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
 
                 # Setting the backup network path for the database
-                if ($BackupNetworkPath.EndsWith("\")) {
-                    $DatabaseBackupNetworkPath = "$BackupNetworkPath$($db.Name)"
+                if ($SharedPath.EndsWith("\")) {
+                    $DatabaseSharedPath = "$SharedPath$($db.Name)"
                 } else {
-                    $DatabaseBackupNetworkPath = "$BackupNetworkPath\$($db.Name)"
+                    $DatabaseSharedPath = "$SharedPath\$($db.Name)"
                 }
-                Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
+                Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
 
 
                 # Checking if the database network path exists
                 if ($setupResult -ne 'Failed') {
-                    Write-Message -Message "Testing database backup network path $DatabaseBackupNetworkPath" -Level Verbose
-                    if ((Test-DbaPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+                    Write-Message -Message "Testing database backup network path $DatabaseSharedPath" -Level Verbose
+                    if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
                         # To to create the backup directory for the database
                         try {
-                            Write-Message -Message "Database backup network path $DatabaseBackupNetworkPath not found. Trying to create it.." -Level Verbose
+                            Write-Message -Message "Database backup network path $DatabaseSharedPath not found. Trying to create it.." -Level Verbose
 
                             Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
-                                Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
-                                $null = New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force
+                                Write-Message -Message "Creating backup folder $DatabaseSharedPath" -Level Verbose
+                                $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Credential $SourceCredential -Force:$Force
                             }
                         } catch {
                             $setupResult = "Failed"
@@ -1411,14 +1412,14 @@ function Invoke-DbaDbLogShipping {
                         if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
 
                             Write-Message -Message "Generating full backup." -Level Verbose
-                            Write-Message -Message "Backing up database $db to $DatabaseBackupNetworkPath" -Level Verbose
+                            Write-Message -Message "Backing up database $db to $DatabaseSharedPath" -Level Verbose
 
                             try {
                                 $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
                                 $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
                                     -SqlCredential $SourceSqlCredential `
-                                    -BackupDirectory $DatabaseBackupNetworkPath `
+                                    -BackupDirectory $DatabaseSharedPath `
                                     -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
                                     -Database $($db.Name) `
                                     -Type Full
@@ -1581,10 +1582,10 @@ function Invoke-DbaDbLogShipping {
                             New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
                                 -SqlCredential $SourceSqlCredential `
                                 -Database $($db.Name) `
-                                -BackupDirectory $DatabaseBackupLocalPath `
+                                -BackupDirectory $DatabaseLocalPath `
                                 -BackupJob $DatabaseBackupJob `
                                 -BackupRetention $BackupRetention `
-                                -BackupShare $DatabaseBackupNetworkPath `
+                                -BackupShare $DatabaseSharedPath `
                                 -BackupThreshold $BackupThreshold `
                                 -CompressBackup:$BackupCompression `
                                 -HistoryRetention $HistoryRetention `
@@ -1649,7 +1650,7 @@ function Invoke-DbaDbLogShipping {
 
                             New-DbaLogShippingSecondaryPrimary -SqlInstance $destInstance `
                                 -SqlCredential $DestinationSqlCredential `
-                                -BackupSourceDirectory $DatabaseBackupNetworkPath `
+                                -BackupSourceDirectory $DatabaseSharedPath `
                                 -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
                                 -CopyJob $DatabaseCopyJob `
                                 -FileRetentionPeriod $BackupRetention `
