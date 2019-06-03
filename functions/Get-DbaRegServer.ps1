@@ -95,8 +95,8 @@ function Get-DbaRegServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [object[]]$Group,
-        [object[]]$ExcludeGroup,
+        [string[]]$Group,
+        [string[]]$ExcludeGroup,
         [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ResolveNetworkName,
@@ -153,15 +153,15 @@ function Get-DbaRegServer {
                     if ($store.AzureDataStudioConnectionStore.Groups) {
                         $adsconnection = Get-ADSConnection
                     }
-                    foreach ($group in $store.AzureDataStudioConnectionStore.Groups) {
-                        $groupname = $group.Name
+                    foreach ($azuregroup in $store.AzureDataStudioConnectionStore.Groups) {
+                        $groupname = $azuregroup.Name
                         if ($groupname -eq 'ROOT' -or $groupname -eq '') {
                             $groupname = $null
                         }
                         $tempgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup $groupname
-                        $tempgroup.Description = $group.Description
+                        $tempgroup.Description = $azuregroup.Description
 
-                        foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $group.Id)) {
+                        foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $azuregroup.Id)) {
                             $azureids += [pscustomobject]@{ id = $server.Id; group = $groupname }
                             $connname = $server.Options['connectionName']
                             if (-not $connname) {
@@ -269,6 +269,13 @@ function Get-DbaRegServer {
                     }
                 }
             }
+
+            # this is a bit dirty and should be addressed by someone who better knows recursion and regex
+            if ($server.Source -ne "Central Management Servers") {
+                if ($PSBoundParameters.Group -and $groupname -notin $PSBoundParameters.Group) { continue }
+                if ($PSBoundParameters.ExcludeGroup -and $groupname -in $PSBoundParameters.ExcludeGroup) { continue }
+            }
+
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
