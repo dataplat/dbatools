@@ -82,11 +82,11 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
     }
     # These are groups by major release (aka "Name")
-    $IdxRef = Get-Content $idxfile -raw | ConvertFrom-Json
+    $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
     $Groups = @{ }
     $OrderedKeys = @()
     foreach ($el in $IdxRef.Data) {
-        $ver = $el.Version.split('.')[0 .. 1] -join '.'
+        $ver = $el.Version.Split('.')[0 .. 1] -join '.'
         if (!($Groups.ContainsKey($ver))) {
             $Groups[$ver] = New-Object System.Collections.ArrayList
             $OrderedKeys += $ver
@@ -116,7 +116,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             }
             It "SPs are ordered correctly" {
                 $SPs = $Versions.SP | Where-Object { $_ }
-                $SPs[0] | Should Be 'RTM'
+                ($SPs | Select-Object -First 1) | Should Be 'RTM'
                 $ActualSPs = $SPs | Where-Object { $_ -match '^SP[\d]+$' }
                 $OrderedActualSPs = $ActualSPs | Sort-Object
                 ($ActualSPs -join ',') | Should Be ($OrderedActualSPs -join ',')
