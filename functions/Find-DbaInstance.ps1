@@ -37,7 +37,7 @@ function Find-DbaInstance {
         - Service Principal Name lookup ('DomainSPN'; from Active Directory)
         - SQL Instance Enumeration ('DataSourceEnumeration'; same as SSMS uses)
         - IP Address range ('IPRange'; all IP Addresses will be scanned)
-		- Domain Server lookup ('DomainServer'; from Active Directory)
+        - Domain Server lookup ('DomainServer'; from Active Directory)
 
         SPN Lookup:
         The function tries to connect active directory to look up all computers with registered SQL Instances.
@@ -57,8 +57,8 @@ function Find-DbaInstance {
         By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.
         By using the '-IpAddress' parameter, custom network ranges can be specified.
 
-		Domain Server:
-		This will discover every single computer in Active Directory that is a Windows Server and enabled.
+        Domain Server:
+        This will discover every single computer in Active Directory that is a Windows Server and enabled.
         By default, your nearest Domain Controller is contacted for this scan.
         However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
         If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.
@@ -614,14 +614,14 @@ function Find-DbaInstance {
         }
 
         function Get-DomainServer {
-            <#
-			.SYNOPSIS
-				Returns a list of all Domain Computer objects that are servers.
+        <#
+            .SYNOPSIS
+                Returns a list of all Domain Computer objects that are servers.
 
-			.DESCRIPTION
-				Returns a list of all Domain Computer objects that are ...
-				- Enabled
-				- Have an OS named like "*windows*server*"
+            .DESCRIPTION
+                Returns a list of all Domain Computer objects that are ...
+                - Enabled
+                - Have an OS named like "*windows*server*"
 
             .PARAMETER DomainController
                 The domain controller to ask.
@@ -629,11 +629,11 @@ function Find-DbaInstance {
             .PARAMETER Credential
                 The credentials to use while asking.
 
-			.EXAMPLE
-				PS C:\> Get-DomainServer
+            .EXAMPLE
+                PS C:\> Get-DomainServer
 
-				Returns a list of all Domain Computer objects that are servers.
-		#>
+                Returns a list of all Domain Computer objects that are servers.
+        #>
             [CmdletBinding()]
             param (
                 [string]
