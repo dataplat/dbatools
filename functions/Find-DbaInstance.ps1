@@ -56,7 +56,7 @@ function Find-DbaInstance {
         See the 'Description' part of help on security issues of network scanning.
         By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.
         By using the '-IpAddress' parameter, custom network ranges can be specified.
-	
+
 		Domain Server:
 		This will discover every single computer in Active Directory that is a Windows Server and enabled.
         By default, your nearest Domain Controller is contacted for this scan.
@@ -612,13 +612,12 @@ function Find-DbaInstance {
                 throw
             }
         }
-		
-		function Get-DomainServer
-		{
-		<#
+
+        function Get-DomainServer {
+            <#
 			.SYNOPSIS
 				Returns a list of all Domain Computer objects that are servers.
-			
+
 			.DESCRIPTION
 				Returns a list of all Domain Computer objects that are ...
 				- Enabled
@@ -629,61 +628,49 @@ function Find-DbaInstance {
 
             .PARAMETER Credential
                 The credentials to use while asking.
-			
+
 			.EXAMPLE
 				PS C:\> Get-DomainServer
-			
+
 				Returns a list of all Domain Computer objects that are servers.
 		#>
-			[CmdletBinding()]
-			param (
-				[string]
-				$DomainController,
-				
-				[Pscredential]
-				$Credential
-			)
-			
-			try
-			{
-				if ($DomainController)
-				{
-					if ($Credential)
-					{
-						$entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController", $Credential.UserName, $Credential.GetNetworkCredential().Password
-					}
-					else
-					{
-						$entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController"
-					}
-				}
-				else
-				{
-					$entry = [ADSI]''
-				}
-				$objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
-				
-				$objSearcher.PageSize = 200
-				$objSearcher.Filter = "(&(objectcategory=computer)(operatingSystem=*windows*server*)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
-				$objSearcher.SearchScope = 'Subtree'
-				
-				$results = $objSearcher.FindAll()
-				foreach ($computer in $results)
-				{
-					if ($computer.Properties["dnshostname"])
-					{
-						$computer.Properties["dnshostname"][0]
-					}
-					else
-					{
-						$computer.Properties["name"][0]
-					}
-				}
-			}
-			catch { throw }
-		}
-		
-		function Get-SQLInstanceBrowserUDP {
+            [CmdletBinding()]
+            param (
+                [string]
+                $DomainController,
+
+                [Pscredential]
+                $Credential
+            )
+
+            try {
+                if ($DomainController) {
+                    if ($Credential) {
+                        $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController", $Credential.UserName, $Credential.GetNetworkCredential().Password
+                    } else {
+                        $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController"
+                    }
+                } else {
+                    $entry = [ADSI]''
+                }
+                $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
+
+                $objSearcher.PageSize = 200
+                $objSearcher.Filter = "(&(objectcategory=computer)(operatingSystem=*windows*server*)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+                $objSearcher.SearchScope = 'Subtree'
+
+                $results = $objSearcher.FindAll()
+                foreach ($computer in $results) {
+                    if ($computer.Properties["dnshostname"]) {
+                        $computer.Properties["dnshostname"][0]
+                    } else {
+                        $computer.Properties["name"][0]
+                    }
+                }
+            } catch { throw }
+        }
+
+        function Get-SQLInstanceBrowserUDP {
             <#
             .SYNOPSIS
                 Requests a list of instances from the browser service.
@@ -1065,21 +1052,17 @@ function Find-DbaInstance {
                         Resolve-IPRange | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     }
                 }
-				#endregion Discovery: IP Range
-				
-				#region Discovery: Windows Server Search
-				if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainServer))
-				{
-					try
-					{
-						Get-DomainServer -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
-					}
-					catch
-					{
-						Write-Message -Level Warning -Message "Failed to execute Windows Server discovery" -ErrorRecord $_ -EnableException $EnableException.ToBool()
-					}
-				}
-				#endregion Discovery: Windows Server Search
+                #endregion Discovery: IP Range
+
+                #region Discovery: Windows Server Search
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainServer)) {
+                    try {
+                        Get-DomainServer -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to execute Windows Server discovery" -ErrorRecord $_ -EnableException $EnableException.ToBool()
+                    }
+                }
+                #endregion Discovery: Windows Server Search
             }
             "Default" {
                 Stop-Function -Message "Please specify DiscoveryType or ScanType. Try Get-Help Find-DbaInstance -Examples for working examples." -EnableException $EnableException
