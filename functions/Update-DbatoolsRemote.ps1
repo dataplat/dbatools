@@ -88,7 +88,7 @@ function Update-DbatoolsRemote {
             } catch {
                 Stop-Function -Message "Error occurred while copying files to $DestInstance" -Category ConnectionError -ErrorRecord $_ -Target $DestInstance -Continue
             }
-            Write-Output "$($InstalledVersion.ModuleBase) files have been copied to server $DestInstance"
+            Write-Output "dbatools version: $($InstalledVersion.Version) files have been copied to server $DestInstance"
         }
     }
 }
