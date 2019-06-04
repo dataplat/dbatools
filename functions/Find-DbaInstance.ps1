@@ -614,7 +614,7 @@ function Find-DbaInstance {
         }
 
         function Get-DomainServer {
-        <#
+            <#
             .SYNOPSIS
                 Returns a list of all Domain Computer objects that are servers.
 
