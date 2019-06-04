@@ -636,11 +636,8 @@ function Find-DbaInstance {
         #>
             [CmdletBinding()]
             param (
-                [string]
-                $DomainController,
-
-                [Pscredential]
-                $Credential
+                [string]$DomainController,
+                [Pscredential]$Credential
             )
 
             try {
