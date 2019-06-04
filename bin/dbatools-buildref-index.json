@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2019-05-28T00:00:00",
+    "LastUpdated": "2019-06-03T00:00:00",
     "Data": [
         {
             "Version": "8.0.47",
@@ -919,10 +919,7 @@
             "Version": "8.0.2026"
         },
         {
-            "SP": [
-                "SP4",
-                "LATEST"
-            ],
+            "SP": "SP4",
             "Version": "8.0.2039",
             "SupportedUntil": "2013-04-09T00:00:00",
             "KBList": "306908"
@@ -1989,10 +1986,7 @@
             "Version": "9.0.4912"
         },
         {
-            "SP": [
-                "SP4",
-                "LATEST"
-            ],
+            "SP": "SP4",
             "Version": "9.0.5000",
             "SupportedUntil": "2016-04-12T00:00:00",
             "KBList": "2463332"
@@ -2452,10 +2446,7 @@
             "KBList": "3135244"
         },
         {
-            "SP": [
-                "SP4",
-                "LATEST"
-            ],
+            "SP": "SP4",
             "Version": "10.0.6000",
             "SupportedUntil": "2019-07-09T00:00:00",
             "KBList": "2979596"
@@ -2770,10 +2761,7 @@
             "KBList": "3135244"
         },
         {
-            "SP": [
-                "SP3",
-                "LATEST"
-            ],
+            "SP": "SP3",
             "Version": "10.50.6000",
             "SupportedUntil": "2019-07-09T00:00:00",
             "KBList": "2979597"
@@ -3215,10 +3203,7 @@
             "KBList": "4057121"
         },
         {
-            "SP": [
-                "SP4",
-                "LATEST"
-            ],
+            "SP": "SP4",
             "SupportedUntil": "2022-07-12T00:00:00",
             "Version": "11.0.7001",
             "KBList": "4018073"
@@ -3602,10 +3587,7 @@
             "KBList": "4482967"
         },
         {
-            "SP": [
-                "SP3",
-                "LATEST"
-            ],
+            "SP": "SP3",
             "Version": "12.0.6024",
             "SupportedUntil": "2024-07-09T00:00:00",
             "KBList": "4022619"
@@ -3869,10 +3851,7 @@
             "KBList": "4495257"
         },
         {
-            "SP": [
-                "SP2",
-                "LATEST"
-            ],
+            "SP": "SP2",
             "Version": "13.0.5026",
             "SupportedUntil": "2026-07-14T00:00:00",
             "KBList": "4052908"
@@ -3957,10 +3936,7 @@
             "Version": "14.0.900"
         },
         {
-            "SP": [
-                "RTM",
-                "LATEST"
-            ],
+            "SP": "RTM",
             "Version": "14.0.1000",
             "SupportedUntil": "2027-10-12T00:00:00"
         },
