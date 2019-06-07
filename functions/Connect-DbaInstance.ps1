@@ -812,6 +812,7 @@ function Connect-DbaInstance {
                 continue
             } else {
                 if (-not $server.ComputerName) {
+                    # Not every environment supports .NetName
                     if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
                         try {
                             $computername = $server.NetName
@@ -819,7 +820,8 @@ function Connect-DbaInstance {
                             $computername = $instance.ComputerName
                         }
                     }
-                    if (-not $computername) {
+                    # SQL on Linux is often on docker and the internal name is not useful
+                    if (-not $computername -or $server.HostPlatform -eq "Linux") {
                         $computername = $instance.ComputerName
                     }
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
