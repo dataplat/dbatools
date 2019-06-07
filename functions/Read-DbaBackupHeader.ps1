@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
@@ -88,7 +87,6 @@ function Read-DbaBackupHeader {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]
@@ -96,7 +94,6 @@ function Read-DbaBackupHeader {
         [switch]$Simple,
         [switch]$FileList,
         [string]$AzureCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

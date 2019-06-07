@@ -40,8 +40,7 @@ function Remove-DbaMessageLevelModifier {
         [Sqlcollaborative.Dbatools.Message.MessageLevelModifier[]]
         $Modifier,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     process {

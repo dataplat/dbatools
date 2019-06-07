@@ -154,7 +154,6 @@ function Set-DbaLogin {
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
     param (
-        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
@@ -176,7 +175,6 @@ function Set-DbaLogin {
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -340,7 +338,7 @@ function Set-DbaLogin {
                         }
                     }
                 }
-                
+
                 # Set the default database
                 if (Test-Bound -ParameterName 'DefaultDatabase') {
                     if ($l.DefaultDatabase -eq $DefaultDatabase) {
@@ -354,7 +352,7 @@ function Set-DbaLogin {
                 $l.Alter()
 
                 # Retrieve the server roles for the login
-                $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
+                $roles = Get-DbaInstanceRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
 
                 # Check if there were any notes to include in the results
                 if ($notes) {

@@ -33,8 +33,7 @@ function Start-DbaRunspace {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceContainer[]]
         $Runspace,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {

@@ -49,7 +49,7 @@ function Get-DbaStartupProcedure {
         Returns an object with a startup procedure named 'dbo.StartupProc' for the Instance2 instance on SqlBox1
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaStartupProcedure
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Get-DbaStartupProcedure
 
         Returns an object with all startup procedures for every server listed in the Central Management Server on sql2014
 
@@ -57,7 +57,6 @@ function Get-DbaStartupProcedure {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$StartupProcedure,

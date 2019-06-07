@@ -65,8 +65,7 @@ function Register-DbaMaintenanceTask {
         [Sqlcollaborative.Dbatools.Maintenance.MaintenancePriority]
         $Priority = "Medium",
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     #region Case: Task already registered

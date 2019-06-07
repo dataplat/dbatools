@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESmartTarget {
     <#
     .SYNOPSIS
@@ -90,7 +89,6 @@ function Start-DbaXESmartTarget {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Database,

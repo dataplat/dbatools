@@ -81,11 +81,10 @@ function Set-DbaDbRecoveryModel {
 
         Sets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs without asking for confirmation.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]

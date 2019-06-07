@@ -2,7 +2,6 @@ function Resolve-SqlIpAddress {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )

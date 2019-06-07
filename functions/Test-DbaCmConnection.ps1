@@ -79,8 +79,7 @@ function Test-DbaCmConnection {
         [switch]
         $Force,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

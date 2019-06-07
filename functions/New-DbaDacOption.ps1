@@ -84,7 +84,7 @@ function New-DbaDacOption {
                 }
             }
         }
-        
+
         # Pick proper option object depending on type and action
         if ($Action -eq 'Export') {
             if ($Type -eq 'Dacpac') {

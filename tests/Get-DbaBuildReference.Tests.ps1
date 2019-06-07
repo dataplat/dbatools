@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Unit Test" -Tags Unittest {
-    $ModuleBase = (Get-Module -Name dbatools).ModuleBase
+    $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
     $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
     Context 'Validate data in json is correct' {
         It "the json file is there" {

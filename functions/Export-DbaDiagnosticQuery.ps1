@@ -60,11 +60,11 @@ function Export-DbaDiagnosticQuery {
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
-        [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
+        # No file path because this needs a directory
+        [System.IO.FileInfo]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
         [switch]$NoQueryExport,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -81,16 +81,15 @@ function Export-DbaDiagnosticQuery {
             }
         }
 
-        if (!$(Test-Path $Path)) {
-            try {
-                New-Item $Path -ItemType Directory -ErrorAction Stop | Out-Null
-                Write-Message -Level Output -Message "Created directory $Path"
-            } catch {
-                Stop-Function -Message "Failed to create directory $Path" -Continue
+        if (-not (Test-Path -Path $Path)) {
+            $null = New-Item -ItemType Directory -Path $Path
+        } else {
+            if ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo]) {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
             }
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -106,10 +105,10 @@ function Export-DbaDiagnosticQuery {
             }
 
             $queryname = Remove-InvalidFileNameChars -Name $Name
-            $excelfilename = "$Path\$SqlInstance-DQ-$Suffix.xlsx"
-            $exceldbfilename = "$Path\$SqlInstance-DQ-$dbname-$Suffix.xlsx"
-            $csvdbfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
-            $csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
+            $excelfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$Suffix.xlsx"
+            $exceldbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbname-$Suffix.xlsx"
+            $csvdbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+            $csvfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 
             $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan", "query_plan_xml"
             if (($result | Get-Member | Where-Object Name -in $columnnameoptions).Count -gt 0) {
@@ -118,13 +117,13 @@ function Export-DbaDiagnosticQuery {
                 foreach ($plan in $result."$columnname") {
                     $plannr += 1
                     if ($row.DatabaseSpecific) {
-                        $planfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     } else {
-                        $planfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     }
 
-                    if (!$NoPlanExport) {
-                        Write-Message -Level Output -Message "Exporting $planfilename"
+                    if (-not $NoPlanExport) {
+                        Write-Message -Level Verbose -Message "Exporting $planfilename"
                         if ($plan) {$plan | Out-File -FilePath $planfilename}
                     }
                 }
@@ -139,14 +138,17 @@ function Export-DbaDiagnosticQuery {
                 foreach ($sql in $result."$columnname") {
                     $sqlnr += 1
                     if ($row.DatabaseSpecific) {
-                        $sqlfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     } else {
-                        $sqlfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     }
 
-                    if (!$NoQueryExport) {
-                        Write-Message -Level Output -Message "Exporting $sqlfilename"
-                        if ($sql) {$sql | Out-File -FilePath $sqlfilename}
+                    if (-not $NoQueryExport) {
+                        Write-Message -Level Verbose -Message "Exporting $sqlfilename"
+                        if ($sql) {
+                            $sql | Out-File -FilePath $sqlfilename
+                            Get-ChildItem -Path $sqlfilename
+                        }
                     }
                 }
 
@@ -156,20 +158,24 @@ function Export-DbaDiagnosticQuery {
             switch ($ConvertTo) {
                 "Excel" {
                     if ($row.DatabaseSpecific) {
-                        Write-Message -Level Output -Message "Exporting $exceldbfilename"
+                        Write-Message -Level Verbose -Message "Exporting $exceldbfilename"
                         $result | Export-Excel -Path $exceldbfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
+                        Get-ChildItem -Path $exceldbfilename
                     } else {
-                        Write-Message -Level Output -Message "Exporting $excelfilename"
+                        Write-Message -Level Verbose -Message "Exporting $excelfilename"
                         $result | Export-Excel -Path $excelfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
+                        Get-ChildItem -Path $excelfilename
                     }
                 }
                 "csv" {
                     if ($row.DatabaseSpecific) {
-                        Write-Message -Level Output -Message "Exporting $csvdbfilename"
+                        Write-Message -Level Verbose -Message "Exporting $csvdbfilename"
                         $result | Export-Csv -Path $csvdbfilename -NoTypeInformation -Append
+                        Get-ChildItem -Path $csvdbfilename
                     } else {
-                        Write-Message -Level Output -Message "Exporting $csvfilename"
+                        Write-Message -Level Verbose -Message "Exporting $csvfilename"
                         $result | Export-Csv -Path $csvfilename -NoTypeInformation -Append
+                        Get-ChildItem -Path $csvfilename
                     }
                 }
             }

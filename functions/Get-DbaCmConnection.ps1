@@ -47,7 +47,7 @@ function Get-DbaCmConnection {
     [CmdletBinding()]
     param
     (
-        [Parameter(Position = 0, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Alias('Filter')]
         [String[]]
         $ComputerName = "*",
@@ -55,8 +55,7 @@ function Get-DbaCmConnection {
         [String]
         $UserName = "*",
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

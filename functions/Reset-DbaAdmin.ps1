@@ -93,7 +93,6 @@ function Reset-DbaAdmin {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject for client backwards compatibilty")]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [pscredential]$SqlCredential,
         [string]$Login = "sa",
@@ -103,8 +102,6 @@ function Reset-DbaAdmin {
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Reset-SqlAdmin
-
         #region Utility functions
         function ConvertTo-PlainText {
             <#

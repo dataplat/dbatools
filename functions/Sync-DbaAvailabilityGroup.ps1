@@ -1,11 +1,10 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Sync-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Syncs depdendent objects such as jobs, logins and custom errors for availability groups
+        Syncs dependent objects such as jobs, logins and custom errors for availability groups
 
     .DESCRIPTION
-        Syncs depdendent objects for availability groups. Such objects include:
+        Syncs dependent objects for availability groups. Such objects include:
 
         SpConfigure
         CustomErrors
@@ -71,7 +70,7 @@ function Sync-DbaAvailabilityGroup {
         Specific jobs to sync. If unspecified, all jobs will be processed.
 
     .PARAMETER ExcludeJob
-         Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
+        Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
@@ -91,7 +90,7 @@ function Sync-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HA
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -276,7 +275,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "SystemTriggers") {
                 if ($PSCmdlet.ShouldProcess("Syncing System Triggers from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
-                    Copy-DbaServerTrigger -Source $server -Destination $secondaries -Force:$Force
+                    Copy-DbaInstanceTrigger -Source $server -Destination $secondaries -Force:$Force
                 }
             }
 

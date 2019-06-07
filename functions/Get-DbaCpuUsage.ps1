@@ -64,7 +64,6 @@ function Get-DbaCpuUsage {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,

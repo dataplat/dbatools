@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
     <#
     .SYNOPSIS
@@ -120,12 +119,9 @@ function Set-DbaDbState {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -139,7 +135,6 @@ function Set-DbaDbState {
         [switch]$RestrictedUser,
         [switch]$MultiUser,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$InputObject
@@ -498,8 +493,5 @@ function Set-DbaDbState {
             }
         }
 
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseState
     }
 }

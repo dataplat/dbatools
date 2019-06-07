@@ -73,18 +73,14 @@ function Set-DbaDbOwner {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Alias("Login")]
         [string]$TargetLogin,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -159,8 +155,5 @@ function Set-DbaDbOwner {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseOwner
     }
 }

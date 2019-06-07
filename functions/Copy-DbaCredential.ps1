@@ -97,10 +97,9 @@ function Copy-DbaCredential {
         [Alias('ExcludeCredentialIdentity')]
         [string[]]$ExcludeIdentity,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         if (-not $script:isWindows) {
             Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
@@ -216,8 +215,5 @@ function Copy-DbaCredential {
 
             Copy-Credential $credentials -force:$force
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
     }
 }

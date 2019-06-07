@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Watch-DbaXESession {
     <#
     .SYNOPSIS
@@ -59,15 +58,13 @@ function Watch-DbaXESession {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Session,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
         [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
         [switch]$Raw,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         if (-not $SqlInstance) {

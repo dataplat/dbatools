@@ -78,11 +78,9 @@ function Get-DbaLatchStatistic {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -83,21 +83,19 @@ function Get-DbaAgentJobOutputFile {
     (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false,
             Position = 0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(HelpMessage = 'SQL Credential',
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false,
             Position = 1)]
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
