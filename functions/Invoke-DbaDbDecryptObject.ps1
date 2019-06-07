@@ -227,24 +227,24 @@ function Invoke-DbaDbDecryptObject {
                         switch ($object.ObjectType) {
 
                             'StoredProcedure' {
-                                $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER PROCEDURE $($object.Schema).$($object.Name) WITH ENCRYPTION AS RETURN 0;"
+                                $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER PROCEDURE [$($object.Schema)].[$($object.Name)] WITH ENCRYPTION AS RETURN 0;"
                             }
                             'UserDefinedFunction' {
 
                                 switch ($object.SubType) {
                                     'Inline' {
-                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION $($object.Schema).$($object.Name)() RETURNS TABLE WITH ENCRYPTION AS BEGIN RETURN SELECT 0 i END;"
+                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$($object.Schema)].[$($object.Name)]() RETURNS TABLE WITH ENCRYPTION AS BEGIN RETURN SELECT 0 i END;"
                                     }
                                     'Scalar' {
-                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION $($object.Schema).$($object.Name)() RETURNS INT WITH ENCRYPTION AS BEGIN RETURN 0 END;"
+                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$($object.Schema)].[$($object.Name)]() RETURNS INT WITH ENCRYPTION AS BEGIN RETURN 0 END;"
                                     }
                                     'Table' {
-                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION $($object.Schema).$($object.Name)() RETURNS @r TABLE(i INT) WITH ENCRYPTION AS BEGIN RETURN END;"
+                                        $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$($object.Schema)].[$($object.Name)]() RETURNS @r TABLE(i INT) WITH ENCRYPTION AS BEGIN RETURN END;"
                                     }
                                 }
                             }
                             'View' {
-                                $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER VIEW $($object.Schema).$($object.Name) WITH ENCRYPTION AS SELECT NULL AS [Value];"
+                                $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER VIEW [$($object.Schema)].[$($object.Name)] WITH ENCRYPTION AS SELECT NULL AS [Value];"
                             }
                         }
 
