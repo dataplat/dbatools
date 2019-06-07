@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaWindowsLogin {
     <#
     .SYNOPSIS
@@ -24,9 +23,6 @@ function Test-DbaWindowsLogin {
 
     .PARAMETER IgnoreDomains
         Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
-
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,8 +58,7 @@ function Test-DbaWindowsLogin {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
@@ -71,14 +66,10 @@ function Test-DbaWindowsLogin {
         [ValidateSet("LoginsOnly", "GroupsOnly", "None")]
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         if ($IgnoreDomains) {
             $IgnoreDomainsNormalized = $IgnoreDomains.ToUpper()
             Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -281,8 +272,5 @@ function Test-DbaWindowsLogin {
 
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }

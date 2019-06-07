@@ -94,7 +94,7 @@ function Format-DbaBackupInformation {
 
         This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

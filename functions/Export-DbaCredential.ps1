@@ -18,7 +18,10 @@ function Export-DbaCredential {
         Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the exported sql file.
+        The path to the directory that will contain the exported sql file.
+
+    .PARAMETER FilePath
+       The specific path to a file which will contain the output.
 
     .PARAMETER Identity
         The credentials to export. If unspecified, all credentials will be exported.
@@ -53,12 +56,13 @@ function Export-DbaCredential {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$Identity,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
         [Parameter(ValueFromPipeline)]
@@ -66,11 +70,14 @@ function Export-DbaCredential {
         [switch]$EnableException
     )
     begin {
+        $null = Test-ExportDirectory -Path $Path
         $serverArray = @()
         $credentialArray = @{}
         $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a Credential or specify a SqlInstance"
             return
@@ -115,7 +122,7 @@ function Export-DbaCredential {
                         $creds | Add-Member -MemberType NoteProperty -Name 'ExcludePassword' -Value $ExcludePassword
                         $credentialCollection.Add($credObject) | Out-Null
                     } else {
-                        if (!(Test-SqlSa -SqlInstance $server)) {
+                        if (-not (Test-SqlSa -SqlInstance $server)) {
                             Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
                         }
 
@@ -155,15 +162,10 @@ function Export-DbaCredential {
         $sql = @()
         foreach ($cred in $credentialCollection) {
             Write-Message -Level Verbose -Message "Credentials in object = $($cred.Count)"
-            if (-not (Test-Bound -ParameterName Path)) {
-                $time = (Get-Date -Format yyyMMddHHmmss)
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $serverName = $($cred[0].SqlInstance.replace('\', '$'))
-
-                $path = Join-DbaPath -Path $mydocs "$serverName-$time-credential.sql"
-            }
 
             foreach ($currentCred in $creds) {
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -ServerName $currentCred.SqlInstance -Type Sql
+
                 $key = $currentCred.SqlInstance + '::' + $currentCred.Name
                 if ( $credentialArray.ContainsKey($key) ) {
                     $name = $currentCred.Name.Replace("'", "''")
@@ -181,21 +183,15 @@ function Export-DbaCredential {
 
             try {
                 if ($Append) {
-                    Add-Content -Path $path -Value $sql
+                    Add-Content -Path $FilePath -Value $sql
                 } else {
-                    Set-Content -Path $path -Value $sql
+                    Set-Content -Path $FilePath -Value $sql
                 }
             } catch {
-                Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
-
-            Write-Message -Level Verbose -Message "Credentials exported to $path"
+            Get-ChildItem -Path $FilePath
+            Write-Message -Level Verbose -Message "Credentials exported to $FilePath"
         }
     }
-
-
-
-
-
-
 }

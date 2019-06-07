@@ -38,7 +38,6 @@ function Save-DbaDiagnosticQueryScript {
     [CmdletBinding()]
     param (
         [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-        [Alias('Silent')]
         [switch]$EnableException
     )
     function Get-WebData {

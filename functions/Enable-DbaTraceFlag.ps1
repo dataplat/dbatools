@@ -44,13 +44,11 @@ function Enable-DbaTraceFlag {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [int[]]$TraceFlag,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

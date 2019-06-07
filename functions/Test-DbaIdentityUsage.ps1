@@ -58,25 +58,17 @@ function Test-DbaIdentityUsage {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1)]
         [int]$Threshold = 0,
-        [parameter(Position = 2)]
-        [Alias("ExcludeSystemDb")]
         [switch]$ExcludeSystem,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter ExcludeSystem
-
         $sql = ";WITH CT_DT AS
         (
             SELECT 'tinyint' AS DataType, 0 AS MinValue ,255 AS MaxValue UNION

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
     <#
     .SYNOPSIS
@@ -124,7 +123,6 @@ function Set-DbaAgentSchedule {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -149,7 +147,6 @@ function Set-DbaAgentSchedule {
         [string]$EndDate,
         [string]$StartTime,
         [string]$EndTime,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

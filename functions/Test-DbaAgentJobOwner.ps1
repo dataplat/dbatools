@@ -24,9 +24,6 @@ function Test-DbaAgentJobOwner {
     .PARAMETER Login
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -64,7 +61,6 @@ function Test-DbaAgentJobOwner {
     [OutputType('System.Object[]')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
@@ -72,13 +68,10 @@ function Test-DbaAgentJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         #connect to the instance and set return array empty
         $return = @()
     }

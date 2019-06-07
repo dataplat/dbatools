@@ -16,6 +16,11 @@ namespace Sqlcollaborative.Dbatools.Discovery
         /// <summary>
         /// We shall search for SQL SPNs in active directory
         /// </summary>
+        DomainSPN = 2,
+
+        /// <summary>
+        /// We shall search for SQL SPNs in active directory
+        /// </summary>
         Domain = 2,
 
         /// <summary>
@@ -24,8 +29,13 @@ namespace Sqlcollaborative.Dbatools.Discovery
         DataSourceEnumeration = 4,
 
         /// <summary>
+        /// We shall search all enabled Windows Server Objects in active directory
+        /// </summary>
+        DomainServer = 8,
+
+        /// <summary>
         /// We shall use all tools in our control to find stuff
         /// </summary>
-        All = 7
+        All = 15
     }
 }

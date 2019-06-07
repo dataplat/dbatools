@@ -38,7 +38,7 @@ function Get-DbaDbccMemoryStatus {
         Get output of DBCC MEMORYSTATUS for instances "sqlcluster" and "sqlserver2012". Returns results in a single recordset.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus
+        PS C:\> Get-DbaRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus
 
         Get output of DBCC MEMORYSTATUS for all servers in Server Central Management Server
 

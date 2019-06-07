@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaDataTable {
     <#
     .SYNOPSIS
@@ -75,7 +74,6 @@ function ConvertTo-DbaDataTable {
             ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
-        [Parameter(Position = 1)]
         [ValidateSet("Ticks",
             "TotalDays",
             "TotalHours",
@@ -89,14 +87,12 @@ function ConvertTo-DbaDataTable {
         [string]$SizeType = "Int64",
         [switch]$IgnoreNull,
         [switch]$Raw,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         Write-Message -Level Debug -Message "TimeSpanType = $TimeSpanType | SizeType = $SizeType"
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Out-DbaDataTable
 
         function Convert-Type {
             # This function will check so that the type is an accepted type which could be used when inserting into a table.
@@ -310,10 +306,8 @@ function ConvertTo-DbaDataTable {
 
             #Handle rows already being System.Data.DataRow
             if ($object.GetType().FullName -eq 'System.Data.DataRow') {
-                if ($ShouldCreateColumns) {
-                    $datatable = $object.Table.Copy()
-                    $ShouldCreateColumns = $false
-                }
+                $datatable.Merge($object.Table)
+                $datatable = $datatable.DefaultView.ToTable($true)
                 continue
             }
 

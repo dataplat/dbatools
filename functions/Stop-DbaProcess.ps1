@@ -95,9 +95,7 @@ function Stop-DbaProcess {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,
@@ -107,15 +105,17 @@ function Stop-DbaProcess {
         [string[]]$Program,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
         [object[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if (!$InputObject) {
-            $InputObject = Get-DbaProcess @PSBoundParameters
+        if (-not $InputObject) {
+            $bound = $PSBoundParameters
+            $null = $bound.Remove("WhatIf")
+            $null = $bound.Remove("Confirm")
+            $InputObject = Get-DbaProcess @bound
         }
 
         foreach ($session in $InputObject) {

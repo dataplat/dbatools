@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerSystem {
     <#
     .SYNOPSIS
@@ -55,8 +54,7 @@ function Get-DbaComputerSystem {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$IncludeAws,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         foreach ($computer in $ComputerName) {

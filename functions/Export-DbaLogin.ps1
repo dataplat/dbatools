@@ -12,6 +12,9 @@ function Export-DbaLogin {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
+
     .PARAMETER Login
         The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
 
@@ -21,8 +24,29 @@ function Export-DbaLogin {
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
+    .PARAMETER ExcludeJobs
+        If this switch is enabled, Agent job ownership will not be exported.
+
+    .PARAMETER ExcludeDatabases
+        If this switch is enabled, mappings for databases will not be exported.
+
+   .PARAMETER DefaultDatabase
+        If this switch is enabled, all logins will be scripted with specified default database,
+        that could help to successfuly import logins on server that is missing default database for login.
+
     .PARAMETER Path
-        The file to write to.
+        Specifies the directory where the file or files will be exported.
+        Will default to Path.DbatoolsExport Configuration entry
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file. If left blank then filename based on Instance name and date is created.
+        If more than one instance is input then this parameter should be blank.
+
+    .PARAMETER Passthru
+        Output script to console
+
+    .PARAMETER BatchSeparator
+        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
 
     .PARAMETER NoClobber
         If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
@@ -30,35 +54,36 @@ function Export-DbaLogin {
     .PARAMETER Append
         If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
 
-    .PARAMETER ExcludeJobs
-        If this switch is enabled, Agent job ownership will not be exported.
+    .PARAMETER DestinationVersion
+        To say to which version the script should be generated. If not specified will use instance major version.
 
-    .PARAMETER ExcludeDatabases
-        If this switch is enabled, mappings for databases will not be exported.
+    .PARAMETER NoPrefix
+        Do not include a Prefix
+
+    .PARAMETER Encoding
+        Specifies the file encoding. The default is UTF8.
+
+        Valid values are:
+        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
+        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+        -- Byte: Encodes a set of characters into a sequence of bytes.
+        -- String: Uses the encoding type for a string.
+        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
+        -- UTF7: Encodes in UTF-7 format.
+        -- UTF8: Encodes in UTF-8 format.
+        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER ExcludeGoBatchSeparator
-        If specified, will NOT script the 'GO' batch separator.
-
-    .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use instance major version.
-
-    .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-    .PARAMETER DefaultDatabase
-        If this switch is enabled, all logins will be scripted with specified default database,
-        that could help to successfuly import logins on server that is missing default database for login.
 
     .NOTES
         Tags: Export, Login
@@ -112,59 +137,51 @@ function Export-DbaLogin {
         Exports login realcajun from sqlserver2008
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sqlserver2008 | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin
+        PS C:\> Get-DbaLogin -SqlInstance sqlserver2008, sqlserver2012  | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin
 
-        Exports all enabled logins from sqlserver2008
+        Exports all enabled logins from sqlserver2008 and sqlserver2008
 
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter()]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [Alias("Databases")]
         [object[]]$Database,
-        [Alias("OutFile", "FilePath", "FileName")]
-        [string]$Path,
+        [switch]$ExcludeJobs,
+        [switch]$ExcludeDatabases,
+        [string]$DefaultDatabase,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
-        [switch]$ExcludeDatabases,
-        [string]$DefaultDatabase,
-        [switch]$ExcludeJobs,
-        [Alias('Silent')]
-        [switch]$EnableException,
-        [switch]$ExcludeGoBatchSeparator,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion,
-        [Parameter(ValueFromPipeline)]
-        [object[]]$InputObject
+        [switch]$NoPrefix,
+        [switch]$Passthru,
+        [switch]$EnableException
     )
 
     begin {
-        if ($Path) {
-            if ($Path -notlike "*\*") {
-                $Path = ".\$Path"
-            }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Write-Message -Level Warning -Message "Parent directory $directory does not exist"
-            }
-        }
-
+        $null = Test-ExportDirectory -Path $Path
         $outsql = @()
+        $instanceArray = @()
+        $logonCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+
     }
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a login, database, or server or specify a SqlInstance"
@@ -267,7 +284,7 @@ function Export-DbaLogin {
                 }
 
                 if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
-                    if ($Path) {
+                    if ($Path -or $FilePath) {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
@@ -464,26 +481,54 @@ function Export-DbaLogin {
                         }
                     }
                 }
+                $loginObject = [PSCustomObject]@{
+                    Name     = $userName
+                    Instance = $server.Name
+                    Sql      = $outsql
+                }
+                $logonCollection.Add($loginObject) | Out-Null
+                $outsql = @()
             }
         }
     }
     end {
-        $sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
+        foreach ($login in $logonCollection) {
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
 
-        if ($ExcludeGoBatchSeparator) {
-            $sql = $outsql
-        } else {
-            $sql = $outsql -join "`r`nGO`r`n"
-            #add the final GO
-            $sql += "`r`nGO"
-        }
+            if ($BatchSeparator) {
+                $sql = $login.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $login.SQL
+            }
 
-        if ($Path) {
-            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-            Get-ChildItem $Path
-        } else {
-            $sql
+
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = $prefix + $sql
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                if ($instanceArray -notcontains $($login.Instance)) {
+                    if ($null -ne $prefix) {
+                        $sql = $prefix + $sql
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $login.Instance
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $instanceArray += $login.Instance
+                    Get-ChildItem $scriptPath
+                } else {
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append
+                }
+            } else {
+                $sql
+            }
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }

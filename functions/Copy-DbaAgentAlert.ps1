@@ -84,7 +84,6 @@ function Copy-DbaAgentAlert {
         [object[]]$ExcludeAlert,
         [switch]$IncludeDefaults,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -321,8 +320,5 @@ function Copy-DbaAgentAlert {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
     }
 }

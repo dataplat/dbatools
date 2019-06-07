@@ -82,10 +82,8 @@ function New-DbaDbUser {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin")]
     param(
         [parameter(Mandatory, Position = 1)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
@@ -95,7 +93,6 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -163,6 +160,10 @@ function New-DbaDbUser {
             }
             if (Test-Bound 'IncludeSystem' -Not) {
                 $databases = $databases | Where-Object IsSystemObject -NE $true
+            }
+
+            if ($null -eq $databases -or $databases.Count -eq 0) {
+                Stop-Function -Message "Error occurred while establishing a connection to $Database" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($db in $databases) {

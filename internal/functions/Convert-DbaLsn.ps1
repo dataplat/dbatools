@@ -21,7 +21,6 @@ function Convert-DbaLSN {
     [CmdletBinding()]
     param(
         [string]$LSN,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

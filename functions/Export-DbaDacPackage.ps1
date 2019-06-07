@@ -17,7 +17,10 @@ function Export-DbaDacPackage {
         Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 
     .PARAMETER Path
-        The directory where the .dacpac files will be exported to. Defaults to documents.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -88,14 +91,14 @@ function Export-DbaDacPackage {
     param
     (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
-        [string]$Path = "$home\Documents",
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [parameter(ParameterSetName = 'SMO')]
         [Alias('ExtractOptions', 'ExportOptions', 'DacExtractOptions', 'DacExportOptions', 'Options', 'Option')]
         [object]$DacOption,
@@ -109,29 +112,15 @@ function Export-DbaDacPackage {
         [string[]]$Table,
         [switch]$EnableException
     )
-
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
             return
-        }
-
-        if (-not (Test-Path $Path)) {
-            Write-Message -Level Verbose "Assuming that $Path is a file path"
-            $parentFolder = Split-Path $path -Parent
-            if (-not (Test-Path $parentFolder)) {
-                Stop-Function -Message "$parentFolder doesn't exist or access denied"
-                return
-            }
-            $leaf = Split-Path $path -Leaf
-            $fileName = Join-Path (Get-Item $parentFolder) $leaf
-        } else {
-            $fileItem = Get-Item $Path
-            if ($fileItem -is [System.IO.DirectoryInfo]) {
-                $parentFolder = $fileItem.FullName
-            } elseif ($fileItem -is [System.IO.FileInfo]) {
-                $fileName = $fileItem.FullName
-            }
         }
 
         if (-not $script:core) {
@@ -210,14 +199,16 @@ function Export-DbaDacPackage {
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbname"
                 }
-                if ($fileName) {
-                    $currentFileName = $fileName
-                } else {
-                    if ($Type -eq 'Dacpac') { $ext = 'dacpac' }
-                    elseif ($Type -eq 'Bacpac') { $ext = 'bacpac' }
-                    $currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.$ext"
-                }
+
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
+
+                if ($Type -eq 'Dacpac') {
+                    $ext = 'dacpac'
+                } elseif ($Type -eq 'Bacpac') {
+                    $ext = 'bacpac'
+                }
+
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $ext -ServerName $instance
 
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {
@@ -226,7 +217,7 @@ function Export-DbaDacPackage {
                     } catch {
                         Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
                     }
-                    if (!$DacOption) {
+                    if (-not $DacOption) {
                         $opts = New-DbaDacOption -Type $Type -Action Export
                     } else {
                         $opts = $DacOption
@@ -235,20 +226,20 @@ function Export-DbaDacPackage {
                     $null = $output = Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $EventArgs.Message.Message }
 
                     if ($Type -eq 'Dacpac') {
-                        Write-Message -Level Verbose -Message "Initiating Dacpac extract to $currentFileName"
+                        Write-Message -Level Verbose -Message "Initiating Dacpac extract to $FilePath"
                         #not sure how to extract that info from the existing DAC application, leaving 1.0.0.0 for now
                         $version = New-Object System.Version -ArgumentList '1.0.0.0'
                         try {
-                            $dacSvc.Extract($currentFileName, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
+                            $dacSvc.Extract($FilePath, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
                         } catch {
                             Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
                         } finally {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     } elseif ($Type -eq 'Bacpac') {
-                        Write-Message -Level Verbose -Message "Initiating Bacpac export to $currentFileName"
+                        Write-Message -Level Verbose -Message "Initiating Bacpac export to $FilePath"
                         try {
-                            $dacSvc.ExportBacpac($currentFileName, $dbname, $opts, $tblList, $null)
+                            $dacSvc.ExportBacpac($FilePath, $dbname, $opts, $tblList, $null)
                         } catch {
                             Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
                         } finally {
@@ -261,7 +252,7 @@ function Export-DbaDacPackage {
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }
                     $cmdConnString = $connstring.Replace('"', "'")
 
-                    $sqlPackageArgs = "/action:$action /tf:""$currentFileName"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
+                    $sqlPackageArgs = "/action:$action /tf:""$FilePath"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
@@ -292,14 +283,11 @@ function Export-DbaDacPackage {
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Database     = $dbname
-                    Path         = $currentFileName
+                    Path         = $FilePath
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     Result       = $finalResult
                 } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
     }
 }

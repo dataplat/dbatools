@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbPageInfo {
     <#
     .SYNOPSIS
@@ -60,7 +59,6 @@ function Get-DbaDbPageInfo {
     #>
     [CmdLetBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
