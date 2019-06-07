@@ -334,6 +334,7 @@ function Invoke-DbaDbDataMasking {
                             if ((($stepcounter++) % 100) -eq 0) {
                                 Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             }
+
                             $updates = $wheres = @()
                             $newValue = $null
 
