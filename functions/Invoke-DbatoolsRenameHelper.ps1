@@ -82,6 +82,8 @@ function Invoke-DbatoolsRenameHelper {
             NoSystemObjects    = 'ExcludeSystemObjects'
             NoSystemSpid       = 'ExcludeSystemSpids'
             UseLastBackups     = 'UseLastBackup'
+            PasswordExpiration = 'PasswordExpirationEnabled'
+            PasswordPolicy     = 'PasswordPolicyEnforced'
         }
 
         $commandrenames = @{
