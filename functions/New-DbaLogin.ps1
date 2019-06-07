@@ -152,11 +152,11 @@ function New-DbaLogin {
         [Alias("Expiration", "CheckExpiration")]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
-        [switch]$PasswordExpiration,
+        [switch]$PasswordExpirationEnabled,
         [Alias("Policy", "CheckPolicy")]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
-        [switch]$PasswordPolicy,
+        [switch]$PasswordPolicyEnforced,
         [Alias("Disable")]
         [switch]$Disabled,
         [switch]$NewSid,
