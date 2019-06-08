@@ -251,12 +251,8 @@ function Export-DbaScript {
                     } else {
                         if ($ScriptingOptionsObject) {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
-                                if (-not $ScriptingOptionsObject.AppendToFile) {
-                                    $ScriptingOptionsObject.AppendToFile = $true
-                                }
-                                if (-not $ScriptingOptionsObject.ToFileOnly) {
-                                    $ScriptingOptionsObject.ToFileOnly = $true
-                                }
+                                $ScriptingOptionsObject.AppendToFile = $true
+                                $ScriptingOptionsObject.ToFileOnly = $true
                                 if (-not $ScriptingOptionsObject.FileName) {
                                     $ScriptingOptionsObject.FileName = $FilePath
                                 }
