@@ -253,7 +253,9 @@ function Export-DbaScript {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
-                                $ScriptingOptionsObject.FileName = $FilePath
+                                if (-not  $ScriptingOptionsObject.FileName) {
+                                    $ScriptingOptionsObject.FileName = $FilePath
+                                }
                                 $object.Script($ScriptingOptionsObject)
                             } else {
                                 foreach ($scriptpart in $scripter.EnumScript($object)) {
