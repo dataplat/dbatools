@@ -230,9 +230,9 @@ function Export-DbaScript {
 
                     if ($passthru) {
                         if ($ScriptingOptionsObject) {
-                            foreach ($script in $scripter.EnumScript($object)) {
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                 }
                                 $scriptpart | Out-String
                             }
@@ -244,7 +244,7 @@ function Export-DbaScript {
                             }
 
                             if ($BatchSeparator -ne "") {
-                                $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                             }
                             $scriptpart  | Out-String
                         }
@@ -256,9 +256,9 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $FilePath
                                 $object.Script($ScriptingOptionsObject)
                             } else {
-                                foreach ($script in $scripter.EnumScript($object)) {
+                                foreach ($scriptpart in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                        $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                     }
                                     $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
                                 }
@@ -271,7 +271,7 @@ function Export-DbaScript {
                                 $scriptpart = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
-                                $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                             }
                             $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
                         }
