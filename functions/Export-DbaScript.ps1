@@ -230,50 +230,52 @@ function Export-DbaScript {
 
                     if ($passthru) {
                         if ($ScriptingOptionsObject) {
-                            foreach ($script in $scripter.EnumScript($object)) {
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $script = "$script`r`n$BatchSeparator`r`n"
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                 }
-                                $script | Out-String
+                                $scriptpart | Out-String
                             }
                         } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $script = $object.ScriptCreate().GetScript()
+                                $scriptpart = $object.ScriptCreate().GetScript()
                             } else {
-                                $script = $object.Script()
+                                $scriptpart = $object.Script()
                             }
 
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`r`n$BatchSeparator`r`n"
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                             }
-                            $script  | Out-String
+                            $scriptpart  | Out-String
                         }
                     } else {
                         if ($ScriptingOptionsObject) {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
-                                $ScriptingOptionsObject.FileName = $FilePath
+                                if (-not  $ScriptingOptionsObject.FileName) {
+                                    $ScriptingOptionsObject.FileName = $FilePath
+                                }
                                 $object.Script($ScriptingOptionsObject)
                             } else {
-                                foreach ($script in $scripter.EnumScript($object)) {
+                                foreach ($scriptpart in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $script = "$script`r`n$BatchSeparator`r`n"
+                                        $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                     }
-                                    $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
+                                    $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
                                 }
                             }
 
                         } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $script = $object.ScriptCreate().GetScript()
+                                $scriptpart = $object.ScriptCreate().GetScript()
                             } else {
-                                $script = $object.Script()
+                                $scriptpart = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`r`n$BatchSeparator`r`n"
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                             }
-                            $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
+                            $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
                         }
                     }
 
