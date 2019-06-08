@@ -232,54 +232,48 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                    $script = "$script`r`n$BatchSeparator`r`n"
                                 }
-                                $scriptpart | Out-String
+                                $script | Out-String
                             }
                         } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $scriptpart = $object.ScriptCreate().GetScript()
+                                $script = $object.ScriptCreate().GetScript()
                             } else {
-                                $scriptpart = $object.Script()
+                                $script = $object.Script()
                             }
 
                             if ($BatchSeparator -ne "") {
-                                $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
-                            $scriptpart  | Out-String
+                            $script  | Out-String
                         }
                     } else {
                         if ($ScriptingOptionsObject) {
                             if ($ScriptingOptionsObject.ScriptBatchTerminator) {
-                                if (-not $ScriptingOptionsObject.AppendToFile) {
-                                    $ScriptingOptionsObject.AppendToFile = $true
-                                }
-                                if (-not $ScriptingOptionsObject.ToFileOnly) {
-                                    $ScriptingOptionsObject.ToFileOnly = $true
-                                }
-                                if (-not $ScriptingOptionsObject.FileName) {
-                                    $ScriptingOptionsObject.FileName = $FilePath
-                                }
+                                $ScriptingOptionsObject.AppendToFile = $true
+                                $ScriptingOptionsObject.ToFileOnly = $true
+                                $ScriptingOptionsObject.FileName = $FilePath
                                 $object.Script($ScriptingOptionsObject)
                             } else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                        $script = "$script`r`n$BatchSeparator`r`n"
                                     }
-                                    $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
+                                    $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
                                 }
                             }
 
                         } else {
                             if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $scriptpart = $object.ScriptCreate().GetScript()
+                                $script = $object.ScriptCreate().GetScript()
                             } else {
-                                $scriptpart = $object.Script()
+                                $script = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
-                                $scriptpart = "$script`r`n$BatchSeparator`r`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
-                            $scriptpart | Out-File -FilePath $FilePath -Encoding $encoding -Append
+                            $script | Out-File -FilePath $FilePath -Encoding $encoding -Append
                         }
                     }
 
