@@ -125,7 +125,7 @@ function Get-DbaCpuRingBuffer {
             Write-Message -Level Verbose -Message "Executing Sql Staement: $sql"
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName            = $server.NetName
+                    ComputerName            = $server.ComputerName
                     InstanceName            = $server.ServiceName
                     SqlInstance             = $server.DomainInstanceName
                     RecordId                = $row.record_id
