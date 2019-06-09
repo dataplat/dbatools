@@ -25,7 +25,7 @@ function Test-DbaMaskingConfiguration {
         If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
-        Tags: Migration, Mail
+        Tags: Data masking, Testing
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io
@@ -57,9 +57,18 @@ function Test-DbaMaskingConfiguration {
 
         # Get all the items that should be processed
         try {
-            $tables = Get-Content -Path $FilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            $json = Get-Content -Path $FilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         } catch {
             Stop-Function -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
+        }
+
+        if (-not $json.Type) {
+            Stop-Function -Message "Configuration file does not contain a type. This is either an older configuration or an invalid one. Please make sure that the json file contains '`"Type`": `"MaskingConfiguration`", '" -Target $json.Type
+            return
+        }
+
+        if ($json.Type -ne "MaskingConfiguration") {
+            Stop-Function -Message "Configuration file is not a valid masking configuration. Type found '$($json.Type)'" -Target $json.Type
             return
         }
     }
@@ -69,7 +78,7 @@ function Test-DbaMaskingConfiguration {
 
         $errors = @()
 
-        foreach ($table in $tables.Tables) {
+        foreach ($table in $json.Tables) {
 
             foreach ($column in $table.Columns) {
 
