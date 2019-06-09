@@ -152,6 +152,14 @@ function Invoke-DbaDbDataMasking {
                 return
             }
 
+            # Test the configuration file
+            try {
+                Test-DbaDataMaskingConfiguration -FilePath $FilePath -EnableException
+            } catch {
+                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
+                return
+            }
+
             # Get all the items that should be processed
             try {
                 $tables = Get-Content -Path $FilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
