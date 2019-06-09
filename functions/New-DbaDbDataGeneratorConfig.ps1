@@ -340,6 +340,7 @@ function New-DbaDbDataGeneratorConfig {
             if ($tables) {
                 $results += [PSCustomObject]@{
                     Name   = $db.Name
+                    Type   = "DataGenerationConfiguration"
                     Tables = $tables
                 }
             } else {

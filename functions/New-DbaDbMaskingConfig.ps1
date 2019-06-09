@@ -452,6 +452,7 @@ function New-DbaDbMaskingConfig {
             if ($tables) {
                 $results += [PSCustomObject]@{
                     Name   = $db.Name
+                    Type   = "MaskingConfiguration"
                     Tables = $tables
                 }
             } else {
