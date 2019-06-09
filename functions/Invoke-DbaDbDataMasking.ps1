@@ -544,9 +544,9 @@ function Invoke-DbaDbDataMasking {
                                             $newValue = $null
 
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Format $columnComposite.Format -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype  -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype -CharacterString $charstring -Format $columnComposite.Format -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
                                             }
 
                                         } catch {
