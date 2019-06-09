@@ -351,7 +351,7 @@ function New-DbaDbDataGeneratorConfig {
         # Write the data to the Path
         if ($results) {
             try {
-                $temppath = "$Path\$($server.Name.Replace('\', '$')).$($db.Name).tables.json"
+                $temppath = "$Path\$($server.Name.Replace('\', '$')).$($db.Name).DataGenerationConfig.json"
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
