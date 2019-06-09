@@ -1,4 +1,4 @@
-function Test-DbaMaskingConfiguration {
+function Test-DbaDataMaskingConfiguration {
     <#
     .SYNOPSIS
         Checks the masking configuration if it's valid
@@ -35,7 +35,7 @@ function Test-DbaMaskingConfiguration {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaMaskingConfiguration
+        https://dbatools.io/Test-DbaDataMaskingConfiguration
 
     .EXAMPLE
 
@@ -63,11 +63,11 @@ function Test-DbaMaskingConfiguration {
         }
 
         if (-not $json.Type) {
-            Stop-Function -Message "Configuration file does not contain a type. This is either an older configuration or an invalid one. Please make sure that the json file contains '`"Type`": `"MaskingConfiguration`", '" -Target $json.Type
+            Stop-Function -Message "Configuration file does not contain a type. This is either an older configuration or an invalid one. Please make sure that the json file contains '`"Type`": `"DataMaskingConfiguration`", '" -Target $json.Type
             return
         }
 
-        if ($json.Type -ne "MaskingConfiguration") {
+        if ($json.Type -ne "DataMaskingConfiguration") {
             Stop-Function -Message "Configuration file is not a valid masking configuration. Type found '$($json.Type)'" -Target $json.Type
             return
         }
