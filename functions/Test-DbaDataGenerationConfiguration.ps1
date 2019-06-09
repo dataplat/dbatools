@@ -1,10 +1,10 @@
 function Test-DbaDataGenerationConfiguration {
     <#
     .SYNOPSIS
-        Checks the masking configuration if it's valid
+        Checks the data generation configuration if it's valid
 
     .DESCRIPTION
-        When you're dealing with large masking configurations, things can get complicated and messy.
+        When you're dealing with large data generation configurations, things can get complicated and messy.
         This function will test for a range of rules and returns all the tables and columns that contain errors.
 
     .PARAMETER FilePath
