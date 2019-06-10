@@ -72,6 +72,8 @@ function New-DbaAgentJobCategory {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Check the category type
         if (-not $CategoryType) {
             # Setting category type to default

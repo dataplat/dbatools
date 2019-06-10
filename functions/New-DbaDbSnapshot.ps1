@@ -91,7 +91,7 @@ function New-DbaDbSnapshot {
 
     #>
 
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -108,6 +108,7 @@ function New-DbaDbSnapshot {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
 
         $NoSupportForSnap = @('model', 'master', 'tempdb')
         # Evaluate the default suffix here for naming consistency
