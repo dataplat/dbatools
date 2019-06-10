@@ -71,7 +71,7 @@ function New-DbaDbDataGeneratorConfig {
         Process only table Customer with all the columns
 
     #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -360,17 +360,17 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
+                if (Test-Path -Path $temppath -PathType Leaf) {
+                    if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
+                        Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                    }
+                } else {
+                    Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                    Get-ChildItem -Path $temppath
+                }
             } catch {
                 Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
             }
-        } else {
-            Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
-        }
-    }
-}           }
         } else {
             Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
         }
