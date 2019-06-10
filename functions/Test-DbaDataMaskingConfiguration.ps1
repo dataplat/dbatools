@@ -88,6 +88,7 @@ function Test-DbaDataMaskingConfiguration {
 
             foreach ($column in $table.Columns) {
 
+                # Test the column properties
                 $columnProperties = $column | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
                 $compareResult = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
 
