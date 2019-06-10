@@ -174,7 +174,7 @@ function Test-DbaDataMaskingConfiguration {
 
         } # End for each table
 
-        $errors
+        return $errors
     } # End process
 
 
