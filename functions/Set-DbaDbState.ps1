@@ -455,7 +455,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Where {$_} | Get-Unique
+                $warn = $warn | Where-Object {$_} | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null
