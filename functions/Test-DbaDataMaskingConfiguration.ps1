@@ -71,6 +71,10 @@ function Test-DbaDataMaskingConfiguration {
             Stop-Function -Message "Configuration file is not a valid masking configuration. Type found '$($json.Type)'" -Target $json.Type
             return
         }
+
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+
+        $randomizerTypes = Get-DbaRandomizedType
     }
 
     process {
@@ -82,8 +86,37 @@ function Test-DbaDataMaskingConfiguration {
 
             foreach ($column in $table.Columns) {
 
-                # Test date types
+                # Test column type
+                if ($column.SubType -notin $randomizerTypes.SubType) {
+                    $errors += [PSCustomObject]@{
+                        Table  = $table.Name
+                        Column = $column.Name
+                        Value  = $column.SubType
+                        Error  = "ColumnType is not of a supported data type "
+                    }
+                }
 
+                # Test masking type
+                if ($column.MaskingType -notin $randomizerTypes.Type) {
+                    $errors += [PSCustomObject]@{
+                        Table  = $table.Name
+                        Column = $column.Name
+                        Value  = $column.MaskingType
+                        Error  = "MaskingType is not valid"
+                    }
+                }
+
+                # Test masking sub type
+                if ($column.SubType -notin $randomizerTypes.SubType) {
+                    $errors += [PSCustomObject]@{
+                        Table  = $table.Name
+                        Column = $column.Name
+                        Value  = $column.SubType
+                        Error  = "SubType is not valid"
+                    }
+                }
+
+                # Test date types
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
                     if ($column.MaskingType -ne 'Date') {
