@@ -87,11 +87,11 @@ function Test-DbaDataMaskingConfiguration {
             foreach ($column in $table.Columns) {
 
                 # Test column type
-                if ($column.SubType -notin $randomizerTypes.SubType) {
+                if ($column.ColumnType -notin $supportedDataTypes) {
                     $errors += [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
-                        Value  = $column.SubType
+                        Value  = $column.ColumnType
                         Error  = "ColumnType is not of a supported data type "
                     }
                 }
