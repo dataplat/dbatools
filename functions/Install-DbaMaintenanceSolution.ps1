@@ -139,6 +139,8 @@ function Install-DbaMaintenanceSolution {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         if ($InstallJobs -and $Solution -ne 'All') {
             Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
             return
