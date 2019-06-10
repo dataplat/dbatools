@@ -172,9 +172,9 @@ function Add-DbaAgDatabase {
 
                 if (!($agreplica)) {
                     Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
-                }			
-				
-				
+                }
+
+
                 if ($SeedingMode) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
