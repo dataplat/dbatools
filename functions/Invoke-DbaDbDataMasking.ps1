@@ -146,12 +146,6 @@ function Invoke-DbaDbDataMasking {
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
         } else {
-            # Check if the destination is accessible
-            if (-not (Test-Path -Path $FilePath)) {
-                Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
-                return
-            }
-
             # Test the configuration file
             try {
                 Test-DbaDataMaskingConfiguration -FilePath $FilePath -EnableException
