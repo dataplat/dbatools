@@ -100,7 +100,9 @@ function Test-DbaDataMaskingConfiguration {
                             Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
-                    } elseif ($compareResult.SideIndicator -contains "=>") {
+                    }
+
+                    if ($compareResult.SideIndicator -contains "=>") {
                         $errors += [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
