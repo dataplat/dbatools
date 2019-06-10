@@ -59,7 +59,8 @@ $TestsRunGroups = @{
         'Set-DbaDbOwner',
         'Test-DbaManagementObject',
         'Test-DbaMaxDop',
-        'New-DbaLogin'
+        'New-DbaLogin',
+        'New-DbaDbUser'
     )
     # do not run everywhere
     "disabled"          = @()
