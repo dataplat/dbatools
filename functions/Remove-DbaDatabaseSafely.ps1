@@ -109,7 +109,7 @@ function Remove-DbaDatabaseSafely {
         If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default", ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
@@ -132,6 +132,8 @@ function Remove-DbaDatabaseSafely {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         if (!$AllDatabases -and !$Database) {
             Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -ErrorRecord $_
             return
