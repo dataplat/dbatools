@@ -70,9 +70,6 @@ function Set-DbaAgentJobCategory {
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
 
-        # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
-
         # Check if multiple categories are being changed
         if ($Category.Count -gt 1 -and $NewName.Count -eq 1) {
             Stop-Function -Message "You cannot rename multiple jobs to the same name" -Target $instance
@@ -81,7 +78,7 @@ function Set-DbaAgentJobCategory {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -109,7 +106,6 @@ function Set-DbaAgentJobCategory {
                         Write-Message -Message "Changing job category $cat" -Level Verbose
 
                         # Get and set the original and new values
-                        $originalCategoryName = $currentCategory.Name
                         $newCategoryName = $null
 
                         # Check if the job category needs to be renamed
