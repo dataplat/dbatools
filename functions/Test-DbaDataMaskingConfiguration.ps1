@@ -76,6 +76,8 @@ function Test-DbaDataMaskingConfiguration {
 
         $randomizerTypes = Get-DbaRandomizedType
 
+        $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
+
         $errors = @()
     }
 
@@ -85,6 +87,27 @@ function Test-DbaDataMaskingConfiguration {
         foreach ($table in $json.Tables) {
 
             foreach ($column in $table.Columns) {
+
+                $columnProperties = $column | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
+                $compareResult = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
+
+                if ($null -ne $compareResult) {
+                    if ($compareResult.SideIndicator -contains "<=") {
+                        $errors += [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                            Error  = "The column does not contain all the required properties. Please check the column "
+                        }
+                    } elseif ($compareResult.SideIndicator -contains "=>") {
+                        $errors += [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                            Error  = "The column contains a property that is not in the required properties. Please check the column"
+                        }
+                    }
+                }
 
                 # Test column type
                 if ($column.ColumnType -notin $supportedDataTypes) {
