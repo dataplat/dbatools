@@ -38,7 +38,9 @@ function Test-DbaDataGenerationConfiguration {
         https://dbatools.io/Test-DbaDataGenerationConfiguration
 
     .EXAMPLE
+        Test-DbaDataGenerationConfiguration -FilePath C:\temp\_datamasking\db1.json
 
+        Test the configuration file
     #>
 
     [cmdletbinding()]

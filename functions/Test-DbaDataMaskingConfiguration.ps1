@@ -38,7 +38,9 @@ function Test-DbaDataMaskingConfiguration {
         https://dbatools.io/Test-DbaDataMaskingConfiguration
 
     .EXAMPLE
+        Test-DbaDataMaskingConfiguration -FilePath C:\temp\_datamasking\db1.json
 
+        Test the configuration file
     #>
 
     [cmdletbinding()]
