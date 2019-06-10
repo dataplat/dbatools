@@ -37,7 +37,7 @@ function New-DbaDiagnosticAdsNotebook {
     .NOTES
         Tags: Notebooks, Azure Data Studio
         Author: Gianluca Sartori (@spaghettidba)
--
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -60,7 +60,7 @@ function New-DbaDiagnosticAdsNotebook {
 
         Creates a new Jupyter Notebook named "myNotebook" based on the version "2017" of diagnostic queries, including database-specific queries
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param(
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
