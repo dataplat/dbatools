@@ -65,7 +65,7 @@ function New-DbaDbDataGeneratorConfig {
         Process only table Customer with all the columns
 
     #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -354,9 +354,10 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
+                if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
+                    Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                    Get-ChildItem -Path $temppath
+                }
             } catch {
                 Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
             }
