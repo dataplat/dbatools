@@ -180,7 +180,7 @@ function Copy-DbaDatabase {
 
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
     #>
-    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [DbaInstanceParameter]$Source,
@@ -259,6 +259,8 @@ function Copy-DbaDatabase {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
 
         function Join-Path {
             <#
