@@ -58,7 +58,8 @@ $TestsRunGroups = @{
         'Remove-DbaDatabaseSafely', # strange pester issue
         'Set-DbaDbOwner',
         'Test-DbaManagementObject',
-        'Test-DbaMaxDop'
+        'Test-DbaMaxDop',
+        'New-DbaLogin'
     )
     # do not run everywhere
     "disabled"          = @()

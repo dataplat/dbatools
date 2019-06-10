@@ -149,9 +149,7 @@ function Reset-DbaAdmin {
             }
         }
         #endregion Utility functions
-        if ($Force) {
-            $ConfirmPreference = "none"
-        }
+        if ($Force) {$ConfirmPreference = 'none'}
 
         if ($SqlCredential) {
             $Login = $SqlCredential.UserName

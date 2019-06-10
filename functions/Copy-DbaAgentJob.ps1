@@ -80,7 +80,7 @@ function Copy-DbaAgentJob {
 
         Copies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -105,6 +105,7 @@ function Copy-DbaAgentJob {
                 return
             }
         }
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

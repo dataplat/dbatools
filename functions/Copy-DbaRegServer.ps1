@@ -73,7 +73,7 @@ function Copy-DbaRegServer {
         If SwitchServerName is not specified, "sqlcluster" will be skipped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -88,6 +88,8 @@ function Copy-DbaRegServer {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Invoke-ParseServerGroup {
             [cmdletbinding()]
             param (

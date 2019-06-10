@@ -85,6 +85,8 @@ function Install-DbaSqlWatch {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $stepCounter = 0
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"

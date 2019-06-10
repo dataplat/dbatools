@@ -79,7 +79,7 @@ function New-DbaDbUser {
         Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
     param(
         [parameter(Mandatory, Position = 1)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -97,6 +97,8 @@ function New-DbaDbUser {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Test-SqlLoginInDatabase {
             param(
                 [Microsoft.SqlServer.Management.Smo.Login]$Login,

@@ -115,7 +115,7 @@ function Copy-DbaLogin {
         Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -141,6 +141,7 @@ function Copy-DbaLogin {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name

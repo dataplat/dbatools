@@ -54,7 +54,7 @@ function Copy-DbaSysDbUserObject {
         Copies user objects from source to destination
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -69,6 +69,8 @@ function Copy-DbaSysDbUserObject {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function get-sqltypename ($type) {
             switch ($type) {
                 "VIEW" { "view" }
