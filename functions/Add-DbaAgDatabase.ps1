@@ -136,104 +136,104 @@ function Add-DbaAgDatabase {
             if (-not $Secondary) {
                 try {
                     $secondaryInstances = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).name | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
-        } catch {
-            Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
-        }
-    } else {
-        $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
-    }
-
-    if ($SeedingMode -ne "Automatic") {
-        if ((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
-            Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
-        }
-    }
-
-    if ($SeedingMode -eq "Automatic") {
-        # first check
-        if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-            $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
-        }
-    }
-
-    if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
-        try {
-            $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-            # something is up with .net create(), force a stop
-            Invoke-Create -Object $agdb
-            Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
-        } catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-        }
-    }
-
-    foreach ($secondaryInstance in $secondaryInstances) {
-
-        $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
-
-        if (!($agreplica)) {
-            Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
-        }
-
-        if ($SeedingMode) {
-            $agreplica.SeedingMode = $SeedingMode
-            $agreplica.Alter()
-        }
-        $agreplica.Refresh()
-        $SeedingModeReplica = $agreplica.SeedingMode
-
-        $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
-
-        if ($SeedingModeReplica -ne 'Automatic') {
-            try {
-                if (-not $allbackups[$db]) {
-                    if ($UseLastBackup) {
-                        $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                    } else {
-                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                $allbackups[$db] = $fullbackup, $logbackup
-            }
-            Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
-        }
-        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
-            # keep going to ensure output is shown even if dbs aren't added well.
-            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance.Name -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-    }
-} catch {
-    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-}
-}
-
-$replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance.Name -Database $db.Name -AvailabilityGroup $ag.Name -SqlCredential $SecondarySqlCredential
-if (-not $replicadb.IsJoined) {
-    if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
-        $timeout = 1
-        do {
-            try {
-                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
-                $timeout++
-                if ($timeout -ne 1) {
-                    Start-Sleep -Seconds 3
+                } catch {
+                    Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
                 }
-                $replicadb.Refresh()
-                $replicadb.JoinAvailablityGroup()
-            } catch {
-                Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
+            } else {
+                $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
             }
-        } while (-not $replicadb.IsJoined -and $timeout -lt 10)
-        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
 
-        if ($replicadb.IsJoined) {
-            $replicadb
-        } else {
-            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
+            if ($SeedingMode -ne "Automatic") {
+                if ((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                    Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
+                }
+            }
+
+            if ($SeedingMode -eq "Automatic") {
+                # first check
+                if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
+                }
+            }
+
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
+                try {
+                    $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
+                    # something is up with .net create(), force a stop
+                    Invoke-Create -Object $agdb
+                    Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+            }
+
+            foreach ($secondaryInstance in $secondaryInstances) {
+
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
+
+                if (!($agreplica)) {
+                    Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
+                }
+
+                if ($SeedingMode) {
+                    $agreplica.SeedingMode = $SeedingMode
+                    $agreplica.Alter()
+                }
+                $agreplica.Refresh()
+                $SeedingModeReplica = $agreplica.SeedingMode
+
+                $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
+
+                if ($SeedingModeReplica -ne 'Automatic') {
+                    try {
+                        if (-not $allbackups[$db]) {
+                            if ($UseLastBackup) {
+                                $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
+                            } else {
+                                $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                                $allbackups[$db] = $fullbackup, $logbackup
+                            }
+                            Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
+                        }
+                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
+                            # keep going to ensure output is shown even if dbs aren't added well.
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance.Name -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    }
+                }
+
+                $replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance.Name -Database $db.Name -AvailabilityGroup $ag.Name -SqlCredential $SecondarySqlCredential
+                if (-not $replicadb.IsJoined) {
+                    if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
+                        $timeout = 1
+                        do {
+                            try {
+                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
+                                $timeout++
+                                if ($timeout -ne 1) {
+                                    Start-Sleep -Seconds 3
+                                }
+                                $replicadb.Refresh()
+                                $replicadb.JoinAvailablityGroup()
+                            } catch {
+                                Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
+                            }
+                        } while (-not $replicadb.IsJoined -and $timeout -lt 10)
+                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
+
+                        if ($replicadb.IsJoined) {
+                            $replicadb
+                        } else {
+                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
+                        }
+                    }
+                } else {
+                    $replicadb
+                }
+            }
         }
     }
-} else {
-    $replicadb
-}
-}
-}
-}
 }
