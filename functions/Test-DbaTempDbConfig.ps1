@@ -1,4 +1,4 @@
-function Test-DbaTempdbConfig {
+function Test-DbaTempDbConfig {
     <#
     .SYNOPSIS
         Evaluates tempdb against several rules to match best practices.
@@ -37,20 +37,20 @@ function Test-DbaTempdbConfig {
         Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
     .LINK
-        https://dbatools.io/Test-DbaTempdbConfig
+        https://dbatools.io/Test-DbaTempddbConfig
 
     .EXAMPLE
-        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost
+        PS C:\> Test-DbaTempDbConfig -SqlInstance localhost
 
         Checks tempdb on the localhost machine.
 
     .EXAMPLE
-        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost | Select-Object *
+        PS C:\> Test-DbaTempDbConfig -SqlInstance localhost | Select-Object *
 
         Checks tempdb on the localhost machine. All rest results are shown.
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaTempDbConfig | Select-Object * | Out-GridView
 
         Checks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.
     #>
@@ -180,7 +180,7 @@ function Test-DbaTempdbConfig {
                 $equalSizeDataFiles = $false
             }
 
-            $value = [PSCustomObject]@{
+            [PSCustomObject]@{
                 ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
