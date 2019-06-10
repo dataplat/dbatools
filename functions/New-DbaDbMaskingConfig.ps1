@@ -76,7 +76,7 @@ function New-DbaDbMaskingConfig {
         Process only table Customer and only the column named "City"
 
     #>
-    [CmdLetBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
