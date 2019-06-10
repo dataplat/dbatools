@@ -75,12 +75,12 @@ function Test-DbaDataMaskingConfiguration {
         $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $randomizerTypes = Get-DbaRandomizedType
+
+        $errors = @()
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
-
-        $errors = @()
 
         foreach ($table in $json.Tables) {
 
@@ -177,4 +177,12 @@ function Test-DbaDataMaskingConfiguration {
         $errors
     } # End process
 
+
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        if ($errors.Count -ge 1) {
+            Stop-Function -Message "The configuration file contains errors. Please check the configuration file" -Target $errors
+        }
+    }
 }
