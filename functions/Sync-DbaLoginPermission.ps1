@@ -86,11 +86,6 @@ function Sync-DbaLoginPermission {
                 [array]$Exclude
             )
 
-            try {
-                $sa = Get-SqlSaLogin -SqlInstance $destServer -ErrorAction Stop
-            } catch {
-                $sa = "sa"
-            }
             $stepCounter = 0
             foreach ($sourceLogin in $alllogins) {
 
