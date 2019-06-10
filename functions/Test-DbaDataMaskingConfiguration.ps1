@@ -92,7 +92,7 @@ function Test-DbaDataMaskingConfiguration {
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.ColumnType
-                        Error  = "ColumnType is not of a supported data type "
+                        Error  = "ColumnType is not a supported data type "
                     }
                 }
 
