@@ -134,7 +134,7 @@ function Add-DbaAgDatabase {
 
             if (-not $Secondary) {
                 try {
-                    $secondaryInstances = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).name | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
+                    $secondaryInstances = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
                 } catch {
                     Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
                 }
