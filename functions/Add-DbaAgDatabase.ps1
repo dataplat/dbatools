@@ -133,9 +133,13 @@ function Add-DbaAgDatabase {
             }
 
             if (-not $Secondary) {
-                $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary
+                try {
+                    $secondaryInstances = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).name | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
+                } catch {
+                    Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
+                }
             } else {
-                $secondaryReplicas = Get-DbaAgReplica -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.Name | Where-Object Role -eq Secondary
+                $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
             }
 
             if ($SeedingMode -ne "Automatic") {
@@ -162,10 +166,15 @@ function Add-DbaAgDatabase {
                 }
             }
 
-            foreach ($replica in $secondaryReplicas) {
+            foreach ($secondaryInstance in $secondaryInstances) {
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $replica.Name
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
 
+                if (!($agreplica)) {
+                    Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
+                }			
+				
+				
                 if ($SeedingMode) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
@@ -189,20 +198,20 @@ function Add-DbaAgDatabase {
                         }
                         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
-                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $replica.Parent.Parent -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
 
-                $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
+                $replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance -Database $db.Name -AvailabilityGroup $ag.Name
                 if (-not $replicadb.IsJoined) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {
                             try {
-                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($replica.Name)" -Id 1 -PercentComplete ($timeout * 10)
+                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
                                 $timeout++
                                 if ($timeout -ne 1) {
                                     Start-Sleep -Seconds 3
@@ -213,12 +222,12 @@ function Add-DbaAgDatabase {
                                 Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
                             }
                         } while (-not $replicadb.IsJoined -and $timeout -lt 10)
-                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($replica.Name)" -Id 1 -Complete
+                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
 
                         if ($replicadb.IsJoined) {
                             $replicadb
                         } else {
-                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($replica.Name)"
+                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
                         }
                     }
                 } else {
