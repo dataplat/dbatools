@@ -167,12 +167,12 @@ function Add-DbaAgDatabase {
         }
     }
 
-    foreach ($instance in $secondaryInstances) {
+    foreach ($secondaryInstance in $secondaryInstances) {
 
-        $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $instance.NetName
+        $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
 
         if (!($agreplica)) {
-            Stop-Function -Continue -Message "Could not connect to instance $($instance.Name)"
+            Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
         }
 
         if ($SeedingMode) {
@@ -198,20 +198,20 @@ function Add-DbaAgDatabase {
         }
         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
             # keep going to ensure output is shown even if dbs aren't added well.
-            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $instance.Name -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance.Name -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
     }
 } catch {
     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
 }
 }
 
-$replicadb = Get-DbaAgDatabase -SqlInstance $instance.Name -Database $db.Name -AvailabilityGroup $ag.Name -SqlCredential $SecondarySqlCredential
+$replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance.Name -Database $db.Name -AvailabilityGroup $ag.Name -SqlCredential $SecondarySqlCredential
 if (-not $replicadb.IsJoined) {
     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
         $timeout = 1
         do {
             try {
-                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($instance.Name)" -Id 1 -PercentComplete ($timeout * 10)
+                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
                 $timeout++
                 if ($timeout -ne 1) {
                     Start-Sleep -Seconds 3
@@ -222,12 +222,12 @@ if (-not $replicadb.IsJoined) {
                 Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
             }
         } while (-not $replicadb.IsJoined -and $timeout -lt 10)
-        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($instance.Name)" -Id 1 -Complete
+        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
 
         if ($replicadb.IsJoined) {
             $replicadb
         } else {
-            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($instance.Name)"
+            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
         }
     }
 } else {
