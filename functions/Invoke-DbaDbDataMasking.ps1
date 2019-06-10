@@ -603,9 +603,6 @@ function Invoke-DbaDbDataMasking {
 
                     # Empty the unique values array
                     $uniqueValues = $null
-
-
-
                 }
 
                 try {
