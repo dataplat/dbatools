@@ -68,6 +68,8 @@ function Set-DbaAgentJobCategory {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Create array list to hold the results
         $collection = New-Object System.Collections.ArrayList
 

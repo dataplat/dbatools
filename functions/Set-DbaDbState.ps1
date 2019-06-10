@@ -141,6 +141,8 @@ function Set-DbaDbState {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Get-WrongCombo($optset, $allparams) {
             $x = 0
             foreach ($opt in $optset) {
