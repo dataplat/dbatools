@@ -192,6 +192,9 @@ function Set-DbaStartupParameter {
         [switch]$Force,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         if (-not $Offline) {
             try {

@@ -82,7 +82,7 @@ function Import-DbaSpConfigure {
         Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(ParameterSetName = "ServerCopy")]
         [DbaInstanceParameter]$Source,
@@ -144,6 +144,7 @@ function Import-DbaSpConfigure {
             }
         }
 
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if ($Path.length -eq 0) {

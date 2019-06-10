@@ -83,7 +83,7 @@ function Invoke-DbaBalanceDataFiles {
         By supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory)]
@@ -96,7 +96,9 @@ function Invoke-DbaBalanceDataFiles {
         [switch]$EnableException,
         [switch]$Force
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         Write-Message -Message "Starting balancing out data files" -Level Verbose

@@ -98,6 +98,7 @@ function Copy-DbaAgentSchedule {
                 $InputObject = Get-DbaAgentSchedule -SqlInstance $sourceServer -Schedule $Schedule -Id $Id
             }
         }
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

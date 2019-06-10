@@ -79,7 +79,7 @@ function Copy-DbaCredential {
         Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -106,6 +106,8 @@ function Copy-DbaCredential {
             return
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+
+        if ($Force) {$ConfirmPreference = 'none'}
 
         function Copy-Credential {
             <#

@@ -68,7 +68,7 @@ function Copy-DbaLinkedServer {
         Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory)]
@@ -89,6 +89,9 @@ function Copy-DbaLinkedServer {
             return
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Copy-DbaLinkedServers {
             param (
                 [string[]]$LinkedServer,

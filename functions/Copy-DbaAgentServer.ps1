@@ -69,7 +69,7 @@ function Copy-DbaAgentServer {
         Shows what would happen if the command were executed.
 
     #>
-    [cmdletbinding(SupportsShouldProcess)]
+    [cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -92,6 +92,8 @@ function Copy-DbaAgentServer {
         }
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

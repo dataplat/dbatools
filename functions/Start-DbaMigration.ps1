@@ -189,7 +189,7 @@ function Start-DbaMigration {
         The execution of the function will migrate everything but logins and databases.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [DbaInstanceParameter]$Source,
         [DbaInstanceParameter[]]$Destination,
@@ -218,6 +218,8 @@ function Start-DbaMigration {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"

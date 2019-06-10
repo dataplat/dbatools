@@ -68,6 +68,9 @@ function Invoke-DbaAgFailover {
         [switch]$Force,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         if ($SqlInstance -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using SqlInstance."

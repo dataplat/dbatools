@@ -71,7 +71,7 @@ function Remove-DbaDbUser {
 
         Drops user1 from all databases it exists in on server 'sqlserver2014'.
     #>
-    [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -92,6 +92,8 @@ function Remove-DbaDbUser {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Remove-DbUser {
             [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.Smo.User[]]$users)

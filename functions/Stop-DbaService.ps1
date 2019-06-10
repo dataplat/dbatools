@@ -41,9 +41,6 @@ function Stop-DbaService {
     .PARAMETER Confirm
         Prompts you for confirmation before running the cmdlet.
 
-    .PARAMETER Force
-        Will stop dependent SQL Server agents when stopping Engine services.
-
     .NOTES
         Tags: Service, Stop
         Author: Kirill Kravtsov (@nvarscar)
@@ -83,7 +80,7 @@ function Stop-DbaService {
         Stops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(ParameterSetName = "Server", Position = 1)]
         [Alias("cn", "host", "Server")]
@@ -101,6 +98,7 @@ function Stop-DbaService {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
         $processArray = @()
         if ($PsCmdlet.ParameterSetName -eq "Server") {
             $serviceParams = @{ ComputerName = $ComputerName }
