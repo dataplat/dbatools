@@ -61,7 +61,6 @@ function New-DbaDiagnosticAdsNotebook {
         Creates a new Jupyter Notebook named "myNotebook" based on the version "2017" of diagnostic queries, including database-specific queries
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
-    [CmdletBinding()]
     param(
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
