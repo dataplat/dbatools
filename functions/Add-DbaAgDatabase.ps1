@@ -171,8 +171,6 @@ function Add-DbaAgDatabase {
             foreach ($instance in $secondaryInstances) {
 
                 $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $instance.NetName
-				
-				write-host "$($Instance.name)"
 
                 if (!($agreplica))
                 {
