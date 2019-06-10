@@ -90,7 +90,7 @@ function Invoke-DbaDbLogShipRecovery {
         Shows what would happen if the command were executed.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param
     (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -104,6 +104,8 @@ function Invoke-DbaDbLogShipRecovery {
         [int]$Delay = 5
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $stepCounter = 0
     }
     process {

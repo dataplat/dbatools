@@ -101,6 +101,8 @@ function Invoke-DbaDbDataGenerator {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Create the faker objects
         try {
             $faker = New-Object Bogus.Faker($Locale)
