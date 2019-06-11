@@ -5340,12 +5340,12 @@ GO
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Database Tempdb -GetAverageTime
         It "Should execute with averagetime" {
-            $results | Should Not Be $Null
+            $results | Should Be $Null
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -GetOuterCommand -FindBlockLeaders
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
-            $results | Should Not Be $Null
+            $results | Should Be $Null
         }
     }
 }
