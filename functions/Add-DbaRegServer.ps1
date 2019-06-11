@@ -1,14 +1,14 @@
 function Add-DbaRegServer {
     <#
     .SYNOPSIS
-        Adds registered servers to SQL Server Central Management Server (CMS)
+        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups
 
     .DESCRIPTION
-        Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegServer which
+        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups. If you need more flexiblity, look into Import-DbaRegServer which
         accepts multiple kinds of input and allows you to add reg servers from different CMSes.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance
+        The target SQL Server instance if a CMS is used
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -17,7 +17,7 @@ function Add-DbaRegServer {
         Server Name is the actual SQL instance name (labeled Server Name)
 
     .PARAMETER Name
-        Name is basically the nickname in SSMS CMS interface (labeled Registered Server Name)
+        Name is basically the nickname in SSMS Registered Server interface (labeled Registered Server Name)
 
     .PARAMETER Description
         Adds a description for the registered server
@@ -26,13 +26,10 @@ function Add-DbaRegServer {
         Adds the registered server to a specific group.
 
     .PARAMETER ActiveDirectoryTenant
-	Active Directory Tenant
+	    Active Directory Tenant
 
     .PARAMETER ActiveDirectoryUserId
         Active Directory User id
-
-    .PARAMETER AuthenticationType
-        Authentication type for connections where the connection string isn't sufficient to discover it
 
     .PARAMETER ConnectionString
         SQL Server connection string
@@ -41,7 +38,7 @@ function Add-DbaRegServer {
         Additional parameters to append to the connection string
 
     .PARAMETER ServerObject
-        SMO Objects
+        SMO Server Objects (from Connect-DbaInstance)
 
     .PARAMETER InputObject
         Allows the piping of a registered server group
@@ -76,6 +73,11 @@ function Add-DbaRegServer {
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible.
 
     .EXAMPLE
+        PS C:\> Add-DbaRegServer -ServerName sql01
+
+        Creates a registered server in Local Server Groups which points to the SQL Server, sql01. When scrolling in Registered Servers, the name "sql01" will be visible.
+
+    .EXAMPLE
         PS C:\> Add-DbaRegServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
@@ -87,9 +89,9 @@ function Add-DbaRegServer {
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaRegServer -ServerName sql01111
+        PS C:\> Connect-DbaInstance -SqlInstance dockersql1 -SqlCredential sqladmin | Add-DbaRegServer -ServerName mydockerjam
 
-        Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
+        Creates a registered server called "mydockerjam" in Local Server Groups that uses SQL authentication and points to the server dockersql1.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -99,8 +101,6 @@ function Add-DbaRegServer {
         [string]$Name = $ServerName,
         [string]$Description,
         [object]$Group,
-        [ValidateSet('Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
-        [string]$AuthenticationType,
         [string]$ActiveDirectoryTenant,
         [string]$ActiveDirectoryUserId,
         [string]$ConnectionString,
@@ -111,15 +111,6 @@ function Add-DbaRegServer {
         [Microsoft.SqlServer.Management.Smo.Server[]]$ServerObject,
         [switch]$EnableException
     )
-    begin {
-        $authtype = switch ($AuthenticationType) {
-            "Windows Authentication" { 3 }
-            "SQL Server Authentication" {  }
-            "AD Universal with MFA Support" {  }
-            "AD - Password" { 2 }
-            "AD - Integrated" { 3 }
-        }
-    }
     process {
         # double check in case a null name was bound
         if (-not $PSBoundParameters.ServerName -and -not $PSBoundParameters.ServerObject) {
