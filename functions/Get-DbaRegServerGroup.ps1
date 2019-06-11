@@ -144,7 +144,7 @@ function Get-DbaRegServerGroup {
             if ($Id) {
                 Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
                 if ($Id -eq 1) {
-                    $groups = $serverstore.DatabaseEngineServerGroup | Where-Object Id -in $Id
+                    $groups = $serverstore.DatabaseEngineServerGroup
                 } else {
                     $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
                 }
