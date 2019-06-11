@@ -62,7 +62,7 @@ function Get-DbaRegServerGroup {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Group,
@@ -70,17 +70,24 @@ function Get-DbaRegServerGroup {
         [int[]]$Id,
         [switch]$EnableException
     )
+    begin {
+        $serverstores = $groups = @()
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $serverstores += Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
+        }
 
-            $groups = @()
+        if (-not $SqlInstance) {
+            $serverstores += Get-DbaRegServerStore
+        }
 
-            if ($group) {
+        foreach ($serverstore in $serverstores) {
+            if ($Group) {
                 foreach ($currentgroup in $Group) {
                     Write-Message -Level Verbose -Message "Processing $currentgroup"
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
@@ -142,14 +149,20 @@ function Get-DbaRegServerGroup {
                     $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
                 }
             }
-            $serverstore.ServerConnection.Disconnect()
+            if ($serverstore.ServerConnection) {
+                $serverstore.ServerConnection.Disconnect()
+            }
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
 
-                Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
+                if ($groupobject.ComputerName) {
+                    Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
+                } else {
+                    Select-DefaultView -InputObject $groupobject -Property Name, DisplayName, Description, ServerGroups, RegisteredServers
+                }
             }
         }
     }
