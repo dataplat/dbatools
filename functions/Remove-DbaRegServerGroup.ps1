@@ -68,16 +68,34 @@ function Remove-DbaRegServerGroup {
             $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Name
         }
 
-        foreach ($regservergroup in $InputObject) {
-            $parentserver = Get-RegServerParent -InputObject $regservergroup
+        if (-not $SqlInstance -and -not $InputObject) {
+            $InputObject += Get-DbaRegServerGroup -Group $Name
+        }
 
-            if ($null -eq $parentserver) {
-                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+        foreach ($regservergroup in $InputObject) {
+            if ($SqlInstance) {
+                $parentserver = Get-RegServerParent -InputObject $regservergroup
+                $target = $parentserver.DomainInstanceName
+                if ($null -eq $parentserver) {
+                    Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+                }
+                $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name", "ServerName", "Status"
+            } else {
+                $target = "Local Registered Servers"
+                $defaults = "Name", "ServerName", "Status"
             }
 
-            if ($Pscmdlet.ShouldProcess($parentserver.DomainInstanceName, "Removing $($regservergroup.Name) CMS Group")) {
-                $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
-                $parentserver.ServerConnection.Disconnect()
+            if ($Pscmdlet.ShouldProcess($target, "Removing $($regservergroup.Name) Group")) {
+                if ($regservergroup.Source -eq "Azure Data Studio") {
+                    Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
+                }
+
+                if ($SqlInstance) {
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
+                    $parentserver.ServerConnection.Disconnect()
+                } else {
+                    $regservergroup.Drop()
+                }
                 try {
                     [pscustomobject]@{
                         ComputerName = $parentserver.ComputerName
@@ -85,7 +103,7 @@ function Remove-DbaRegServerGroup {
                         SqlInstance  = $parentserver.SqlInstance
                         Name         = $regservergroup.Name
                         Status       = "Dropped"
-                    }
+                    } | Select-DefaultView -Property $defaults
                 } catch {
                     Stop-Function -Message "Failed to drop $regservergroup on $parentserver" -ErrorRecord $_ -Continue
                 }

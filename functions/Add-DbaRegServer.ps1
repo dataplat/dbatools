@@ -25,6 +25,24 @@ function Add-DbaRegServer {
     .PARAMETER Group
         Adds the registered server to a specific group.
 
+    .PARAMETER ActiveDirectoryTenant
+	Active Directory Tenant
+
+    .PARAMETER ActiveDirectoryUserId
+        Active Directory User id
+
+    .PARAMETER AuthenticationType
+        Authentication type for connections where the connection string isn't sufficient to discover it
+
+    .PARAMETER ConnectionString
+        SQL Server connection string
+
+    .PARAMETER OtherParams
+        Additional parameters to append to the connection string
+
+    .PARAMETER ServerObject
+        SMO Objects
+
     .PARAMETER InputObject
         Allows the piping of a registered server group
 
@@ -77,17 +95,37 @@ function Add-DbaRegServer {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [string]$ServerName,
         [string]$Name = $ServerName,
         [string]$Description,
         [object]$Group,
+        [ValidateSet('Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        [string]$AuthenticationType,
+        [string]$ActiveDirectoryTenant,
+        [string]$ActiveDirectoryUserId,
+        [string]$ConnectionString,
+        [string]$OtherParams,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Server[]]$ServerObject,
         [switch]$EnableException
     )
+    begin {
+        $authtype = switch ($AuthenticationType) {
+            "Windows Authentication" { 3 }
+            "SQL Server Authentication" {  }
+            "AD Universal with MFA Support" {  }
+            "AD - Password" { 2 }
+            "AD - Integrated" { 3 }
+        }
+    }
     process {
         # double check in case a null name was bound
+        if (-not $PSBoundParameters.ServerName -and -not $PSBoundParameters.ServerObject) {
+            Stop-Function -Message "You must specify either ServerName or ServerObject"
+            return
+        }
         if (-not $Name) {
             $Name = $ServerName
         }
@@ -124,16 +162,56 @@ function Add-DbaRegServer {
         }
 
         foreach ($reggroup in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($reggroup.ParentServer.SqlInstance, "Adding $ServerName")) {
-                try {
-                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
-                    $newserver.ServerName = $ServerName
-                    $newserver.Description = $Description
-                    $newserver.Create()
+            if ($reggroup.Source -eq "Azure Data Studio") {
+                Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
+            }
+            if ($SqlInstance) {
+                $target = $reggroup.ParentServer.SqlInstance
+            } else {
+                $target = "Local Registered Servers"
+            }
+            if ($Pscmdlet.ShouldProcess($target, "Adding $ServerName")) {
 
-                    Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
-                } catch {
-                    Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
+                if ($ServerObject) {
+                    foreach ($server in $ServerObject) {
+                        if (-not $PSBoundParameters.Name) {
+                            $Name = $server.Name
+                        }
+                        if (-not $PSBoundParameters.ServerName) {
+                            $ServerName = $server.Name
+                        }
+                        try {
+                            $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                            $newserver.ServerName = $ServerName
+                            $newserver.Description = $Description
+                            $newserver.ConnectionString = $server.ConnectionContext.ConnectionString
+                            $newserver.SecureConnectionString = $server.ConnectionContext.SecureConnectionString
+                            $newserver.ActiveDirectoryTenant = $ActiveDirectoryTenant
+                            $newserver.ActiveDirectoryUserId = $ActiveDirectoryUserId
+                            $newserver.OtherParams = $OtherParams
+                            $newserver.CredentialPersistenceType = "PersistLoginNameAndPassword"
+                            $newserver.Create()
+
+                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                        } catch {
+                            Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                        }
+                    }
+                } else {
+                    try {
+                        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                        $newserver.ServerName = $ServerName
+                        $newserver.Description = $Description
+                        $newserver.ConnectionString = $ConnectionString
+                        $newserver.ActiveDirectoryTenant = $ActiveDirectoryTenant
+                        $newserver.ActiveDirectoryUserId = $ActiveDirectoryUserId
+                        $newserver.OtherParams = $OtherParams
+                        $newserver.Create()
+
+                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                    } catch {
+                        Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                    }
                 }
             }
         }
