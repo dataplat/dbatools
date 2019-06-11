@@ -306,7 +306,6 @@ function Invoke-DbaDbDataMasking {
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $deterministicColumns = $tables.Tables.Columns | Where-Object Deterministic -eq $true
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
