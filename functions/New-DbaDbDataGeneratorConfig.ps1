@@ -38,6 +38,12 @@ function New-DbaDbDataGeneratorConfig {
     .PARAMETER Force
         Forcefully execute commands when needed
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -65,7 +71,7 @@ function New-DbaDbDataGeneratorConfig {
         Process only table Customer with all the columns
 
     #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -354,9 +360,14 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
+                if (Test-Path -Path $temppath -PathType Leaf) {
+                    if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
+                        Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                    }
+                } else {
+                    Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                    Get-ChildItem -Path $temppath
+                }
             } catch {
                 Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
             }
