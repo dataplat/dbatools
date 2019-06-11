@@ -82,6 +82,7 @@ function New-DbaAzAccessToken {
         Once the connection is made, it is used to perform a test query.
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
