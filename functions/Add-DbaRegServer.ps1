@@ -72,7 +72,6 @@ function Add-DbaRegServer {
         PS C:\> Get-DbaRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaRegServer -ServerName sql01111
 
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -88,14 +87,24 @@ function Add-DbaRegServer {
         [switch]$EnableException
     )
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
-            return
-        }
-
         # double check in case a null name was bound
         if (-not $Name) {
             $Name = $ServerName
+        }
+
+        if (-not $SqlInstance -and -not $InputObject) {
+            Write-Message -Level Verbose -Message "Parsing local"
+            if (($Group)) {
+                if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                    $InputObject += Get-DbaRegServerGroup -Group $Group.Name
+                } else {
+                    Write-Message -Level Verbose -Message "String group provided"
+                    $InputObject += Get-DbaRegServerGroup -Group $Group
+                }
+            } else {
+                Write-Message -Level Verbose -Message "No group passed, getting root"
+                $InputObject += Get-DbaRegServerGroup -Id 1
+            }
         }
 
         foreach ($instance in $SqlInstance) {
@@ -115,22 +124,14 @@ function Add-DbaRegServer {
         }
 
         foreach ($reggroup in $InputObject) {
-            $parentserver = Get-RegServerParent -InputObject $reggroup
-
-            if ($null -eq $parentserver) {
-                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
-            }
-
-            $server = $reggroup.ParentServer
-
-            if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $ServerName")) {
+            if ($Pscmdlet.ShouldProcess($reggroup.ParentServer.SqlInstance, "Adding $ServerName")) {
                 try {
                     $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
                     $newserver.ServerName = $ServerName
                     $newserver.Description = $Description
                     $newserver.Create()
 
-                    Get-DbaRegServer -SqlInstance $server -Name $Name -ServerName $ServerName
+                    Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
                 } catch {
                     Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
