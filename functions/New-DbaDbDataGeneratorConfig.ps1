@@ -204,6 +204,10 @@ function New-DbaDbDataGeneratorConfig {
                                 $maskingType = "Name"
                                 $maskingSubtype = "Lastname"
                             }
+                            "fullname" {
+                                $maskingType = "Name"
+                                $maskingSubtype = "FullName"
+                            }
                             "creditcard" {
                                 $maskingType = "Finance"
                                 $maskingSubtype = "CreditcardNumber"
@@ -253,15 +257,18 @@ function New-DbaDbDataGeneratorConfig {
                                 $MaxValue = 2147483647
                             }
                             "date" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "datetime2" {
-                                $subType = "Date"
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "float" {
@@ -351,7 +358,7 @@ function New-DbaDbDataGeneratorConfig {
         # Write the data to the Path
         if ($results) {
             try {
-                $temppath = "$Path\$($server.Name.Replace('\', '$')).$($db.Name).DataGenerationConfig.json"
+                $temppath = "$Path\$($server.Name.Replace('\', '$')).$($db.Name).DataGeneratorConfig.json"
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
