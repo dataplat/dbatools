@@ -79,8 +79,6 @@ function Test-DbaDataMaskingConfiguration {
         $randomizerTypes = Get-DbaRandomizedType
 
         $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
-
-        $findings = @()
     }
 
     process {
@@ -96,7 +94,7 @@ function Test-DbaDataMaskingConfiguration {
 
                 if ($null -ne $compareResult) {
                     if ($compareResult.SideIndicator -contains "<=") {
-                        $findings += [PSCustomObject]@{
+                        [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
@@ -107,7 +105,7 @@ function Test-DbaDataMaskingConfiguration {
                     }
 
                     if ($compareResult.SideIndicator -contains "=>") {
-                        $findings += [PSCustomObject]@{
+                        [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
@@ -120,7 +118,7 @@ function Test-DbaDataMaskingConfiguration {
 
                 # Test column type
                 if ($column.ColumnType -notin $supportedDataTypes) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.ColumnType
@@ -130,7 +128,7 @@ function Test-DbaDataMaskingConfiguration {
 
                 # Test masking type
                 if ($column.MaskingType -notin $randomizerTypes.Type) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.MaskingType
@@ -140,7 +138,7 @@ function Test-DbaDataMaskingConfiguration {
 
                 # Test masking sub type
                 if ($null -ne $column.SubType -and $column.SubType -notin $randomizerTypes.SubType) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.SubType
@@ -152,7 +150,7 @@ function Test-DbaDataMaskingConfiguration {
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
                     if ($column.MaskingType -ne 'Date') {
-                        $findings += [PSCustomObject]@{
+                        [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = $column.MaskingType
@@ -163,7 +161,7 @@ function Test-DbaDataMaskingConfiguration {
                     if ($Column.SubType.ToLower() -eq 'between') {
 
                         if (-not ($null -eq $column.MinValue) -and -not ([datetime]::TryParse($column.MinValue, [ref]"2002-12-31"))) {
-                            $findings += [PSCustomObject]@{
+                            [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = $column.MinValue
@@ -172,7 +170,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if (-not ($null -eq $column.MaxValue) -and -not ([datetime]::TryParse($column.MaxValue, [ref]"2002-12-31"))) {
-                            $findings += [PSCustomObject]@{
+                            [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = $column.MaxValue
@@ -181,7 +179,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if ($null -eq $column.MinValue) {
-                            $findings += [PSCustomObject]@{
+                            [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
@@ -190,7 +188,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if ($null -eq $column.MaxValue) {
-                            $findings += [PSCustomObject]@{
+                            [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
