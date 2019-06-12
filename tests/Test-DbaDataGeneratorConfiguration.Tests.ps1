@@ -55,7 +55,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $json = Get-Content -Path $file.FullName | ConvertFrom-Json
 
         # Break the content by removing a property
-        $json.Tables[0].Columns[7].PSObject.Properties.Remove("SubType")
+        $json.Tables[0].Columns[8].PSObject.Properties.Remove("SubType")
 
         # Write the JSON back to the file
         $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
