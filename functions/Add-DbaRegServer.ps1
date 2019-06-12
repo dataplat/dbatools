@@ -1,14 +1,14 @@
 function Add-DbaRegServer {
     <#
     .SYNOPSIS
-        Adds registered servers to SQL Server Central Management Server (CMS)
+        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups
 
     .DESCRIPTION
-        Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegServer which
+        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups. If you need more flexiblity, look into Import-DbaRegServer which
         accepts multiple kinds of input and allows you to add reg servers from different CMSes.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance
+        The target SQL Server instance if a CMS is used
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -17,13 +17,28 @@ function Add-DbaRegServer {
         Server Name is the actual SQL instance name (labeled Server Name)
 
     .PARAMETER Name
-        Name is basically the nickname in SSMS CMS interface (labeled Registered Server Name)
+        Name is basically the nickname in SSMS Registered Server interface (labeled Registered Server Name)
 
     .PARAMETER Description
         Adds a description for the registered server
 
     .PARAMETER Group
         Adds the registered server to a specific group.
+
+    .PARAMETER ActiveDirectoryTenant
+        Active Directory Tenant
+
+    .PARAMETER ActiveDirectoryUserId
+        Active Directory User id
+
+    .PARAMETER ConnectionString
+        SQL Server connection string
+
+    .PARAMETER OtherParams
+        Additional parameters to append to the connection string
+
+    .PARAMETER ServerObject
+        SMO Server Objects (from Connect-DbaInstance)
 
     .PARAMETER InputObject
         Allows the piping of a registered server group
@@ -58,6 +73,11 @@ function Add-DbaRegServer {
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible.
 
     .EXAMPLE
+        PS C:\> Add-DbaRegServer -ServerName sql01
+
+        Creates a registered server in Local Server Groups which points to the SQL Server, sql01. When scrolling in Registered Servers, the name "sql01" will be visible.
+
+    .EXAMPLE
         PS C:\> Add-DbaRegServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
@@ -69,33 +89,51 @@ function Add-DbaRegServer {
         Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaRegServer -ServerName sql01111
+        PS C:\> Connect-DbaInstance -SqlInstance dockersql1 -SqlCredential sqladmin | Add-DbaRegServer -ServerName mydockerjam
 
-        Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
-
+        Creates a registered server called "mydockerjam" in Local Server Groups that uses SQL authentication and points to the server dockersql1.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [string]$ServerName,
         [string]$Name = $ServerName,
         [string]$Description,
         [object]$Group,
+        [string]$ActiveDirectoryTenant,
+        [string]$ActiveDirectoryUserId,
+        [string]$ConnectionString,
+        [string]$OtherParams,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Server[]]$ServerObject,
         [switch]$EnableException
     )
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
+        # double check in case a null name was bound
+        if (-not $PSBoundParameters.ServerName -and -not $PSBoundParameters.ServerObject) {
+            Stop-Function -Message "You must specify either ServerName or ServerObject"
             return
         }
-
-        # double check in case a null name was bound
         if (-not $Name) {
             $Name = $ServerName
+        }
+
+        if (-not $SqlInstance -and -not $InputObject) {
+            Write-Message -Level Verbose -Message "Parsing local"
+            if (($Group)) {
+                if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                    $InputObject += Get-DbaRegServerGroup -Group $Group.Name
+                } else {
+                    Write-Message -Level Verbose -Message "String group provided"
+                    $InputObject += Get-DbaRegServerGroup -Group $Group
+                }
+            } else {
+                Write-Message -Level Verbose -Message "No group passed, getting root"
+                $InputObject += Get-DbaRegServerGroup -Id 1
+            }
         }
 
         foreach ($instance in $SqlInstance) {
@@ -115,24 +153,56 @@ function Add-DbaRegServer {
         }
 
         foreach ($reggroup in $InputObject) {
-            $parentserver = Get-RegServerParent -InputObject $reggroup
-
-            if ($null -eq $parentserver) {
-                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+            if ($reggroup.Source -eq "Azure Data Studio") {
+                Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
             }
+            if ($reggroup.ID) {
+                $target = $reggroup.ParentServer.SqlInstance
+            } else {
+                $target = "Local Registered Servers"
+            }
+            if ($Pscmdlet.ShouldProcess($target, "Adding $ServerName")) {
 
-            $server = $reggroup.ParentServer
+                if ($ServerObject) {
+                    foreach ($server in $ServerObject) {
+                        if (-not $PSBoundParameters.Name) {
+                            $Name = $server.Name
+                        }
+                        if (-not $PSBoundParameters.ServerName) {
+                            $ServerName = $server.Name
+                        }
+                        try {
+                            $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                            $newserver.ServerName = $ServerName
+                            $newserver.Description = $Description
+                            $newserver.ConnectionString = $server.ConnectionContext.ConnectionString
+                            $newserver.SecureConnectionString = $server.ConnectionContext.SecureConnectionString
+                            $newserver.ActiveDirectoryTenant = $ActiveDirectoryTenant
+                            $newserver.ActiveDirectoryUserId = $ActiveDirectoryUserId
+                            $newserver.OtherParams = $OtherParams
+                            $newserver.CredentialPersistenceType = "PersistLoginNameAndPassword"
+                            $newserver.Create()
 
-            if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $ServerName")) {
-                try {
-                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
-                    $newserver.ServerName = $ServerName
-                    $newserver.Description = $Description
-                    $newserver.Create()
+                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                        } catch {
+                            Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                        }
+                    }
+                } else {
+                    try {
+                        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                        $newserver.ServerName = $ServerName
+                        $newserver.Description = $Description
+                        $newserver.ConnectionString = $ConnectionString
+                        $newserver.ActiveDirectoryTenant = $ActiveDirectoryTenant
+                        $newserver.ActiveDirectoryUserId = $ActiveDirectoryUserId
+                        $newserver.OtherParams = $OtherParams
+                        $newserver.Create()
 
-                    Get-DbaRegServer -SqlInstance $server -Name $Name -ServerName $ServerName
-                } catch {
-                    Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
+                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                    } catch {
+                        Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                    }
                 }
             }
         }
