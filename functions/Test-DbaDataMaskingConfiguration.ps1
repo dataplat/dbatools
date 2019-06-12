@@ -80,7 +80,7 @@ function Test-DbaDataMaskingConfiguration {
 
         $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
 
-        $errors = @()
+        $findings = @()
     }
 
     process {
@@ -96,27 +96,31 @@ function Test-DbaDataMaskingConfiguration {
 
                 if ($null -ne $compareResult) {
                     if ($compareResult.SideIndicator -contains "<=") {
-                        $errors += [PSCustomObject]@{
+                        $findings += [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
+
+                        return $findings
                     }
 
                     if ($compareResult.SideIndicator -contains "=>") {
-                        $errors += [PSCustomObject]@{
+                        $findings += [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
                             Error  = "The column contains a property that is not in the required properties. Please check the column"
                         }
                     }
+
+                    return $findings
                 }
 
                 # Test column type
                 if ($column.ColumnType -notin $supportedDataTypes) {
-                    $errors += [PSCustomObject]@{
+                    $findings += [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.ColumnType
@@ -126,7 +130,7 @@ function Test-DbaDataMaskingConfiguration {
 
                 # Test masking type
                 if ($column.MaskingType -notin $randomizerTypes.Type) {
-                    $errors += [PSCustomObject]@{
+                    $findings += [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.MaskingType
@@ -135,8 +139,8 @@ function Test-DbaDataMaskingConfiguration {
                 }
 
                 # Test masking sub type
-                if ($column.SubType -notin $randomizerTypes.SubType) {
-                    $errors += [PSCustomObject]@{
+                if ($null -ne $column.SubType -and $column.SubType -notin $randomizerTypes.SubType) {
+                    $findings += [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.SubType
@@ -148,7 +152,7 @@ function Test-DbaDataMaskingConfiguration {
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
                     if ($column.MaskingType -ne 'Date') {
-                        $errors += [PSCustomObject]@{
+                        $findings += [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = $column.MaskingType
@@ -159,7 +163,7 @@ function Test-DbaDataMaskingConfiguration {
                     if ($Column.SubType.ToLower() -eq 'between') {
 
                         if (-not ($null -eq $column.MinValue) -and -not ([datetime]::TryParse($column.MinValue, [ref]"2002-12-31"))) {
-                            $errors += [PSCustomObject]@{
+                            $findings += [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = $column.MinValue
@@ -168,7 +172,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if (-not ($null -eq $column.MaxValue) -and -not ([datetime]::TryParse($column.MaxValue, [ref]"2002-12-31"))) {
-                            $errors += [PSCustomObject]@{
+                            $findings += [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = $column.MaxValue
@@ -177,7 +181,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if ($null -eq $column.MinValue) {
-                            $errors += [PSCustomObject]@{
+                            $findings += [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
@@ -186,7 +190,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
 
                         if ($null -eq $column.MaxValue) {
-                            $errors += [PSCustomObject]@{
+                            $findings += [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
@@ -202,15 +206,15 @@ function Test-DbaDataMaskingConfiguration {
 
         } # End for each table
 
-        return $errors
+
     } # End process
 
 
     end {
+        return $findings
+
         if (Test-FunctionInterrupt) { return }
 
-        if ($errors.Count -ge 1) {
-            Stop-Function -Message "The configuration file contains errors. Please check the configuration file" -Target $errors
-        }
+
     }
 }
