@@ -182,6 +182,7 @@ function Copy-DbaDatabase {
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "Unfortunate variable name that doesn't hold a password")]
     param (
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -1286,7 +1287,7 @@ function Copy-DbaDatabase {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
                                 try {
-                                    $ownerResult = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
+                                    $null = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
                                 } catch {
                                     Stop-Function -Message "Failure setting $dbname to read-write on destination server" -ErrorRecord $_
                                 }
