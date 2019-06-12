@@ -107,8 +107,6 @@ function Get-DbaDiskSpace {
         # Keep track of what computer was already processed to avoid duplicates
         $processed = New-Object System.Collections.ArrayList
 
-        <# In order to support properly identifying if a disk/volume is involved with ANY instance on a given computer #>
-        $sqlDisks = New-Object System.Collections.ArrayList
     }
 
     process {
