@@ -91,7 +91,7 @@ function Remove-DbaRegServer {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
             }
 
-            if ($SqlInstance) {
+            if ($regserver.ID) {
                 $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name", "ServerName", "Status"
                 $target = $regserver.Parent
             } else {
@@ -102,7 +102,7 @@ function Remove-DbaRegServer {
             if ($Pscmdlet.ShouldProcess($target, "Removing $regserver")) {
                 $null = $regserver.Drop()
 
-                if ($SqlInstance) {
+                if ($regserver.ID) {
                     Disconnect-RegServer -Server $regserver.Parent
                 }
 
