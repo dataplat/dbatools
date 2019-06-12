@@ -19,14 +19,14 @@ function Export-DbaDbTableData {
         Specifies the file encoding. The default is UTF8.
 
         Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+          - ASCII: Uses the encoding for the ASCII (7-bit) character set.
+          - BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+          - Byte: Encodes a set of characters into a sequence of bytes.
+          - String: Uses the encoding type for a string.
+          - Unicode: Encodes in UTF-16 format using the little-endian byte order.
+          - UTF7: Encodes in UTF-7 format.
+          - UTF8: Encodes in UTF-8 format.
+          - Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
     .PARAMETER Passthru
         Output script to console
@@ -79,7 +79,7 @@ function Export-DbaDbTableData {
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\temp\export.sql
 
-        Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+        Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:\temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -106,6 +106,8 @@ function Export-DbaDbTableData {
     }
 
     process {
-        Export-DbaScript @PSBoundParameters -ScriptingOptionsObject $ScriptingOptionsObject
+        if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $InputObject")) {
+            Export-DbaScript @PSBoundParameters -ScriptingOptionsObject $ScriptingOptionsObject
+        }
     }
 }
