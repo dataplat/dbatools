@@ -152,22 +152,18 @@ function Get-DbaRegServerGroup {
             if ($serverstore.ServerConnection) {
                 $serverstore.ServerConnection.Disconnect()
             }
-            try {
-                foreach ($groupobject in $groups) {
-                    Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
-                    Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
-                    Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
-                    Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
 
-                    if ($groupobject.ComputerName) {
-                        Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
-                    } else {
-                        Select-DefaultView -InputObject $groupobject -Property Name, DisplayName, Description, ServerGroups, RegisteredServers
-                    }
+            foreach ($groupobject in $groups) {
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
+
+                if ($groupobject.ComputerName) {
+                    Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
+                } else {
+                    Select-DefaultView -InputObject $groupobject -Property Name, DisplayName, Description, ServerGroups, RegisteredServers
                 }
-            } catch {
-                # having issues with the .Drop() and "Collection was modified after the enumerator was instantiated" sooooo
-                $null = 1
             }
         }
     }

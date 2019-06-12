@@ -79,17 +79,25 @@ function Remove-DbaRegServerGroup {
                 if ($null -eq $parentserver) {
                     Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
                 }
-                $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name", "ServerName", "Status"
+                $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name", "Status"
             } else {
                 $target = "Local Registered Servers"
-                $defaults = "Name", "ServerName", "Status"
+                $defaults = "Name", "Status"
             }
 
             if ($Pscmdlet.ShouldProcess($target, "Removing $($regservergroup.Name) Group")) {
                 if ($regservergroup.Source -eq "Azure Data Studio") {
                     Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
                 }
-                $regservergroup.Drop()
+
+                # try to avoid 'Collection was modified after the enumerator was instantiated' issue
+                if ($regservergroup.ID) {
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
+                    $parentserver.ServerConnection.Disconnect()
+                } else {
+                    $regservergroup.Drop()
+                }
+
                 try {
                     [pscustomobject]@{
                         ComputerName = $parentserver.ComputerName
