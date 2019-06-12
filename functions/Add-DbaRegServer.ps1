@@ -26,7 +26,7 @@ function Add-DbaRegServer {
         Adds the registered server to a specific group.
 
     .PARAMETER ActiveDirectoryTenant
-	    Active Directory Tenant
+        Active Directory Tenant
 
     .PARAMETER ActiveDirectoryUserId
         Active Directory User id
