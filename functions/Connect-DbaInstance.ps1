@@ -766,7 +766,6 @@ function Connect-DbaInstance {
 
             # Update lots of registered stuff
             if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
-                $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
                     Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
                 }

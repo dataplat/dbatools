@@ -47,7 +47,6 @@ function Export-DbaXECsv {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('FullName')]
         [object[]]$InputObject,
-        [parameter(Mandatory)]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
