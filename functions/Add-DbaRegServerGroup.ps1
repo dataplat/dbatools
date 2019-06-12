@@ -98,7 +98,7 @@ function Add-DbaRegServerGroup {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
             }
 
-            if ($SqlInstance) {
+            if ($reggroup.ID) {
                 $target = $reggroup.Parent
             } else {
                 $target = "Local Registered Server Groups"

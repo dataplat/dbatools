@@ -73,7 +73,7 @@ function Remove-DbaRegServerGroup {
         }
 
         foreach ($regservergroup in $InputObject) {
-            if ($SqlInstance) {
+            if ($regservergroup.ID) {
                 $parentserver = Get-RegServerParent -InputObject $regservergroup
                 $target = $parentserver.DomainInstanceName
                 if ($null -eq $parentserver) {
@@ -89,13 +89,7 @@ function Remove-DbaRegServerGroup {
                 if ($regservergroup.Source -eq "Azure Data Studio") {
                     Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
                 }
-
-                if ($SqlInstance) {
-                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
-                    $parentserver.ServerConnection.Disconnect()
-                } else {
-                    $regservergroup.Drop()
-                }
+                $regservergroup.Drop()
                 try {
                     [pscustomobject]@{
                         ComputerName = $parentserver.ComputerName
