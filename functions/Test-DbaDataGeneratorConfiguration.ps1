@@ -96,18 +96,17 @@ function Test-DbaDataGeneratorConfiguration {
 
                 if ($null -ne $compareResult) {
                     if ($compareResult.SideIndicator -contains "<=") {
-                        $findings += [PSCustomObject]@{
+                        [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
 
-                        return $findings
                     }
 
                     if ($compareResult.SideIndicator -contains "=>") {
-                        $findings += [PSCustomObject]@{
+                        [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
                             Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
@@ -118,7 +117,7 @@ function Test-DbaDataGeneratorConfiguration {
 
                 # Test column type
                 if ($column.ColumnType -notin $supportedDataTypes) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.ColumnType
@@ -128,7 +127,7 @@ function Test-DbaDataGeneratorConfiguration {
 
                 # Test masking type
                 if ($column.MaskingType -notin $randomizerTypes.Type) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.MaskingType
@@ -138,7 +137,7 @@ function Test-DbaDataGeneratorConfiguration {
 
                 # Test masking sub type
                 if ($null -ne $column.SubType -and $column.SubType -notin $randomizerTypes.SubType) {
-                    $findings += [PSCustomObject]@{
+                    [PSCustomObject]@{
                         Table  = $table.Name
                         Column = $column.Name
                         Value  = $column.SubType
@@ -150,8 +149,6 @@ function Test-DbaDataGeneratorConfiguration {
     } # End process
 
     end {
-        return $findings
-
         if (Test-FunctionInterrupt) { return }
     }
 
