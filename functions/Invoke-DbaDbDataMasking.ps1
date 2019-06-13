@@ -589,19 +589,11 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     try {
+                        $null = $transaction.Commit()
                         $sqlconn.Close()
                     } catch {
                         Stop-Function -Message "Failure" -Continue -ErrorRecord $_
                     }
-                }
-            }
-        }
-    }
-                try {
-                    $null = $transaction.Commit()
-                    $sqlconn.Close()
-                } catch {
-                    Stop-Function -Message "Failure" -Continue -ErrorRecord $_
                 }
             }
         }
