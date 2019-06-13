@@ -61,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
 
         $findings = @()
-        $findings = Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
 
         $findings.Count | Should -Be 1
     }
