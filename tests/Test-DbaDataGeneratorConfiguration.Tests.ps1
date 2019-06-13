@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "gives no errors with a correct json file" {
         $findings = @()
-        $findings = Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
 
         $findings.Count | Should -Be 0
     }
