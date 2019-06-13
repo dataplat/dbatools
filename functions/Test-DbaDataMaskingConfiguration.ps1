@@ -209,10 +209,7 @@ function Test-DbaDataMaskingConfiguration {
 
 
     end {
-        return $findings
-
         if (Test-FunctionInterrupt) { return }
-
 
     }
 }
