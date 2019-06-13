@@ -148,9 +148,11 @@ function Invoke-DbaDbDataMasking {
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
         } else {
-            # Check if the destination is accessible
-            if (-not (Test-Path -Path $FilePath)) {
-                Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
+            # Test the configuration file
+            try {
+                Test-DbaDataMaskingConfiguration -FilePath $FilePath -EnableException
+            } catch {
+                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return
             }
 
@@ -265,7 +267,6 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                        <# if ($uniqueValues.Count -ge 1) { #>
                                         while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
 
                                             $rowValue = New-Object PSCustomObject

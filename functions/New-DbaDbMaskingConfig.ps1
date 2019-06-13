@@ -458,6 +458,7 @@ function New-DbaDbMaskingConfig {
             if ($tables) {
                 $results += [PSCustomObject]@{
                     Name   = $db.Name
+                    Type   = "DataMaskingConfiguration"
                     Tables = $tables
                 }
             } else {
@@ -469,7 +470,7 @@ function New-DbaDbMaskingConfig {
         if ($results) {
             try {
                 $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                $temppath = "$Path\$($filenamepart).$($db.Name).tables.json"
+                $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
