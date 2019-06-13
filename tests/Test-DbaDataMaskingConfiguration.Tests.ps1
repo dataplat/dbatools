@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "gives no errors with a correct json file" {
         $findings = @()
-        $findings = Test-DbaDataMaskingConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDataMaskingConfiguration -FilePath $file.FullName
 
         $findings.Count | Should -Be 0
     }
@@ -61,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
 
         $findings = @()
-        $findings = Test-DbaDataMaskingConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDataMaskingConfiguration -FilePath $file.FullName
 
         $findings.Count | Should -Be 2
     }
