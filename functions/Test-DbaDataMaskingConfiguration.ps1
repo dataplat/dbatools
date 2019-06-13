@@ -154,7 +154,7 @@ function Test-DbaDataMaskingConfiguration {
                         }
                     }
 
-                    if ($Column.SubType.ToLower() -eq 'between') {
+                    if ($null -ne $Column.SubType -and $Column.SubType.ToLower() -eq 'between') {
 
                         if (-not ($null -eq $column.MinValue) -and -not ([datetime]::TryParse($column.MinValue, [ref]"2002-12-31"))) {
                             [PSCustomObject]@{
