@@ -63,7 +63,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $findings = @()
         $findings += Test-DbaDataMaskingConfiguration -FilePath $file.FullName
 
-        $findings.Count | Should -Be 2
+        $findings.Count | Should -Be 1
     }
 
 }
