@@ -152,6 +152,7 @@ function Set-DbaAgentSchedule {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
@@ -164,7 +165,7 @@ function Set-DbaAgentSchedule {
         }
 
         # Check if the interval is valid
-        if ($null = $FrequencyInterval -and ($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
+        if ($null -eq $FrequencyInterval -and ($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
             Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
             return
         }
@@ -310,7 +311,7 @@ function Set-DbaAgentSchedule {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             foreach ($j in $Job) {
 

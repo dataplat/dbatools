@@ -217,7 +217,6 @@ function Import-DbaCsv {
         The CSV column 'Text' is inserted into SQL column 'FirstName' and CSV column Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [parameter(ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -316,7 +315,7 @@ function Import-DbaCsv {
             $reader.Dispose()
 
             # Get SQL datatypes by best guess on first data row
-            $sqldatatypes = @(); $index = 0
+            $sqldatatypes = @();
 
             foreach ($column in $Columns) {
                 $sqldatatypes += "[$column] varchar(MAX)"
@@ -497,7 +496,7 @@ function Import-DbaCsv {
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions = $bulkCopyOptions -bor (Invoke-Expression "[System.Data.SqlClient.SqlBulkCopyOptions]::$option")
+                        $bulkCopyOptions += $([System.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
                     }
                 }
 

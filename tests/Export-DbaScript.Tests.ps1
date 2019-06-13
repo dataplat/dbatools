@@ -12,8 +12,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "works as expected" {
+        $script:results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select -First 1 | Export-DbaScript -Passthru
+        It "should export some text matching create table" {
+            $script:results -match "CREATE TABLE"
+        }
+        $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+        It "should not accept non-SMO objects" {
+            $invalid -match "not a SQL Management Object"
+        }
+    }
+}

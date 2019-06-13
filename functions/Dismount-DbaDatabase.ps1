@@ -67,7 +67,7 @@ function Dismount-DbaDatabase {
         Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands).
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default", ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -80,6 +80,9 @@ function Dismount-DbaDatabase {
         [switch]$Force,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

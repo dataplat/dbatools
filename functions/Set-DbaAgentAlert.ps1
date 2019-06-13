@@ -86,8 +86,8 @@ function Set-DbaAgentAlert {
         [Microsoft.SqlServer.Management.Smo.Agent.Alert[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
 

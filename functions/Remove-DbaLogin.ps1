@@ -76,7 +76,9 @@ function Remove-DbaLogin {
         [switch]$Force,
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         foreach ($instance in $SqlInstance) {

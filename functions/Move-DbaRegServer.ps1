@@ -1,10 +1,10 @@
 function Move-DbaRegServer {
     <#
     .SYNOPSIS
-        Moves registered servers around SQL Server Central Management Server (CMS)
+        Moves registered servers around SQL Server Central Management Server (CMS). Local Registered Servers not currently supported.
 
     .DESCRIPTION
-        Moves registered servers around SQL Server Central Management Server (CMS)
+        Moves registered servers around SQL Server Central Management Server (CMS). Local Registered Servers not currently supported.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

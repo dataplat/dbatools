@@ -67,7 +67,9 @@ function Remove-DbaAgentJobCategory {
         [switch]$Force,
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         foreach ($instance in $sqlinstance) {

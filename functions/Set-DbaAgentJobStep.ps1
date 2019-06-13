@@ -174,6 +174,8 @@ function Set-DbaAgentJobStep {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
