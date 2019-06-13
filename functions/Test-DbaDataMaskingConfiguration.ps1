@@ -100,8 +100,6 @@ function Test-DbaDataMaskingConfiguration {
                             Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
-
-                        return $findings
                     }
 
                     if ($compareResult.SideIndicator -contains "=>") {
@@ -112,8 +110,6 @@ function Test-DbaDataMaskingConfiguration {
                             Error  = "The column contains a property that is not in the required properties. Please check the column"
                         }
                     }
-
-                    return $findings
                 }
 
                 # Test column type
