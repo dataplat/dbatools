@@ -30,13 +30,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $r.SourceDatabase | Should Be "Master"
             }
             It "Should be sourced from the instance $($script:instance1)" {
-                $r.SourceSqlInstance | Should Be $($script:instance1)
+                $r.SourceSqlInstance | Should Be "$env:COMPUTERNAME\SQL2008R2SP2"
             }
             It "Should be destined for Dbatoolsci_DestinationDB" {
                 $r.DestinationDatabase | Should Be "Dbatoolsci_DestinationDB"
             }
             It "Should be destined for the instance $($script:instance2)" {
-                $r.DestinationSqlInstance | Should Be $($script:instance2)
+                $r.DestinationSqlInstance | Should Be "$env:COMPUTERNAME\SQL2016"
             }
             It "Should be have files on source" {
                 $r.FileLocation | Should Be "Only on Source"
