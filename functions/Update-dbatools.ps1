@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Update-Dbatools {
     <#
     .SYNOPSIS
@@ -48,7 +47,6 @@ function Update-Dbatools {
     param(
         [Alias("dev", "devbranch")]
         [switch]$Development,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     $MyModuleBase = [SqlCollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase

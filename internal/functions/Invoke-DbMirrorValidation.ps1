@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbMirrorValidation {
     <#
         .SYNOPSIS
@@ -91,7 +90,7 @@ function Invoke-DbMirrorValidation {
             $server = $db.Parent
             $dbname = $db.Name
             $canmirror = $true
-            $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
+            $dest = Connect-DbaInstance -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential
 
             $endpoints = @()
             $endpoints += Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring

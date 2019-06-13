@@ -157,7 +157,6 @@ function Test-DbaLastBackup {
         [switch]$NoDrop,
         [switch]$CopyFile,
         [string]$CopyPath,
-        [Alias("MaxMB")]
         [int]$MaxSize,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
@@ -166,9 +165,6 @@ function Test-DbaLastBackup {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0" -Parameter 'MaxMB'
-    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase

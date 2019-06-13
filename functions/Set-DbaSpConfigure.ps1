@@ -66,10 +66,9 @@ function Set-DbaSpConfigure {
 
         Returns information on the action that would be performed. No actual change will be made.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Alias("NewValue", "NewConfig")]

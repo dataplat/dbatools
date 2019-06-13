@@ -134,7 +134,7 @@ function Get-DbaLogin {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
@@ -146,16 +146,11 @@ function Get-DbaLogin {
         [ValidateSet('Windows', 'SQL')]
         [string]$Type,
         [switch]$HasAccess,
-        [switch]$SqlLogins,
-        [switch]$WindowsLogins,
         [switch]$Locked,
         [switch]$Disabled,
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter SQLLogins
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter WindowsLogins
-
         if ($SQLLogins) {
             $Type = "SQL"
         }

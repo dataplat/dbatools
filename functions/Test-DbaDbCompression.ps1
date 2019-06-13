@@ -139,7 +139,6 @@ function Test-DbaDbCompression {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -151,7 +150,6 @@ function Test-DbaDbCompression {
         [string]$Rank = 'TotalPages',
         [ValidateSet('Partition', 'Index', 'Table')]
         [string]$FilterBy = 'Partition',
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

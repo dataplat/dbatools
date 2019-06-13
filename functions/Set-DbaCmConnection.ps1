@@ -198,8 +198,7 @@ function Set-DbaCmConnection {
         [switch]
         $ResetConfiguration,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

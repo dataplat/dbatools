@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaConnection {
     <#
     .SYNOPSIS
@@ -39,7 +38,6 @@ function Get-DbaConnection {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
         [PSCredential]$SqlCredential,

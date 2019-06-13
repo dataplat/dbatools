@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgentJobHistory {
     <#
     .SYNOPSIS
@@ -105,7 +104,6 @@ function Get-DbaAgentJobHistory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
@@ -117,7 +115,6 @@ function Get-DbaAgentJobHistory {
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -66,7 +66,6 @@ function Copy-DbaSysDbUserObject {
         [PSCredential]$DestinationSqlCredential,
         [switch]$Force,
         [switch]$Classic,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -383,8 +382,5 @@ function Copy-DbaSysDbUserObject {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
     }
 }

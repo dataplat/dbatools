@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Stop-Function {
     <#
@@ -102,7 +101,6 @@ function Stop-Function {
         $Message,
 
         [bool]
-        [Alias('Silent')]
         $EnableException = $EnableException,
 
         [Parameter(ParameterSetName = 'Plain')]

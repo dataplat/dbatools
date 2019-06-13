@@ -196,7 +196,6 @@ function Start-DbaMigration {
         [switch]$DetachAttach,
         [switch]$Reattach,
         [switch]$BackupRestore,
-        [Alias("NetworkShare")]
         [parameter(HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts, or a URL to an Azure Storage account")]
         [string]$SharedPath,
         [switch]$WithReplace,
@@ -219,8 +218,6 @@ function Start-DbaMigration {
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
-
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {
                 Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -Exclude Databases"
@@ -316,7 +313,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'CentralManagementServer') {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaCmsRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'BackupDevices') {
@@ -326,7 +323,7 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'SystemTriggers') {
             Write-Message -Level Verbose -Message "Migrating System Triggers"
-            Copy-DbaServerTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'Databases') {
@@ -368,12 +365,12 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'Audits') {
             Write-Message -Level Verbose -Message "Migrating Audits"
-            Copy-DbaServerAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'ServerAuditSpecifications') {
             Write-Message -Level Verbose -Message "Migrating Server Audit Specifications"
-            Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaInstanceAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if ($Exclude -notcontains 'Endpoints') {

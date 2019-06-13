@@ -52,7 +52,6 @@ function Get-DbaLocaleSetting {
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential] $Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -66,8 +65,8 @@ function Get-DbaLocaleSetting {
     }
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential

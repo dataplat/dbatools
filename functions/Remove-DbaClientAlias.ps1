@@ -50,13 +50,12 @@ function Remove-DbaClientAlias {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias('AliasName')]
         [string[]]$Alias,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

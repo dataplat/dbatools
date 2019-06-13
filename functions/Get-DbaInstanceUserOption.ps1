@@ -47,11 +47,9 @@ function Get-DbaInstanceUserOption {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -70,8 +68,5 @@ function Get-DbaInstanceUserOption {
                 Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlInstanceUserOption
     }
 }

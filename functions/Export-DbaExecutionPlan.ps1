@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
     <#
     .SYNOPSIS
@@ -40,7 +39,7 @@ function Export-DbaExecutionPlan {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER PipedObject
+    .PARAMETER InputObject
         Internal parameter
 
     .PARAMETER EnableException
@@ -83,23 +82,21 @@ function Export-DbaExecutionPlan {
     [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'NotPiped')]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ParameterSetName = 'Piped', Mandatory)]
-        [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [string]$Path,
+        [parameter(ParameterSetName = 'Piped')]
+        [parameter(ParameterSetName = 'NotPiped')]
+        # No file path because this needs a directory
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceCreation,
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
-        [object[]]$PipedObject,
-        [Alias('Silent')]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -148,12 +145,18 @@ function Export-DbaExecutionPlan {
     }
 
     process {
-        if (!(Test-Path $Path)) {
-            $null = New-Item -ItemType Directory -Path $Path
+
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
+            }
         }
 
-        if ($PipedObject) {
-            foreach ($object in $pipedobject) {
+        if ($InputObject) {
+            foreach ($object in $InputObject) {
                 Export-Plan $object
                 return
             }

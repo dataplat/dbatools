@@ -52,7 +52,7 @@ Import-Module "$ModuleBase\dbatools.psm1"
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
 
-Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml"
+Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
 
 function Split-ArrayInParts($array, [int]$parts) {

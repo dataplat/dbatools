@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $result.Length | Should BeGreaterThan 1
         }
 
-        It "Should return a random address zipcode" {
+        It -Skip "Should return a random address zipcode" {
             $result = Get-DbaRandomizedValue -RandomizerSubType Zipcode -Format "#####"
 
             $result.Length | Should Be 5

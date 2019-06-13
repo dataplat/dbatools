@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbSpace {
     <#
     .SYNOPSIS
@@ -71,10 +70,8 @@ function Get-DbaDbSpace {
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
@@ -208,10 +205,5 @@ function Get-DbaDbSpace {
                 Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseFreeSpace
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncludeSystemDBs
     }
 }
