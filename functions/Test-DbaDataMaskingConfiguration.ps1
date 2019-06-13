@@ -203,9 +203,4 @@ function Test-DbaDataMaskingConfiguration {
 
     } # End process
 
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-    }
 }
