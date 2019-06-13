@@ -79,8 +79,6 @@ function Test-DbaDataGeneratorConfiguration {
         $randomizerTypes = Get-DbaRandomizedType
 
         $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'ForeignKey', 'Identity', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
-
-        $findings = @()
     }
 
     process {
@@ -146,10 +144,8 @@ function Test-DbaDataGeneratorConfiguration {
                 }
             }
         }
+
     } # End process
 
-    end {
-        if (Test-FunctionInterrupt) { return }
-    }
 
 }
