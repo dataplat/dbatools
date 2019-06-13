@@ -14,8 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    # disabled until we figure out a way to not have pw expire
-    if ($env:azuredbpasswd1) {
+    if ($env:azuredbpasswd) {
         Context "Connect to Azure" {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
