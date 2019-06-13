@@ -5347,5 +5347,10 @@ GO
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
             $results | Should Be $Null
         }
+
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -NotFilter 0 -NotFilterType Program
+        It "Should execute with NotFilter and NotFilterType" {
+            $results | Should Be $Null
+        }
     }
 }
