@@ -82,6 +82,8 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\spwhoisactive.zip"
@@ -132,21 +134,11 @@ function Install-DbaWhoIsActive {
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
 
                 Unblock-File $zipfile -ErrorAction SilentlyContinue
-
-                if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-                    try {
-                        Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-                    } catch {
-                        Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
-                        return
-                    }
-                } else {
-                    # Keep it backwards compatible
-                    $shell = New-Object -ComObject Shell.Application
-                    $zipPackage = $shell.NameSpace($zipfile)
-                    $destinationFolder = $shell.NameSpace($temp)
-                    Get-ChildItem "$temp\who*active*.sql" | Remove-Item
-                    $destinationFolder.CopyHere($zipPackage.Items())
+                try {
+                    Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+                } catch {
+                    Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
+                    return
                 }
                 Remove-Item -Path $zipfile
             }

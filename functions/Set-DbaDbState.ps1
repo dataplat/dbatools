@@ -116,7 +116,7 @@ function Set-DbaDbState {
         Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -141,6 +141,8 @@ function Set-DbaDbState {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Get-WrongCombo($optset, $allparams) {
             $x = 0
             foreach ($opt in $optset) {
@@ -453,7 +455,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Where {$_} | Get-Unique
+                $warn = $warn | Where-Object {$_} | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null

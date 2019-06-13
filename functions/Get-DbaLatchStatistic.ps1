@@ -125,7 +125,7 @@ function Get-DbaLatchStatistic {
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.DomainInstanceName
                     WaitType           = $row.LatchClass

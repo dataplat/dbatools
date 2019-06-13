@@ -74,6 +74,8 @@ function Disable-DbaFilestream {
             2 = 'FileStream enabled for T-Sql and IO streaming access'
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         foreach ($instance in $SqlInstance) {

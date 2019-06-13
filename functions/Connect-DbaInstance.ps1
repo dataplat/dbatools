@@ -766,7 +766,6 @@ function Connect-DbaInstance {
 
             # Update lots of registered stuff
             if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
-                $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
                 foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
                     Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
                 }
@@ -812,8 +811,20 @@ function Connect-DbaInstance {
                 continue
             } else {
                 if (-not $server.ComputerName) {
+                    # Not every environment supports .NetName
+                    if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                        try {
+                            $computername = $server.NetName
+                        } catch {
+                            $computername = $instance.ComputerName
+                        }
+                    }
+                    # SQL on Linux is often on docker and the internal name is not useful
+                    if (-not $computername -or $server.HostPlatform -eq "Linux") {
+                        $computername = $instance.ComputerName
+                    }
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                 }

@@ -79,7 +79,7 @@ function Restore-DbaDbSnapshot {
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -91,7 +91,9 @@ function Restore-DbaDbSnapshot {
         [switch]$Force,
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         if (-not $Snapshot -and -not $Database -and -not $ExcludeDatabase -and -not $InputObject) {
             Stop-Function -Message "You must specify either -Snapshot (to restore from) or -Database/-ExcludeDatabase (to restore to) or pipe in a snapshot"

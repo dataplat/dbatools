@@ -118,6 +118,17 @@ Describe "$ModuleName style" -Tag 'Compliance' {
             }
         }
     }
+    Context "Shell.Application" {
+        # Not every PS instance has Shell.Application
+        foreach ($f in $AllPublicFunctions) {
+            $NotAllowed = Select-String -Path $f -Pattern 'shell.application'
+            if ($NotAllowed.Count -gt 0) {
+                It "$f should not use Shell.Application (usually fallbacks for Expand-Archive, which dbatools ships), see #4800" {
+                    $NotAllowed.Count | Should -Be 0
+                }
+            }
+        }
+    }
 
 }
 

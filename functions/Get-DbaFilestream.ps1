@@ -124,7 +124,7 @@ function Get-DbaFilestream {
             $servicelevel = [int]$serviceFS.AccessLevel
 
             [PsCustomObject]@{
-                ComputerName        = $server.NetName
+                ComputerName        = $server.ComputerName
                 InstanceName        = $server.ServiceName
                 SqlInstance         = $server.DomainInstanceName
                 InstanceAccess      = $idInstanceFS[$runvalue]

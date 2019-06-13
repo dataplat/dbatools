@@ -69,7 +69,7 @@ function Copy-DbaInstanceAuditSpecification {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -97,6 +97,8 @@ function Copy-DbaInstanceAuditSpecification {
         }
 
         $AuditSpecifications = $sourceServer.ServerAuditSpecifications
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

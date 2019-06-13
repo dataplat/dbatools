@@ -1,10 +1,10 @@
 function Move-DbaRegServerGroup {
     <#
     .SYNOPSIS
-        Moves registered server groups around SQL Server Central Management Server (CMS).
+        Moves registered server groups around SQL Server Central Management Server (CMS). Local Registered Server Groups not currently supported.
 
     .DESCRIPTION
-        Moves registered server groups around SQL Server Central Management Server (CMS).
+        Moves registered server groups around SQL Server Central Management Server (CMS). Local Registered Server Groups not currently supported.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -124,6 +124,14 @@ namespace Sqlcollaborative.Dbatools.Commands
         public SwitchParameter PassThru;
 
         /// <summary>
+        /// Registers the configuration setting into the user scope.
+        /// As if running Register-PSFConfig.
+        /// Only applies when updating an existing setting.
+        /// </summary>
+        [Parameter()]
+        public SwitchParameter Register;
+
+        /// <summary>
         /// Enable throwing exceptions.
         /// </summary>
         [Parameter()]
@@ -415,6 +423,15 @@ namespace Sqlcollaborative.Dbatools.Commands
             #endregion Handler
 
             _Config.Value = tempValue;
+
+            if (Register.ToBool())
+            {
+                ScriptBlock registerCodeblock = ScriptBlock.Create(@"
+param ($Config)
+$Config | Register-DbatoolsConfig
+");
+                registerCodeblock.Invoke(_Config);
+            }
         }
 
         /// <summary>
