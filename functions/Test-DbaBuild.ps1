@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
     <#
     .SYNOPSIS
@@ -40,7 +39,7 @@ function Test-DbaBuild {
         Tags: SqlBuild, Version
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -93,7 +92,7 @@ function Test-DbaBuild {
         Returns information builds identified by these versions strings.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a.
 
@@ -106,13 +105,11 @@ function Test-DbaBuild {
         [string]$MaxBehind,
         [switch] $Latest,
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Update,
         [switch]$Quiet,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -271,8 +268,5 @@ function Test-DbaBuild {
                 $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }

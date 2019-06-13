@@ -89,7 +89,7 @@ function New-DbaLogin {
 
     .EXAMPLE
         PS C:\> $securePassword = Read-Host "Input password" -AsSecureString
-        PS C:\> New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
+        PS C:\> New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -SecurePassword $securePassword -PasswordPolicy -PasswordExpiration
 
         Creates a login on Server1\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.
 
@@ -113,7 +113,6 @@ function New-DbaLogin {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
     param (
         [parameter(Mandatory, Position = 1)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Name", "LoginName")]
@@ -161,7 +160,6 @@ function New-DbaLogin {
         [switch]$Disabled,
         [switch]$NewSid,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Find-DbaDbUnusedIndex {
     <#
     .SYNOPSIS
@@ -58,7 +57,7 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused indexes on all databases on sql2016
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
@@ -165,8 +164,5 @@ function Find-DbaDbUnusedIndex {
                 Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
     }
 }

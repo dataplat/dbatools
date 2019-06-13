@@ -36,12 +36,9 @@ function Get-DbaRepDistributor {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Position = 1)]
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -78,8 +75,5 @@ function Get-DbaRepDistributor {
 
             Select-DefaultView -InputObject $distributor -Property ComputerName, InstanceName, SqlInstance, IsPublisher, IsDistributor, DistributionServer, DistributionDatabase, DistributorInstalled, DistributorAvailable, HasRemotePublisher
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDistributor
     }
 }

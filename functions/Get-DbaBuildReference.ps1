@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
     <#
     .SYNOPSIS
@@ -67,7 +66,7 @@ function Get-DbaBuildReference {
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
@@ -95,20 +94,16 @@ function Get-DbaBuildReference {
         $CumulativeUpdate,
 
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
 
         [switch]
         $Update,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -309,7 +304,7 @@ function Get-DbaBuildReference {
         }
         #endregion Helper functions
 
-        $moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
+        $moduledirectory = $script:PSModuleRoot
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
@@ -461,8 +456,5 @@ function Get-DbaBuildReference {
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }

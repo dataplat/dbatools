@@ -94,8 +94,8 @@ function Get-DbaRandomizedValue {
         [string]$DataType,
         [string]$RandomizerType,
         [string]$RandomizerSubType,
-        [object]$Min = 1,
-        [object]$Max = 255,
+        [object]$Min,
+        [object]$Max,
         [int]$Precision = 2,
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
@@ -106,23 +106,27 @@ function Get-DbaRandomizedValue {
 
 
     begin {
-        # Get all the random possibilities
-        $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
-
-        # Create the faker objects
-        $typePath = Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll"
-
-        if ([AppDomain]::CurrentDomain.GetAssemblies().Location -notcontains $typePath.Path) {
-            Write-Message -Level Verbose -Message "Randomizer type not loaded yet. Loading it"
-            try {
-                Add-Type -Path (Resolve-Path -Path $typePath)
-            } catch {
-                Stop-Function -Message "Couldn't load randomizer dll" -Target $typePath -ErrorRecord $_ -Continue
-            }
+        # Create faker object
+        if (-not $script:faker) {
+            $script:faker = New-Object Bogus.Faker($Locale)
         }
 
-        # Create faker object
-        $faker = New-Object Bogus.Faker($Locale)
+        # Get all the random possibilities
+        if (-not $script:randomizerTypes) {
+            $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
+        }
+
+        if (-not $script:uniquesubtypes) {
+            $script:uniquesubtypes = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
+        }
+
+        if (-not $script:uniquerandomizertypes) {
+            $script:uniquerandomizertypes = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
+        }
+
+        if (-not $script:uniquerandomizersubtype) {
+            $script:uniquerandomizersubtype = ($script:randomizerTypes.Group.SubType | Select-Object -Unique)
+        }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
@@ -134,36 +138,47 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
+            $RandomizerType = $script:uniquesubtypes
         }
 
-        if ($DataType -and $DataType.ToLower() -notin $supportedDataTypes) {
+        if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
             Stop-Function -Message "Unsupported sql data type" -Continue -Target $DataType
         }
 
         # Check the bogus type
         if ($RandomizerType) {
-            if ($RandomizerType -notin ($randomizerTypes.Group.Type | Select-Object -Unique)) {
+            if ($RandomizerType -notin $script:uniquerandomizertypes) {
                 Stop-Function -Message "Invalid randomizer type" -Continue -Target $RandomizerType
             }
         }
 
         # Check the sub type
         if ($RandomizerSubType) {
-            if ($RandomizerSubType -notin ($randomizerTypes.Group.SubType | Select-Object -Unique)) {
+            if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            $randomizerSubTypes = $randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
+            <# cant get this to work and it's expensive
+                if (-not $randomizerSubTypes) {
+                    $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
+                }
+                if ($RandomizerSubType -notin $randomizerSubTypes) {
+                    Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
+                }
+            #>
+        }
 
-            if ($RandomizerSubType -notin $randomizerSubTypes) {
-                Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
+        if (-not $Min) {
+            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+                $Min = 1
             }
         }
 
-        <# if ($Min -gt $Max) {
-            Stop-Function -Message "Min value cannot be greater than max value" -Continue -Target $Min
-        } #>
+        if (-not $Max) {
+            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+                $Max = 255
+            }
+        }
     }
 
     process {
@@ -172,7 +187,7 @@ function Get-DbaRandomizedValue {
 
         if ($DataType) {
 
-            switch ($DataType.ToLower()) {
+            switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
                     if ($Min -lt -9223372036854775808) {
                         $Min = -9223372036854775808
@@ -288,9 +303,9 @@ function Get-DbaRandomizedValue {
 
         } else {
 
-            $randSubType = $RandomizerSubType.ToLower()
+            $randSubType = $RandomizerSubType.ToLowerInvariant()
 
-            switch ($RandomizerType.ToLower()) {
+            switch ($RandomizerType.ToLowerInvariant()) {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
@@ -325,7 +340,22 @@ function Get-DbaRandomizedValue {
                     $faker.Database.$RandomizerSubType()
                 }
                 'date' {
-                    if ($randSubType -eq 'past') {
+                    if ($randSubType -eq 'between') {
+
+                        if (-not $Min) {
+                            Stop-Function -Message "Please set the minimum value for the date" -Continue -Target $Min
+                        }
+
+                        if (-not $Max) {
+                            Stop-Function -Message "Please set the maximum value for the date" -Continue -Target $Max
+                        }
+
+                        if ($Min -gt $Max) {
+                            Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
+                        } else {
+                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        }
+                    } elseif ($randSubType -eq 'past') {
                         $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'future') {
                         $faker.Future.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")

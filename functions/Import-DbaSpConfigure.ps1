@@ -93,14 +93,12 @@ function Import-DbaSpConfigure {
         [Parameter(ParameterSetName = "ServerCopy")]
         [PSCredential]$DestinationSqlCredential,
         [Parameter(ParameterSetName = "FromFile")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Parameter(ParameterSetName = "FromFile")]
         [string]$Path,
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -230,7 +228,5 @@ function Import-DbaSpConfigure {
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Message -Level Output -Message "SQL Server configuration options migration finished."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-SqlSpConfigure
     }
 }

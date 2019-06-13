@@ -54,15 +54,12 @@ function Get-DbaDbMailHistory {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,
         [ValidateSet('Unsent', 'Sent', 'Failed', 'Retrying')]
         [string]$Status,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

@@ -108,7 +108,6 @@ function Invoke-DbaAdvancedRestore {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Object[]]$BackupHistory,
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$OutputScriptOnly,
@@ -320,8 +319,8 @@ function Invoke-DbaAdvancedRestore {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                         $RestoreComplete = $False
                         $ExitError = $_.Exception.InnerException
-                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
-                        return
+                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_ -Continue
+                        break
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server

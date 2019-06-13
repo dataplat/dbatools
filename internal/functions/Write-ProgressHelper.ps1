@@ -6,6 +6,7 @@ function Write-ProgressHelper {
         [string]$Activity,
         [string]$Message,
         [int]$TotalSteps,
+        [Alias("NoProgress")]
         [switch]$ExcludePercent
     )
 

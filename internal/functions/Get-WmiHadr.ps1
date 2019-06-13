@@ -2,10 +2,8 @@ function Get-WmiHadr {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

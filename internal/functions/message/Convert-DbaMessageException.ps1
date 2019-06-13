@@ -38,7 +38,7 @@ function Convert-DbaMessageException {
 
     if ($null -eq $Exception) { return }
 
-    $typeName = $Exception.GetType().FullName.ToLower()
+    $typeName = $Exception.GetType().FullName.ToLowerInvariant()
 
     if ([Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms.ContainsKey($typeName)) {
         $scriptBlock = [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms[$typeName]

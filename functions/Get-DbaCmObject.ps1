@@ -71,12 +71,12 @@ function Get-DbaCmObject {
     [CmdletBinding(DefaultParameterSetName = "Class")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
+        [Parameter(Mandatory, ParameterSetName = "Class")]
         [Alias('Class')]
         [string]
         $ClassName,
 
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]
         $Query,
 
@@ -99,8 +99,7 @@ function Get-DbaCmObject {
         [switch]
         $SilentlyContinue,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -118,7 +117,7 @@ function Get-DbaCmObject {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
             # Since all connection caching runs using lower-case strings, making it lowercase here simplifies things.
-            $computer = $connectionObject.Connection.ComputerName.ToLower()
+            $computer = $connectionObject.Connection.ComputerName.ToLowerInvariant()
 
             Write-Message -Message "[$computer] Retrieving Management Information" -Level VeryVerbose -Target $computer
 

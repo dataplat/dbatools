@@ -45,15 +45,20 @@ $TestsRunGroups = @{
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Test-DbaDeprecatedFeature',
-        'Test-DbaServerName',
+        'Test-DbaInstanceName',
         'Test-DbaTempDbConfig',
-        'Test-DbaDbVirtualLogFile',
+        'Measure-DbaDbVirtualLogFile',
         'Test-DbaAgentJobOwner',
         'Resume-DbaAgDbDataMovement',
         'Get-DbaDbMasterKey',
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
-        'Get-DbaPrivilege'
+        'Get-DbaPrivilege',
+        'Find-DbaAgentJob', # strange pester issue
+        'Remove-DbaDatabaseSafely', # strange pester issue
+        'Set-DbaDbOwner',
+        'Test-DbaManagementObject',
+        'Test-DbaMaxDop'
     )
     # do not run everywhere
     "disabled"          = @()

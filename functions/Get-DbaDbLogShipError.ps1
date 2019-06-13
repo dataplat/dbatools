@@ -84,7 +84,6 @@ function Get-DbaDbLogShipError {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -95,7 +94,6 @@ function Get-DbaDbLogShipError {
         [datetime]$DateTimeTo,
         [switch]$Primary,
         [switch]$Secondary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -219,8 +217,5 @@ DROP TABLE #DatabaseID;"
                 Write-Message -Message "No log shipping errors found" -Level Verbose
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLogShippingError
     }
 }

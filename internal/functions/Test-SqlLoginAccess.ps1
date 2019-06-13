@@ -7,7 +7,6 @@ function Test-SqlLoginAccess {
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Login

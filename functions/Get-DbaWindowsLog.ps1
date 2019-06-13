@@ -59,7 +59,6 @@ function Get-DbaWindowsLog {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,
 
@@ -79,8 +78,7 @@ function Get-DbaWindowsLog {
         [int]
         $MaxRemoteThreads = 2,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

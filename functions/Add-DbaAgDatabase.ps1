@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
@@ -198,21 +197,23 @@ function Add-DbaAgDatabase {
                 }
 
                 $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
-
                 if (-not $replicadb.IsJoined) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {
                             try {
-                                Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $($replica.Name)"
+                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($replica.Name)" -Id 1 -PercentComplete ($timeout * 10)
                                 $timeout++
-                                $replicadb.JoinAvailablityGroup()
+                                if ($timeout -ne 1) {
+                                    Start-Sleep -Seconds 3
+                                }
                                 $replicadb.Refresh()
-                                Start-Sleep -Seconds 1
+                                $replicadb.JoinAvailablityGroup()
                             } catch {
-                                Stop-Function -Message "Error joining database to availability group" -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
                             }
                         } while (-not $replicadb.IsJoined -and $timeout -lt 10)
+                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($replica.Name)" -Id 1 -Complete
 
                         if ($replicadb.IsJoined) {
                             $replicadb

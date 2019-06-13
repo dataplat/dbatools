@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaSpConfigure {
     <#
     .SYNOPSIS
@@ -15,9 +14,10 @@ function Export-DbaSpConfigure {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
-        If not specified will output to My Documents folder with default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
-        If a directory is passed then uses default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -66,13 +66,18 @@ function Export-DbaSpConfigure {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [switch]$EnableException
     )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -80,35 +85,7 @@ function Export-DbaSpConfigure {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $filepath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            }
-
-            if (Test-Path $Path -PathType Container) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-            } elseif (Test-Path $Path -PathType Leaf) {
-                if ($SqlInstance.Count -gt 1) {
-                    $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                    $PathData = Get-ChildItem $Path
-                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
-                } else {
-                    $filepath = $Path
-                }
-            }
-
-            If (-not $filepath) {
-                $filepath = $Path
-            }
-
-            $topdir = Split-Path -Path $filepath
-
-            if (-not (Test-Path -Path $topdir)) {
-                New-Item -Path $topdir -ItemType Directory
-            }
-
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
             $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
 
             if ($ShowAdvancedOptions -eq 0) {
@@ -121,31 +98,28 @@ function Export-DbaSpConfigure {
             }
 
             try {
-                Set-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
+                Set-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
             } catch {
-                Stop-Function -Message "Can't write to $filepath" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
 
             foreach ($sourceprop in $server.Configuration.Properties) {
                 $displayname = $sourceprop.DisplayName
                 $configvalue = $sourceprop.ConfigValue
-                Add-Content -Path $filepath "EXEC sp_configure '$displayname' , $configvalue;"
+                Add-Content -Path $FilePath "EXEC sp_configure '$displayname' , $configvalue;"
             }
 
             if ($ShowAdvancedOptions -eq 0) {
-                Add-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 0;"
-                Add-Content -Path $filepath "RECONFIGURE WITH OVERRIDE"
+                Add-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 0;"
+                Add-Content -Path $FilePath "RECONFIGURE WITH OVERRIDE"
 
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 $server.Configuration.Alter($true)
             }
-            Get-ChildItem -Path $filepath
+            Get-ChildItem -Path $FilePath
         }
     }
-
     end {
         Write-Message -Level Verbose -Message "Server configuration export finished"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }

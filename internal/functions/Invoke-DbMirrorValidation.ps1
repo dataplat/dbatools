@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbMirrorValidation {
     <#
         .SYNOPSIS
@@ -44,7 +43,7 @@ function Invoke-DbMirrorValidation {
         .NOTES
             Tags: Mirror, HA
             Author: Chrissy LeMaire (@cl), netnerds.net
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            dbatools PowerShell module (https://dbatools.io)
            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
         .EXAMPLE
@@ -91,7 +90,7 @@ function Invoke-DbMirrorValidation {
             $server = $db.Parent
             $dbname = $db.Name
             $canmirror = $true
-            $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
+            $dest = Connect-DbaInstance -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential
 
             $endpoints = @()
             $endpoints += Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring

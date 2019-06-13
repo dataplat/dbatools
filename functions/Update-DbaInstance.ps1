@@ -93,6 +93,9 @@ function Update-DbaInstance {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER ExtractPath
+        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+
     .NOTES
         Tags: Install, Patching, SP, CU, Instance
         Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
@@ -139,6 +142,14 @@ function Update-DbaInstance {
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
         Does not prompt for confirmation.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -Restart -Confirm:$false -ExtractPath "C:\temp"
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
+        Does not prompt for confirmation.
+        Extracts the files in local driver on Server1 C:\temp.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -164,7 +175,9 @@ function Update-DbaInstance {
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
+        [string]$ExtractPath,
         [switch]$EnableException
+
     )
     begin {
         $notifiedCredentials = $false
@@ -267,7 +280,7 @@ function Update-DbaInstance {
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
+        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
@@ -297,7 +310,7 @@ function Update-DbaInstance {
             Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
             # Filter for specific instance name
             if ($InstanceName) {
-                $components = $components | Where-Object {$_.InstanceName -eq $InstanceName }
+                $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
             }
             try {
                 $restartNeeded = Test-PendingReboot -ComputerName $resolvedName -Credential $Credential
@@ -340,7 +353,7 @@ function Update-DbaInstance {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
                 Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
                 # get upgrade details for each component
-                $upgradeDetails = Get-SqlServerUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
+                $upgradeDetails = Get-SqlInstanceUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
                 if ($upgradeDetails.Successful -contains $false) {
                     #Exit the actions loop altogether - upgrade cannot be performed
                     $upgradeDetails
@@ -359,7 +372,7 @@ function Update-DbaInstance {
                         KB             = $detail.KB
                     }
                     try {
-                        $installer = Find-SqlServerUpdate @kbLookupParams
+                        $installer = Find-SqlInstanceUpdate @kbLookupParams
                     } catch {
                         Stop-Function -Message "Failed to enumerate files in -Path" -ErrorRecord $_ -Continue
                     }
@@ -399,6 +412,7 @@ function Update-DbaInstance {
                 Restart         = $Restart
                 Credential      = $Credential
                 EnableException = $EnableException
+                ExtractPath     = $ExtractPath
             }
             if ($explicitAuth) { $updateSplat.Authentication = $Authentication }
             Invoke-DbaAdvancedUpdate @updateSplat

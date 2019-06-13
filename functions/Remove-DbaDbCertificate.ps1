@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbCertificate {
     <#
     .SYNOPSIS
@@ -54,7 +53,6 @@ function Remove-DbaDbCertificate {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -63,9 +61,6 @@ function Remove-DbaDbCertificate {
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseCertificate
-    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database

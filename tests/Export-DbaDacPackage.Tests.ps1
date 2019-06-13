@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','AllUserDatabases','Path','DacOption','ExtendedParameters','ExtendedProperties','Type','Table','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'Path', 'FilePath', 'DacOption', 'ExtendedParameters', 'ExtendedProperties', 'Type', 'Table', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports dacpac with a table list" {
                 $relativePath = '.\extract.dacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -100,7 +100,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports bacpac with a table list" {
                 $relativePath = '.\extract.bacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example -Type Bacpac
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
     <#
     .SYNOPSIS
@@ -189,7 +188,7 @@ function Get-DbaSsisExecutionHistory {
                     , s.code AS StatusCode
                     , start_time as StartTime
                     , end_time as EndTime
-                    , ElapsedMinutes = DATEDIFF(ss, e.start_time, e.end_time)
+                    , ElapsedMinutes = DATEDIFF(mi, e.start_time, e.end_time)
                     , l.LoggingLevel
             FROM
                 [catalog].executions e

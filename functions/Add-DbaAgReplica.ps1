@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -105,7 +104,7 @@ function Add-DbaAgReplica {
         [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode = 'Automatic',
+        [string]$SeedingMode,
         [string]$Endpoint,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
@@ -182,7 +181,13 @@ function Add-DbaAgReplica {
                             if (-not $serviceaccount) {
                                 $serviceaccount = "$saname`$"
                             }
-                            $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+
+                            if ($server.HostPlatform -ne "Linux") {
+                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
+                                }
+                            }
                         }
                     }
 

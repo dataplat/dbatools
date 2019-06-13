@@ -222,7 +222,7 @@ function Install-DbaInstance {
         [ValidateSet("Default", "All", "Engine", "Tools", "Replication", "FullText", "DataQuality", "PolyBase", "MachineLearning", "AnalysisServices",
             "ReportingServices", "ReportingForSharepoint", "SharepointAddin", "IntegrationServices", "MasterDataServices", "PythonPackages", "RPackages",
             "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
-        [string]$Feature = "Default",
+        [string[]]$Feature = "Default",
         [ValidateSet("Windows", "Mixed")]
         [string]$AuthenticationMode = "Windows",
         [string]$InstancePath,
@@ -381,7 +381,7 @@ function Install-DbaInstance {
         if ($isNetworkPath) {
             Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
             try {
-                $localSetupFile = Find-SqlServerSetup -Version $canonicVersion -Path $Path
+                $localSetupFile = Find-SqlInstanceSetup -Version $canonicVersion -Path $Path
             } catch {
                 Write-Message -Level Verbose -Message "Failed to access $($Path) on a local machine, ignoring for now"
             }
@@ -475,7 +475,7 @@ function Install-DbaInstance {
                     Path           = $Path
                 }
                 try {
-                    $setupFile = Find-SqlServerSetup @findSetupParams
+                    $setupFile = Find-SqlInstanceSetup @findSetupParams
                 } catch {
                     Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
                 }

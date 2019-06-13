@@ -34,10 +34,6 @@ function Copy-DbaLogin {
     .PARAMETER ExcludePermissionSync
         Skips permission syncs
 
-    .PARAMETER SyncOnly
-        If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
-        Credential removal is not currently supported for this parameter.
-
     .PARAMETER SyncSaName
         If this switch is enabled, the name of the sa account will be synced between Source and Destination
 
@@ -109,13 +105,6 @@ function Copy-DbaLogin {
         Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
-
-        Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.
-
-        If a matching Login does not exist on Destination, the Login will be skipped.
-
-    .EXAMPLE
         PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
         Copies PreviousUser and then renames it to newlogin.
@@ -137,7 +126,6 @@ function Copy-DbaLogin {
         [object[]]$Login,
         [object[]]$ExcludeLogin,
         [switch]$ExcludeSystemLogins,
-        [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [parameter(ParameterSetName = "SqlInstance")]
         [switch]$SyncSaName,
@@ -204,7 +192,7 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
 
-                $userBase = ($userName.Split("\")[0]).ToLower()
+                $userBase = ($userName.Split("\")[0]).ToLowerInvariant()
 
                 if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
                     if ($sourceServer.ComputerName -ne $destServer.ComputerName) {
@@ -531,13 +519,6 @@ function Copy-DbaLogin {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
 
-            if ($SyncOnly) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Syncing $Login permissions")) {
-                    Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
-                    continue
-                }
-            }
-
             Write-Message -Level Verbose -Message "Attempting Login Migration."
             Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
 
@@ -554,8 +535,5 @@ function Copy-DbaLogin {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
     }
 }

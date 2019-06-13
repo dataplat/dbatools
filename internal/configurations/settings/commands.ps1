@@ -6,3 +6,7 @@ Set-DbatoolsConfig -FullName 'commands.Write-DbaDbTableData.raw' -Value $false -
 
 # Resolve-DbaNetworkName
 Set-DbatoolsConfig -FullName 'commands.resolve-dbanetworkname.bypass' -Value $false -Initialize -Validation bool -Description "Use input exactly as stated instead of attempting to resolve"
+
+# Get-DbaRegServer
+Set-DbatoolsConfig -FullName 'commands.get-dbaregserver.defaultcms' -Value $null -Initialize -Validation string -Description "Use a default Central Management Server"
+Set-DbatoolsConfig -FullName 'commands.get-dbaregserver.includelocal' -Value $false -Initialize -Validation bool -Description "Include local servers by default"

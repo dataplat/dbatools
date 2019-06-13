@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaTraceFile {
     <#
     .SYNOPSIS
@@ -156,8 +155,7 @@ function Read-DbaTraceFile {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,
@@ -174,7 +172,6 @@ function Read-DbaTraceFile {
         [string[]]$ApplicationName,
         [string[]]$ObjectName,
         [string]$Where,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

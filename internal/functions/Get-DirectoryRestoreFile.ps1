@@ -11,7 +11,6 @@ Takes path, checks for validity. Scans for usual backup file
         [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
         [switch]$Recurse,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

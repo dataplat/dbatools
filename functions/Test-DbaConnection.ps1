@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-DbaConnection {
     <#
@@ -63,11 +62,9 @@ function Test-DbaConnection {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -181,8 +178,5 @@ function Test-DbaConnection {
                 LocalEdition         = $localInfo.Edition
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlConnection
     }
 }

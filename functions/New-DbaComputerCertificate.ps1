@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaComputerCertificate {
     <#
     .SYNOPSIS
@@ -112,7 +111,6 @@ function New-DbaComputerCertificate {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string]$CaServer,
@@ -127,12 +125,11 @@ function New-DbaComputerCertificate {
         [string]$Folder = "My",
         [string[]]$Dns,
         [switch]$SelfSigned,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
         $englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225
-        if ($englishCodes -notcontains (Get-DbaCmObject Win32_OperatingSystem).OSLanguage) {
+        if ($englishCodes -notcontains (Get-DbaCmObject -ClassName Win32_OperatingSystem).OSLanguage) {
             Stop-Function -Message "Currently, this command is only supported in English OS locales. OS Locale detected: $([System.Globalization.CultureInfo]::GetCultureInfo([int](Get-DbaCmObject Win32_OperatingSystem).OSLanguage).DisplayName)`nWe apologize for the inconvenience and look into providing universal language support in future releases."
             return
         }
@@ -191,7 +188,7 @@ function New-DbaComputerCertificate {
             }
         }
 
-        if ((!$CaServer -or !$CaName) -and !$SelfSigned) {
+        if ((-not $CaServer -or !$CaName) -and !$SelfSigned) {
             try {
                 Write-Message -Level Verbose -Message "No CaServer or CaName specified. Performing lookup."
                 # hat tip Vadims Podans
@@ -212,12 +209,12 @@ function New-DbaComputerCertificate {
                 return
             }
 
-            if (!$CaServer) {
+            if (-not $CaServer) {
                 $CaServer = ($allCas | Select-Object -First 1).Computer
                 Write-Message -Level Verbose -Message "Root Server: $CaServer"
             }
 
-            if (!$CaName) {
+            if (-not $CaName) {
                 $CaName = ($allCas | Select-Object -First 1).CA
                 Write-Message -Level Verbose -Message "Root CA name: $CaName"
             }
@@ -231,11 +228,12 @@ function New-DbaComputerCertificate {
         if (Test-FunctionInterrupt) { return }
 
         # uses dos command locally
-        
+
 
         foreach ($computer in $ComputerName) {
+            $stepCounter = 0
 
-            if (!$secondaryNode) {
+            if (-not $secondaryNode) {
 
                 if ($ClusterInstanceName) {
                     if ($ClusterInstanceName -notmatch "\.") {
@@ -246,7 +244,7 @@ function New-DbaComputerCertificate {
                 } else {
                     $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
-                    if (!$resolved) {
+                    if (-not $resolved) {
                         $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
                         Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
                     } else {
@@ -262,17 +260,17 @@ function New-DbaComputerCertificate {
                 $tempPfx = "$certDir\temp-$fqdn.pfx"
 
                 if (Test-Path($certDir)) {
-                    Write-Message -Level Output -Message "Deleting files from $certDir"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
                     $null = Remove-Item "$certDir\*.*"
                 } else {
-                    Write-Message -Level Output -Message "Creating $certDir"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
                     $null = New-Item -Path $certDir -ItemType Directory -Force
                 }
 
                 # Make sure output is compat with clusters
                 $shortName = $fqdn.Split(".")[0]
 
-                if (!$dns) {
+                if (-not $dns) {
                     $dns = $shortName, $fqdn
                 }
 
@@ -307,7 +305,7 @@ function New-DbaComputerCertificate {
 
 
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-Message -Level Output -Message "Running: certreq -new $certCfg $certCsr"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
                     $create = certreq -new $certCfg $certCsr
                 }
 
@@ -320,12 +318,12 @@ function New-DbaComputerCertificate {
                     }
                 } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
-                        Write-Message -Level Output -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
                         $submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certCsr $certCrt $certPfx
                     }
 
                     if ($submit -match "ssued") {
-                        Write-Message -Level Output -Message "certreq -accept -machine $certCrt"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -accept -machine $certCrt"
                         $null = certreq -accept -machine $certCrt
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                         $cert.Import($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
@@ -343,11 +341,11 @@ function New-DbaComputerCertificate {
                 }
             }
 
-            if (!$Computer.IsLocalHost) {
+            if (-not $Computer.IsLocalHost) {
 
-                if (!$secondaryNode) {
+                if (-not $secondaryNode) {
                     if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
-                        Write-Message -Level Output -Message "Exporting PFX with password to $tempPfx"
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting PFX with password to $tempPfx"
                         $certdata = $storedCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
                     }
 
@@ -371,8 +369,8 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
-                            Select-DefaultView -Property DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop).Thumbprint
+                        Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
                     }

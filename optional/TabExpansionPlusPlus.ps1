@@ -1,4 +1,4 @@
-if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore)) {
+if (-not $ExecutionContext.SessionState.InvokeCommand.GetCommand('Register-ArgumentCompleter','Function,Cmdlet')) {
 
     #############################################################################
     #
@@ -47,7 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     # Helper function to create a new completion results
     #
     function New-CompletionResult {
-        param ([Parameter(Position = 0, ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
+        param ([Parameter(ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
             [ValidateNotNullOrEmpty()]
             [string]
             $CompletionText,
@@ -108,7 +108,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     function Get-CommandWithParameter {
         [CmdletBinding(DefaultParameterSetName = 'AllCommandSet')]
         param (
-            [Parameter(ParameterSetName = 'AllCommandSet', Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+            [Parameter(ParameterSetName = 'AllCommandSet', ValueFromPipeline, ValueFromPipelineByPropertyName)]
             [ValidateNotNullOrEmpty()]
             [string[]]
             ${Name},
@@ -205,8 +205,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     function New-CommandTree {
         [CmdletBinding(DefaultParameterSetName = 'Default')]
         param (
-            [Parameter(Position = 0, Mandatory, ParameterSetName = 'Default')]
-            [Parameter(Position = 0, Mandatory, ParameterSetName = 'Argument')]
+            [Parameter(Mandatory, ParameterSetName = 'Default')]
+            [Parameter(Mandatory, ParameterSetName = 'Argument')]
             [ValidateNotNullOrEmpty()]
             [string]
             $Completion,
@@ -225,7 +225,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [scriptblock]
             $SubCommands,
 
-            [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlockSet')]
+            [Parameter(Mandatory, ParameterSetName = 'ScriptBlockSet')]
             [scriptblock]
             $CompletionGenerator
         )

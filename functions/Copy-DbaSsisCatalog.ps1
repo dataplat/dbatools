@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -54,7 +53,7 @@ function Copy-DbaSsisCatalog {
         Tags: Migration, SSIS
         Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -82,7 +81,7 @@ function Copy-DbaSsisCatalog {
 
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]
@@ -97,7 +96,6 @@ function Copy-DbaSsisCatalog {
         [System.Security.SecureString]$CreateCatalogPassword,
         [Switch]$EnableSqlClr,
         [Switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     <# Developer note: The throw calls must stay in this command #>
@@ -533,8 +531,5 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }

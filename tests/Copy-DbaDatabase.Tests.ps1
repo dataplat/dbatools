@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
     }
-<#
+
     # if failed Disable-NetFirewallRule -DisplayName 'Core Networking - Group Policy (TCP-Out)'
     Context "Detach Attach" {
         It "Should be success" {
@@ -203,14 +203,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             ($files.PhysicalName -like "*$prefix$backuprestoredb*").count | Should -Be $files.count
         }
 
-        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -useDestinationDefaultDirectories
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
         It "Should warn and exit if newname and >1 db specified" {
             $prefix = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar
             $Warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
         }
     }
-    #>
+
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {

@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
     <#
     .SYNOPSIS
@@ -145,11 +144,9 @@ function Get-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
@@ -168,7 +165,6 @@ function Get-DbaDatabase {
         [datetime]$NoFullBackupSince,
         [switch]$NoLogBackup,
         [datetime]$NoLogBackupSince,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$IncludeLastUsed,
         [switch]$OnlyAccessible
@@ -251,7 +247,7 @@ function Get-DbaDatabase {
                 'ReadWrite' { @($false) }
                 default { @($true, $false) }
             }
-            $Encrypt = switch (Test-Bound $Encrypted) {
+            $Encrypt = switch (Test-Bound -Parameter 'Encrypted') {
                 $true { @($true) }
                 default { @($true, $false, $null) }
             }

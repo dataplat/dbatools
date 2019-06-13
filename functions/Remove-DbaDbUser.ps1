@@ -70,38 +70,24 @@ function Remove-DbaDbUser {
         PS C:\> Get-DbaDbUser sqlserver2014 | Where-Object Name -In "user1" | Remove-DbaDbUser
 
         Drops user1 from all databases it exists in on server 'sqlserver2014'.
-
     #>
-
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess)]
     param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [parameter(ParameterSetName = 'User')]
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
-
+        [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = 'User')]
-        [Alias("Databases")]
         [object[]]$Database,
-
         [parameter(ParameterSetName = 'User')]
         [object[]]$ExcludeDatabase,
-
         [parameter(Mandatory, ParameterSetName = 'User')]
         [object[]]$User,
-
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
         [Microsoft.SqlServer.Management.Smo.User[]]$InputObject,
-
         [parameter(ParameterSetName = 'User')]
         [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
-
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -119,12 +105,12 @@ function Remove-DbaDbUser {
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
                 if ($Pscmdlet.ShouldProcess($user, "Removing user from Database $db")) {
-                    # Drop Schemas owned by the user before droping the user
+                    # Drop Schemas owned by the user before dropping the user
                     $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
                     if ($schemaUrns) {
                         Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
 
-                        # Need to gather up the schema changes so they can be done in a non-desctructive order
+                        # Need to gather up the schema changes so they can be done in a non-destructive order
                         foreach ($schemaUrn in $schemaUrns) {
                             $schema = $server.GetSmoObject($schemaUrn)
 
@@ -151,7 +137,7 @@ function Remove-DbaDbUser {
                                 if (($ownedUrns -And $Force) -Or (-Not $ownedUrns)) {
                                     $alterSchemas += $schema
                                 } else {
-                                    Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
+                                    Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
                                     $ownedObjects = $true
                                 }
                             }
@@ -188,7 +174,7 @@ function Remove-DbaDbUser {
                             $status = "Not Dropped"
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
@@ -204,11 +190,15 @@ function Remove-DbaDbUser {
 
     process {
         if ($InputObject) {
-            Remove-DbUser $InputObject
+            $server = Connect-SqlInstance -SqlInstance $InputObject.Parent.Parent.Name
+            $user = $server.Databases[$InputObject.Parent.Name].Users[$InputObject.Name]
+
+            Remove-DbUser $user
+
         } else {
             foreach ($instance in $SqlInstance) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -231,5 +221,4 @@ function Remove-DbaDbUser {
             }
         }
     }
-
 }

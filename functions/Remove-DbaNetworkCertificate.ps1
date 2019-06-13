@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Remove-DbaNetworkCertificate {
     <#
@@ -54,16 +53,16 @@ function Remove-DbaNetworkCertificate {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
     process {
         # Registry access
-        
-        
+
+
         foreach ($instance in $sqlinstance) {
+            $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
@@ -100,10 +99,10 @@ function Remove-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-            Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regroot = $args[0]

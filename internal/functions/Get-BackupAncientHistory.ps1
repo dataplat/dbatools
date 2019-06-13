@@ -18,7 +18,7 @@ function Get-BackupAncientHistory {
         .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -26,14 +26,10 @@ function Get-BackupAncientHistory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [string]$FileNameStub,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

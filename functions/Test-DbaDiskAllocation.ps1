@@ -23,9 +23,6 @@ function Test-DbaDiskAllocation {
 
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -68,19 +65,14 @@ function Test-DbaDiskAllocation {
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sessionoptions = New-CimSessionOption -Protocol DCOM
 
         function Get-AllDiskAllocation {
@@ -180,8 +172,8 @@ function Test-DbaDiskAllocation {
 
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($computer in $ComputerName) {
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential

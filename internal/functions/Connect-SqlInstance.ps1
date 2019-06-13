@@ -65,8 +65,11 @@ function Connect-SqlInstance {
         [switch]$NonPooled
     )
     if ($SqlInstance.InputObject.GetType().Name -eq 'Server') {
+        if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+            throw "Azure SQL Database is not supported by this command"
+        }
         return $SqlInstance.InputObject
     } else {
-        Connect-DbaInstance @PSBoundParameters -ClientName "dbatools PowerShell module - dbatools.io"
+        Connect-DbaInstance @PSBoundParameters -ClientName (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
     }
 }

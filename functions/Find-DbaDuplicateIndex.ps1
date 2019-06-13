@@ -76,10 +76,8 @@ function Find-DbaDuplicateIndex {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [switch]$IncludeOverlapping,
         [switch]$EnableException
@@ -479,8 +477,5 @@ function Find-DbaDuplicateIndex {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
     }
 }

@@ -98,7 +98,6 @@ function Set-DbaDbCompression {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -107,7 +106,6 @@ function Set-DbaDbCompression {
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         $InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

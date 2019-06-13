@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaPageFileSetting {
     <#
@@ -46,11 +45,9 @@ function Get-DbaPageFileSetting {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-        [Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
