@@ -73,9 +73,6 @@ function New-DbaInstanceRole {
 
             $serverroles = $server.Roles
 
-            $members = $role.EnumMemberNames()
-            $dbRoles = $db.Roles
-
             foreach ($role in $ServerRole) {
                 if ($serverroles | Where-Object Name -eq $role) {
                     Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
@@ -83,10 +80,11 @@ function New-DbaInstanceRole {
 
                 Write-Message -Level Verbose -Message "Add roles to Instance $server"
 
-                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on", $server)) {
+                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
                     try {
                         $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
                         $newServerRole.Name = $role
+                        $newServerRole.Parent = $server
 
                         if ($Owner) {
                             $newServerRole.Owner = $Owner
@@ -104,7 +102,6 @@ function New-DbaInstanceRole {
                     }
                 }
             }
-
         }
     }
 }
