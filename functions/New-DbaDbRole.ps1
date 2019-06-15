@@ -2,7 +2,7 @@
 function New-DbaDbRole {
     <#
     .SYNOPSIS
-        Creaete new database roles for each database(s)/ instance(s) of SQL Server.
+        Create new database roles for each database(s)/ instance(s) of SQL Server.
 
     .DESCRIPTION
         The New-DbaDbRole create new roles on database(s)/ instance(s) of SQL Server.
