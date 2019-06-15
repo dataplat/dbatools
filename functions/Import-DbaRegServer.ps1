@@ -149,8 +149,7 @@ function Import-DbaRegServer {
 
                         }
                         Add-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $object.Group
-                    }
-                    else {
+                    } else {
                         Add-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
                     }
                 }
