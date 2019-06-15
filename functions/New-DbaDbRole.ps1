@@ -16,6 +16,9 @@ function New-DbaDbRole {
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+
     .PARAMETER Role
         The role(s) to create.
 
