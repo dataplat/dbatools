@@ -98,6 +98,8 @@ function Add-DbaRegServerGroup {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
             }
 
+            $currentInstance = $reggroup.ParentServer
+
             if ($reggroup.ID) {
                 $target = $reggroup.Parent
             } else {
@@ -106,11 +108,19 @@ function Add-DbaRegServerGroup {
 
             if ($Pscmdlet.ShouldProcess($target, "Adding $Name")) {
                 try {
-                    $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $Name)
+                    $groupList = $Name -split '\\'
+                    foreach ($group in $groupList) {
+                        if ($null -eq $reggroup.ServerGroups[$group]) {
+                            $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $group)
+                            $newGroup.create()
+                            $reggroup.refresh()
+                        }
+                        $reggroup = $reggroup.ServerGroups[$group]
+                    }
                     $newgroup.Description = $Description
-                    $newgroup.Create()
+                    $newgroup.Alter()
 
-                    Get-DbaRegServerGroup -SqlInstance $reggroup.ParentServer -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    Get-DbaRegServerGroup -SqlInstance $currentInstance -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     if ($parentserver.ServerConnection) {
                         $parentserver.ServerConnection.Disconnect()
                     }
