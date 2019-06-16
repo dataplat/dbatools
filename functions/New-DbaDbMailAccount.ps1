@@ -74,7 +74,7 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
-        [swithc]$Force,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
