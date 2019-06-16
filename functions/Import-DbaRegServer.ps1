@@ -138,7 +138,19 @@ function Import-DbaRegServer {
                     if (-not $object.ServerName) {
                         Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
                     }
-                    Add-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
+
+                    if (-not (Test-Bound -ParameterName Group)) {
+                        if ($null -eq (Get-DbaRegServerGroup -SqlInstance $instance -Group $object.Group)) {
+                            if ($groupobject) {
+                                $null = Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Group -Group $groupobject
+                            } elseif ($null -ne $object.Group) {
+                                $null = Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Group
+                            }
+                        }
+                        Add-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $object.Group
+                    } else {
+                        Add-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
+                    }
                 }
             }
         }
