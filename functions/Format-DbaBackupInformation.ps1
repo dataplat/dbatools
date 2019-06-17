@@ -144,7 +144,7 @@ function Format-DbaBackupInformation {
 
     process {
 
-        foreach ($History in $BackupHistory) {
+        foreach ($History in ($BackupHistory | Select-Object *)) {
             if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalDatabase' -Type NoteProperty -Value $History.Database
             }
