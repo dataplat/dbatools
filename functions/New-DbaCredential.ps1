@@ -76,7 +76,7 @@ function New-DbaCredential {
         Create a credential on Server1 using a SAS token for Backup To URL. Name has to be the full URI for the blob store container that will be the backup target. The SecurePassword will be the Share Access Token (SAS) and passed in as a SecureString.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)] #, ConfirmImpact = "High"
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -95,6 +95,8 @@ function New-DbaCredential {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $mappedClass = switch ($MappedClassType) {
             "CryptographicProvider" { 1 }
             "None" { 0 }

@@ -195,7 +195,7 @@ function Rename-DbaDatabase {
         The db is then set offline (watch out!). The function tries to do a simple rename and then sets the db online again to finish the rename process
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -220,6 +220,8 @@ function Rename-DbaDatabase {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $CurrentDate = Get-Date -Format 'yyyyMMdd'
 
         function Get-DbaNameStructure($database) {

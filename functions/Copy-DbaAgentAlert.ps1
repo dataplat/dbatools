@@ -72,7 +72,7 @@ function Copy-DbaAgentAlert {
         Shows what would happen if the command were executed using force.
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -94,6 +94,7 @@ function Copy-DbaAgentAlert {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

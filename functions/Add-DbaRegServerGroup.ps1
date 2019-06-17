@@ -13,13 +13,14 @@ function Add-DbaRegServerGroup {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Name
-        The name of the registered server group
+        The name of the registered server group.
 
     .PARAMETER Description
         The description for the registered server group
 
     .PARAMETER Group
         The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
+        You can pass sub groups using the '\' to split the path. Group\SubGroup will create both folders. Folder 'SubGroup' under 'Group' folder.
 
     .PARAMETER InputObject
         Allows results from Get-DbaRegServerGroup to be piped in
@@ -77,10 +78,6 @@ function Add-DbaRegServerGroup {
         [switch]$EnableException
     )
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
-            return
-        }
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
                 $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
@@ -89,24 +86,50 @@ function Add-DbaRegServerGroup {
             }
         }
 
-        foreach ($reggroup in $InputObject) {
-            $parentserver = Get-RegServerParent -InputObject $reggroup
-            $server = $reggroup.ParentServer
+        if (-not $SqlInstance -and -not $InputObject) {
+            if ((Test-Bound -ParameterName Group)) {
+                $InputObject += Get-DbaRegServerGroup -Group $Group
+            } else {
+                $InputObject += Get-DbaRegServerGroup -Id 1
+            }
+        }
 
-            if ($null -eq $parentserver) {
-                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+        foreach ($reggroup in $InputObject) {
+            if ($reggroup.Source -eq "Azure Data Studio") {
+                Stop-Function -Message "You cannot use dbatools to remove or add registered server groups in Azure Data Studio" -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $Name")) {
-                try {
-                    $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $Name)
-                    $newgroup.Description = $Description
-                    $newgroup.Create()
+            $currentInstance = $reggroup.ParentServer
 
-                    Get-DbaRegServerGroup -SqlInstance $server -Group (Get-RegServerGroupReverseParse -object $newgroup)
-                    $parentserver.ServerConnection.Disconnect()
+            if ($reggroup.ID) {
+                $target = $reggroup.Parent
+            } else {
+                $target = "Local Registered Server Groups"
+            }
+
+            if ($Pscmdlet.ShouldProcess($target, "Adding $Name")) {
+                try {
+                    $groupList = $Name -split '\\'
+                    foreach ($group in $groupList) {
+                        if ($null -eq $reggroup.ServerGroups[$group]) {
+                            $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $group)
+                            $newGroup.create()
+                            $reggroup.refresh()
+                        } else {
+                            Write-Message -Level Verbose -Message "Group $group already exists. Will continue."
+                            $newGroup = $reggroup.ServerGroups[$group]
+                        }
+                        $reggroup = $reggroup.ServerGroups[$group]
+                    }
+                    $newgroup.Description = $Description
+                    $newgroup.Alter()
+
+                    Get-DbaRegServerGroup -SqlInstance $currentInstance -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    if ($parentserver.ServerConnection) {
+                        $parentserver.ServerConnection.Disconnect()
+                    }
                 } catch {
-                    Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to add $reggroup" -ErrorRecord $_ -Continue
                 }
             }
         }

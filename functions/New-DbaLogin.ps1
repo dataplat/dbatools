@@ -164,6 +164,8 @@ function New-DbaLogin {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         if ($Sid) {
             if ($Sid.GetType().Name -ne 'Byte[]') {
                 foreach ($symbol in $Sid.TrimStart("0x").ToCharArray()) {

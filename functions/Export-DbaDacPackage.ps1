@@ -181,7 +181,6 @@ function Export-DbaDacPackage {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $cleaninstance = $instance.ToString().Replace('\', '-')
             if ($Database) {
                 $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
             } else {

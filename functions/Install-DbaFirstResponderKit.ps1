@@ -84,7 +84,7 @@ function Install-DbaFirstResponderKit {
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -98,6 +98,8 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         if (-not $DbatoolsData) {

@@ -19,7 +19,7 @@ function Copy-DbaDbMail {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Type
-        Specifies the object type to migrate. Valid options are "Job", "Alert" and "Operator". When Type is specified, all categories from the selected type will be migrated.
+        Specifies the object type to migrate. Valid options are 'ConfigurationValues', 'Profiles', 'Accounts', and 'MailServers'. When Type is specified, all categories from the selected type will be migrated.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -69,14 +69,14 @@ function Copy-DbaDbMail {
         Performs execution of function, and will throw a terminating exception if something breaks
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [Parameter(ParameterSetName = 'SpecificTypes')]
-        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
+        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
         [string[]]$Type,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
@@ -84,6 +84,7 @@ function Copy-DbaDbMail {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
         function Copy-DbaDbMailConfig {
             [cmdletbinding(SupportsShouldProcess)]
             param ()

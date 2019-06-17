@@ -69,7 +69,7 @@ function Copy-DbaEndpoint {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -93,6 +93,8 @@ function Copy-DbaEndpoint {
             return
         }
         $serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }

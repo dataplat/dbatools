@@ -101,6 +101,8 @@ function Invoke-DbaDbDataGenerator {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Create the faker objects
         try {
             $faker = New-Object Bogus.Faker($Locale)
@@ -123,7 +125,15 @@ function Invoke-DbaDbDataGenerator {
         } else {
             # Check if the destination is accessible
             if (-not (Test-Path -Path $FilePath)) {
-                Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
+                Stop-Function -Message "Could not find data generation config file $FilePath" -Target $FilePath
+                return
+            }
+
+            # Test the configuration
+            try {
+                Test-DbaDataGeneratorConfiguration -FilePath $FilePath -EnableException
+            } catch {
+                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return
             }
 

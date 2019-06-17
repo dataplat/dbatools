@@ -87,7 +87,9 @@ function Remove-DbaAgentSchedule {
         [switch]$EnableException,
         [switch]$Force
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         foreach ($instance in $sqlinstance) {

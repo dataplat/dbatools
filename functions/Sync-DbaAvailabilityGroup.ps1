@@ -142,6 +142,8 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $allcombos = @()
     }
     process {

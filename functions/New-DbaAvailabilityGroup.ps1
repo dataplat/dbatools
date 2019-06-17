@@ -253,6 +253,9 @@ function New-DbaAvailabilityGroup {
         [switch]$Dhcp,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         $stepCounter = $wait = 0
 
