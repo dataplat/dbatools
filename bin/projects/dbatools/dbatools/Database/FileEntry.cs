@@ -16,6 +16,14 @@ namespace Sqlcollaborative.Dbatools.Database
         /// Type of the file
         /// </summary>
         public string FileType;
+        /// <summary>
+        /// Type of the file
+        /// </summary>
+        public string Type
+        {
+            get { return FileType; }
+            set { FileType = value; }
+        }
 
         /// <summary>
         /// Logical name of the file
@@ -49,6 +57,10 @@ namespace Sqlcollaborative.Dbatools.Database
             if ((Object.Properties.Where(o => String.Equals(o.Name, "FileType", StringComparison.InvariantCultureIgnoreCase)).Count() == 1) && (Object.Properties["FileType"].Value != null))
             {
                 FileType = Object.Properties["FileType"].Value.ToString();
+            }
+            if ((Object.Properties.Where(o => String.Equals(o.Name, "Type", StringComparison.InvariantCultureIgnoreCase)).Count() == 1) && (Object.Properties["Type"].Value != null))
+            {
+                Type = Object.Properties["Type"].Value.ToString();
             }
             if ((Object.Properties.Where(o => String.Equals(o.Name, "LogicalName", StringComparison.InvariantCultureIgnoreCase)).Count() == 1) && (Object.Properties["LogicalName"].Value != null))
             {

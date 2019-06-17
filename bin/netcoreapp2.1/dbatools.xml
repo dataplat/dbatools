@@ -1860,6 +1860,11 @@
             Type of the file
             </summary>
         </member>
+        <member name="P:Sqlcollaborative.Dbatools.Database.FileEntry.Type">
+            <summary>
+            Type of the file
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Database.FileEntry.LogicalName">
             <summary>
             Logical name of the file
