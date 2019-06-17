@@ -1870,6 +1870,11 @@
             The full path of the file
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.FileEntry.PhysicalName">
+            <summary>
+            Physical name of the file
+            </summary>
+        </member>
         <member name="M:Sqlcollaborative.Dbatools.Database.FileEntry.#ctor">
             <summary>
             Creates an empty file entry

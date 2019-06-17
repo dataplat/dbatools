@@ -28,6 +28,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public string FullName;
 
         /// <summary>
+        /// Physical name of the file
+        /// </summary>
+        public string PhysicalName;
+
+        /// <summary>
         /// Creates an empty file entry
         /// </summary>
         public FileEntry()
@@ -53,6 +58,10 @@ namespace Sqlcollaborative.Dbatools.Database
             {
                 FullName = Object.Properties["FullName"].Value.ToString();
             }
+            if ((Object.Properties.Where(o => String.Equals(o.Name, "PhysicalName", StringComparison.InvariantCultureIgnoreCase)).Count() == 1) && (Object.Properties["PhysicalName"].Value != null))
+            {
+                PhysicalName = Object.Properties["PhysicalName"].Value.ToString();
+            }
         }
 
         /// <summary>
@@ -65,6 +74,7 @@ namespace Sqlcollaborative.Dbatools.Database
             result.FileType = FileType;
             result.LogicalName = LogicalName;
             result.FullName = FullName;
+            result.PhysicalName = PhysicalName;
             return result;
         }
     }
