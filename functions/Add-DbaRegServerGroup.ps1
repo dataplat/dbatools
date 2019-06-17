@@ -13,13 +13,14 @@ function Add-DbaRegServerGroup {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Name
-        The name of the registered server group
+        The name of the registered server group.
 
     .PARAMETER Description
         The description for the registered server group
 
     .PARAMETER Group
         The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
+        You can pass sub groups using the '\' to split the path. Group\SubGroup will create both folders. Folder 'SubGroup' under 'Group' folder.
 
     .PARAMETER InputObject
         Allows results from Get-DbaRegServerGroup to be piped in
@@ -114,6 +115,9 @@ function Add-DbaRegServerGroup {
                             $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $group)
                             $newGroup.create()
                             $reggroup.refresh()
+                        } else {
+                            Write-Message -Level Verbose -Message "Group $group already exists. Will continue."
+                            $newGroup = $reggroup.ServerGroups[$group]
                         }
                         $reggroup = $reggroup.ServerGroups[$group]
                     }
