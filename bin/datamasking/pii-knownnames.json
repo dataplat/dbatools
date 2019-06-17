@@ -40,16 +40,6 @@
         ]
     },
     {
-        "Name": "Zipcode",
-        "Category": "Location",
-        "Pattern": [
-            "^.*zip.*$",
-            "^.*postal.*$",
-            "^.*postleitzahl.*$",
-            "^.*postcode.*$"
-        ]
-    },
-    {
         "Name": "County",
         "Category": "Location",
         "Pattern": [
@@ -101,6 +91,16 @@
             "^.*pass.*$",
             "^.*contrasena.*$",
             "^.*wachtwoord.*$"
+        ]
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Pattern": [
+            "^.*zip.*$",
+            "^.*postal.*$",
+            "^.*postleitzahl.*$",
+            "^.*postcode.*$"
         ]
     }
 ]
