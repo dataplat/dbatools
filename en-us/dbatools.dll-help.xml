@@ -18,7 +18,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>FullName</maml:name>
           <maml:Description>
-            <maml:para>The full name of a configuration element. Must be namespaced &lt;Module&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+            <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
           </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -155,7 +155,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ModuleExport</maml:name>
           <maml:Description>
-            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;ModuleName&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
           </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -194,7 +194,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>FullName</maml:name>
           <maml:Description>
-            <maml:para>The full name of a configuration element. Must be namespaced &lt;Module&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+            <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
           </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -382,7 +382,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Name</maml:name>
           <maml:Description>
-            <maml:para>Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten. Duplicate names across different modules are possible and will be treated separately. If a name contains namespace notation and no module is set, the first namespace element will be used as module instead of name. Example: -Name "Nordwind.Server" Is Equivalent to -Name "Server" -Module "Nordwind"</maml:para>
+            <maml:para>Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten. Duplicate names across different modules are possible and will be treated separately.</maml:para>
           </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -531,7 +531,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ModuleExport</maml:name>
           <maml:Description>
-            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;ModuleName&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
           </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -570,7 +570,7 @@
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>FullName</maml:name>
         <maml:Description>
-          <maml:para>The full name of a configuration element. Must be namespaced &lt;Module&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+          <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
         </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -762,7 +762,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ModuleExport</maml:name>
         <maml:Description>
-          <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;ModuleName&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+          <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
         </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -817,37 +817,15 @@
     </maml:alertSet>
     <command:examples>
       <command:example>
-        <maml:title>---------------------- Example 1: Simple ----------------------</maml:title>
-        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName 'MyModule.User' -Value "Friedrich"</dev:code>
+        <maml:title>---------------------- Example 1 ----------------------</maml:title>
+        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools</dev:code>
         <dev:remarks>
-          <maml:para>Creates or updates a configuration entry under the module "MyModule" named "User" with the value "Friedrich"</maml:para>
+          <maml:para>Updates the configuration entry for Path.DbatoolsData to E:\temp\dbatools</maml:para>
           <maml:para>_</maml:para>
         </dev:remarks>
       </command:example>
-      <command:example>
-        <maml:title>----------------- Example 2: Module Definition -----------------</maml:title>
-        <dev:code>C:\PS&gt; Set-DbatoolsConfig -Name 'mymodule.User' -Value "Friedrich" -Description "The user under which the show must go on." -Handler $scriptBlock -Initialize -Validation String</dev:code>
-        <dev:remarks>
-          <maml:para>Creates a configuration entry ... - Named "mymodule.user"</maml:para>
-          <maml:para>- With the value "Friedrich"</maml:para>
-          <maml:para>- It adds a description as noted</maml:para>
-          <maml:para>- It registers the scriptblock stored in $scriptBlock as handler</maml:para>
-          <maml:para>- It initializes the script.</maml:para>
-          <maml:para>This block only executes the first time a it is run like this. Subsequent calls will be ignored. - It registers the basic string input type validator This is the default example for modules using the configuration system. Note: While the -Handler parameter is optional, it is important to add it at the initial initialize call, if you are planning to add it. Only then will the system validate previous settings (such as what a user might have placed in his user profile)</maml:para>
-          <maml:para>_</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>------------------- Example 3: Hiding things -------------------</maml:title>
-        <dev:code>C:\PS&gt; Set-DbatoolsConfig 'Company' 'ConfigLink' 'https://www.example.com/config.xml' -Hidden</dev:code>
-        <dev:remarks>
-          <maml:para>Creates a configuration entry named "ConfigLink" in the "Company" module with the value 'https://www.example.com/config.xml'. This entry is hidden from casual discovery using Get-DbatoolsConfig.</maml:para>
-          <maml:para>_</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
         <maml:title>----------------- Example 4: Default Settings -----------------</maml:title>
-        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName 'Network.Firewall' -Value '10.0.0.2' -Default</dev:code>
+        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools -Default</dev:code>
         <dev:remarks>
           <maml:para>Creates a configuration entry named "Firewall" in the "Network" module with the value '10.0.0.2' This is only set, if the setting does not exist yet. If it does, this command will apply no changes.</maml:para>
         </dev:remarks>
