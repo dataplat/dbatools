@@ -391,12 +391,12 @@ function Invoke-DbaDbLogShipping {
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("SourceServerInstance", "SourceSqlServerSqlServer", "Source")]
-        [object]$SourceSqlInstance,
+        [DbaInstanceParameter]$SourceSqlInstance,
 
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("DestinationServerInstance", "DestinationSqlServer", "Destination")]
-        [object[]]$DestinationSqlInstance,
+        [DbaInstanceParameter[]]$DestinationSqlInstance,
 
         [System.Management.Automation.PSCredential]
         $SourceSqlCredential,
