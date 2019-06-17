@@ -183,7 +183,7 @@ function Add-DbaRegServer {
                             $newserver.CredentialPersistenceType = "PersistLoginNameAndPassword"
                             $newserver.Create()
 
-                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                         } catch {
                             Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                         }
@@ -199,7 +199,7 @@ function Add-DbaRegServer {
                         $newserver.OtherParams = $OtherParams
                         $newserver.Create()
 
-                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                     } catch {
                         Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                     }
