@@ -143,7 +143,7 @@ function Add-DbaAgDatabase {
             }
 
             if ($SeedingMode -ne "Automatic") {
-                if ((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+                if (((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup).Year -eq 1) {
                     Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
                 }
             }
