@@ -115,6 +115,10 @@ function Add-DbaRegServerGroup {
                             $newGroup.create()
                             $reggroup.refresh()
                         }
+                        else {
+                            Write-Message -Level Verbose -Message "Group $group already exists. Will continue."
+                            $newGroup = $reggroup.ServerGroups[$group]
+                        }
                         $reggroup = $reggroup.ServerGroups[$group]
                     }
                     $newgroup.Description = $Description
