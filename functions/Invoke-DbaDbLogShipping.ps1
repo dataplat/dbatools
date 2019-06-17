@@ -592,7 +592,7 @@ function Invoke-DbaDbLogShipping {
 
 
         # Check the instance if it is a named instance
-        $SourceServerName, $SourceInstanceName = $SourceSqlInstance.Split("\")
+        $SourceServerName, $SourceInstanceName = $SourceSqlInstance.FullName.Split("\")
 
         if ($null -eq $SourceInstanceName) {
             $SourceInstanceName = "MSSQLSERVER"
@@ -937,7 +937,7 @@ function Invoke-DbaDbLogShipping {
                 return
             }
 
-            $DestinationServerName, $DestinationInstanceName = $destInstance.Split("\")
+            $DestinationServerName, $DestinationInstanceName = $destInstance.FullName.Split("\")
 
             if ($null -eq $DestinationInstanceName) {
                 $DestinationInstanceName = "MSSQLSERVER"
@@ -1450,7 +1450,7 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the primary monitor server
-                if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
+                if ($Force -and (-not $PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
                     Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Verbose
                     $PrimaryMonitorServer = $SourceSqlInstance
                 }
@@ -1714,9 +1714,9 @@ function Invoke-DbaDbLogShipping {
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
                                 -HistoryRetention $HistoryRetention `
-                                -MonitorServer $PrimaryMonitorServer `
-                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-                                -MonitorCredential $PrimaryMonitorCredential
+                                -MonitorServer $SecondaryMonitorServer `
+                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
+                                -MonitorCredential $SecondaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {
