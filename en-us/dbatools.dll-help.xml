@@ -815,19 +815,12 @@
         <maml:para></maml:para>
       </maml:alert>
     </maml:alertSet>
-    <command:examples>
+	    <command:examples>
       <command:example>
-        <maml:title>---------------------- Example 1 ----------------------</maml:title>
+        <maml:title>---------------------- Example 1: Simple ----------------------</maml:title>
         <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools</dev:code>
         <dev:remarks>
           <maml:para>Updates the configuration entry for Path.DbatoolsData to E:\temp\dbatools</maml:para>
-          <maml:para>_</maml:para>
-        </dev:remarks>
-      </command:example>
-        <maml:title>----------------- Example 4: Default Settings -----------------</maml:title>
-        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools -Default</dev:code>
-        <dev:remarks>
-          <maml:para>Creates a configuration entry named "Firewall" in the "Network" module with the value '10.0.0.2' This is only set, if the setting does not exist yet. If it does, this command will apply no changes.</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
