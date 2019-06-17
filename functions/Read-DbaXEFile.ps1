@@ -68,7 +68,7 @@ function Read-DbaXEFile {
         }
     }
     process {
-        if (Test-PSFFunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) { return }
         foreach ($file in $path) {
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object
