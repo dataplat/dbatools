@@ -132,7 +132,7 @@ function Add-DbaRegServer {
                     $regServerGroup = Get-DbaRegServerGroup -Group $Group
                 }
                 if ($regServerGroup) {
-                       $InputObject += $regServerGroup
+                    $InputObject += $regServerGroup
                 } else {
                     # Create the Group
                     if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
@@ -157,7 +157,7 @@ function Add-DbaRegServer {
                 }
 
                 if ($regServerGroup) {
-                       $InputObject += $regServerGroup
+                    $InputObject += $regServerGroup
                 } else {
                     if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                         $InputObject += Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $Group.Name
