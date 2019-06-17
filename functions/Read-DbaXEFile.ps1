@@ -59,15 +59,7 @@ function Read-DbaXEFile {
     begin {
         # there's sometimes a compat issue with XE.Core. Until we get this resolved with the new dlls, here's a potential workaround.
         if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.XEvent.Linq,*" })) {
-            try {
-                $xecore = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XE.Core")
-                $xelinq = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XEvent.Linq")
-            } catch {
-                Stop-Function -Message "Could not load appropriate DLLs. This is a known issue and will be resolved as time allows."
-            }
-            if (-not $xecore -or -not $xelinq) {
-                Stop-Function -Message "Could not load appropriate DLLs. This is a known issue and will be resolved as time allows."
-            }
+            Stop-Function -Message "Could not load appropriate DLLs. This is a known issue and will be resolved as time allows."
         }
     }
     process {

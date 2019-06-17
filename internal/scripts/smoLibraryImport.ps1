@@ -86,6 +86,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Rmo'
         )
     }
+
+
     #endregion Names
 
     $basePath = $dllRoot
@@ -130,6 +132,10 @@ $scriptBlock = {
         }
     }
 }
+
+# until we get the XE issue sorted..
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XE.Core")
+$null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XEvent.Linq")
 
 $script:serialImport = $true
 if ($script:serialImport) {
