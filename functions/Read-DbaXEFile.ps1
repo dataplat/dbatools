@@ -63,11 +63,12 @@ function Read-DbaXEFile {
                 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XE.Core")
                 $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.XEvent.Linq")
             } catch {
-                $null = 1
+                Stop-Function -Message "Could not load appropriate DLLs. This is a known issue and will be resolved as time allows."
             }
         }
     }
     process {
+        if (Test-PSFFunctionInterrupt) { return }
         foreach ($file in $path) {
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object
