@@ -1,0 +1,54 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "array",
+    "title": "The Root Schema",
+    "items": {
+        "$id": "#/items",
+        "type": "object",
+        "title": "The Items Schema",
+        "required": [
+            "Name",
+            "Category",
+            "Pattern"
+        ],
+        "properties": {
+            "Name": {
+                "$id": "#/items/properties/Name",
+                "type": "string",
+                "title": "The Name Schema",
+                "default": "",
+                "examples": [
+                    "Name"
+                ],
+                "pattern": "^(.*)$"
+            },
+            "Category": {
+                "$id": "#/items/properties/Category",
+                "type": "string",
+                "title": "The Category Schema",
+                "default": "",
+                "examples": [
+                    "Personal"
+                ],
+                "pattern": "^(.*)$"
+            },
+            "Pattern": {
+                "$id": "#/items/properties/Pattern",
+                "type": "array",
+                "title": "The Pattern Schema",
+                "items": {
+                    "$id": "#/items/properties/Pattern/items",
+                    "type": "string",
+                    "title": "The Items Schema",
+                    "default": "",
+                    "examples": [
+                        "^.*(firstname|fname|lastname|lname|fullname|fname).*$"
+                    ],
+                    "pattern": "^(.*)$"
+                }
+            }
+        }
+    }
+}
