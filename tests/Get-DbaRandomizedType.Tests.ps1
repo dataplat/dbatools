@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should have at least 263 rows" {
             $types = Get-DbaRandomizedType
 
-            $types.count | Should BeGreaterOrEqual 263
+            $types.count | Should BeGreaterOrEqual 205
         }
 
         It "Should return correct type based on subtype" {
@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return values based on pattern" {
             $types = Get-DbaRandomizedType -Pattern Name
 
-            $types.Count | Should BeGreaterOrEqual 27
+            $types.Count | Should BeGreaterOrEqual 26
         }
     }
 }
