@@ -1769,6 +1769,12 @@
             Recovery Model of the database when backup was taken
             </summary>
         </member>
+        <member name="M:Sqlcollaborative.Dbatools.Database.BackupHistory.Clone">
+            <summary>
+            Clones itself
+            </summary>
+            <returns>Clones itself</returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Database.Dependency">
             <summary>
             Class containing all dependency information over a database object
@@ -1843,6 +1849,43 @@
             <summary>
             The object of the original resource, from which the dependency hierachy has been calculated.
             </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Database.FileEntry">
+            <summary>
+            Simple representation of a backup file
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.FileEntry.FileType">
+            <summary>
+            Type of the file
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.FileEntry.LogicalName">
+            <summary>
+            Logical name of the file
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.FileEntry.FullName">
+            <summary>
+            The full path of the file
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Database.FileEntry.#ctor">
+            <summary>
+            Creates an empty file entry
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Database.FileEntry.#ctor(System.Management.Automation.PSObject)">
+            <summary>
+            Creates a file entry from a psobject
+            </summary>
+            <param name="Object">The object to parse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Database.FileEntry.Clone">
+            <summary>
+            Clones this item
+            </summary>
+            <returns>A true copy of itself</returns>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.dbaSystem.DbaErrorRecord">
             <summary>
@@ -5767,6 +5810,12 @@
             <param name="seconds"></param>
             <param name="milliseconds"></param>
         </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaTimeSpan.Clone">
+            <summary>
+            Clone itself
+            </summary>
+            <returns>Cause copies rock</returns>
+        </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.DbaTimeSpan.ParseTimeSpan(System.String)">
             <summary>
             Parses an input string as timespan
@@ -6159,6 +6208,12 @@
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.ToString">
             <summary>
             Shows the default string representation of size
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.Clone">
+            <summary>
+            Clones itself
             </summary>
             <returns></returns>
         </member>

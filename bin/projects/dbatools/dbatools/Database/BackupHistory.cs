@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using Sqlcollaborative.Dbatools.Utility;
 
@@ -7,7 +8,7 @@ namespace Sqlcollaborative.Dbatools.Database
     /// <summary>
     /// Object containing the information about the history of mankind ... or a database backup. WHo knows.
     /// </summary>
-    public class BackupHistory
+    public class BackupHistory : ICloneable
     {
         /// <summary>
         /// The name of the computer running MSSQL Server
@@ -97,7 +98,7 @@ namespace Sqlcollaborative.Dbatools.Database
         /// <summary>
         /// The files that are part of this backup
         /// </summary>
-        public object FileList;
+        public FileEntry[] FileList;
 
         /// <summary>
         /// The position of the backup
@@ -144,5 +145,43 @@ namespace Sqlcollaborative.Dbatools.Database
         /// </summary>
         public string RecoveryModel;
         
+        /// <summary>
+        /// Clones itself
+        /// </summary>
+        /// <returns>Clones itself</returns>
+        public object Clone()
+        {
+            BackupHistory clone = new BackupHistory();
+
+            clone.ComputerName = ComputerName;
+            clone.InstanceName = InstanceName;
+            clone.SqlInstance = SqlInstance;
+            clone.Database = Database;
+            clone.UserName = UserName;
+            clone.Start = Start;
+            clone.End = End;
+            clone.Duration = (DbaTimeSpan)Duration.Clone();
+            clone.Path = (string[])Path.Clone();
+            clone.TotalSize = (Size)TotalSize.Clone();
+            clone.CompressedBackupSize = (Size)CompressedBackupSize.Clone();
+            clone.CompressionRatio = CompressionRatio;
+            clone.Type = Type;
+            clone.BackupSetId = BackupSetId;
+            clone.DeviceType = DeviceType;
+            clone.Software = Software;
+            clone.FullName = (string[])FullName.Clone();
+            clone.FileList = FileList.Select(o => (FileEntry)o.Clone()).ToArray();
+            clone.Position = Position;
+            clone.FirstLsn = FirstLsn;
+            clone.DatabaseBackupLsn = DatabaseBackupLsn;
+            clone.CheckpointLsn = CheckpointLsn;
+            clone.LastLsn = LastLsn;
+            clone.SoftwareVersionMajor = SoftwareVersionMajor;
+            clone.IsCopyOnly = IsCopyOnly;
+            clone.LastRecoveryForkGUID = LastRecoveryForkGUID;
+            clone.RecoveryModel = RecoveryModel;
+
+            return clone;
+        }
     }
 }

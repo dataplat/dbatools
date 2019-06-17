@@ -7,7 +7,7 @@ namespace Sqlcollaborative.Dbatools.Utility
     /// <summary>
     /// A wrapper class, encapsuling a regular TimeSpan object. Used to provide custom timespan display.
     /// </summary>
-    public class DbaTimeSpan : IComparable, IComparable<TimeSpan>, IComparable<DbaTimeSpan>, IEquatable<TimeSpan>
+    public class DbaTimeSpan : IComparable, IComparable<TimeSpan>, IComparable<DbaTimeSpan>, IEquatable<TimeSpan>, ICloneable
     {
         internal TimeSpan _timespan;
 
@@ -200,6 +200,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         #endregion Constructors
 
         #region Methods
+        /// <summary>
+        /// Clone itself
+        /// </summary>
+        /// <returns>Cause copies rock</returns>
+        public object Clone()
+        {
+            return new DbaTimeSpan(_timespan);
+        }
+
         /// <summary>
         /// Parses an input string as timespan
         /// </summary>

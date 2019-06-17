@@ -6,7 +6,7 @@ namespace Sqlcollaborative.Dbatools.Utility
     /// Class that reports File size.
     /// </summary>
     [Serializable]
-    public class Size : IComparable<Size>, IComparable
+    public class Size : IComparable<Size>, IComparable, ICloneable
     {
         /// <summary>
         /// Number of bytes contained in whatever object uses this object as a property
@@ -135,6 +135,15 @@ namespace Sqlcollaborative.Dbatools.Utility
                         return "Unlimited";
                     return "";
             }
+        }
+
+        /// <summary>
+        /// Clones itself
+        /// </summary>
+        /// <returns></returns>
+        public object Clone()
+        {
+            return new Size(Byte);
         }
 
         /// <summary>
