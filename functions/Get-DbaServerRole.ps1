@@ -1,4 +1,4 @@
-function Get-DbaInstanceRole {
+function Get-DbaServerRole {
     <#
     .SYNOPSIS
         Gets the list of server-level roles.
@@ -33,15 +33,15 @@ function Get-DbaInstanceRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceRole
+        https://dbatools.io/Get-DbaServerRole
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRole -SqlInstance sql2016a
+        PS C:\> Get-DbaServerRole -SqlInstance sql2016a
 
         Outputs list of server-level roles for sql2016a instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRole -SqlInstance sql2017a -ExcludeFixedRole
+        PS C:\> Get-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole
 
         Outputs the server-level role(s) that are not fixed roles on sql2017a instance.
 
