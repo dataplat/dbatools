@@ -31,15 +31,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should find disabled index: $indexName" {
-            $results = Find-DbadisabledIndex -SqlInstance $script:instance1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1
             $results.IndexName -contains $indexName | Should Be $true
         }
         It "Should find disabled index: $indexName for specific database" {
-            $results = Find-DbadisabledIndex -SqlInstance $script:instance1 -Database tempdb
+            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1 -Database tempdb
             $results.IndexName -contains $indexName | Should Be $true
         }
         It "Should exclude specific database" {
-            $results = Find-DbadisabledIndex -SqlInstance $script:instance1 -ExcludeDatabase tempdb
+            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1 -ExcludeDatabase tempdb
             $results.DatabaseName -contains 'tempdb' | Should Be $false
         }
     }

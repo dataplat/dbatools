@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets back some results" {
-        $results = Find-DbaDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
+        $results = Find-DbaDbDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
         It "return at least two results" {
             $results.Count -ge 2 | Should Be $true
         }
