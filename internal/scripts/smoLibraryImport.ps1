@@ -117,6 +117,9 @@ $scriptBlock = {
     }
 
     foreach ($name in $names) {
+        if ($name -in 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser.dll' -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
+            continue
+        }
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
         $null = try {
