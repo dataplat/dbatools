@@ -128,13 +128,20 @@ function Add-DbaAgDatabase {
             # check primary, should be run against primary
             $ag = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
 
+            if (-not $ag.Parent) {
+                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($db.Parent.Name)" -Continue
+            }
+
             if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
 
             if (-not $Secondary) {
                 try {
-                    $secondaryInstances = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
+                    $secondarynames = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name
+                    if ($secondarynames) {
+                        $secondaryInstances = $secondarynames | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
+                    }
                 } catch {
                     Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
                 }
@@ -170,7 +177,7 @@ function Add-DbaAgDatabase {
 
                 $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
 
-                if (!($agreplica)) {
+                if (-not $agreplica) {
                     Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
                 }
 
