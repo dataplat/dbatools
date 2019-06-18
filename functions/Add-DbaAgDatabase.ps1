@@ -178,7 +178,7 @@ function Add-DbaAgDatabase {
                 {
                     Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
 
-                    if (!($SharedPath) -and $UseLastBackup -eq $false)
+                    if (-not $SharedPath -and -not $UseLastBackup)
                     {
                         Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
                         break
