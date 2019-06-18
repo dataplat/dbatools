@@ -326,8 +326,12 @@ function Restore-DbaDatabase {
     param (
         [parameter(Mandatory)][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")][parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")][object[]]$Path,
-        [parameter(ValueFromPipeline)][Alias("Name")][object[]]$DatabaseName,
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")]
+        [object[]]$Path,
+        [parameter(ValueFromPipeline)]
+        [Alias("Name")]
+        [string[]]$DatabaseName,
         [parameter(ParameterSetName = "Restore")][String]$DestinationDataDirectory,
         [parameter(ParameterSetName = "Restore")][String]$DestinationLogDirectory,
         [parameter(ParameterSetName = "Restore")][String]$DestinationFileStreamDirectory,
@@ -637,8 +641,8 @@ function Restore-DbaDatabase {
             return
         }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
-            if ($BackupHistory.Count -eq 0) {
-                Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
+            if ($BackupHistory.Count -eq 0 -and $RestoreInstance.VersionMajor -ne 8) {
+                Write-Message -Level Warning -Message "No backups passed through. This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
                 return
             }
             Write-Message -message "Processing DatabaseName - $DatabaseName" -Level Verbose

@@ -299,7 +299,7 @@ function Get-DbaBackupInformation {
                 $historyObject.Start = [DateTime]$group.Group[0].BackupStartDate
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
-                $historyObject.Path = [string[]]$group.Group.BackupPath
+                $historyObject.Path = ([string[]]$group.Group.BackupPath | Sort-Object -Unique)
                 $historyObject.FileList = ($group.Group.FileList | Select-Object Type, LogicalName, PhysicalName -Unique)
                 $historyObject.TotalSize = ($group.Group.BackupSize.Byte | Measure-Object -Sum).Sum
                 $HistoryObject.CompressedBackupSize = ($group.Group.CompressedBackupSize.Byte | Measure-Object -Sum).Sum
