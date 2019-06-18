@@ -49,7 +49,7 @@ function Get-DbaStub {
     #>
     process {
         do this UseLastBackup
-        then Find-DbaDuplicateIndex
+        then Find-DbaDbDuplicateIndex
         or Export-DbaUser -ExcludeSystemLogins
         Write-Message -Level Verbose "stub"
     }
@@ -71,7 +71,7 @@ function Get-DbaStub {
             It "returns the expected results" {
                 $result.Path | Should -Be $temppath
                 $result.Pattern -in "Export-SqlUser", "Find-SqlDuplicateIndex", "UseLastBackups", "NoSystem" | Should -Be $true
-                $result.ReplacedWith -in "Export-DbaUser", "Find-DbaDuplicateIndex", "UseLastBackup", "ExcludeSystemLogins" | Should -Be $true
+                $result.ReplacedWith -in "Export-DbaUser", "Find-DbaDbDuplicateIndex", "UseLastBackup", "ExcludeSystemLogins" | Should -Be $true
             }
         }
 

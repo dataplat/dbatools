@@ -1,4 +1,4 @@
-function Find-DbaDisabledIndex {
+function Find-DbaDbDisabledIndex {
     <#
     .SYNOPSIS
         Find Disabled indexes
@@ -44,25 +44,25 @@ function Find-DbaDisabledIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbadisabledIndex
+        https://dbatools.io/Find-DbaDbDisabledIndex
 
     .EXAMPLE
-        PS C:\> Find-DbaDisabledIndex -SqlInstance sql2005
+        PS C:\> Find-DbaDbDisabledIndex -SqlInstance sql2005
 
         Generates the SQL statements to drop the selected disabled indexes on server "sql2005".
 
     .EXAMPLE
-        PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -SqlCredential $cred
+        PS C:\> Find-DbaDbDisabledIndex -SqlInstance sqlserver2016 -SqlCredential $cred
 
         Generates the SQL statements to drop the selected disabled indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
 
     .EXAMPLE
-        PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
+        PS C:\> Find-DbaDbDisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
 
         Generates the SQL Statement to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
 
     .EXAMPLE
-        PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016
+        PS C:\> Find-DbaDbDisabledIndex -SqlInstance sqlserver2016
 
         Generates the SQL statements to drop selected indexes on all user databases.
 

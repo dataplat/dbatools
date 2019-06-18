@@ -1,4 +1,4 @@
-function Find-DbaDuplicateIndex {
+function Find-DbaDbDuplicateIndex {
     <#
     .SYNOPSIS
         Find duplicate and overlapping indexes.
@@ -50,25 +50,25 @@ function Find-DbaDuplicateIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaDuplicateIndex
+        https://dbatools.io/Find-DbaDbDuplicateIndex
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005
+        PS C:\> Find-DbaDbDuplicateIndex -SqlInstance sql2005
 
         Returns duplicate indexes found on sql2005
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -SqlCredential sqladmin
+        PS C:\> Find-DbaDbDuplicateIndex -SqlInstance sql2017 -SqlCredential sqladmin
 
         Finds exact duplicate indexes on all user databases present on sql2017, using SQL authentication.
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -Database db1, db2
+        PS C:\> Find-DbaDbDuplicateIndex -SqlInstance sql2017 -Database db1, db2
 
         Finds exact duplicate indexes on the db1 and db2 databases.
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -IncludeOverlapping
+        PS C:\> Find-DbaDbDuplicateIndex -SqlInstance sql2017 -IncludeOverlapping
 
         Finds both duplicate and overlapping indexes on all user databases.
 
