@@ -77,7 +77,7 @@ function Write-ImportTime {
 
 
     if (-not $script:dbatools_ImportPerformance) {
-        $script:dbatools_ImportPerformance = [Collections.ArrayList]::new()
+        $script:dbatools_ImportPerformance = New-Object Collections.ArrayList]
     }
 
     if (-not ('Sqlcollaborative.Dbatools.Configuration.Config' -as [type])) {
