@@ -150,7 +150,7 @@ function Invoke-DbaDbDataMasking {
         } else {
             # Test the configuration file
             try {
-                Test-DbaDataMaskingConfiguration -FilePath $FilePath -EnableException
+                Test-DbaDbDataMaskingConfig -FilePath $FilePath -EnableException
             } catch {
                 Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return

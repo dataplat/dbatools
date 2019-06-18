@@ -340,7 +340,7 @@ $script:xplat = @(
     'Expand-DbaDbLogFile',
     'Test-DbaMigrationConstraint',
     'Test-DbaNetworkLatency',
-    'Find-DbaDuplicateIndex',
+    'Find-DbaDbDuplicateIndex',
     'Remove-DbaDatabaseSafely',
     'Set-DbaTempdbConfig',
     'Test-DbaTempdbConfig',
@@ -544,7 +544,6 @@ $script:xplat = @(
     'New-DbaAgentJobCategory',
     'Remove-DbaAgentJobCategory',
     'Set-DbaAgentJobCategory',
-    'Get-DbaDbRole',
     'Get-DbaInstanceRole',
     'Find-DbaBackup',
     'Remove-DbaXESession',
@@ -568,7 +567,7 @@ $script:xplat = @(
     'Copy-DbaXESessionTemplate',
     'Get-DbaXEObject',
     'ConvertTo-DbaDataTable',
-    'Find-DbaDisabledIndex',
+    'Find-DbaDbDisabledIndex',
     'Get-DbaXESmartTarget',
     'Remove-DbaXESmartTarget',
     'Stop-DbaXESmartTarget',
@@ -711,7 +710,6 @@ $script:xplat = @(
     'Backup-DbaServiceMasterKey',
     'Invoke-DbaDbPiiScan',
     'New-DbaAzAccessToken',
-    'Get-DbatoolsChangeLog',
     'Add-DbaDbRoleMember',
     'Disable-DbaStartupProcedure',
     'Enable-DbaStartupProcedure',
@@ -720,10 +718,16 @@ $script:xplat = @(
     'Get-DbaStartupProcedure',
     'Get-DbatoolsChangeLog',
     'Get-DbaXESessionTargetFile',
+    'Get-DbaDbRole',
+    'New-DbaDbRole',
     'New-DbaDbTable',
     'New-DbaDiagnosticAdsNotebook',
+    'New-DbaInstanceRole',
     'Remove-DbaDbRole',
-    'Remove-DbaDbRoleMember'
+    'Remove-DbaDbRoleMember',
+    'Remove-DbaInstanceRole',
+    'Test-DbaDbDataGeneratorConfig',
+    'Test-DbaDbDataMaskingConfig'
 )
 
 $script:noncoresmo = @(

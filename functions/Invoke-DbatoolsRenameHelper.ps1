@@ -87,6 +87,8 @@ function Invoke-DbatoolsRenameHelper {
         }
 
         $commandrenames = @{
+            'Find-DbaDuplicateIndex'            = 'Find-DbaDbDuplicateIndex'
+            'Find-DbaDisabledIndex'             = 'Find-DbaDbDisabledIndex'
             'Add-DbaRegisteredServer'           = 'Add-DbaRegServer'
             'Add-DbaRegisteredServerGroup'      = 'Add-DbaRegServerGroup'
             'Backup-DbaDatabaseCertificate'     = 'Backup-DbaDbCertificate'
@@ -142,7 +144,7 @@ function Invoke-DbatoolsRenameHelper {
             'Export-SqlSpConfigure'             = 'Export-DbaSpConfigure'
             'Export-SqlUser'                    = 'Export-DbaUser'
             'Find-DbaDatabaseGrowthEvent'       = 'Find-DbaDbGrowthEvent'
-            'Find-SqlDuplicateIndex'            = 'Find-DbaDuplicateIndex'
+            'Find-SqlDuplicateIndex'            = 'Find-DbaDbDuplicateIndex'
             'Find-SqlUnusedIndex'               = 'Find-DbaDbUnusedIndex'
             'Get-DbaRegServerName'              = 'Get-DbaRegServer'
             'Get-DbaConfig'                     = 'Get-DbatoolsConfig'
