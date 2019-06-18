@@ -131,7 +131,7 @@ function Invoke-DbaDbDataGenerator {
 
             # Test the configuration
             try {
-                Test-DbaDataGeneratorConfiguration -FilePath $FilePath -EnableException
+                Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
             } catch {
                 Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return

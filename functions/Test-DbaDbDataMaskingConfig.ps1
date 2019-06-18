@@ -1,4 +1,4 @@
-function Test-DbaDataMaskingConfiguration {
+function Test-DbaDbDataMaskingConfig {
     <#
     .SYNOPSIS
         Checks the masking configuration if it's valid
@@ -35,10 +35,10 @@ function Test-DbaDataMaskingConfiguration {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaDataMaskingConfiguration
+        https://dbatools.io/Test-DbaDbDataMaskingConfig
 
     .EXAMPLE
-        Test-DbaDataMaskingConfiguration -FilePath C:\temp\_datamasking\db1.json
+        Test-DbaDbDataMaskingConfig -FilePath C:\temp\_datamasking\db1.json
 
         Test the configuration file
     #>
