@@ -1,4 +1,4 @@
-function Remove-DbaInstanceRole {
+function Remove-DbaServerRole {
     <#
     .SYNOPSIS
         Deletes specified database certificate
@@ -37,12 +37,12 @@ function Remove-DbaInstanceRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        PS C:\> Remove-DbaInstanceRole -SqlInstance Server1 -ServerRole 'serverExecuter'
+        PS C:\> Remove-DbaServerRole -SqlInstance Server1 -ServerRole 'serverExecuter'
 
         Server-role 'serverExecuter' on Server1 will be removed if it exists.
 
     .EXAMPLE
-        PS C:\> Remove-DbaInstanceRole -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> Remove-DbaServerRole -SqlInstance Server1 -Database db1 -Confirm:$false
 
         Suppresses all prompts to remove the server-role in the 'Server1'.
 
@@ -58,7 +58,7 @@ function Remove-DbaInstanceRole {
     )
     process {
         if ($SqlInstance) {
-            $InputObject += Get-DbaInstanceRole -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ServerRole $ServerRole
+            $InputObject += Get-DbaServerRole -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ServerRole $ServerRole
         }
 
         foreach ($srvrole in $InputObject) {

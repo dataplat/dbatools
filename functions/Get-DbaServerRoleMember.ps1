@@ -1,10 +1,10 @@
-function Get-DbaInstanceRoleMember {
+function Get-DbaServerRoleMember {
     <#
     .SYNOPSIS
         Get members of server roles for each instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Get-DbaInstanceRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.
+        The Get-DbaServerRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -38,41 +38,41 @@ function Get-DbaInstanceRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceRoleMember
+        https://dbatools.io/Get-DbaServerRoleMember
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance localhost
+        PS C:\> Get-DbaServerRoleMember -SqlInstance localhost
 
         Returns all members of all server roles on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaServerRoleMember -SqlInstance localhost, sql2016
 
         Returns all members of all server roles on the local and sql2016 SQL Server instances
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
-        PS C:\> $servers | Get-DbaInstanceRoleMember
+        PS C:\> $servers | Get-DbaServerRoleMember
 
         Returns all members of all server roles for every server in C:\servers.txt
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance localhost -ServerRole 'sysadmin', 'dbcreator'
+        PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ServerRole 'sysadmin', 'dbcreator'
 
         Returns all members of the sysadmin or dbcreator roles on localhost.
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance localhost -ExcludeServerRole 'sysadmin'
+        PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ExcludeServerRole 'sysadmin'
 
         Returns all members of server-level roles other than sysadmin.
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance sql2017a -ExcludeFixedRole
+        PS C:\> Get-DbaServerRoleMember -SqlInstance sql2017a -ExcludeFixedRole
 
         Returns all members of server-level role(s) that are not fixed roles on sql2017a instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaInstanceRoleMember -SqlInstance localhost -Login 'MyFriendlyDeveloper'
+        PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -Login 'MyFriendlyDeveloper'
 
         Returns all server-level role(s) for the MyFriendlyDeveloper login on localhost.
 

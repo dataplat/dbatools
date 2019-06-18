@@ -198,7 +198,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting server roles"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
-                $null = Get-DbaInstanceRole -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-serverroles.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaServerRole -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-serverroles.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-serverroles.sql"
                 if (-not (Test-Path "$Path\$fileCounter-serverroles.sql")) {
                     $fileCounter--

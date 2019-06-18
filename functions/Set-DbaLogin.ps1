@@ -352,7 +352,7 @@ function Set-DbaLogin {
                 $l.Alter()
 
                 # Retrieve the server roles for the login
-                $roles = Get-DbaInstanceRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
+                $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
 
                 # Check if there were any notes to include in the results
                 if ($notes) {
