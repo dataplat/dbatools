@@ -40,8 +40,7 @@ function Select-DefaultView {
             }
 
             $props = ($InputObject | Get-Member | Where-Object MemberType -in 'Property', 'NoteProperty', 'AliasProperty' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
-            $defaultset =
-            [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$props)
+            $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$props)
         } else {
             # property needs to be string
             if ("$property" -like "* as *") {
@@ -58,7 +57,8 @@ function Select-DefaultView {
                     })
             }
             $defaultset =
-            [Management.Automation.PSPropertySet]::new('DefaultDisplayPropertySet', [string[]]$Property)
+
+            $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
         }
 
         $standardmembers = [Management.Automation.PSMemberInfo[]]@($defaultset)
