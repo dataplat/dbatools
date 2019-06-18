@@ -153,6 +153,7 @@ function Add-DbaAgDatabase {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
                     $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
                 }
+
             }
 
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
@@ -172,6 +173,17 @@ function Add-DbaAgDatabase {
 
                 if (!($agreplica)) {
                     Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
+                }
+
+                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12)
+                {
+                    Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
+
+                    if (!($SharedPath) -and $UseLastBackup -eq $false)
+                    {
+                        Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided - Instance $($secondaryInstance.Name)"
+                        break
+                    }
                 }
 
 
