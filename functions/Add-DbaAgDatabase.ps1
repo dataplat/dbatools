@@ -174,12 +174,10 @@ function Add-DbaAgDatabase {
                     Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
                 }
 
-                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12)
-                {
+                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
                     Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
 
-                    if (-not $SharedPath -and -not $UseLastBackup)
-                    {
+                    if (-not $SharedPath -and -not $UseLastBackup) {
                         Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
                     }
                 }
