@@ -181,7 +181,6 @@ function Add-DbaAgDatabase {
                     if (-not $SharedPath -and -not $UseLastBackup)
                     {
                         Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
-                        break
                     }
                 }
 
