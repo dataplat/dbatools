@@ -153,7 +153,6 @@ function Add-DbaAgDatabase {
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
                     $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
                 }
-
             }
 
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
