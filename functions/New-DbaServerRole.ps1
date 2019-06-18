@@ -1,10 +1,10 @@
-function New-DbaInstanceRole {
+function New-DbaServerRole {
     <#
     .SYNOPSIS
         Create new server-level roles.
 
     .DESCRIPTION
-        The New-DbaInstanceRole create new roles on instance(s) of SQL Server.
+        The New-DbaServerRole create new roles on instance(s) of SQL Server.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -40,10 +40,10 @@ function New-DbaInstanceRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaInstanceRole
+        https://dbatools.io/New-DbaServerRole
 
     .EXAMPLE
-        PS C:\> New-DbaInstanceRole -SqlInstance sql2017a -Database db1 -Role 'dbExecuter'
+        PS C:\> New-DbaServerRole -SqlInstance sql2017a -Database db1 -Role 'dbExecuter'
 
         Will create a new role named dbExecuter within db1 on sql2017a instance.
 
