@@ -143,16 +143,13 @@ function Format-DbaBackupInformation {
 
 
     process {
-		
-		foreach ($History in $BackupHistory)
-		{
-			if ($History -is [Sqlcollaborative.Dbatools.Database.BackupHistory])
-			{
-				$History = $History.Clone()
-			}
-			else { $History = $History | Select-Object * }
-			
-			if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
+
+        foreach ($History in $BackupHistory) {
+            if ($History -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
+                $History = $History.Clone()
+            } else { $History = $History | Select-Object * }
+
+            if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalDatabase' -Type NoteProperty -Value $History.Database
             }
             if ("OriginalFileList" -notin $History.PSobject.Properties.name) {
