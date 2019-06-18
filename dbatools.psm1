@@ -77,7 +77,7 @@ function Write-ImportTime {
 
 
     if (-not $script:dbatools_ImportPerformance) {
-        $script:dbatools_ImportPerformance = [Collections.ArrayList]::new()
+        $script:dbatools_ImportPerformance = New-Object Collections.ArrayList
     }
 
     if (-not ('Sqlcollaborative.Dbatools.Configuration.Config' -as [type])) {
@@ -85,12 +85,12 @@ function Write-ImportTime {
     } else {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) {
-                $te = [Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry]::new($entry.Action, $entry.Time, [Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)
+                $te = New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, [Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)
                 [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
             }
             $script:dbatools_ImportPerformance.Clear()
         }
-        $te = [Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry]::new($Text, $timestamp, ([Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+        $te = New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
         [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
     }
 }

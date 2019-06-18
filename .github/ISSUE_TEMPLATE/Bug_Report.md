@@ -18,10 +18,23 @@ Run below command, paste results below:
 & {"``````";"#### PowerShell version:`n$($PSVersionTable | Out-String)"; "`n#### dbatools Module version:`n$(gmo dbatools -List | select name, path, version | fl -force | Out-String)";"``````"} | clip
 -->
 
+<!-- Only if using non-English versions of Windows -->
+<!-- Paste output of `Get-Culture` -->
+```powershell
+# Replace with output of Get-Culture
+```
+
+
 #### SQL Server: 
 <!-- Paste output of `SELECT @@VERSION` -->
 ```sql
 /* REPLACE WITH output of @@VERSION */
+```
+
+<!-- Only if using non-English Database Engine -->
+<!-- Paste output of `SELECT @@LANGUAGE` -->
+```sql
+/* REPLACE WITH output of @@LANGUAGE */
 ```
 
 ### Report

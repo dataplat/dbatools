@@ -102,8 +102,9 @@ $scriptBlock = {
         }
     } else {
         $shared = "bogus"
+        $separator = [IO.Path]::DirectorySeparatorChar
         foreach ($name in $shared) {
-            $assemblyPath = "$dllRoot([IO.Path]::DirectorySeparatorChar)$name.dll"
+            $assemblyPath = "$dllRoot$separator$name.dll"
             $null = try {
                 Import-Module $assemblyPath
             } catch {

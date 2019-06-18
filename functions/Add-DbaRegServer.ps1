@@ -24,6 +24,7 @@ function Add-DbaRegServer {
 
     .PARAMETER Group
         Adds the registered server to a specific group.
+        If group does not exist it will be created
 
     .PARAMETER ActiveDirectoryTenant
         Active Directory Tenant
@@ -121,14 +122,25 @@ function Add-DbaRegServer {
             $Name = $ServerName
         }
 
-        if (-not $SqlInstance -and -not $InputObject) {
+        if ((-not $SqlInstance -and -not $InputObject) -or $ServerObject) {
             Write-Message -Level Verbose -Message "Parsing local"
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $InputObject += Get-DbaRegServerGroup -Group $Group.Name
+                    $regServerGroup = Get-DbaRegServerGroup -Group $Group.Name
                 } else {
                     Write-Message -Level Verbose -Message "String group provided"
-                    $InputObject += Get-DbaRegServerGroup -Group $Group
+                    $regServerGroup = Get-DbaRegServerGroup -Group $Group
+                }
+                if ($regServerGroup) {
+                    $InputObject += $regServerGroup
+                } else {
+                    # Create the Group
+                    if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                        $InputObject += Add-DbaRegServerGroup -Name $Group.Name
+                    } else {
+                        Write-Message -Level Verbose -Message "String group provided"
+                        $InputObject += Add-DbaRegServerGroup -Name $Group
+                    }
                 }
             } else {
                 Write-Message -Level Verbose -Message "No group passed, getting root"
@@ -139,16 +151,24 @@ function Add-DbaRegServer {
         foreach ($instance in $SqlInstance) {
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
+                    $regServerGroup = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
                 } else {
-                    $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                    $regServerGroup = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                 }
+
+                if ($regServerGroup) {
+                    $InputObject += $regServerGroup
+                } else {
+                    if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                        $InputObject += Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $Group.Name
+                    } else {
+                        Write-Message -Level Verbose -Message "String group provided"
+                        $InputObject += Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $Group
+                    }
+                }
+
             } else {
                 $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
-            }
-
-            if (-not $InputObject) {
-                Stop-Function -Message "No matching groups found on $instance" -Continue
             }
         }
 
@@ -156,12 +176,13 @@ function Add-DbaRegServer {
             if ($reggroup.Source -eq "Azure Data Studio") {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
             }
+            Write-Message -Level Verbose -Message "ID: $($reggroup.ID))"
             if ($reggroup.ID) {
                 $target = $reggroup.ParentServer.SqlInstance
             } else {
                 $target = "Local Registered Servers"
             }
-            if ($Pscmdlet.ShouldProcess($target, "Adding $ServerName")) {
+            if ($Pscmdlet.ShouldProcess($target, "Adding $name")) {
 
                 if ($ServerObject) {
                     foreach ($server in $ServerObject) {
@@ -183,7 +204,7 @@ function Add-DbaRegServer {
                             $newserver.CredentialPersistenceType = "PersistLoginNameAndPassword"
                             $newserver.Create()
 
-                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                         } catch {
                             Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                         }
@@ -199,7 +220,7 @@ function Add-DbaRegServer {
                         $newserver.OtherParams = $OtherParams
                         $newserver.Create()
 
-                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName
+                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                     } catch {
                         Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                     }
