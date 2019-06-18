@@ -118,6 +118,11 @@ $scriptBlock = {
     }
 
     foreach ($name in $names) {
+        $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
+        if ($name -in $x64only -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
+            Write-Verbose -Message "Skipping $name. x86 not supported for this library."
+            continue
+        }
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
         $null = try {
