@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbSnapshot {
     <#
     .SYNOPSIS
@@ -94,13 +93,10 @@ function Remove-DbaDbSnapshot {
         Removes all database snapshots from sql2014 and prompts for each database
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$Snapshot,
@@ -108,10 +104,11 @@ function Remove-DbaDbSnapshot {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$AllSnapshots,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $defaultprops = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database as Name', 'Status'
     }
     process {
@@ -167,8 +164,5 @@ function Remove-DbaDbSnapshot {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseSnapshot
     }
 }

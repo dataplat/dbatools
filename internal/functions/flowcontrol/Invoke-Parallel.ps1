@@ -150,7 +150,7 @@ function Invoke-Parallel {
     #>
     [cmdletbinding(DefaultParameterSetName = 'ScriptBlock')]
     param (
-        [Parameter(Position = 0, ParameterSetName = 'ScriptBlock')]
+        [Parameter(ParameterSetName = 'ScriptBlock')]
         [System.Management.Automation.ScriptBlock]$ScriptBlock,
 
         [Parameter(ParameterSetName = 'ScriptFile')]

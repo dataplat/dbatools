@@ -92,7 +92,6 @@ function New-DbaLogShippingPrimaryDatabase {
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -118,7 +117,6 @@ function New-DbaLogShippingPrimaryDatabase {
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

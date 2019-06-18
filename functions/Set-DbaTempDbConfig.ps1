@@ -1,4 +1,4 @@
-function Set-DbaTempdbConfig {
+function Set-DbaTempDbConfig {
     <#
     .SYNOPSIS
         Sets tempdb data and log files according to best practices.
@@ -64,30 +64,30 @@ function Set-DbaTempdbConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaTempdbConfig
+        https://dbatools.io/Set-DbaTempDbConfig
 
     .EXAMPLE
-        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSize 1000
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000
 
         Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
 
     .EXAMPLE
-        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSize 1000 -DataFileCount 8
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000 -DataFileCount 8
 
         Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
 
     .EXAMPLE
-        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSize 1000 -OutputScriptOnly
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000 -OutputScriptOnly
 
         Provides a SQL script output to configure tempdb according to the passed parameters.
 
     .EXAMPLE
-        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSize 1000 -DisableGrowth
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000 -DisableGrowth
 
         Disables the growth for the data and log files.
 
     .EXAMPLE
-        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSize 1000 -OutputScriptOnly
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000 -OutputScriptOnly
 
         Returns the T-SQL script representing tempdb configuration.
 
@@ -96,7 +96,6 @@ function Set-DbaTempdbConfig {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$DataFileCount,
@@ -179,8 +178,6 @@ function Set-DbaTempdbConfig {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb ($TooBigCount MB) is larger than the calculated individual file configuration ($DataFilesizeSingle MB)." -Continue
             }
 
-            $EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingle AND type = 0").Tables[0].Rows[0].FileCount
-
             Write-Message -Message "tempdb configuration validated." -Level Verbose
 
             $DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
@@ -244,9 +241,5 @@ function Set-DbaTempdbConfig {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-SqlTempDbConfiguration
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaTempDbConfiguration
     }
 }

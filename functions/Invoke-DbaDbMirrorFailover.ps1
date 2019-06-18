@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirrorFailover {
     <#
     .SYNOPSIS
@@ -68,6 +67,9 @@ function Invoke-DbaDbMirrorFailover {
         [switch]$Force,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
             Stop-Function -Message "Database is required when SqlInstance is specified"

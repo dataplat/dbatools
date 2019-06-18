@@ -80,7 +80,6 @@ function Set-DbaAgentJobOwner {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
@@ -90,12 +89,8 @@ function Set-DbaAgentJobOwner {
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias("TargetLogin")]
         [string]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Set-DbaJobOwner
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaComputerCertificate {
     <#
     .SYNOPSIS
@@ -60,7 +59,6 @@ function Add-DbaComputerCertificate {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("Password")]
@@ -70,7 +68,6 @@ function Add-DbaComputerCertificate {
         [string]$Path,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

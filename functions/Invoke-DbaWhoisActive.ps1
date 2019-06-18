@@ -198,7 +198,6 @@ function Invoke-DbaWhoIsActive {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
@@ -240,7 +239,6 @@ function Invoke-DbaWhoIsActive {
         [switch]$ReturnSchema,
         [string]$Schema,
         [switch]$Help,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -337,8 +335,5 @@ function Invoke-DbaWhoIsActive {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
     }
 }

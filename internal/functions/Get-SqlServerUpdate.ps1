@@ -1,4 +1,4 @@
-function Get-SqlServerUpdate {
+function Get-SqlInstanceUpdate {
     <#
     Originally based on https://github.com/adbertram/PSSqlUpdater
     Internal function. Provides information on the target update version for a specific set of SQL Server instances based on current and target SQL Server levels.

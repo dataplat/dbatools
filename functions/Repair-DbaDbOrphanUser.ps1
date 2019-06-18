@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaDbOrphanUser {
     <#
     .SYNOPSIS
@@ -89,23 +88,22 @@ function Repair-DbaDbOrphanUser {
         Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         foreach ($instance in $SqlInstance) {
@@ -223,9 +221,5 @@ function Repair-DbaDbOrphanUser {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-DbaOrphanUser
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Repair-SqlOrphanUser
     }
 }

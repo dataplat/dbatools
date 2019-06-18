@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Write-DbaDbTableData {
     <#
     .SYNOPSIS
@@ -154,15 +153,11 @@ function Write-DbaDbTableData {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [Parameter(Position = 0, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(Mandatory)]
         [ValidateNotNull()]
         [DbaInstanceParameter]$SqlInstance,
-        [Parameter(Position = 1)]
         [ValidateNotNull()]
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Parameter(Position = 2)]
         [object]$Database,
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("DataTable")]
@@ -187,7 +182,6 @@ function Write-DbaDbTableData {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )
@@ -512,7 +506,12 @@ function Write-DbaDbTableData {
             }
         }
 
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
+        if ($server.isAzure) {
+            # will for sure have the database in connstring
+            $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString, $bulkCopyOptions)
+        } else {
+            $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
+        }
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
         $bulkCopy.NotifyAfter = $NotifyAfter

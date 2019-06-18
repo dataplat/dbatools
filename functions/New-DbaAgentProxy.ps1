@@ -98,7 +98,6 @@ function New-DbaAgentProxy {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter ProxyCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -113,10 +112,11 @@ function New-DbaAgentProxy {
         [string[]]$MsdbRole,
         [switch]$Disabled,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

@@ -63,7 +63,7 @@ function Install-DbaWhoIsActive {
         Installs sp_WhoisActive to sqlserver2014a's master database from the local file whoisactive_install.sql
 
     .EXAMPLE
-        PS C:\> $instances = Get-DbaCmsRegServer sqlserver
+        PS C:\> $instances = Get-DbaRegServer sqlserver
         PS C:\> Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
         Installs sp_WhoisActive to all servers within CMS
@@ -72,18 +72,18 @@ function Install-DbaWhoIsActive {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
         [string]$LocalFile,
         [object]$Database,
-        [switch][Alias('Silent')]
-        $EnableException,
+        [switch]$EnableException,
         [switch]$Force
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\spwhoisactive.zip"
@@ -134,21 +134,11 @@ function Install-DbaWhoIsActive {
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
 
                 Unblock-File $zipfile -ErrorAction SilentlyContinue
-
-                if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-                    try {
-                        Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-                    } catch {
-                        Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
-                        return
-                    }
-                } else {
-                    # Keep it backwards compatible
-                    $shell = New-Object -ComObject Shell.Application
-                    $zipPackage = $shell.NameSpace($zipfile)
-                    $destinationFolder = $shell.NameSpace($temp)
-                    Get-ChildItem "$temp\who*active*.sql" | Remove-Item
-                    $destinationFolder.CopyHere($zipPackage.Items())
+                try {
+                    Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+                } catch {
+                    Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
+                    return
                 }
                 Remove-Item -Path $zipfile
             }
@@ -245,6 +235,5 @@ function Install-DbaWhoIsActive {
         if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
             Get-Item $sqlfile | Remove-Item
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
     }
 }

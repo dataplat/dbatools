@@ -64,12 +64,10 @@ function Test-DbaNetworkLatency {
     [OutputType([System.Object[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
         [int]$Count = 3,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -120,8 +118,5 @@ function Test-DbaNetworkLatency {
                 Stop-Function -Message "Error occurred testing dba network latency: $_" -ErrorRecord $_ -Continue -Target $instance
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlNetworkLatency
     }
 }

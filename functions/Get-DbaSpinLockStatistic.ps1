@@ -62,10 +62,8 @@ function Get-DbaSpinLockStatistic {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -96,7 +94,7 @@ function Get-DbaSpinLockStatistic {
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName      = $server.NetName
+                    ComputerName      = $server.ComputerName
                     InstanceName      = $server.ServiceName
                     SqlInstance       = $server.DomainInstanceName
                     SpinLockName      = $row.name

@@ -82,7 +82,7 @@ function Import-DbaSpConfigure {
         Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(ParameterSetName = "ServerCopy")]
         [DbaInstanceParameter]$Source,
@@ -93,14 +93,12 @@ function Import-DbaSpConfigure {
         [Parameter(ParameterSetName = "ServerCopy")]
         [PSCredential]$DestinationSqlCredential,
         [Parameter(ParameterSetName = "FromFile")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Parameter(ParameterSetName = "FromFile")]
         [string]$Path,
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -146,6 +144,7 @@ function Import-DbaSpConfigure {
             }
         }
 
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if ($Path.length -eq 0) {
@@ -230,7 +229,5 @@ function Import-DbaSpConfigure {
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Message -Level Output -Message "SQL Server configuration options migration finished."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-SqlSpConfigure
     }
 }

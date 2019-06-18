@@ -74,7 +74,7 @@ function Copy-DbaXESession {
         Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -87,11 +87,9 @@ function Copy-DbaXESession {
         [object[]]$XeSession,
         [object[]]$ExcludeXeSession,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaExtendedEvent
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
@@ -108,6 +106,8 @@ function Copy-DbaXESession {
         if ($ExcludeXeSession) {
             $storeSessions = $storeSessions | Where-Object Name -NotIn $ExcludeXeSession
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -188,8 +188,5 @@ function Copy-DbaXESession {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlExtendedEvent
     }
 }

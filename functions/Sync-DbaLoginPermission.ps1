@@ -86,11 +86,6 @@ function Sync-DbaLoginPermission {
                 [array]$Exclude
             )
 
-            try {
-                $sa = Get-SqlSaLogin -SqlInstance $destServer -ErrorAction Stop
-            } catch {
-                $sa = "sa"
-            }
             $stepCounter = 0
             foreach ($sourceLogin in $alllogins) {
 
@@ -147,9 +142,5 @@ function Sync-DbaLoginPermission {
                 Sync-Only -SourceServer $sourceServer -DestServer $destServer
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
     }
 }

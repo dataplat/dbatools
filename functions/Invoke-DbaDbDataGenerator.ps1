@@ -101,36 +101,39 @@ function Invoke-DbaDbDataGenerator {
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Create the faker objects
         try {
-            Add-Type -Path (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\Bogus.dll")
             $faker = New-Object Bogus.Faker($Locale)
         } catch {
-            Stop-Function -Message "Could not load randomizer dll" -Continue
+            Stop-Function -Message "Could not load randomizer class" -Continue
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-
         $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
-
         $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
-
         $supportedFakerSubTypes += "Date"
-
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if ($FilePath.ToString().StartsWith('http')) {
             $tables = Invoke-RestMethod -Uri $FilePath
         } else {
             # Check if the destination is accessible
             if (-not (Test-Path -Path $FilePath)) {
-                Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
+                Stop-Function -Message "Could not find data generation config file $FilePath" -Target $FilePath
+                return
+            }
+
+            # Test the configuration
+            try {
+                Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
+            } catch {
+                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return
             }
 
@@ -254,24 +257,19 @@ function Invoke-DbaDbDataGenerator {
                                             $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
                                             $uniqueValueColumns += $indexColumn.Name
                                         }
-
                                     }
                                 }
-
                             }
-
                             # Add the row value to the array
                             $uniqueValues += $rowValue
-
                         }
-
                     }
-
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $sqlconn.ChangeDatabase($db.Name)
-
+                    if (-not $server.IsAzure) {
+                        $sqlconn.ChangeDatabase($db.Name)
+                    }
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
@@ -290,7 +288,6 @@ function Invoke-DbaDbDataGenerator {
                     $insertQuery = ""
 
                     if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
-                        $transaction = $sqlconn.BeginTransaction()
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
@@ -454,6 +451,7 @@ function Invoke-DbaDbDataGenerator {
                         }
 
                         try {
+                            $transaction = $sqlconn.BeginTransaction()
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {

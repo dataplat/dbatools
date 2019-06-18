@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Build','Kb','MajorVersion','ServicePack','CumulativeUpdate','SqlInstance','SqlCredential','Update','EnableException'
+        [object[]]$knownParameters = 'Build', 'Kb', 'MajorVersion', 'ServicePack', 'CumulativeUpdate', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Unit Test" -Tags Unittest {
-    $ModuleBase = (Get-Module -Name dbatools).ModuleBase
+    $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
     $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
     Context 'Validate data in json is correct' {
         It "the json file is there" {
@@ -82,11 +82,11 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
     }
     # These are groups by major release (aka "Name")
-    $IdxRef = Get-Content $idxfile -raw | ConvertFrom-Json
+    $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
     $Groups = @{ }
     $OrderedKeys = @()
     foreach ($el in $IdxRef.Data) {
-        $ver = $el.Version.split('.')[0 .. 1] -join '.'
+        $ver = $el.Version.Split('.')[0 .. 1] -join '.'
         if (!($Groups.ContainsKey($ver))) {
             $Groups[$ver] = New-Object System.Collections.ArrayList
             $OrderedKeys += $ver
@@ -105,11 +105,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             It "has a single version tagged as RTM" {
                 ($Versions.SP -eq 'RTM').Count | Should Be 1
             }
-            It "has a single version tagged as LATEST" {
-                ($Versions.SP -eq 'LATEST').Count | Should Be 1
-            }
             It "SP Property is formatted correctly" {
-                $Versions.SP | Where-Object { $_ } | Should Match '^RTM$|^LATEST$|^SP[\d]+$'
+                $Versions.SP | Where-Object { $_ } | Should Match '^RTM$|^SP[\d]+$'
             }
             It "CU Property is formatted correctly" {
                 $CUMatch = $Versions.CU | Where-Object { $_ }
@@ -119,15 +116,10 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             }
             It "SPs are ordered correctly" {
                 $SPs = $Versions.SP | Where-Object { $_ }
-                $SPs[0] | Should Be 'RTM'
-                $SPs[-1] | Should Be 'LATEST'
+                ($SPs | Select-Object -First 1) | Should Be 'RTM'
                 $ActualSPs = $SPs | Where-Object { $_ -match '^SP[\d]+$' }
                 $OrderedActualSPs = $ActualSPs | Sort-Object
                 ($ActualSPs -join ',') | Should Be ($OrderedActualSPs -join ',')
-            }
-            It "LATEST is on PAR with a SP" {
-                $LATEST = $Versions | Where-Object SP -contains "LATEST"
-                $LATEST.SP.Count | Should Be 2
             }
             # see https://github.com/sqlcollaborative/dbatools/pull/2466
             It "KBList has only numbers on it" {
