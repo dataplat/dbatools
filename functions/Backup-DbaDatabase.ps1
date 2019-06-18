@@ -327,7 +327,7 @@ function Backup-DbaDatabase {
             $dbname = $db.Name
             $server = $db.Parent
 
-            if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL') {
+            if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and -not $server.IsAzure) {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
