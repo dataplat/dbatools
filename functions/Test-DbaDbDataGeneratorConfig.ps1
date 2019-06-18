@@ -1,4 +1,4 @@
-function Test-DbaDataGeneratorConfiguration {
+function Test-DbaDbDataGeneratorConfig {
     <#
     .SYNOPSIS
         Checks the data generation configuration if it's valid
@@ -35,10 +35,10 @@ function Test-DbaDataGeneratorConfiguration {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaDataGeneratorConfiguration
+        https://dbatools.io/Test-DbaDbDataGeneratorConfig
 
     .EXAMPLE
-        Test-DbaDataGeneratorConfiguration -FilePath C:\temp\_datamasking\db1.json
+        Test-DbaDbDataGeneratorConfig -FilePath C:\temp\_datamasking\db1.json
 
         Test the configuration file
     #>

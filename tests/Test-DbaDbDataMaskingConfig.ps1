@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $dbname = "dbatools_datagentest"
+        $dbname = "dbatools_maskingtest"
         $query = "CREATE DATABASE [$dbname]"
 
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+        $file = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datamasking"
 
     }
     AfterAll {
@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "gives no errors with a correct json file" {
         $findings = @()
-        $findings += Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDbDataMaskingConfig -FilePath $file.FullName
 
         $findings.Count | Should -Be 0
     }
@@ -55,13 +55,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $json = Get-Content -Path $file.FullName | ConvertFrom-Json
 
         # Break the content by removing a property
-        $json.Tables[0].Columns[8].PSObject.Properties.Remove("SubType")
+        $json.Tables[0].Columns[7].PSObject.Properties.Remove("SubType")
 
         # Write the JSON back to the file
         $json | ConvertTo-Json -Depth 5 | Out-File $file.FullName -Force
 
         $findings = @()
-        $findings += Test-DbaDataGeneratorConfiguration -FilePath $file.FullName
+        $findings += Test-DbaDbDataMaskingConfig -FilePath $file.FullName
 
         $findings.Count | Should -Be 1
     }
