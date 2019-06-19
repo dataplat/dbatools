@@ -45,6 +45,10 @@ function Invoke-DbatoolsFormatter {
         $CBHRex = [regex]'(?smi)\s+<#[^#]*#>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)<#'
         $CBHEndRex = [regex]'(?<spaces>[ ]*)#>'
+        $OSEOL = "`n"
+        if ($psVersionTable.Platform -ne 'Unix') {
+            $OSEOL = "`r`n"
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -57,7 +61,7 @@ function Invoke-DbatoolsFormatter {
 
             $content = Get-Content -Path $realPath -Raw -Encoding UTF8
             #strip ending empty lines
-            $content = $content -replace "(?s)`r`n\s*$"
+            $content = $content -replace "(?s)$OSEOL\s*$"
             try {
                 $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
             } catch {
@@ -83,7 +87,7 @@ function Invoke-DbatoolsFormatter {
             foreach ($line in $content.Split("`n")) {
                 $realContent += $line.TrimEnd()
             }
-            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "`r`n"), $Utf8NoBomEncoding)
+            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
         }
     }
 }
