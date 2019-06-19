@@ -12129,7 +12129,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting server roles"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
-                $null = Get-DbaInstanceRole -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-serverroles.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaServerRole -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-serverroles.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-serverroles.sql"
                 if (-not (Test-Path "$Path\$fileCounter-serverroles.sql")) {
                     $fileCounter--
@@ -26989,141 +26989,6 @@ function Get-DbaInstanceProtocol {
 }
 
 #.ExternalHelp dbatools-Help.xml
-function Get-DbaInstanceRole {
-    
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [string[]]$ServerRole,
-        [string[]]$ExcludeServerRole,
-        [switch]$ExcludeFixedRole,
-        [switch]$EnableException
-    )
-
-    process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $serverroles = $server.Roles
-
-            if ($ServerRole) {
-                $serverroles = $serverroles | Where-Object Name -In $ServerRole
-            }
-            if ($ExcludeServerRole) {
-                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
-            }
-            if ($ExcludeFixedRole) {
-                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
-            }
-
-            foreach ($role in $serverroles) {
-                $members = $role.EnumMemberNames()
-
-                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members
-                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'IsFixedRole', 'DateCreated', 'DateModified'
-                Select-DefaultView -InputObject $role -Property $default
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbaInstanceRoleMember {
-    
-    [CmdletBinding()]
-    param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [Alias('Credential')]
-        [PSCredential]$SqlCredential,
-        [string[]]$ServerRole,
-        [string[]]$ExcludeServerRole,
-        [object[]]$Login,
-        [switch]$ExcludeFixedRole,
-        [switch]$EnableException
-    )
-
-    process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $roles = $server.Roles
-
-            if (Test-Bound -ParameterName 'Login') {
-                try {
-                    $logins = Get-DbaLogin -SqlInstance $server -Login $Login -EnableException
-                } catch {
-                    Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
-                }
-                Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
-                foreach ($l in $logins) {
-                    $loginRoles += $l.ListMembers()
-                }
-
-                $loginRoles = $loginRoles | Select-Object -Unique
-                Write-Message -Level 'Verbose' -Message "Filtering by roles: $($loginRoles -join ', ')"
-
-                $roles = $roles | Where-Object { $_.Name -in $loginRoles }
-            }
-
-            if (Test-Bound -ParameterName 'ServerRole') {
-                $roles = $roles | Where-Object { $_.Name -in $ServerRole }
-            }
-
-            if (Test-Bound -ParameterName 'ExcludeServerRole') {
-                $roles = $roles | Where-Object { $_.Name -notin $ExcludeServerRole }
-            }
-
-            if (Test-Bound -ParameterName 'ExcludeFixedRole') {
-                $roles = $roles | Where-Object { $_.IsFixedRole -eq $false }
-            }
-
-            foreach ($role in $roles) {
-                Write-Message -Level 'Verbose' -Message "Getting Server Role Members for $role on $instance"
-
-                $members = $role.EnumMemberNames()
-                Write-Message -Level 'Verbose' -Message "$role members: $($members -join ', ')"
-
-                if (Test-Bound -ParameterName 'Login') {
-                    Write-Message -Level 'Verbose' -Message "Only returning results for $($logins.Name -join ', ')"
-                    $members = $members | Where-Object { $_ -in $logins.Name }
-                }
-
-                foreach ($member in $members) {
-                    $l = $server.Logins | Where-Object { $_.Name -eq $member }
-
-                    if ($l) {
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name Role -Value $role.Name
-
-                        # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                        Select-Object -InputObject $l -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Name'
-                    }
-                }
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
 function Get-DbaInstanceTrigger {
     
     [CmdletBinding()]
@@ -31990,6 +31855,141 @@ function Get-DbaSchemaChangeHistory {
                 Write-Message -Level Debug -Message "SQL: $sql"
 
                 $db.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbaServerRole {
+    
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$ServerRole,
+        [string[]]$ExcludeServerRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $serverroles = $server.Roles
+
+            if ($ServerRole) {
+                $serverroles = $serverroles | Where-Object Name -In $ServerRole
+            }
+            if ($ExcludeServerRole) {
+                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
+            }
+            if ($ExcludeFixedRole) {
+                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
+            }
+
+            foreach ($role in $serverroles) {
+                $members = $role.EnumMemberNames()
+
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'IsFixedRole', 'DateCreated', 'DateModified'
+                Select-DefaultView -InputObject $role -Property $default
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbaServerRoleMember {
+    
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias('Credential')]
+        [PSCredential]$SqlCredential,
+        [string[]]$ServerRole,
+        [string[]]$ExcludeServerRole,
+        [object[]]$Login,
+        [switch]$ExcludeFixedRole,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $roles = $server.Roles
+
+            if (Test-Bound -ParameterName 'Login') {
+                try {
+                    $logins = Get-DbaLogin -SqlInstance $server -Login $Login -EnableException
+                } catch {
+                    Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
+                }
+                Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
+                foreach ($l in $logins) {
+                    $loginRoles += $l.ListMembers()
+                }
+
+                $loginRoles = $loginRoles | Select-Object -Unique
+                Write-Message -Level 'Verbose' -Message "Filtering by roles: $($loginRoles -join ', ')"
+
+                $roles = $roles | Where-Object { $_.Name -in $loginRoles }
+            }
+
+            if (Test-Bound -ParameterName 'ServerRole') {
+                $roles = $roles | Where-Object { $_.Name -in $ServerRole }
+            }
+
+            if (Test-Bound -ParameterName 'ExcludeServerRole') {
+                $roles = $roles | Where-Object { $_.Name -notin $ExcludeServerRole }
+            }
+
+            if (Test-Bound -ParameterName 'ExcludeFixedRole') {
+                $roles = $roles | Where-Object { $_.IsFixedRole -eq $false }
+            }
+
+            foreach ($role in $roles) {
+                Write-Message -Level 'Verbose' -Message "Getting Server Role Members for $role on $instance"
+
+                $members = $role.EnumMemberNames()
+                Write-Message -Level 'Verbose' -Message "$role members: $($members -join ', ')"
+
+                if (Test-Bound -ParameterName 'Login') {
+                    Write-Message -Level 'Verbose' -Message "Only returning results for $($logins.Name -join ', ')"
+                    $members = $members | Where-Object { $_ -in $logins.Name }
+                }
+
+                foreach ($member in $members) {
+                    $l = $server.Logins | Where-Object { $_.Name -eq $member }
+
+                    if ($l) {
+                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name Role -Value $role.Name
+
+                        # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
+                        Select-Object -InputObject $l -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Name'
+                    }
+                }
             }
         }
     }
@@ -44980,16 +44980,14 @@ function Invoke-DbatoolsRenameHelper {
             'Remove-DbaCmsRegServer'            = 'Remove-DbaRegServer'
             'Remove-DbaCmsRegServerGroup'       = 'Remove-DbaRegServerGroup'
             'Copy-DbaServerAuditSpecification'  = 'Copy-DbaInstanceAuditSpecification'
-            'Copy-DbaInstanceAudit'             = 'Copy-DbaServerAudit'
-            'Copy-DbaServerRole'                = 'Copy-DbaInstanceRole'
+            'Copy-DbaServerAudit'               = 'Copy-DbaInstanceAudit'
             'Copy-DbaServerTrigger'             = 'Copy-DbaInstanceTrigger'
-            'Test-DbaServerName'                = 'Repair-DbaServerName'
+            'Test-DbaServerName'                = 'Test-DbaInstanceName'
             'Test-DbaInstanceName'              = 'Repair-DbaInstanceName'
             'Get-DbaServerTrigger'              = 'Get-DbaInstanceTrigger'
-            'Get-DbaServerAudit'                = 'Get-DbaServerAuditSpecification'
-            'Get-DbaInstanceAudit'              = 'Get-DbaInstanceAuditSpecification'
+            'Get-DbaServerAudit'                = 'Get-DbaInstanceAudit'
+            'Get-DbaServerAuditSpecification'   = 'Get-DbaInstanceAuditSpecification'
             'Get-DbaServerInstallDate'          = 'Get-DbaInstanceInstallDate'
-            'Get-DbaServerRole'                 = 'Get-DbaInstanceRole'
             'Show-DbaServerFileSystem'          = 'Show-DbaInstanceFileSystem'
             'Install-DbaWatchUpdate'            = 'Install-DbatoolsWatchUpdate'
             'Uninstall-DbaWatchUpdate'          = 'Uninstall-DbatoolsWatchUpdate'
@@ -50784,66 +50782,6 @@ function New-DbaEndpoint {
 }
 
 #.ExternalHelp dbatools-Help.xml
-function New-DbaInstanceRole {
-    
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
-    param (
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [String[]]$ServerRole,
-        [String]$Owner,
-        [switch]$EnableException
-    )
-    process {
-        if (-not $ServerRole) {
-            Stop-Function -Message "You must specify a new server-role name. Use -ServerRole parameter."
-            return
-        }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $serverroles = $server.Roles
-
-            foreach ($role in $ServerRole) {
-                if ($serverroles | Where-Object Name -eq $role) {
-                    Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
-                }
-
-                Write-Message -Level Verbose -Message "Add roles to Instance $server"
-
-                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
-                    try {
-                        $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
-                        $newServerRole.Name = $role
-                        $newServerRole.Parent = $server
-
-                        if ($Owner) {
-                            $newServerRole.Owner = $Owner
-                        }
-
-                        $newServerRole.Create()
-
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $newServerRole -Property ComputerName, InstanceName, SqlInstance, Name, Owner
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                    }
-                }
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
 function New-DbaLogin {
     
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
@@ -51204,6 +51142,66 @@ function New-DbaScriptingOption {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     param()
     New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
+}
+
+#.ExternalHelp dbatools-Help.xml
+function New-DbaServerRole {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [String[]]$ServerRole,
+        [String]$Owner,
+        [switch]$EnableException
+    )
+    process {
+        if (-not $ServerRole) {
+            Stop-Function -Message "You must specify a new server-role name. Use -ServerRole parameter."
+            return
+        }
+
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $serverroles = $server.Roles
+
+            foreach ($role in $ServerRole) {
+                if ($serverroles | Where-Object Name -eq $role) {
+                    Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
+                }
+
+                Write-Message -Level Verbose -Message "Add roles to Instance $server"
+
+                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
+                    try {
+                        $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
+                        $newServerRole.Name = $role
+                        $newServerRole.Parent = $server
+
+                        if ($Owner) {
+                            $newServerRole.Owner = $Owner
+                        }
+
+                        $newServerRole.Create()
+
+                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                        Select-DefaultView -InputObject $newServerRole -Property ComputerName, InstanceName, SqlInstance, Name, Owner
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+        }
+    }
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -54846,51 +54844,6 @@ function Remove-DbaEndpoint {
 }
 
 #.ExternalHelp dbatools-Help.xml
-function Remove-DbaInstanceRole {
-    
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
-    param (
-        [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [string[]]$ServerRole,
-        [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.ServerRole[]]$InputObject,
-        [switch]$EnableException
-    )
-    process {
-        if ($SqlInstance) {
-            $InputObject += Get-DbaInstanceRole -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ServerRole $ServerRole
-        }
-
-        foreach ($srvrole in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($srvrole.DomainInstanceName, "Dropping the server-role named $($srvrole.Role) on $($srvrole.DomainInstanceName)")) {
-                try {
-                    $srvrole.Drop()
-
-                    [pscustomobject]@{
-                        ComputerName = $srvrole.ComputerName
-                        InstanceName = $srvrole.InstanceName
-                        SqlInstance  = $srvrole.SqlInstance
-                        ServerRole   = $srvrole.Role
-                        Status       = "Success"
-                    }
-                } catch {
-                    Stop-Function -Message "Failed to drop server-role named $($srvrole.Name) on $($srvrole.Name)." -Target $srvrole -ErrorRecord $_ -Continue
-
-                    [pscustomobject]@{
-                        ComputerName = $srvrole.ComputerName
-                        InstanceName = $srvrole.InstanceName
-                        SqlInstance  = $srvrole.SqlInstance
-                        ServerRole   = $srvrole.Role
-                        Status       = "Failed"
-                    }
-                }
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
 function Remove-DbaLogin {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
@@ -55312,6 +55265,51 @@ function Remove-DbaRegServerGroup {
                     } | Select-DefaultView -Property $defaults
                 } catch {
                     Stop-Function -Message "Failed to drop $regservergroup on $parentserver" -ErrorRecord $_ -Continue
+                }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Remove-DbaServerRole {
+    
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$ServerRole,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.ServerRole[]]$InputObject,
+        [switch]$EnableException
+    )
+    process {
+        if ($SqlInstance) {
+            $InputObject += Get-DbaServerRole -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ServerRole $ServerRole
+        }
+
+        foreach ($srvrole in $InputObject) {
+            if ($Pscmdlet.ShouldProcess($srvrole.DomainInstanceName, "Dropping the server-role named $($srvrole.Role) on $($srvrole.DomainInstanceName)")) {
+                try {
+                    $srvrole.Drop()
+
+                    [pscustomobject]@{
+                        ComputerName = $srvrole.ComputerName
+                        InstanceName = $srvrole.InstanceName
+                        SqlInstance  = $srvrole.SqlInstance
+                        ServerRole   = $srvrole.Role
+                        Status       = "Success"
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to drop server-role named $($srvrole.Name) on $($srvrole.Name)." -Target $srvrole -ErrorRecord $_ -Continue
+
+                    [pscustomobject]@{
+                        ComputerName = $srvrole.ComputerName
+                        InstanceName = $srvrole.InstanceName
+                        SqlInstance  = $srvrole.SqlInstance
+                        ServerRole   = $srvrole.Role
+                        Status       = "Failed"
+                    }
                 }
             }
         }
@@ -61699,7 +61697,7 @@ function Set-DbaLogin {
                 $l.Alter()
 
                 # Retrieve the server roles for the login
-                $roles = Get-DbaInstanceRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
+                $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
 
                 # Check if there were any notes to include in the results
                 if ($notes) {

@@ -16298,147 +16298,6 @@
         "Syntax":  "Get-DbaInstanceProtocol [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Get-DbaInstanceRole",
-        "Description":  "Gets the list of server-level roles for SQL Server instance.",
-        "Tags":  [
-                     "ServerRole",
-                     "Security"
-                 ],
-        "Synopsis":  "Gets the list of server-level roles.",
-        "Alias":  "",
-        "Author":  "Shawn Melton (@wsmelton)",
-        "CommandName":  "Get-DbaInstanceRole",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaInstanceRole",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaInstanceRole -SqlInstance sql2016a\nOutputs list of server-level roles for sql2016a instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaInstanceRole -SqlInstance sql2017a -ExcludeFixedRole\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.",
-                           "",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ServerRole",
-                           "Server-Level role to filter results to that role only.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeServerRole",
-                           "Server-Level role to exclude from results.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeFixedRole",
-                           "Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because \r\nit basically disables advanced scripting. Using this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Syntax":  "Get-DbaInstanceRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-ExcludeServerRole] \u003cString[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "Name":  "Get-DbaInstanceRoleMember",
-        "Description":  "The Get-DbaInstanceRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.",
-        "Tags":  [
-                     "ServerRole",
-                     "Security",
-                     "Login"
-                 ],
-        "Synopsis":  "Get members of server roles for each instance(s) of SQL Server.",
-        "Alias":  "",
-        "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
-        "CommandName":  "Get-DbaInstanceRoleMember",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaInstanceRoleMember",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance localhost\nReturns all members of all server roles on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance localhost, sql2016\nReturns all members of all server roles on the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Get-DbaInstanceRoleMember\nReturns all members of all server roles for every server in C:\\servers.txt\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance localhost -ServerRole \u0027sysadmin\u0027, \u0027dbcreator\u0027\nReturns all members of the sysadmin or dbcreator roles on localhost.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance localhost -ExcludeServerRole \u0027sysadmin\u0027\nReturns all members of server-level roles other than sysadmin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance sql2017a -ExcludeFixedRole\nReturns all members of server-level role(s) that are not fixed roles on sql2017a instance.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaInstanceRoleMember -SqlInstance localhost -Login \u0027MyFriendlyDeveloper\u0027\nReturns all server-level role(s) for the MyFriendlyDeveloper login on localhost.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
-                           "",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).",
-                           "Credential",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ServerRole",
-                           "The role(s) to process. If unspecified, all roles will be processed.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeServerRole",
-                           "The role(s) to exclude.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Login",
-                           "The login(s) to process. If unspecified, all logins will be processed.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeFixedRole",
-                           "Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Syntax":  "Get-DbaInstanceRoleMember [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-ExcludeServerRole] \u003cString[]\u003e] [[-Login] \u003cObject[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "Get-DbaInstanceTrigger",
         "Description":  "Get all existing server triggers on one or more SQL instances.",
         "Tags":  [
@@ -19681,6 +19540,147 @@
                        ]
                    ],
         "Syntax":  "Get-DbaSchemaChangeHistory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Since] \u003cDbaDateTime\u003e] [[-Object] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaServerRole",
+        "Description":  "Gets the list of server-level roles for SQL Server instance.",
+        "Tags":  [
+                     "ServerRole",
+                     "Security"
+                 ],
+        "Synopsis":  "Gets the list of server-level roles.",
+        "Alias":  "",
+        "Author":  "Shawn Melton (@wsmelton)",
+        "CommandName":  "Get-DbaServerRole",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaServerRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a\nOutputs list of server-level roles for sql2016a instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "Server-Level role to filter results to that role only.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeServerRole",
+                           "Server-Level role to exclude from results.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeFixedRole",
+                           "Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because \r\nit basically disables advanced scripting. Using this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaServerRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-ExcludeServerRole] \u003cString[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaServerRoleMember",
+        "Description":  "The Get-DbaServerRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "ServerRole",
+                     "Security",
+                     "Login"
+                 ],
+        "Synopsis":  "Get members of server roles for each instance(s) of SQL Server.",
+        "Alias":  "",
+        "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
+        "CommandName":  "Get-DbaServerRoleMember",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaServerRoleMember",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost\nReturns all members of all server roles on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost, sql2016\nReturns all members of all server roles on the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Get-DbaServerRoleMember\nReturns all members of all server roles for every server in C:\\servers.txt\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -ServerRole \u0027sysadmin\u0027, \u0027dbcreator\u0027\nReturns all members of the sysadmin or dbcreator roles on localhost.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -ExcludeServerRole \u0027sysadmin\u0027\nReturns all members of server-level roles other than sysadmin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance sql2017a -ExcludeFixedRole\nReturns all members of server-level role(s) that are not fixed roles on sql2017a instance.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -Login \u0027MyFriendlyDeveloper\u0027\nReturns all server-level role(s) for the MyFriendlyDeveloper login on localhost.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).",
+                           "Credential",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "The role(s) to process. If unspecified, all roles will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeServerRole",
+                           "The role(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "The login(s) to process. If unspecified, all logins will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeFixedRole",
+                           "Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaServerRoleMember [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-ExcludeServerRole] \u003cString[]\u003e] [[-Login] \u003cObject[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaService",
@@ -32012,81 +32012,6 @@
         "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-Type] \u003cString\u003e] [[-Protocol] \u003cString\u003e] [[-Role] \u003cString\u003e] [[-EndpointEncryption] \u003cString\u003e] [[-EncryptionAlgorithm] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-Port] \u003cInt32\u003e] [[-SslPort] \u003cInt32\u003e] [[-Owner] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "New-DbaInstanceRole",
-        "Description":  "The New-DbaInstanceRole create new roles on instance(s) of SQL Server.",
-        "Tags":  [
-                     "Role",
-                     "Database",
-                     "Security"
-                 ],
-        "Synopsis":  "Create new server-level roles.",
-        "Alias":  "",
-        "Author":  "ClÃ¡udio Silva (@ClaudioESSilva), https://claudioessilva.eu",
-        "CommandName":  "New-DbaInstanceRole",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/New-DbaInstanceRole",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaInstanceRole -SqlInstance sql2017a -Database db1 -Role \u0027dbExecuter\u0027\nWill create a new role named dbExecuter within db1 on sql2017a instance.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances.",
-                           "",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ServerRole",
-                           "Server-Level role to be created.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Owner",
-                           "The owner of the role. If not specified will assume the default dbo.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "Shows what would happen if the command were to run. No actions are actually performed.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Syntax":  "New-DbaInstanceRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "New-DbaLogin",
         "Description":  "Creates a new SQL Server login with provided specifications",
         "Tags":  [
@@ -32291,6 +32216,81 @@
 
                    ],
         "Syntax":  "New-DbaScriptingOption [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaServerRole",
+        "Description":  "The New-DbaServerRole create new roles on instance(s) of SQL Server.",
+        "Tags":  [
+                     "Role",
+                     "Database",
+                     "Security"
+                 ],
+        "Synopsis":  "Create new server-level roles.",
+        "Alias":  "",
+        "Author":  "ClÃ¡udio Silva (@ClaudioESSilva), https://claudioessilva.eu",
+        "CommandName":  "New-DbaServerRole",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaServerRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaServerRole -SqlInstance sql2017a -Database db1 -Role \u0027dbExecuter\u0027\nWill create a new role named dbExecuter within db1 on sql2017a instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "Server-Level role to be created.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "The owner of the role. If not specified will assume the default dbo.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaServerRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaServiceMasterKey",
@@ -35849,81 +35849,6 @@
         "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Remove-DbaInstanceRole",
-        "Description":  "Deletes specified database certificate",
-        "Tags":  [
-                     "ServerRole",
-                     "Instance",
-                     "Security"
-                 ],
-        "Synopsis":  "Deletes specified database certificate",
-        "Alias":  "",
-        "Author":  "Claudio Silva (@ClaudioESSilva), https://claudioessilva.com",
-        "CommandName":  "Remove-DbaInstanceRole",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaInstanceRole -SqlInstance Server1 -ServerRole \u0027serverExecuter\u0027\nServer-role \u0027serverExecuter\u0027 on Server1 will be removed if it exists.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaInstanceRole -SqlInstance Server1 -Database db1 -Confirm:$false\nSuppresses all prompts to remove the server-role in the \u0027Server1\u0027.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The SQL Server to create the certificates on.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Allows you to login to SQL Server using alternative credentials.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ServerRole",
-                           "The server-role that will be removed",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "InputObject",
-                           "Piped server-role objects",
-                           "",
-                           false,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "WhatIf",
-                           "Shows what would happen if the command were to run. No actions are actually performed.",
-                           "wi",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
-                       ]
-                   ],
-        "Syntax":  "Remove-DbaInstanceRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-InputObject] \u003cServerRole[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
         "Name":  "Remove-DbaLogin",
         "Description":  "Tries a bunch of different ways to remove a Login or two or more.",
         "Tags":  [
@@ -36381,6 +36306,81 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaRegServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaServerRole",
+        "Description":  "Deletes specified database certificate",
+        "Tags":  [
+                     "ServerRole",
+                     "Instance",
+                     "Security"
+                 ],
+        "Synopsis":  "Deletes specified database certificate",
+        "Alias":  "",
+        "Author":  "Claudio Silva (@ClaudioESSilva), https://claudioessilva.com",
+        "CommandName":  "Remove-DbaServerRole",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaServerRole -SqlInstance Server1 -ServerRole \u0027serverExecuter\u0027\nServer-role \u0027serverExecuter\u0027 on Server1 will be removed if it exists.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaServerRole -SqlInstance Server1 -Database db1 -Confirm:$false\nSuppresses all prompts to remove the server-role in the \u0027Server1\u0027.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The SQL Server to create the certificates on.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Allows you to login to SQL Server using alternative credentials.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "The server-role that will be removed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Piped server-role objects",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaServerRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-InputObject] \u003cServerRole[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaSpn",
