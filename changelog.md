@@ -5,9 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.831] - 2019-05-24
+## [0.9.833] - 2019-05-30
 ### Fixed
-* Now able to install multiple features at once with `Install-DbaInstance` [#5573](https://github.com/sqlcollaborative/dbatools/pull/5573)
+* Rename multiple `DbaServer` functions to `DbaInstance` [#4580](https://github.com/sqlcollaborative/dbatools/issues/4580)
+* `New-DbaDbUser` errors when database is missing or incorrect [#5613](https://github.com/sqlcollaborative/dbatools/pull/5613)
+* Allow `Start-DbaXESession` `stopat` parameter to include longer running periods [#5362](https://github.com/sqlcollaborative/dbatools/issues/5362)
+* Workaround for `.Databases` collection in Azure [#5621](https://github.com/sqlcollaborative/dbatools/issues/5621)
+* Export Add Append and other Fixes [#5627](https://github.com/sqlcollaborative/dbatools/pull/5627)
+* `Export-DbaScript` returns 2 spaces if object doesn't exist [#5418](https://github.com/sqlcollaborative/dbatools/issues/5418)
+* `New-DbaComputerCertificate -SelfSigned` throws error [#5637](https://github.com/sqlcollaborative/dbatools/issues/5637)
+* `Encoding` property fixed on `Import-DbaCsv` [#5634](https://github.com/sqlcollaborative/dbatools/issues/5634)
+* `Get-DbaRegisteredServer` Local Server Groups bad grouping when instances are used [#5632](https://github.com/sqlcollaborative/dbatools/issues/5632)
+* `Start-DbaMigration` with `-BackupRestore -SetSourceReadOnly` tries to update database owner while restored DB is still READ_ONLY [#5370](https://github.com/sqlcollaborative/dbatools/issues/5370)
+* Greedy AG creation [#5650](https://github.com/sqlcollaborative/dbatools/issues/5650)
+
+### Removed
+* Remove synconly from `Copy-DbaLogin` [#5510](https://github.com/sqlcollaborative/dbatools/issues/5510)
+* Remove `-CheckForSql` parameter from `Get-DbaDiskSpace` as it doesn't work well [#5023](https://github.com/sqlcollaborative/dbatools/issues/5023)
+* Remove various parameters marked for removal at version 1.0.0
+
+### Changed
+* Rename `Test-DbaVirtualLogFile` to `Measure-DbaDbVirtualLogFile` [#2407](https://github.com/sqlcollaborative/dbatools/issues/2407)
+* Replace output with Progress Bar in `Install-DbaMaintenanceSolution` [#5644](https://github.com/sqlcollaborative/dbatools/pull/5644)
+* Standardize `Remove-DbaDatabaseSafely` [#5618](https://github.com/sqlcollaborative/dbatools/pull/5618)
+* Parameter names `BackupDirectory` and `backupFileName` changed on `Backup-DbaDatabase` to match PowerShell standard [#5648](https://github.com/sqlcollaborative/dbatools/pull/5648)
+
+### Added
+* Multifactor authentication support for Azure [#5593](https://github.com/sqlcollaborative/dbatools/pull/5593)
+* Certificate support in `Connect-DbaInstance` [#5605](https://github.com/sqlcollaborative/dbatools/pull/5605)
+* Add default configuration for CMS and IncludeLocal in `Get-DbaRegisteredServer` [#5607](https://github.com/sqlcollaborative/dbatools/pull/5607)
+* Add `Source` column to output of `Get-DbaRegistered Server` [#5606](https://github.com/sqlcollaborative/dbatools/pull/5606)
+* Latest CU and SP build numbers to builds
+* Allow user to specify client name in `Connect-DbaInstance` [#5564](https://github.com/sqlcollaborative/dbatools/issues/5564)
+* Multi-instance support for `Export-DbaLogin` [#5635](https://github.com/sqlcollaborative/dbatools/pull/5635)
+* Azure support for `Write-DbaDbTableData` [#5643](https://github.com/sqlcollaborative/dbatools/pull/5643)
+
+## [0.9.832] - 2019-05-24
+### Fixed
 * `Restore-DbaDatabase` Fails To Process Other Databases After Failure [#5400](https://github.com/sqlcollaborative/dbatools/issues/5400)
 * `Get-DbaLastGoodCheckDb` fails on Database names with non standard characters [#5585](https://github.com/sqlcollaborative/dbatools/issues/5585)
 
@@ -20,13 +54,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Aliases and deprecation warnings for compatibility with old function names [#5582](https://github.com/sqlcollaborative/dbatools/pull/5582)
 
 ### Added
-* Latest CU and SP build numbers to build references
 * New function `Get-DbaDbFileGroup` to get filegroup information [#5568](https://github.com/sqlcollaborative/dbatools/pull/5568)
 * Add Azure Data Studio support to `Get-DbaRegisteredServer` [#5578](https://github.com/sqlcollaborative/dbatools/pull/5578)
 * New function `Get-DbaDbObjectTrigger` [#5570](https://github.com/sqlcollaborative/dbatools/pull/5570)
 * Add Connection String support for Registered Servers in `Connect-DbaInstance` [#5579](https://github.com/sqlcollaborative/dbatools/pull/5579)
 * New command `New-DbaDiagnosticAdsNotebook` [#5577](https://github.com/sqlcollaborative/dbatools/pull/5577)
 * Add support for alternative credentials in Azure Data Studio in `Get-DbaRegisteredServer` [#5580](https://github.com/sqlcollaborative/dbatools/pull/5580)
+
+## [0.9.831] - 2019-05-22
+### Fixed
+* Now able to install multiple features at once with `Install-DbaInstance` [#5573](https://github.com/sqlcollaborative/dbatools/pull/5573)
+
+### Added
+* Latest CU and SP build numbers to builds
+* Functions for managing Server and Database Roles [#5520](https://github.com/sqlcollaborative/dbatools/pull/5520)
 
 ## [0.9.830] - 2019-05-20
 ### Fixed
