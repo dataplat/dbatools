@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.831] - 2019-05-22
+### Fixed
+* Now able to install multiple features at once with `Install-DbaInstance` [#5573](https://github.com/sqlcollaborative/dbatools/pull/5573)
+
+### Added
+* Latest CU and SP build numbers to build references
+
 ## [0.9.830] - 2019-05-20
 ### Fixed
 * `Import-DbaCsv` sometimes does not work if `AutoCreateTable` is not used [#5553](https://github.com/sqlcollaborative/dbatools/issues/5553)
