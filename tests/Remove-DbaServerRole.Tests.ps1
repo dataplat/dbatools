@@ -23,19 +23,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $instance = Connect-DbaInstance -SqlInstance $script:instance2
         $roleExecutor = "serverExecuter"
-        $null = New-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor
+        $null = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
     }
     AfterAll {
-        $null = Remove-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
     }
     Context "Command actually works" {
         It "It returns info about server-role removed" {
-            $results = Remove-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
+            $results = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -Confirm:$false
             $results.ServerRole | Should Be $roleExecutor
         }
 
         It "Should not return server-role" {
-            $results = Get-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor
+            $results = Get-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
             $results | Should Be $null
         }
     }

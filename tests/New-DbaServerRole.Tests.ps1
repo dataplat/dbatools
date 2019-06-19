@@ -21,19 +21,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $owner = "sa"
     }
     AfterEach {
-        $null = Remove-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster -Confirm:$false
     }
 
     Context "Functionality" {
         It 'Add new server-role and returns results' {
-            $result = New-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor
+            $result = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
 
             $result.Count | Should Be 1
             $result.Name | Should Be $roleExecutor
         }
 
         It 'Add new server-role with specificied owner' {
-            $result = New-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor -Owner $owner
+            $result = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor -Owner $owner
 
             $result.Count | Should Be 1
             $result.Name | Should Be $roleExecutor
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add two new server-roles and returns results' {
-            $result = New-DbaInstanceRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster
+            $result = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster
 
             $result.Count | Should Be 2
             $result.Name | Should Contain $roleExecutor
