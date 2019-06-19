@@ -23,6 +23,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * `Add-DbaAgDatabase` targets restore at Primary server rather than secondary [#5682](https://github.com/sqlcollaborative/dbatools/issues/5682)
 * Fix comparison bug in `Set-DbaAgentSchedule` [#5713](https://github.com/sqlcollaborative/dbatools/pull/5713)
 * `Import-DbaRegServer` doesn't properly import subgroups [#5706](https://github.com/sqlcollaborative/dbatools/issues/5706)
+* Improve errors/warnings on `Add-DbaRegServerGroup` [#5752](https://github.com/sqlcollaborative/dbatools/pull/5752)
+* Fix `Backup-DbaDatabase` date conversion
+  * [#5751](https://github.com/sqlcollaborative/dbatools/issues/5751)
+  * [#5748](https://github.com/sqlcollaborative/dbatools/issues/5748)
+  * [#5744](https://github.com/sqlcollaborative/dbatools/issues/5744)
+  * [#5742](https://github.com/sqlcollaborative/dbatools/issues/5742)
+  * [#5308](https://github.com/sqlcollaborative/dbatools/issues/5308)
+  * [#5024](https://github.com/sqlcollaborative/dbatools/issues/5024)
+* `Add-DbaRegServer` not adding if group is specified [#5756](https://github.com/sqlcollaborative/dbatools/issues/5756)
+* `Add-DbaAgDatabase` uses English for date comparison [#5701](https://github.com/sqlcollaborative/dbatools/issues/5701)
+* Fix Secondary Log Shipping Monitor [#5764](https://github.com/sqlcollaborative/dbatools/pull/5764)
+* .NET Core on macOS no longer throws errors on loading [#5773](https://github.com/sqlcollaborative/dbatools/pull/5773)
+* `Add-DbaAgDatabase` tries to modify seeding mode on SQL Server 2014 [#5702](https://github.com/sqlcollaborative/dbatools/issues/5702)
+* Avoid errors on importing on x86 processors [#5785](https://github.com/sqlcollaborative/dbatools/pull/5785)
 
 ### Removed
 * Remove "LATEST" from buildreference in `Get-DbaBuildReference` [#5379](https://github.com/sqlcollaborative/dbatools/issues/5379)
@@ -37,6 +51,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * For commands that support `-Force`, it should not prompt for confirmation [#5422](https://github.com/sqlcollaborative/dbatools/issues/5422)
 * Various small changes suggested by PowerShell Script Analyzer including removing unused variables
 * Remove duplicated effort in `Install-DbaInstance` [#5723](https://github.com/sqlcollaborative/dbatools/pull/5723)
+* Improve patterns for PII recognition [#5740](https://github.com/sqlcollaborative/dbatools/pull/5740)
+* Improve date masking [#5741](https://github.com/sqlcollaborative/dbatools/pull/5741)
+* Latest versions of Glenn Berry's diagnostic queries
+* Mass rename `InstanceRole` to `ServerRole` [#5787](https://github.com/sqlcollaborative/dbatools/pull/5787)
 
 ### Added
 * Pipeline support for certificate functions [#5659](https://github.com/sqlcollaborative/dbatools/pull/5659)
@@ -45,6 +63,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Additional support for Local Server Groups [#5734](https://github.com/sqlcollaborative/dbatools/pull/5734)
 * New Command Data Masking and Generator Tests [#5738](https://github.com/sqlcollaborative/dbatools/pull/5738)
 * New functions to work with instance and database roles [#5746](https://github.com/sqlcollaborative/dbatools/pull/5746)
+* Add support for SQL Server 2000 and piping to `Restore-DbaDatabase` [#5771](https://github.com/sqlcollaborative/dbatools/pull/5771)
+* Allow piped input to `Backup-DbaDatabase` SQL Server 2000 [#5778](https://github.com/sqlcollaborative/dbatools/pull/5778)
 
 ## [0.9.834] - 2019-05-30
 ### Fixed
