@@ -66,11 +66,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Add support for SQL Server 2000 and piping to `Restore-DbaDatabase` [#5771](https://github.com/sqlcollaborative/dbatools/pull/5771)
 * Allow piped input to `Backup-DbaDatabase` SQL Server 2000 [#5778](https://github.com/sqlcollaborative/dbatools/pull/5778)
 
-## [0.9.834] - 2019-05-30
+## [prerelease] - 2019-05-30
 ### Fixed
 * `New-DbaAvailabilityGroup` does not assign permissions for service account to connect to Endpoint [#5341](https://github.com/sqlcollaborative/dbatools/issues/5341)
 
-## [0.9.833] - 2019-05-30
+## [prerelease] - 2019-05-30
 ### Fixed
 * Rename multiple `DbaServer` functions to `DbaInstance` [#4580](https://github.com/sqlcollaborative/dbatools/issues/4580)
 * `New-DbaDbUser` errors when database is missing or incorrect [#5613](https://github.com/sqlcollaborative/dbatools/pull/5613)
@@ -105,7 +105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Multi-instance support for `Export-DbaLogin` [#5635](https://github.com/sqlcollaborative/dbatools/pull/5635)
 * Azure support for `Write-DbaDbTableData` [#5643](https://github.com/sqlcollaborative/dbatools/pull/5643)
 
-## [0.9.832] - 2019-05-24
+## [prerelease] - 2019-05-24
 ### Fixed
 * `Restore-DbaDatabase` Fails To Process Other Databases After Failure [#5400](https://github.com/sqlcollaborative/dbatools/issues/5400)
 * `Get-DbaLastGoodCheckDb` fails on Database names with non standard characters [#5585](https://github.com/sqlcollaborative/dbatools/issues/5585)
@@ -126,7 +126,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * New command `New-DbaDiagnosticAdsNotebook` [#5577](https://github.com/sqlcollaborative/dbatools/pull/5577)
 * Add support for alternative credentials in Azure Data Studio in `Get-DbaRegisteredServer` [#5580](https://github.com/sqlcollaborative/dbatools/pull/5580)
 
-## [0.9.831] - 2019-05-22
+## [prerelease] - 2019-05-22
 ### Fixed
 * Now able to install multiple features at once with `Install-DbaInstance` [#5573](https://github.com/sqlcollaborative/dbatools/pull/5573)
 
@@ -134,7 +134,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Latest CU and SP build numbers to builds
 * Functions for managing Server and Database Roles [#5520](https://github.com/sqlcollaborative/dbatools/pull/5520)
 
-## [0.9.830] - 2019-05-20
+## [prerelease] - 2019-05-20
 ### Fixed
 * `Import-DbaCsv` sometimes does not work if `AutoCreateTable` is not used [#5553](https://github.com/sqlcollaborative/dbatools/issues/5553)
 * `Get-DbaDatabase` function `-Encrypted` switch parameter not working [#5554](https://github.com/sqlcollaborative/dbatools/issues/5554)
@@ -147,7 +147,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 * New function `Add-DbaTable` [#5272](https://github.com/sqlcollaborative/dbatools/issues/5272)
 
-## [0.9.829] - 2019-05-17
+## [prerelease] - 2019-05-17
 ### Fixed
 * Module base location in multiple functions
 * Improved module load time
