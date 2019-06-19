@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.830] - 2019-05-20
+### Fixed
+* `Import-DbaCsv` sometimes does not work if `AutoCreateTable` is not used [#5553](https://github.com/sqlcollaborative/dbatools/issues/5553)
+* `Get-DbaDatabase` function `-Encrypted` switch parameter not working [#5554](https://github.com/sqlcollaborative/dbatools/issues/5554)
+* Unable to pipe `Get-DbaUser` into `Remove-DbaUser` when multiple users are selected on the same database [#4971](https://github.com/sqlcollaborative/dbatools/issues/4971)
+* `Set-DbaDbRecoveryModel` - error on snapshot [#5543](https://github.com/sqlcollaborative/dbatools/issues/5534)
+
+### Removed
+* Unusable parameter `IncludeSystemDb` from `Remove-DbaDatabase` [#5561](https://github.com/sqlcollaborative/dbatools/pull/5561)
+
+### Added
+* New function `Add-DbaTable` [#5272](https://github.com/sqlcollaborative/dbatools/issues/5272)
+
 ## [0.9.829] - 2019-05-17
 ### Fixed
 * Module base location in multiple functions
@@ -273,7 +286,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * TEPP is no longer broken [#5171](https://github.com/sqlcollaborative/dbatools/issues/5171)
 * Resolved issues in `Get-DbaCmObject` [#4096](https://github.com/sqlcollaborative/dbatools/issues/4096)
 * `Stop-Function` not recognized in `Set-DbatoolsConfig` [#5065](https://github.com/sqlcollaborative/dbatools/issues/5065)
-
 
 ## [0.9.785] - 2019-03-16
 ### Fixed
