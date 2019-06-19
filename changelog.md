@@ -17,9 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Handling of special characters in `Invoke-DbaDbDecryptObject` [#5689](https://github.com/sqlcollaborative/dbatools/pull/5689)
 * `Test-DbaDbCompatability` uses `Credential` parameter and fails when a SQL credential is passed [#5666](https://github.com/sqlcollaborative/dbatools/issues/5666)
 * `Invoke-DbaDbClone` server version check failed [#5673](https://github.com/sqlcollaborative/dbatools/issues/5673)
+* Script batch terminator fix in `Export-DbaScript` [#5693](https://github.com/sqlcollaborative/dbatools/pull/5693)
+* `Copy-DbaLogin` - stop if `force` is used when `truelogin` is not in login list [#5665](https://github.com/sqlcollaborative/dbatools/issues/5665)
+* `Restore-DbaDatabase` calculates file size incorrectly [#5688](https://github.com/sqlcollaborative/dbatools/issues/5688)
+* `Add-DbaAgDatabase` targets restore at Primary server rather than secondary [#5682](https://github.com/sqlcollaborative/dbatools/issues/5682)
+* Fix comparison bug in `Set-DbaAgentSchedule` [#5713](https://github.com/sqlcollaborative/dbatools/pull/5713)
+* `Import-DbaRegServer` doesn't properly import subgroups [#5706](https://github.com/sqlcollaborative/dbatools/issues/5706)
 
 ### Removed
 * Remove "LATEST" from buildreference in `Get-DbaBuildReference` [#5379](https://github.com/sqlcollaborative/dbatools/issues/5379)
+* Remove fallbacks for `Expand-Archive` [#5731](https://github.com/sqlcollaborative/dbatools/pull/5731)
 
 ### Changed
 * Skip HKEY_LOCAL_MACHINE checks on Linux [#5663](https://github.com/sqlcollaborative/dbatools/pull/5663)
@@ -27,10 +34,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Improved progress bar and performance in `Invoke-DbaDbDataMasking` [#5667](https://github.com/sqlcollaborative/dbatools/pull/5667)
 * Rename path parameters in `Invoke-DbaDbLogShipping` [#5672](https://github.com/sqlcollaborative/dbatools/pull/5672)
 * Revised `ComputerName` resolution in `Connect-DbaInstance` [#5687](https://github.com/sqlcollaborative/dbatools/pull/5687)
+* For commands that support `-Force`, it should not prompt for confirmation [#5422](https://github.com/sqlcollaborative/dbatools/issues/5422)
+* Various small changes suggested by PowerShell Script Analyzer including removing unused variables
+* Remove duplicated effort in `Install-DbaInstance` [#5723](https://github.com/sqlcollaborative/dbatools/pull/5723)
 
 ### Added
 * Pipeline support for certificate functions [#5659](https://github.com/sqlcollaborative/dbatools/pull/5659)
 * `Set-DbatoolsConfig -Register` & `Find-DbaInstance` Domain Discovery [#5675](https://github.com/sqlcollaborative/dbatools/pull/5675)
+* `ShouldProcess` support in `Export-DbaDbTableData` [#5727](https://github.com/sqlcollaborative/dbatools/pull/5727)
+* Additional support for Local Server Groups [#5734](https://github.com/sqlcollaborative/dbatools/pull/5734)
+* New Command Data Masking and Generator Tests [#5738](https://github.com/sqlcollaborative/dbatools/pull/5738)
+* New functions to work with instance and database roles [#5746](https://github.com/sqlcollaborative/dbatools/pull/5746)
 
 ## [0.9.834] - 2019-05-30
 ### Fixed
