@@ -5,12 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.831] - 2019-05-22
+## [0.9.831] - 2019-05-24
 ### Fixed
 * Now able to install multiple features at once with `Install-DbaInstance` [#5573](https://github.com/sqlcollaborative/dbatools/pull/5573)
+* `Restore-DbaDatabase` Fails To Process Other Databases After Failure [#5400](https://github.com/sqlcollaborative/dbatools/issues/5400)
+* `Get-DbaLastGoodCheckDb` fails on Database names with non standard characters [#5585](https://github.com/sqlcollaborative/dbatools/issues/5585)
+
+### Changed
+* `CmsReg` in function names is now `Reg` to reflect support for registered servers beyond CMS [#5575](https://github.com/sqlcollaborative/dbatools/pull/5575)
+* Improve `Find-DbaTrigger` [#5570](https://github.com/sqlcollaborative/dbatools/pull/5570)
+* Export function output standardized to one directory [#4704](https://github.com/sqlcollaborative/dbatools/issues/4704)
+
+### Removed
+* Aliases and deprecation warnings for compatibility with old function names [#5582](https://github.com/sqlcollaborative/dbatools/pull/5582)
 
 ### Added
 * Latest CU and SP build numbers to build references
+* New function `Get-DbaDbFileGroup` to get filegroup information [#5568](https://github.com/sqlcollaborative/dbatools/pull/5568)
+* Add Azure Data Studio support to `Get-DbaRegisteredServer` [#5578](https://github.com/sqlcollaborative/dbatools/pull/5578)
+* New function `Get-DbaDbObjectTrigger` [#5570](https://github.com/sqlcollaborative/dbatools/pull/5570)
+* Add Connection String support for Registered Servers in `Connect-DbaInstance` [#5579](https://github.com/sqlcollaborative/dbatools/pull/5579)
+* New command `New-DbaDiagnosticAdsNotebook` [#5577](https://github.com/sqlcollaborative/dbatools/pull/5577)
+* Add support for alternative credentials in Azure Data Studio in `Get-DbaRegisteredServer` [#5580](https://github.com/sqlcollaborative/dbatools/pull/5580)
 
 ## [0.9.830] - 2019-05-20
 ### Fixed
