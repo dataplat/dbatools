@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.829] - 2019-05-17
+### Fixed
+* Module base location in multiple functions
+* Improved module load time
+* `Get-DbaOperatingSystem` - Caption is blank [#5549](https://github.com/sqlcollaborative/dbatools/issues/5549)
+
+## Changed
+* Rename `Watch-DbaWatchUpdate` to `Watch-DbatoolsWatchUpdate` [#5537](https://github.com/sqlcollaborative/dbatools/issues/5537)
+* Connection String enhancements for `New-DbaConnectionString` and `Connect-DbaInstance` [#5196](https://github.com/sqlcollaborative/dbatools/issues/5196)
+
+### Added
+* More names to `Invoke-DbatoolsRenameHelper`
+* Support for PowerShell Core in `Invoke-DbaAsync`
+* `ExtractPath` parameter to multiple commands [#5529](https://github.com/sqlcollaborative/dbatools/pull/5529) (also fixes [#5512](https://github.com/sqlcollaborative/dbatools/issues/5512))
+* Pipeline support for `Set-DbaDbOwner` [#5545](https://github.com/sqlcollaborative/dbatools/issues/5545)
+
 ## [0.9.828] - 2019-05-15
 ### Added
 * `Get-DbatoolsChangeLog` to open link to this changelog [#5528](https://github.com/sqlcollaborative/dbatools/pull/5528)
