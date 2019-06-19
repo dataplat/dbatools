@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2019-06-20
+### Fixed
+* Version number now starts with 1 instead of 0
+* `Get-DbaRegisteredServer` fixed on Linux & macOS [#5655](https://github.com/sqlcollaborative/dbatools/pull/5655)
+* `ConvertTo-DbaDataTable` is not converting all data [#4938](https://github.com/sqlcollaborative/dbatools/issues/4938)
+* `Stop-DbaProcess` does not support `-whatif` [#5658](https://github.com/sqlcollaborative/dbatools/issues/5658)
+* `New-DbaDbSnapshot` doesn't create snapshot on a mirrored database [#5631](https://github.com/sqlcollaborative/dbatools/issues/5631)
+* `Get-DbaRegisteredServer` filter group properly for all types [#5671](https://github.com/sqlcollaborative/dbatools/pull/5671)
+* `Set-DbaLogin` and `New-DbaLogin` have slightly different parameter names [#5684](https://github.com/sqlcollaborative/dbatools/issues/5684)
+* Handling of special characters in `Invoke-DbaDbDecryptObject` [#5689](https://github.com/sqlcollaborative/dbatools/pull/5689)
+* `Test-DbaDbCompatability` uses `Credential` parameter and fails when a SQL credential is passed [#5666](https://github.com/sqlcollaborative/dbatools/issues/5666)
+* `Invoke-DbaDbClone` server version check failed [#5673](https://github.com/sqlcollaborative/dbatools/issues/5673)
+
+### Removed
+* Remove "LATEST" from buildreference in `Get-DbaBuildReference` [#5379](https://github.com/sqlcollaborative/dbatools/issues/5379)
+
+### Changed
+* Skip HKEY_LOCAL_MACHINE checks on Linux [#5663](https://github.com/sqlcollaborative/dbatools/pull/5663)
+* Improved data masking [#5664](https://github.com/sqlcollaborative/dbatools/pull/5664)
+* Improved progress bar and performance in `Invoke-DbaDbDataMasking` [#5667](https://github.com/sqlcollaborative/dbatools/pull/5667)
+* Rename path parameters in `Invoke-DbaDbLogShipping` [#5672](https://github.com/sqlcollaborative/dbatools/pull/5672)
+* Revised `ComputerName` resolution in `Connect-DbaInstance` [#5687](https://github.com/sqlcollaborative/dbatools/pull/5687)
+
+### Added
+* Pipeline support for certificate functions [#5659](https://github.com/sqlcollaborative/dbatools/pull/5659)
+* `Set-DbatoolsConfig -Register` & `Find-DbaInstance` Domain Discovery [#5675](https://github.com/sqlcollaborative/dbatools/pull/5675)
+
 ## [0.9.834] - 2019-05-30
 ### Fixed
 * `New-DbaAvailabilityGroup` does not assign permissions for service account to connect to Endpoint [#5341](https://github.com/sqlcollaborative/dbatools/issues/5341)
