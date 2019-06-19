@@ -361,36 +361,11 @@ function Invoke-DbaDbDataGenerator {
                                     }
                                     $columnValue = $nextIdentity
                                 } else {
-                                    # make sure max is good
-                                    if ($MaxValue) {
-                                        if ($columnobject.MaxValue -le $MaxValue) {
-                                            $max = $columnobject.MaxValue
-                                        } else {
-                                            $max = $MaxValue
-                                        }
-                                    } else {
-                                        $max = $columnobject.MaxValue
-                                    }
-
-                                    if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
-                                        $max = 10
-                                    }
 
                                     if ($columnobject.CharacterString) {
                                         $charstring = $columnobject.CharacterString
                                     } else {
                                         $charstring = $CharacterString
-                                    }
-
-                                    # make sure min is good
-                                    if ($columnobject.MinValue) {
-                                        $min = $columnobject.MinValue
-                                    } else {
-                                        if ($columnobject.CharacterString) {
-                                            $min = 1
-                                        } else {
-                                            $min = 0
-                                        }
                                     }
 
                                     if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
