@@ -1,4 +1,4 @@
-if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore)) {
+if (-not $ExecutionContext.SessionState.InvokeCommand.GetCommand('Register-ArgumentCompleter','Function,Cmdlet')) {
     Function Get-GenericArgumentCompleter {
         param (
             [string]$name,

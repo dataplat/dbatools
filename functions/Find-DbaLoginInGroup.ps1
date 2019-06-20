@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
     <#
     .SYNOPSIS
@@ -52,11 +51,9 @@ function Find-DbaLoginInGroup {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

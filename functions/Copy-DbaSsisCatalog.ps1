@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -82,8 +81,8 @@ function Copy-DbaSsisCatalog {
 
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
-       #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -97,12 +96,14 @@ function Copy-DbaSsisCatalog {
         [System.Security.SecureString]$CreateCatalogPassword,
         [Switch]$EnableSqlClr,
         [Switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     <# Developer note: The throw calls must stay in this command #>
     begin {
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
@@ -533,8 +534,5 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }

@@ -65,7 +65,6 @@ function Stop-DbaAgentJob {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
@@ -73,7 +72,6 @@ function Stop-DbaAgentJob {
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$Wait,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

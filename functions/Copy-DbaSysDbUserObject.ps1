@@ -54,7 +54,7 @@ function Copy-DbaSysDbUserObject {
         Copies user objects from source to destination
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -66,10 +66,11 @@ function Copy-DbaSysDbUserObject {
         [PSCredential]$DestinationSqlCredential,
         [switch]$Force,
         [switch]$Classic,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function get-sqltypename ($type) {
             switch ($type) {
                 "VIEW" { "view" }
@@ -383,8 +384,5 @@ function Copy-DbaSysDbUserObject {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
     }
 }

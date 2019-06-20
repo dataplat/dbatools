@@ -77,7 +77,7 @@ function Copy-DbaDataCollector {
         Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -91,7 +91,6 @@ function Copy-DbaDataCollector {
         [object[]]$ExcludeCollectionSet,
         [switch]$NoServerReconfig,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -110,6 +109,8 @@ function Copy-DbaDataCollector {
         $sourceStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $sourceSqlStoreConnection
         $configDb = $sourceStore.ScriptAlter().GetScript() | Out-String
         $configDb = $configDb -replace [Regex]::Escape("'$source'"), "'$destReplace'"
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -246,10 +247,5 @@ function Copy-DbaDataCollector {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDataCollector
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlDataCollector
-        if (Test-FunctionInterrupt) { return }
     }
 }

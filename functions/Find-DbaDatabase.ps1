@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaDatabase {
     <#
     .SYNOPSIS
@@ -23,9 +22,6 @@ function Find-DbaDatabase {
 
     .PARAMETER Exact
         Search for an exact match instead of a pattern
-
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,22 +58,15 @@ function Find-DbaDatabase {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
         [string]$Property = 'Name',
         [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$Exact,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

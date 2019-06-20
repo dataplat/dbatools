@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source','SourceSqlCredential','Destination','DestinationSqlCredential','Login','ExcludeLogin','ExcludeSystemLogins','SyncOnly','SyncSaName','OutFile','InputObject','LoginRenameHashtable','KillActiveConnection','Force','ExcludePermissionSync','EnableException'
+        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -57,7 +57,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should login with newly created Sql Login (also tests credential login) and gets name" {
             $password = ConvertTo-SecureString -Force -AsPlainText tester1
             $cred = New-Object System.Management.Automation.PSCredential ("tester", $password)
-            $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+            $s = Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $cred
             $s.Name | Should Be $script:instance1
         }
     }

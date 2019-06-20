@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Job','ExcludeJob','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -67,7 +67,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-sqlserver
+            } #mock connect-SqlInstance
             It "Gets only steps with output files" {
                 $Results = @()
                 $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName'

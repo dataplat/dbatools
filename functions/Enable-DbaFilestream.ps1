@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Enable-DbaFilestream {
     <#
     .SYNOPSIS
@@ -59,7 +58,7 @@ function Enable-DbaFilestream {
 
         Using this pipeline you can scan a range of SQL instances and enable filestream on only those on which it's disabled.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
@@ -96,6 +95,8 @@ function Enable-DbaFilestream {
             2 = 'FileStream enabled for T-Sql and IO streaming access'
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if ($ShareName -and $level -lt 2) {

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaInstance {
     <#
     .SYNOPSIS
@@ -35,9 +34,10 @@ function Find-DbaInstance {
     .PARAMETER DiscoveryType
         The mechanisms to be used to discover instances.
         Supports any combination of:
-        - Service Principal Name lookup ('Domain'; from Active Directory)
+        - Service Principal Name lookup ('DomainSPN'; from Active Directory)
         - SQL Instance Enumeration ('DataSourceEnumeration'; same as SSMS uses)
         - IP Address range ('IPRange'; all IP Addresses will be scanned)
+        - Domain Server lookup ('DomainServer'; from Active Directory)
 
         SPN Lookup:
         The function tries to connect active directory to look up all computers with registered SQL Instances.
@@ -56,6 +56,12 @@ function Find-DbaInstance {
         See the 'Description' part of help on security issues of network scanning.
         By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.
         By using the '-IpAddress' parameter, custom network ranges can be specified.
+
+        Domain Server:
+        This will discover every single computer in Active Directory that is a Windows Server and enabled.
+        By default, your nearest Domain Controller is contacted for this scan.
+        However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
+        If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.
 
     .PARAMETER Credential
         The credentials to use on windows network connection.
@@ -207,7 +213,7 @@ function Find-DbaInstance {
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
-        Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaCmsRegServer instead.
+        Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaRegServer instead.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
@@ -607,6 +613,60 @@ function Find-DbaInstance {
             }
         }
 
+        function Get-DomainServer {
+            <#
+            .SYNOPSIS
+                Returns a list of all Domain Computer objects that are servers.
+
+            .DESCRIPTION
+                Returns a list of all Domain Computer objects that are ...
+                - Enabled
+                - Have an OS named like "*windows*server*"
+
+            .PARAMETER DomainController
+                The domain controller to ask.
+
+            .PARAMETER Credential
+                The credentials to use while asking.
+
+            .EXAMPLE
+                PS C:\> Get-DomainServer
+
+                Returns a list of all Domain Computer objects that are servers.
+        #>
+            [CmdletBinding()]
+            param (
+                [string]$DomainController,
+                [Pscredential]$Credential
+            )
+
+            try {
+                if ($DomainController) {
+                    if ($Credential) {
+                        $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController", $Credential.UserName, $Credential.GetNetworkCredential().Password
+                    } else {
+                        $entry = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList "LDAP://$DomainController"
+                    }
+                } else {
+                    $entry = [ADSI]''
+                }
+                $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
+
+                $objSearcher.PageSize = 200
+                $objSearcher.Filter = "(&(objectcategory=computer)(operatingSystem=*windows*server*)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))"
+                $objSearcher.SearchScope = 'Subtree'
+
+                $results = $objSearcher.FindAll()
+                foreach ($computer in $results) {
+                    if ($computer.Properties["dnshostname"]) {
+                        $computer.Properties["dnshostname"][0]
+                    } else {
+                        $computer.Properties["name"][0]
+                    }
+                }
+            } catch { throw }
+        }
+
         function Get-SQLInstanceBrowserUDP {
             <#
             .SYNOPSIS
@@ -970,7 +1030,7 @@ function Find-DbaInstance {
                 #endregion Discovery: DataSource Enumeration
 
                 #region Discovery: SPN Search
-                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::Domain)) {
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainSPN)) {
                     try {
                         Get-DomainSPN -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     } catch {
@@ -990,6 +1050,16 @@ function Find-DbaInstance {
                     }
                 }
                 #endregion Discovery: IP Range
+
+                #region Discovery: Windows Server Search
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainServer)) {
+                    try {
+                        Get-DomainServer -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to execute Windows Server discovery" -ErrorRecord $_ -EnableException $EnableException.ToBool()
+                    }
+                }
+                #endregion Discovery: Windows Server Search
             }
             "Default" {
                 Stop-Function -Message "Please specify DiscoveryType or ScanType. Try Get-Help Find-DbaInstance -Examples for working examples." -EnableException $EnableException

@@ -42,7 +42,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     Ensures common formatting standards are applied:
     - OTSB style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
-       #>
+    #>
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
     $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\internal\functions"-Filter '*.ps*1'
     Context "formatting" {
@@ -113,6 +113,17 @@ Describe "$ModuleName style" -Tag 'Compliance' {
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
             if ($NotAllowed.Count -gt 0) {
                 It "$f should instead use Invoke-TlsWebRequest, see #4250" {
+                    $NotAllowed.Count | Should -Be 0
+                }
+            }
+        }
+    }
+    Context "Shell.Application" {
+        # Not every PS instance has Shell.Application
+        foreach ($f in $AllPublicFunctions) {
+            $NotAllowed = Select-String -Path $f -Pattern 'shell.application'
+            if ($NotAllowed.Count -gt 0) {
+                It "$f should not use Shell.Application (usually fallbacks for Expand-Archive, which dbatools ships), see #4800" {
                     $NotAllowed.Count | Should -Be 0
                 }
             }

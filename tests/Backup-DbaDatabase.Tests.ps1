@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'BackupDirectory', 'BackupFileName', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -214,7 +214,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Backup can pipe to restore" {
-        $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
         It "Should return successful restore" {
             $results.RestoreComplete | Should -Be $true

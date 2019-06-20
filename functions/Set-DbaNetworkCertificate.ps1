@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaNetworkCertificate {
     <#
     .SYNOPSIS
@@ -61,13 +60,14 @@ function Set-DbaNetworkCertificate {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [Alias("ComputerName")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
-        [parameter(Mandatory, ParameterSetName = "Thumbprint")]
+        [parameter(Mandatory, ParameterSetName = "Thumbprint", ValueFromPipelineByPropertyName)]
         [string]$Thumbprint,
         [switch]$EnableException
     )

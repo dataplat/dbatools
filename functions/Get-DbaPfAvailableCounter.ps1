@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfAvailableCounter {
     <#
     .SYNOPSIS
@@ -88,8 +87,8 @@ function Get-DbaPfAvailableCounter {
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
-        
-        
+
+
         foreach ($computer in $ComputerName) {
 
             try {

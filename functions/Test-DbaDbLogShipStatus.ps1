@@ -81,7 +81,6 @@ function Test-DbaDbLogShipStatus {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -89,7 +88,6 @@ function Test-DbaDbLogShipStatus {
         [switch]$Simple,
         [switch]$Primary,
         [switch]$Secondary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -275,8 +273,5 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaLogShippingStatus
     }
 }

@@ -9,12 +9,12 @@ function Select-DefaultView {
     https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 
     TypeName creates a new type so that we can use ps1xml to modify the output
-       #>
+    #>
 
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
-        [object]
+        [parameter(ValueFromPipeline = $true)]
+        [psobject]
         $InputObject,
 
         [string[]]
@@ -44,23 +44,24 @@ function Select-DefaultView {
         } else {
             # property needs to be string
             if ("$property" -like "* as *") {
-                $newproperty = @()
-                foreach ($p in $property) {
-                    if ($p -like "* as *") {
-                        $old, $new = $p -isplit " as "
-                        # Do not be tempted to not pipe here
-                        $inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
-                        $newproperty += $new
-                    } else {
-                        $newproperty += $p
-                    }
-                }
-                $property = $newproperty
+                $property =
+                @(foreach ($p in $property) {
+                        if ($p -like "* as *") {
+                            $old, $new = $p -isplit " as "
+                            # Do not be tempted to not pipe here
+                            $inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
+                            $new
+                        } else {
+                            $p
+                        }
+                    })
             }
+            $defaultset =
+
             $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
         }
 
-        $standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
+        $standardmembers = [Management.Automation.PSMemberInfo[]]@($defaultset)
 
         # Do not be tempted to not pipe here
         $inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue

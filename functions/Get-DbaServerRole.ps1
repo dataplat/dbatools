@@ -48,7 +48,7 @@ function Get-DbaServerRole {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$ServerRole,

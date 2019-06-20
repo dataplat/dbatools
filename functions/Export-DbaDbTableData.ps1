@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaDbTableData {
     <#
     .SYNOPSIS
@@ -11,20 +10,23 @@ function Export-DbaDbTableData {
         Pipeline input from Get-DbaDbTable
 
     .PARAMETER Path
-        The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Encoding
         Specifies the file encoding. The default is UTF8.
 
         Valid values are:
-        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
-        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
-        -- Byte: Encodes a set of characters into a sequence of bytes.
-        -- String: Uses the encoding type for a string.
-        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
-        -- UTF7: Encodes in UTF-7 format.
-        -- UTF8: Encodes in UTF-8 format.
-        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+          - ASCII: Uses the encoding for the ASCII (7-bit) character set.
+          - BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+          - Byte: Encodes a set of characters into a sequence of bytes.
+          - String: Uses the encoding type for a string.
+          - Unicode: Encodes in UTF-16 format using the little-endian byte order.
+          - UTF7: Encodes in UTF-7 format.
+          - UTF8: Encodes in UTF-8 format.
+          - Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
     .PARAMETER Passthru
         Output script to console
@@ -77,13 +79,15 @@ function Export-DbaDbTableData {
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\temp\export.sql
 
-        Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+        Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:\temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [string]$BatchSeparator = '',
@@ -102,6 +106,8 @@ function Export-DbaDbTableData {
     }
 
     process {
-        Export-DbaScript @PSBoundParameters -ScriptingOptionsObject $ScriptingOptionsObject
+        if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $InputObject")) {
+            Export-DbaScript @PSBoundParameters -ScriptingOptionsObject $ScriptingOptionsObject
+        }
     }
 }

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJob {
     <#
     .SYNOPSIS
@@ -137,7 +136,6 @@ function New-DbaAgentJob {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -164,11 +162,11 @@ function New-DbaAgentJob {
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$DeleteLevel,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
 
         # Check of the event log level is of type string and set the integer value
         if ($EventLogLevel -notin 1, 2, 3) {

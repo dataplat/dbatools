@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaSqlWatch {
     <#
     .SYNOPSIS
@@ -86,6 +85,8 @@ function Install-DbaSqlWatch {
         [switch]$EnableException
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $stepCounter = 0
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
@@ -154,20 +155,11 @@ function Install-DbaSqlWatch {
             $LocalCacheFolder = Split-Path $LocallyCachedZip -Parent
 
             Write-Message -Level Verbose "Extracting $LocallyCachedZip to $LocalCacheFolder"
-            if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-                try {
-                    Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
-                } catch {
-                    Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
-                    return
-                }
-            } else {
-                # Keep it backwards compatible
-                $shell = New-Object -ComObject Shell.Application
-                $zipPackage = $shell.NameSpace($LocallyCachedZip)
-                $destinationFolder = $shell.NameSpace($LocalCacheFolder)
-                Get-ChildItem "$LocalCacheFolder\SqlWatch.zip" | Remove-Item
-                $destinationFolder.CopyHere($zipPackage.Items())
+            try {
+                Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
+            } catch {
+                Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
+                return
             }
 
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
     <#
     .SYNOPSIS
@@ -117,15 +116,12 @@ function Set-DbaDbState {
         Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -139,13 +135,14 @@ function Set-DbaDbState {
         [switch]$RestrictedUser,
         [switch]$MultiUser,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$InputObject
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Get-WrongCombo($optset, $allparams) {
             $x = 0
             foreach ($opt in $optset) {
@@ -458,7 +455,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Where {$_} | Get-Unique
+                $warn = $warn | Where-Object {$_} | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null
@@ -498,8 +495,5 @@ function Set-DbaDbState {
             }
         }
 
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDatabaseState
     }
 }

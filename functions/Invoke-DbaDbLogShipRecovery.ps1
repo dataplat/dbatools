@@ -90,15 +90,13 @@ function Invoke-DbaDbLogShipRecovery {
         Shows what would happen if the command were executed.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param
     (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$Database,
         [PSCredential]$SqlCredential,
         [switch]$NoRecovery,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force,
         [Parameter(ValueFromPipeline)]
@@ -106,6 +104,8 @@ function Invoke-DbaDbLogShipRecovery {
         [int]$Delay = 5
     )
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         $stepCounter = 0
     }
     process {
@@ -324,8 +324,5 @@ function Invoke-DbaDbLogShipRecovery {
             Write-Progress -Activity $activity -Completed
             $stepCounter = 0
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
     }
 }

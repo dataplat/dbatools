@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','TargetLogin','Detailed','InputObject','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'TargetLogin', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -31,7 +31,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 {
                     Test-DbaDbOwner -SqlInstance 'SQLServerName'
@@ -55,7 +55,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 {
                     Test-DbaDbOwner -SqlInstance 'SQLServerName'
@@ -79,7 +79,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -107,7 +107,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result.SqlInstance | Should Be 'SQLServerName'
@@ -140,7 +140,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -173,7 +173,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -213,7 +213,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
                 Mock Stop-Function {
                 }
 
@@ -248,7 +248,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'

@@ -34,10 +34,6 @@ function Copy-DbaLogin {
     .PARAMETER ExcludePermissionSync
         Skips permission syncs
 
-    .PARAMETER SyncOnly
-        If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
-        Credential removal is not currently supported for this parameter.
-
     .PARAMETER SyncSaName
         If this switch is enabled, the name of the sa account will be synced between Source and Destination
 
@@ -109,13 +105,6 @@ function Copy-DbaLogin {
         Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
-
-        Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.
-
-        If a matching Login does not exist on Destination, the Login will be skipped.
-
-    .EXAMPLE
         PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
         Copies PreviousUser and then renames it to newlogin.
@@ -126,7 +115,7 @@ function Copy-DbaLogin {
         Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -137,7 +126,6 @@ function Copy-DbaLogin {
         [object[]]$Login,
         [object[]]$ExcludeLogin,
         [switch]$ExcludeSystemLogins,
-        [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [parameter(ParameterSetName = "SqlInstance")]
         [switch]$SyncSaName,
@@ -153,9 +141,7 @@ function Copy-DbaLogin {
     )
 
     begin {
-        if ($SyncOnly) {
-            Write-Message -Level Warning -Message "Please note that SyncOnly will be removed in dbatools 1.0. Please use Sync-DbaLoginPermission instead."
-        }
+        if ($Force) {$ConfirmPreference = 'none'}
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
@@ -527,16 +513,18 @@ function Copy-DbaLogin {
 
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-                Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
+                Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Target $sourceServer
             }
 
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
-                Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
+                Stop-Function -Message "SQL Server 7 and below are not supported." -Target $sourceServer
             }
 
-            if ($SyncOnly) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Syncing $Login permissions")) {
-                    Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
+            if ($destserver.ConnectionContext.TrueLogin -notin $destserver.Logins.Name -and $Force) {
+                if ($Login -or $ExcludeLogin) {
+                    Write-Message -Level Verbose -Message "Force was used and $($destserver.ConnectionContext.TrueLogin) not found in logins list but an explicit Login or ExcludeLogin was specified, so we trust you won't drop the group that allows $($destserver.ConnectionContext.TrueLogin) access. Proceeding."
+                } else {
+                    Stop-Function -Message "Force was used, no explicit -Login or -ExcludeLogin was specified and $($destserver.ConnectionContext.TrueLogin) cannot be found in the logins list. It may be part of a group. This will likely result in you being locked out of the server. To use Force, $($destserver.ConnectionContext.TrueLogin) must be added directly to logins before proceeding." -Target $destserver
                     continue
                 }
             }
@@ -557,8 +545,5 @@ function Copy-DbaLogin {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
     }
 }
