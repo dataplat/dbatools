@@ -91,10 +91,9 @@ function Invoke-DbaDbUpgrade {
         Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -107,9 +106,11 @@ function Invoke-DbaDbUpgrade {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
 
         if (Test-Bound -not 'SqlInstance', 'InputObject') {
@@ -273,8 +274,5 @@ function Invoke-DbaDbUpgrade {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }

@@ -79,8 +79,7 @@ function Get-DbaServerRoleMember {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlServer')]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
@@ -88,7 +87,6 @@ function Get-DbaServerRoleMember {
         [string[]]$ExcludeServerRole,
         [object[]]$Login,
         [switch]$ExcludeFixedRole,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -226,6 +226,13 @@
             Return the changed configuration setting.
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Register">
+            <summary>
+            Registers the configuration setting into the user scope.
+            As if running Register-PSFConfig.
+            Only applies when updating an existing setting.
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.EnableException">
             <summary>
             Enable throwing exceptions.
@@ -2118,6 +2125,11 @@
             We shall sweep the network for instances, by targeting every IP within a range.
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.DomainSPN">
+            <summary>
+            We shall search for SQL SPNs in active directory
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.Domain">
             <summary>
             We shall search for SQL SPNs in active directory
@@ -2126,6 +2138,11 @@
         <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.DataSourceEnumeration">
             <summary>
             We shall use the SSMS Data Sizrce Enumeration mechanism and hope for the best
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.DomainServer">
+            <summary>
+            We shall search all enabled Windows Server Objects in active directory
             </summary>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.All">

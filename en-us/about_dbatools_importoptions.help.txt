@@ -42,6 +42,11 @@ LONG DESCRIPTION
 	Note that this must be done BEFORE importing dbatools. If the script is
 	called from a powershell process that has dbatools already installed, it
 	will be ignored and have no effect.
+    
+    Alternatively, you can provide a Hashtable of arguments when importing DBATools, 
+    for instance
+        
+        Import-Module DBATools -ArgumentList @{MultiFileImport=$true}
 	
 	Per User:
 	The individual settings are DWORD properties found in the following key:

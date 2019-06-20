@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaCommand {
     <#
     .SYNOPSIS
@@ -91,7 +90,6 @@ function Find-DbaCommand {
         [String]$MinimumVersion,
         [String]$MaximumVersion,
         [switch]$Rebuild,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -191,7 +189,7 @@ function Find-DbaCommand {
             }
         }
 
-        $moduleDirectory = (Get-Module -Name dbatools).ModuleBase
+        $moduleDirectory = $script:PSModuleRoot
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")

@@ -79,7 +79,6 @@ function Copy-DbaSpConfigure {
         [PSCredential]$DestinationSqlCredential,
         [object[]]$ConfigName,
         [object[]]$ExcludeConfigName,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -162,8 +161,5 @@ function Copy-DbaSpConfigure {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSpConfigure
     }
 }

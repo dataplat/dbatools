@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaPfDataCollectorSetTemplate {
     <#
     .SYNOPSIS
@@ -169,8 +168,8 @@ function Import-DbaPfDataCollectorSetTemplate {
         }
     }
     process {
-        
-        
+
+
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
         }

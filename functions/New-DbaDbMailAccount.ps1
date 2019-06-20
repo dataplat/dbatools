@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbMailAccount {
     <#
     .SYNOPSIS
@@ -37,6 +36,9 @@ function New-DbaDbMailAccount {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .PARAMETER Force
+        If this switch is enabled, the Mail Account will be created even if the mail server is not present.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -62,7 +64,6 @@ function New-DbaDbMailAccount {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -73,6 +74,7 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -84,9 +86,8 @@ function New-DbaDbMailAccount {
             }
 
             if (Test-Bound -ParameterName MailServer) {
-                if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer)) {
-                    # Perhaps we should add a force to auto create the mail server
-                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" -ErrorRecord $_ -Target $instance -Continue
+                if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer) -and -not (Test-Bound -ParameterName Force)) {
+                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance. Use -Force if you need to create it anyway." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
 

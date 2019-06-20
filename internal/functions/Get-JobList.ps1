@@ -62,7 +62,6 @@ function Get-JobList {
         [string[]]$JobFilter,
         [string[]]$StepFilter,
         [switch]$Not,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

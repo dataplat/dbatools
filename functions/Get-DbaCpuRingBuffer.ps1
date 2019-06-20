@@ -70,11 +70,9 @@ function Get-DbaCpuRingBuffer {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$CollectionMinutes = 60,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -127,7 +125,7 @@ function Get-DbaCpuRingBuffer {
             Write-Message -Level Verbose -Message "Executing Sql Staement: $sql"
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName            = $server.NetName
+                    ComputerName            = $server.ComputerName
                     InstanceName            = $server.ServiceName
                     SqlInstance             = $server.DomainInstanceName
                     RecordId                = $row.record_id

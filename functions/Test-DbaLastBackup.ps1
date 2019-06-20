@@ -157,7 +157,6 @@ function Test-DbaLastBackup {
         [switch]$NoDrop,
         [switch]$CopyFile,
         [string]$CopyPath,
-        [Alias("MaxMB")]
         [int]$MaxSize,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
@@ -166,9 +165,6 @@ function Test-DbaLastBackup {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0" -Parameter 'MaxMB'
-    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -191,7 +187,7 @@ function Test-DbaLastBackup {
                 $DestinationCredential = $SqlCredential
             }
 
-            if ($db.LastFullBackup -eq 'Monday, January 1, 0001 12:00:00 AM') {
+            if ($db.LastFullBackup.Year -eq 1) {
                 [pscustomobject]@{
                     SourceServer   = $source
                     TestServer     = $destination

@@ -134,8 +134,7 @@ function New-DbaCmConnection {
         $CimWinRMOptions,
         [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
         $CimDCOMOptions,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

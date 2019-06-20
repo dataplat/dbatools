@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbSnapshot {
     <#
     .SYNOPSIS
@@ -60,16 +59,12 @@ function Get-DbaDbSnapshot {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [object[]]$ExcludeSnapshot,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -108,8 +103,5 @@ function Get-DbaDbSnapshot {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSnapshot
     }
 }

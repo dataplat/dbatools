@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDbGrowthEvent {
     <#
     .SYNOPSIS
@@ -90,10 +89,8 @@ function Find-DbaDbGrowthEvent {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [ValidateSet('Growth', 'Shrink')]
@@ -101,7 +98,6 @@ function Find-DbaDbGrowthEvent {
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
         [switch]$UseLocalTime,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -222,8 +218,6 @@ function Find-DbaDbGrowthEvent {
                     1 AS [SessionLoginName],
                     1 AS [SPID]
             END CATCH"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {

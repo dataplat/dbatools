@@ -106,7 +106,6 @@ function New-DbaLogShippingSecondaryDatabase {
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,
@@ -137,7 +136,6 @@ function New-DbaLogShippingSecondaryDatabase {
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )

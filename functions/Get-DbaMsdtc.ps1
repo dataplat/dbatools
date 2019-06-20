@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Get-DbaMsdtc {
     <#
     .SYNOPSIS

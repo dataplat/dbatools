@@ -65,8 +65,7 @@ function New-DbatoolsSupportPackage {
         [switch]
         $PassThru,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

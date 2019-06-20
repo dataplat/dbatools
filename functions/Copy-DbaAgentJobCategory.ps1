@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaAgentJobCategory {
     <#
     .SYNOPSIS
@@ -82,7 +81,7 @@ function Copy-DbaAgentJobCategory {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -97,12 +96,10 @@ function Copy-DbaAgentJobCategory {
         [string[]]$AgentCategory,
         [string[]]$OperatorCategory,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentCategory
         function Copy-JobCategory {
             <#
                 .SYNOPSIS
@@ -348,6 +345,8 @@ function Copy-DbaAgentJobCategory {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -395,8 +394,5 @@ function Copy-DbaAgentJobCategory {
             Copy-AlertCategory
             Copy-JobCategory
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
     }
 }

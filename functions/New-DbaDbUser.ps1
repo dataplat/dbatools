@@ -79,13 +79,11 @@ function New-DbaDbUser {
         Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
     param(
         [parameter(Mandatory, Position = 1)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
@@ -95,11 +93,12 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         function Test-SqlLoginInDatabase {
             param(
                 [Microsoft.SqlServer.Management.Smo.Login]$Login,
@@ -163,6 +162,10 @@ function New-DbaDbUser {
             }
             if (Test-Bound 'IncludeSystem' -Not) {
                 $databases = $databases | Where-Object IsSystemObject -NE $true
+            }
+
+            if ($null -eq $databases -or $databases.Count -eq 0) {
+                Stop-Function -Message "Error occurred while establishing a connection to $Database" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($db in $databases) {

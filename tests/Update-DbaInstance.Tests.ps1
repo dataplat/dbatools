@@ -617,8 +617,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         #no restarts
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        # mock whole Find-SqlServerUpdate because it's executed remotely
-        Mock -CommandName Find-SqlServerUpdate -ModuleName dbatools -MockWith {
+        # mock whole Find-SqlInstanceUpdate because it's executed remotely
+        Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
             [pscustomobject]@{
                 FullName = 'c:\mocked\filename.exe'
             }
@@ -633,7 +633,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
             if ($testBuild.Compliant -eq $false) {
-                Assert-MockCalled -CommandName Find-SqlServerUpdate -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceUpdate -Scope It -ModuleName dbatools
             }
         }
     }

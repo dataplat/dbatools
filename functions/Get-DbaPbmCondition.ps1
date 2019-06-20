@@ -50,9 +50,7 @@ function Get-DbaPbmCondition {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Condition,
         [Parameter(ValueFromPipeline)]

@@ -78,11 +78,9 @@ function Get-DbaLatchStatistic {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -127,7 +125,7 @@ function Get-DbaLatchStatistic {
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.DomainInstanceName
                     WaitType           = $row.LatchClass

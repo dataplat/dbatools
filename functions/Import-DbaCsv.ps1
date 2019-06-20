@@ -133,9 +133,6 @@ function Import-DbaCsv {
     .PARAMETER NullValue
         The value which denotes a DbNull-value.
 
-    .PARAMETER Threshold
-        Defines the default value for Threshold indicating when the CsvReader should replace/remove consecutive null bytes.
-
     .PARAMETER MaxQuotedFieldLength
         The maxmimum length (in bytes) for any quoted field.
 
@@ -220,7 +217,6 @@ function Import-DbaCsv {
         The CSV column 'Text' is inserted into SQL column 'FirstName' and CSV column Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [parameter(ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -257,9 +253,9 @@ function Import-DbaCsv {
         [int]$BufferSize = 4096,
         [ValidateSet('AdvanceToNextLine', 'ThrowException')]
         [string]$ParseErrorAction = 'ThrowException',
-        [System.Text.Encoding]$Encoding,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding,
         [string]$NullValue,
-        [int]$Threshold = 60,
         [int]$MaxQuotedFieldLength,
         [switch]$SkipEmptyLine,
         [switch]$SupportsMultiline,
@@ -319,7 +315,7 @@ function Import-DbaCsv {
             $reader.Dispose()
 
             # Get SQL datatypes by best guess on first data row
-            $sqldatatypes = @(); $index = 0
+            $sqldatatypes = @();
 
             foreach ($column in $Columns) {
                 $sqldatatypes += "[$column] varchar(MAX)"
@@ -398,7 +394,7 @@ function Import-DbaCsv {
             }
 
             # Automatically generate Table name if not specified, then prompt user to confirm
-            if (-not (Test-Bound -ParameterName Table)) {
+            if (-not ($PSBoundParameters.Table)) {
                 $table = [IO.Path]::GetFileNameWithoutExtension($file)
                 Write-Message -Level Verbose -Message "Table name not specified, using $table"
             }
@@ -500,7 +496,7 @@ function Import-DbaCsv {
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions = $bulkCopyOptions -bor (Invoke-Expression "[System.Data.SqlClient.SqlBulkCopyOptions]::$option")
+                        $bulkCopyOptions += $([System.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
                     }
                 }
 
@@ -555,36 +551,49 @@ function Import-DbaCsv {
                     try {
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                             (New-Object System.IO.StreamReader($file)),
-                            $FirstRowHeader,
-                            $Delimiter,
-                            $Quote,
-                            $Escape,
-                            $Comment,
-                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                            $BufferSize,
-                            $NullValue
+                            [System.Text.Encoding]::$Encoding
                         )
 
-                        if (Test-Bound -ParameterName Encoding) {
-                            $reader.Encoding = $Encoding
-                        }
-                        if (Test-Bound -ParameterName Threshold) {
-                            $reader.Threshold = $Threshold
-                        }
-                        if (Test-Bound -ParameterName MaxQuotedFieldLength) {
+                        if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
-                        if (Test-Bound -ParameterName SkipEmptyLine) {
+                        if ($PSBoundParameters.SkipEmptyLine) {
                             $reader.SkipEmptyLines = $SkipEmptyLine
                         }
-                        if (Test-Bound -ParameterName SupportsMultiline) {
+                        if ($PSBoundParameters.SupportsMultiline) {
                             $reader.SupportsMultiline = $SupportsMultiline
                         }
-                        if (Test-Bound -ParameterName UseColumnDefault) {
+                        if ($PSBoundParameters.UseColumnDefault) {
                             $reader.UseColumnDefaults = $UseColumnDefault
                         }
-                        if (Test-Bound -ParameterName ParseErrorAction) {
+                        if ($PSBoundParameters.ParseErrorAction) {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
+                        }
+
+                        # constructors were misleading so here's some brute forcing of readonly (get;) properties. it works :O
+                        if ($PSBoundParameters.BufferSize) {
+                            Add-Member -Type NoteProperty -Name BufferSize -Value $BufferSize -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.NullValue) {
+                            Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.FirstRowHeader) {
+                            $reader.hasHeaders = $FirstRowHeader
+                        }
+                        if ($PSBoundParameters.Delimiter) {
+                            Add-Member -Type NoteProperty -Name Delimiter -Value $Delimiter -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Quote) {
+                            Add-Member -Type NoteProperty -Name Quote -Value $Quote -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Escape) {
+                            Add-Member -Type NoteProperty -Name Escape -Value $Escape -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.Comment) {
+                            Add-Member -Type NoteProperty -Name Comment -Value $Comment -Force -InputObject $reader
+                        }
+                        if ($PSBoundParameters.TrimmingOption) {
+                            Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
                         }
 
                         # Add rowcount output
@@ -674,8 +683,5 @@ function Import-DbaCsv {
         # Script is finished. Show elapsed time.
         $totaltime = [math]::Round($scriptelapsed.Elapsed.TotalSeconds, 2)
         Write-Message -Level Verbose -Message "Total Elapsed Time for everything: $totaltime seconds"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaCsvtoSql
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }
