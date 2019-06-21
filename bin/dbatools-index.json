@@ -2114,7 +2114,7 @@
     },
     {
         "Name":  "ConvertTo-DbaTimeline",
-        "Description":  "This function accepts input as pipeline from the following dbatools functions:\nGet-DbaAgentJobHistory\nGet-DbaBackupHistory\n(more to come...)\nAnd generates Bootstrap based, HTML file with Google Chart Timeline",
+        "Description":  "This function accepts input as pipeline from the following dbatools functions:\nGet-DbaAgentJobHistory\nGet-DbaDbBackupHistory\n(more to come...)\nAnd generates Bootstrap based, HTML file with Google Chart Timeline",
         "Tags":  "Chart",
         "Synopsis":  "Converts InputObject to a html timeline using Google Chart",
         "Alias":  "",
@@ -2122,7 +2122,7 @@
         "CommandName":  "ConvertTo-DbaTimeline",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/ConvertTo-DbaTimeline",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html \r\n-Encoding ASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\n\u003e\u003e Subject = \"Backup history for sql2017 and sql2016\"\r\n\u003e\u003e Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-String\r\n\u003e\u003e From = \"dba@ad.local\"\r\n\u003e\u003e To = \"dba@ad.local\"\r\n\u003e\u003e SmtpServer = \"smtp.ad.local\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Send-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html \r\n-Encoding ASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlcm | Get-DbaDbBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\n\u003e\u003e Subject = \"Backup history for sql2017 and sql2016\"\r\n\u003e\u003e Body = Get-DbaDbBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-String\r\n\u003e\u003e From = \"dba@ad.local\"\r\n\u003e\u003e To = \"dba@ad.local\"\r\n\u003e\u003e SmtpServer = \"smtp.ad.local\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Send-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaDbBackupHistory. Note that viewing these reports may not be supported in all email clients.",
         "Params":  [
                        [
                            "InputObject",
@@ -7650,7 +7650,7 @@
         "CommandName":  "Export-DbaScript",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaScript",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\\sql2016-Job-Export-date.sql\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\\temp\\export.sql -Append\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\\temp\\export.sql if it already exists\r\nScript does not include Batch Separator and will not compile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential sqladmin | Export-DbaScript -Path C:\\temp\\export.sql\nExports only script for \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential sqladmin | Export-DbaScript -Path C:\\temp\\export.sql -NoPrefix\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\r\nSuppress the output of a Prefix\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptSchema = $true\r\nPS C:\\\u003e $options.IncludeDatabaseContext  = $true\r\nPS C:\\\u003e $options.IncludeHeaders = $false\r\nPS C:\\\u003e $Options.NoCommandTerminator = $false\r\nPS C:\\\u003e $Options.ScriptBatchTerminator = $true\r\nPS C:\\\u003e $Options.AnsiFile = $true\r\nPS C:\\\u003e Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential sqladmin | Export-DbaScript -Path C:\\temp\\export.sql -ScriptingOptionsObject $options\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\r\nAppends a batch separator at end of each script.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace(\u0027sql2014\u0027,\u0027sql2016\u0027) } | Set-Content -Path C:\\temp\\export.sql\nExports jobs and replaces all instances of the servername \"sql2014\" with \"sql2016\" then writes to C:\\temp\\export.sql\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptSchema = $true\r\nPS C:\\\u003e $options.IncludeDatabaseContext  = $true\r\nPS C:\\\u003e $options.IncludeHeaders = $false\r\nPS C:\\\u003e $Options.NoCommandTerminator = $false\r\nPS C:\\\u003e $Options.ScriptBatchTerminator = $true\r\nPS C:\\\u003e $Options.AnsiFile = $true\r\nPS C:\\\u003e $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb, tempdb\r\nPS C:\\\u003e foreach ($db in $Databases) {\r\n\u003e\u003e        Export-DbaScript -InputObject $db -Path C:\\temp\\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix\r\n\u003e\u003e }\nExports Script for each database on sql2016 excluding system databases\r\nUses Scripting options to ensure Batch Terminator is set\r\nWill append the output to the file C:\\temp\\export.sql if it already exists",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename based on the Path.DbatoolsExport configuration setting, current time and server name.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -FilePath C:\\temp\\export.sql -Append\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\\temp\\export.sql if it already exists\r\nInclusion of Batch Separator in script depends on the configuration s not include Batch Separator and will not compile\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential sqladmin | Export-DbaScript -FilePath C:\\temp\\export.sql\nExports only script for \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential sqladmin | Export-DbaScript -FilePath C:\\temp\\export.sql -NoPrefix\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\r\nSuppress the output of a Prefix\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptSchema = $true\r\nPS C:\\\u003e $options.IncludeDatabaseContext  = $true\r\nPS C:\\\u003e $options.IncludeHeaders = $false\r\nPS C:\\\u003e $Options.NoCommandTerminator = $false\r\nPS C:\\\u003e $Options.ScriptBatchTerminator = $true\r\nPS C:\\\u003e $Options.AnsiFile = $true\r\nPS C:\\\u003e Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential sqladmin | Export-DbaScript -FilePath C:\\temp\\export.sql -ScriptingOptionsObject $options\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to login to sql2016\r\nUses Scripting options to ensure Batch Terminator is set\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace(\u0027sql2014\u0027,\u0027sql2016\u0027) } | Set-Content -Path C:\\temp\\export.sql\nExports jobs and replaces all instances of the servername \"sql2014\" with \"sql2016\" then writes to C:\\temp\\export.sql\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptSchema = $true\r\nPS C:\\\u003e $options.IncludeDatabaseContext  = $true\r\nPS C:\\\u003e $options.IncludeHeaders = $false\r\nPS C:\\\u003e $Options.NoCommandTerminator = $false\r\nPS C:\\\u003e $Options.ScriptBatchTerminator = $true\r\nPS C:\\\u003e $Options.AnsiFile = $true\r\nPS C:\\\u003e $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb, tempdb\r\nPS C:\\\u003e foreach ($db in $Databases) {\r\n\u003e\u003e        Export-DbaScript -InputObject $db -FilePath C:\\temp\\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix\r\n\u003e\u003e }\nExports Script for each database on sql2016 excluding system databases\r\nUses Scripting options to ensure Batch Terminator is set\r\nWill append the output to the file C:\\temp\\export.sql if it already exists",
         "Params":  [
                        [
                            "InputObject",
@@ -7662,7 +7662,7 @@
                        ],
                        [
                            "ScriptingOptionsObject",
-                           "An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption",
+                           "An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption\r\nOptions set in the ScriptingOptionsObject may override other parameter values",
                            "ScriptingOptionObject",
                            false,
                            "false",
@@ -7670,7 +7670,7 @@
                        ],
                        [
                            "Path",
-                           "Specifies the directory where the file or files will be exported.",
+                           "Specifies the directory where the file or files will be exported.\r\nWill default to Path.DbatoolsExport Configuration entry",
                            "",
                            false,
                            "false",
@@ -7694,11 +7694,11 @@
                        ],
                        [
                            "BatchSeparator",
-                           "Specifies the Batch Separator to use. Default is None",
+                           "Specifies the Batch Separator to use. Uses the value from configuration Formatting.BatchSeparator by default. This is normally \"GO\"",
                            "",
                            false,
                            "false",
-                           ""
+                           "(Get-DbatoolsConfigValue -FullName \u0027Formatting.BatchSeparator\u0027)"
                        ],
                        [
                            "NoPrefix",
@@ -10612,168 +10612,6 @@
                        ]
                    ],
         "Syntax":  "Get-DbaBackupDevice [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "Name":  "Get-DbaBackupHistory",
-        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup"
-                 ],
-        "Synopsis":  "Returns backup history details for databases on a SQL Server.",
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)",
-        "CommandName":  "Get-DbaBackupHistory",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaBackupHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2016 | Get-DbaBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.",
-        "Params":  [
-                       [
-                           "SqlInstance",
-                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
-                           "",
-                           true,
-                           "true (ByValue)",
-                           ""
-                       ],
-                       [
-                           "SqlCredential",
-                           "Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you \r\nare intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Database",
-                           "Specifies one or more database(s) to process. If unspecified, all databases will be processed.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "ExcludeDatabase",
-                           "Specifies one or more database(s) to exclude from processing.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "IncludeCopyOnly",
-                           "By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Force",
-                           "If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Since",
-                           "Specifies a DateTime object to use as the starting point for the search for backups.",
-                           "",
-                           false,
-                           "false",
-                           "(Get-Date \u002701/01/1970\u0027)"
-                       ],
-                       [
-                           "RecoveryFork",
-                           "Specifies the Recovery Fork you want backup history for",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Last",
-                           "If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "LastFull",
-                           "If this switch is enabled, the most recent full backup set is returned.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "LastDiff",
-                           "If this switch is enabled, the most recent differential backup set is returned.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "LastLog",
-                           "If this switch is enabled, the most recent log backup is returned.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "DeviceType",
-                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "Raw",
-                           "If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "LastLsn",
-                           "Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "IncludeMirror",
-                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ],
-                       [
-                           "Type",
-                           "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
-                           "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
-                           "",
-                           false,
-                           "false",
-                           "False"
-                       ]
-                   ],
-        "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaBackupInformation",
@@ -37482,7 +37320,7 @@
         "CommandName":  "Restore-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $params = @{\r\n\u003e\u003e SqlInstance = \u0027server\\instance1\u0027\r\n\u003e\u003e DestinationFilePrefix = \u0027prefix\u0027\r\n\u003e\u003e DatabaseName =\u0027Restored\u0027\r\n\u003e\u003e RestoreTime = (get-date \"14:58:30 22/05/2017\")\r\n\u003e\u003e NoRecovery = $true\r\n\u003e\u003e WithReplace = $true\r\n\u003e\u003e StandbyDirectory = \u0027C:\\dbatools\\standby\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e $params.RestoredTime = (get-date \"15:09:30 22/05/2017\")\r\nPS C:\\\u003e $params.NoRecovery = $false\r\nPS C:\\\u003e $params.Add(\"Continue\",$true)\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups\nScans all the backup files in \\\\server2\\backups, filters them and restores the database to server1\\instance1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores\nScans all the backup files in \\\\server2\\backups$ stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-ChildItem c:\\SQLbackups1\\, \\\\server\\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\\instance1\nTakes the provided files from multiple directories and restores them on  server1\\instance1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$RestoreTime = Get-Date(\u002711:19 23/12/2016\u0027)\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\\restores -RestoreTime $RestoreTime\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and restores the database to the c:\\restores folder on server1\\instance1 up to 11:19 23/12/2016\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$result = Restore-DbaDatabase -SqlInstance server1\\instance1 -Path \\\\server2\\backups -DestinationDataDirectory c:\\restores -OutputScriptOnly\nPS C:\\\u003e $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\\scripts\\restore.sql\nScans all the backup files in \\\\server2\\backups stored in an Ola Hallengren style folder structure,\r\nfilters them and generate the T-SQL Scripts to restore the database to the latest point in time,\r\nand then stores the output in a file for later retrieval\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path c:\\backups -DestinationDataDirectory c:\\DataFiles -DestinationLogDirectory c:\\LogFile\nScans all the files in c:\\backups and then restores them onto the SQL Server Instance server1\\instance1, placing data files\r\nc:\\DataFiles and all the log files into c:\\LogFiles\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential\nWill restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\\instance1. The connection to Azure will be made using the\r\ncredential MyAzureCredential held on instance Server1\\instance1\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak\nWill attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\\instance1\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$File = Get-ChildItem c:\\backups, \\\\server1\\backups -recurse\nPS C:\\\u003e $File | Restore-DbaDatabase -SqlInstance Server1\\Instance -UseDestinationDefaultDirectories\nThis will take all of the files found under the folders c:\\backups and \\\\server1\\backups, and pipeline them into\r\nRestore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included\r\nto the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server\r\nfolder for those file types as defined on the target instance.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$files = Get-ChildItem C:\\dbatools\\db1\nPS C:\\\u003e $params = @{\r\n\u003e\u003e SqlInstance = \u0027server\\instance1\u0027\r\n\u003e\u003e DestinationFilePrefix = \u0027prefix\u0027\r\n\u003e\u003e DatabaseName =\u0027Restored\u0027\r\n\u003e\u003e RestoreTime = (get-date \"14:58:30 22/05/2017\")\r\n\u003e\u003e NoRecovery = $true\r\n\u003e\u003e WithReplace = $true\r\n\u003e\u003e StandbyDirectory = \u0027C:\\dbatools\\standby\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from Restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e $params.RestoredTime = (get-date \"15:09:30 22/05/2017\")\r\nPS C:\\\u003e $params.NoRecovery = $false\r\nPS C:\\\u003e $params.Add(\"Continue\",$true)\r\nPS C:\\\u003e $files | Restore-DbaDatabase @params\r\nPS C:\\\u003e Invoke-DbaQuery -SQLInstance server\\instance1 -Query \"select top 1 * from restored.dbo.steps order by dt desc\"\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace\nIn this example we step through the backup files held in c:\\dbatools\\db1 folder.\r\nFirst we restore the database to a point in time in standby mode. This means we can check some details in the databases\r\nWe then roll it on a further 9 minutes to perform some more checks\r\nAnd finally we continue by rolling it all the way forward to the latest point in the backup.\r\nAt each step, only the log files needed to roll the database forward are restored.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server\\instance1 -Path c:\\backups -DatabaseName example1 -NoRecovery\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server\\instance1 -Recover -DatabaseName example1\nIn this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory - SqlInstance server\\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore\nPS C:\\\u003e $SuspectPage -PageRestoreTailFolder c:\\temp -TrustDbBackupHistory\nGets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaDbBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date\r\nIf server\\instance1 is Enterprise edition this will be done online, if not it will be performed offline\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\\\backups\\sql2000\\ProdDb\nPS C:\\\u003e $BackupHistory | Restore-DbaDatabase -SqlInstance sql2000 -TrustDbBackupHistory\nDue to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround\r\nThis will use a SQL Server instance \u003e 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003eRestore-DbaDatabase -SqlInstance server1\\instance1 -Path \"C:\\Temp\\devops_prod_full.bak\" -DatabaseName \"DevOps_DEV\" -ReplaceDbNameInFile\nPS C:\\\u003e Rename-DbaDatabase -SqlInstance server1\\instance1 -Database \"DevOps_DEV\" -LogicalName \"\u003cDBN\u003e_\u003cFT\u003e\"\nThis will restore the database from the \"C:\\Temp\\devops_prod_full.bak\" file, with the new name \"DevOps_DEV\" and store the different physical files with the new name. It will use the system default \r\nconfigured data and log locations.\r\nAfter the restore the logical names of the database files will be renamed with the \"DevOps_DEV_ROWS\" for MDF/NDF and \"DevOps_DEV_LOG\" for LDF\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$FileStructure = @{\n\u003e\u003e \u0027database_data\u0027 = \u0027C:\\Data\\database_data.mdf\u0027\r\n\u003e\u003e \u0027database_log\u0027 = \u0027C:\\Log\\database_log.ldf\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Restore-DbaDatabase -SqlInstance server1 -Path \\\\ServerName\\ShareName\\File -DatabaseName database -FileMapping $FileStructure\nRestores \u0027database\u0027 to \u0027server1\u0027 and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -37646,7 +37484,7 @@
                        ],
                        [
                            "TrustDbBackupHistory",
-                           "This switch can be used when piping the output of Get-DbaBackupHistory or Backup-DbaDatabase into this command.\r\nIt allows the user to say that they trust that the output from those commands is correct, and skips the file header read portion of the process. This means a faster process, but at the risk of not \r\nknowing till halfway through the restore that something is wrong with a file.",
+                           "This switch can be used when piping the output of Get-DbaDbBackupHistory or Backup-DbaDatabase into this command.\r\nIt allows the user to say that they trust that the output from those commands is correct, and skips the file header read portion of the process. This means a faster process, but at the risk of not \r\nknowing till halfway through the restore that something is wrong with a file.",
                            "",
                            false,
                            "false",
