@@ -167,7 +167,6 @@ function Invoke-DbatoolsRenameHelper {
             'Get-DbaDistributor'                = 'Get-DbaRepDistributor'
             'Get-DbaInstance'                   = 'Connect-DbaInstance'
             'Get-DbaJobCategory'                = 'Get-DbaAgentJobCategory'
-            'Get-DbaLog'                        = 'Get-DbaErrorLog'
             'Get-DbaLogShippingError'           = 'Get-DbaDbLogShipError'
             'Get-DbaOrphanUser'                 = 'Get-DbaDbOrphanUser'
             'Get-DbaPolicy'                     = 'Get-DbaPbmPolicy'
