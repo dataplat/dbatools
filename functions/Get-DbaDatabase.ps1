@@ -291,7 +291,7 @@ function Get-DbaDatabase {
                 $_.EncryptionEnabled -in $Encrypt
             }
             if ($NoFullBackup -or $NoFullBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
 
@@ -302,7 +302,7 @@ function Get-DbaDatabase {
 
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastLog )
                 if ($null -ne $NoLogBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
                     $inputobject = $inputobject |

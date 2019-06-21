@@ -1172,7 +1172,7 @@ function Copy-DbaDatabase {
                         }
                         If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
                             if ($UseLastBackup) {
-                                $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
+                                $backupTmpResult = Get-DbaDbBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
                                 if (-not $backupTmpResult) {
                                     $copyDatabaseStatus.Type = "Database (BackupRestore)"
                                     $copyDatabaseStatus.Status = "Failed"
