@@ -225,7 +225,7 @@ function Invoke-DbaDbMirroring {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
                 if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                     if ($UseLastBackup) {
-                        $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                        $allbackups = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                     } else {
                         if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
                             $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
@@ -255,7 +255,7 @@ function Invoke-DbaDbMirroring {
                 if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                     if (-not $allbackups) {
                         if ($UseLastBackup) {
-                            $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                            $allbackups = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                         } else {
                             if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
                                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
