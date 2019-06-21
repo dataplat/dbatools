@@ -128,7 +128,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
             #Pre-stage the restore
-            $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database $backuprestoredb -LastFull | Restore-DbaDatabase -SqlInstance $script:instance3 -DatabaseName $backuprestoredb -NoRecovery 3>$null
+            $null =  Get-DbaDbBackupHistory -SqlInstance $script:instance2 -Database $backuprestoredb -LastFull | Restore-DbaDatabase -SqlInstance $script:instance3 -DatabaseName $backuprestoredb -NoRecovery 3>$null
             #Run diff now
             $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath -Type Diff
         }

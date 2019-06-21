@@ -226,7 +226,7 @@ function Remove-DbaDatabaseSafely {
                 Stop-Function -Message "$dbname does not exist on $source. Aborting routine for this database." -Continue
             }
 
-            $lastFullBckDuration = (Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -LastFull).Duration
+            $lastFullBckDuration = ( Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -LastFull).Duration
 
             if (-NOT ([string]::IsNullOrEmpty($lastFullBckDuration))) {
                 $lastFullBckDurationSec = $lastFullBckDuration.TotalSeconds
@@ -250,7 +250,7 @@ function Remove-DbaDatabaseSafely {
                     }
                 }
             } else {
-                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using Get-DbaBackupHistory."
+                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using  Get-DbaDbBackupHistory."
             }
 
             $jobname = "Rationalised Database Restore Script for $dbname"

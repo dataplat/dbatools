@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get last history for single database" {
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
         It "Should be 4 backups returned" {
             $results.count | Should Be 4
         }
@@ -53,44 +53,44 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get last history for all databases" {
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1
         It "Should be more than one database" {
             ($results | Where-Object Database -match "master").Count | Should BeGreaterThan 0
         }
     }
 
     Context "ExcludeDatabase is honored" {
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
         It "Should not report about excluded database master" {
             ($results | Where-Object Database -match "master").Count | Should Be 0
         }
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
         It "Should not report about excluded database master" {
             ($results | Where-Object Database -match "master").Count | Should Be 0
         }
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
         It "Should not report about excluded database master" {
             ($results | Where-Object Database -match "master").Count | Should Be 0
         }
     }
 
     Context "LastFull should work with multiple databases" {
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
         It "Should return 2 records" {
             $results.count | Should Be 2
         }
     }
 
     Context "Testing IncludeCopyOnly with LastFull" {
-        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -LastFull -Database $dbname
-        $resultsCo = Get-DbaBackupHistory -SqlInstance $script:instance1 -LastFull -IncludeCopyOnly -Database $dbname
+        $results =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -Database $dbname
+        $resultsCo =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -IncludeCopyOnly -Database $dbname
         It "Should return the CopyOnly Backup" {
             ($resultsCo.BackupSetID -ne $Results.BackupSetID) | Should Be $True
         }
     }
 
     Context "Testing IncludeCopyOnly with Last" {
-        $resultsCo = Get-DbaBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
+        $resultsCo =  Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
         It "Should return just the CopyOnly Full Backup" {
             ($resultsCo | Measure-Object).count | Should Be 1
         }

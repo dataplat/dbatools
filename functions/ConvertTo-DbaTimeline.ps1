@@ -6,7 +6,7 @@ function ConvertTo-DbaTimeline {
     .DESCRIPTION
         This function accepts input as pipeline from the following dbatools functions:
         Get-DbaAgentJobHistory
-        Get-DbaBackupHistory
+         Get-DbaDbBackupHistory
         (more to come...)
         And generates Bootstrap based, HTML file with Google Chart Timeline
 
@@ -43,14 +43,14 @@ function ConvertTo-DbaTimeline {
         Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+        PS C:\> Get-DbaRegServer -SqlInstance sqlcm |  Get-DbaDbBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
 
         Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
 
     .EXAMPLE
         PS C:\> $messageParameters = @{
         >> Subject = "Backup history for sql2017 and sql2016"
-        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
+        >> Body =  Get-DbaDbBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
         >> From = "dba@ad.local"
         >> To = "dba@ad.local"
         >> SmtpServer = "smtp.ad.local"
@@ -58,7 +58,7 @@ function ConvertTo-DbaTimeline {
         >>
         PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
 
-        Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
+        Sends an email to dba@ad.local with the results of  Get-DbaDbBackupHistory. Note that viewing these reports may not be supported in all email clients.
 
     #>
     [CmdletBinding()]
@@ -157,7 +157,7 @@ function ConvertTo-DbaTimeline {
             $CallerName = "Get-DbaAgentJobHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
         } elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
-            $CallerName = "Get-DbaBackupHistory"
+            $CallerName = " Get-DbaDbBackupHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
         } else {
             # sorry to be so formal, can't help it ;)
