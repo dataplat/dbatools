@@ -167,6 +167,7 @@ function Invoke-DbatoolsRenameHelper {
             'Get-DbaDistributor'                = 'Get-DbaRepDistributor'
             'Get-DbaInstance'                   = 'Connect-DbaInstance'
             'Get-DbaJobCategory'                = 'Get-DbaAgentJobCategory'
+            'Get-DbaLog'                        = 'Get-DbaErrorLog'
             'Get-DbaLogShippingError'           = 'Get-DbaDbLogShipError'
             'Get-DbaOrphanUser'                 = 'Get-DbaDbOrphanUser'
             'Get-DbaPolicy'                     = 'Get-DbaPbmPolicy'
@@ -308,9 +309,9 @@ function Invoke-DbatoolsRenameHelper {
             $file = $fileobject.FullName
 
             foreach ($name in $allrenames.GetEnumerator()) {
-                if ((Select-String -Pattern $name.Key -Path $file)) {
+                if ((Select-String -Pattern "\b$($name.Key)\b" -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.Key) with $($name.Value)")) {
-                        $content = (Get-Content -Path $file -Raw).Replace($name.Key, $name.Value).Trim()
+                        $content = ((Get-Content -Path $file -Raw) -Replace "\b$($name.Key)\b", $name.Value).Trim()
                         Set-Content -Path $file -Encoding $Encoding -Value $content
                         [pscustomobject]@{
                             Path         = $file
