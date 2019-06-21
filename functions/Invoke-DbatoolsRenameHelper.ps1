@@ -235,6 +235,7 @@ function Invoke-DbatoolsRenameHelper {
             'Restore-DbaDatabaseSnapshot'       = 'Restore-DbaDbSnapshot'
             'Restore-HallengrenBackup'          = 'Restore-SqlBackupFromDirectory'
             'Set-DbaConfig'                     = 'Set-DbatoolsConfig'
+            'Get-DbaBackupHistory'              = 'Get-DbaDbBackupHistory'
             'Set-DbaDatabaseOwner'              = 'Set-DbaDbOwner'
             'Set-DbaDatabaseState'              = 'Set-DbaDbState'
             'Set-DbaDbQueryStoreOptions'        = 'Set-DbaDbQueryStoreOption'
