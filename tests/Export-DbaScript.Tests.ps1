@@ -19,6 +19,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "should export some text matching create table" {
             $script:results -match "CREATE TABLE"
         }
+        It "should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
+            $script:results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
+        }
+
+        $script:results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+        It "should include the defined BatchSeparator" {
+            $script:results -match "MakeItSo"
+        }
         $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
         It "should not accept non-SMO objects" {
             $invalid -match "not a SQL Management Object"
