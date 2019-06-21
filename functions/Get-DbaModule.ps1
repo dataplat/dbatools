@@ -71,6 +71,11 @@ function Get-DbaModule {
         Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 
     .EXAMPLE
+        PS C:\> 'sql2008' | Get-DbaModule -Database TestDB -Type View, StoredProcedure, ScalarFunction
+
+        Return all modules on server sql2008 for only the TestDB database that are stored procedures, views or scalar functions. Input via Pipeline
+
+    .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2008 -ExcludeSystem | Get-DbaModule -Type View, Trigger, ScalarFunction
 
         Return all modules on server sql2008 for all user databases that are triggers, views or scalar functions.
