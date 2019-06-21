@@ -302,14 +302,26 @@ function Invoke-DbatoolsRenameHelper {
             'Install-DbaWatchUpdate'            = 'Install-DbatoolsWatchUpdate'
             'Uninstall-DbaWatchUpdate'          = 'Uninstall-DbatoolsWatchUpdate'
         }
-
-        $allrenames = $commandrenames + $paramrenames
     }
     process {
         foreach ($fileobject in $InputObject) {
             $file = $fileobject.FullName
 
-            foreach ($name in $allrenames.GetEnumerator()) {
+            foreach ($name in $paramrenames.GetEnumerator()) {
+                if ((Select-String -Pattern $name.Key -Path $file)) {
+                    if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.Key) with $($name.Value)")) {
+                        $content = (Get-Content -Path $file -Raw).Replace($name.Key, $name.Value).Trim()
+                        Set-Content -Path $file -Encoding $Encoding -Value $content
+                        [pscustomobject]@{
+                            Path         = $file
+                            Pattern      = $name.Key
+                            ReplacedWith = $name.Value
+                        }
+                    }
+                }
+            }
+
+            foreach ($name in $commandrenames.GetEnumerator()) {
                 if ((Select-String -Pattern "\b$($name.Key)\b" -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.Key) with $($name.Value)")) {
                         $content = ((Get-Content -Path $file -Raw) -Replace "\b$($name.Key)\b", $name.Value).Trim()
