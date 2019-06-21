@@ -250,7 +250,7 @@ function Remove-DbaDatabaseSafely {
                     }
                 }
             } else {
-                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using  Get-DbaDbBackupHistory."
+                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using Get-DbaDbBackupHistory."
             }
 
             $jobname = "Rationalised Database Restore Script for $dbname"

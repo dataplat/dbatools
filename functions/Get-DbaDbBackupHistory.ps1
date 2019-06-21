@@ -1,4 +1,4 @@
-function  Get-DbaDbBackupHistory {
+function Get-DbaDbBackupHistory {
     <#
     .SYNOPSIS
         Returns backup history details for databases on a SQL Server.
@@ -25,7 +25,7 @@ function  Get-DbaDbBackupHistory {
         Specifies one or more database(s) to exclude from processing.
 
     .PARAMETER IncludeCopyOnly
-        By default  Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
+        By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 
     .PARAMETER Force
         If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
@@ -80,63 +80,63 @@ function  Get-DbaDbBackupHistory {
         https://dbatools.io/ Get-DbaDbBackupHistory
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a
 
         Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
-         Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
+        Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
 
         Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
 
         Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
 
         Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
 
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
 
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
 
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
 
         Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
 
         Returns information about all Full backups for AdventureWorks2014 on sql2014.
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sql2016 |  Get-DbaDbBackupHistory
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Get-DbaDbBackupHistory
 
         Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
 
         Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
 
     .EXAMPLE
-        PS C:\>  Get-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
 
         If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
 
@@ -293,8 +293,8 @@ function  Get-DbaDbBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb =  Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
-                    $diffDb =  Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
@@ -307,7 +307,7 @@ function  Get-DbaDbBackupHistory {
                             continue
                         }
                     }
-                    $allBackups +=  Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object {
+                    $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object {
                         $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid
                     }
                     #This line does the output for -Last!!!
