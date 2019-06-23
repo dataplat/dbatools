@@ -11639,6 +11639,168 @@
         "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbBackupHistory",
+        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "Backup"
+                 ],
+        "Synopsis":  "Returns backup history details for databases on a SQL Server.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)",
+        "CommandName":  "Get-DbaDbBackupHistory",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/ Get-DbaDbBackupHistory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2016 | Get-DbaDbBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you \r\nare intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies one or more database(s) to process. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies one or more database(s) to exclude from processing.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeCopyOnly",
+                           "By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Since",
+                           "Specifies a DateTime object to use as the starting point for the search for backups.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-Date \u002701/01/1970\u0027)"
+                       ],
+                       [
+                           "RecoveryFork",
+                           "Specifies the Recovery Fork you want backup history for",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Last",
+                           "If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastFull",
+                           "If this switch is enabled, the most recent full backup set is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastDiff",
+                           "If this switch is enabled, the most recent differential backup set is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastLog",
+                           "If this switch is enabled, the most recent log backup is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DeviceType",
+                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Raw",
+                           "If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastLsn",
+                           "Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeMirror",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Type",
+                           "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbccHelp",
         "Description":  "Returns the results of DBCC HELP\n\nRead more:\n    - https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-help-transact-sql",
         "Tags":  "DBCC",
@@ -16890,13 +17052,13 @@
         "CommandName":  "Get-DbaModule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaModule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012 | Select-Object *\nShows hidden definition column (informative wall of text).\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Database TestDB -ModifiedSince \"2017-01-01 10:00:00\"\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 1 January 2017 10:00:00 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Type View, Trigger, ScalarFunction\nReturn all modules on server sql2008 for all databases that are triggers, views or scalar functions.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008, sqlserver2012 | Select-Object *\nShows hidden definition column (informative wall of text).\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Database TestDB -ModifiedSince \"2017-01-01 10:00:00\"\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 1 January 2017 10:00:00 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaModule -SqlInstance sql2008 -Type View, Trigger, ScalarFunction\nReturn all modules on server sql2008 for all databases that are triggers, views or scalar functions.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027 | Get-DbaModule -Database TestDB -Type View, StoredProcedure, ScalarFunction\nReturn all modules on server sql2008 for only the TestDB database that are stored procedures, views or scalar functions. Input via Pipeline\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -ExcludeSystem | Get-DbaModule -Type View, Trigger, ScalarFunction\nReturn all modules on server sql2008 for all user databases that are triggers, views or scalar functions.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008, sqlserver2012 -ExcludeUser | Get-DbaModule -Type StoredProcedure -ExcludeSystemObjects\nReturn all user created stored procedures in the system databases for servers sql2008 and sqlserver2012.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances.",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16957,6 +17119,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16965,7 +17135,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaModule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-ModifiedSince] \u003cDateTime\u003e] [[-Type] \u003cString[]\u003e] [-ExcludeSystemDatabases] [-ExcludeSystemObjects] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaModule [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-ModifiedSince] \u003cDateTime\u003e] [[-Type] \u003cString[]\u003e] [-ExcludeSystemDatabases] [-ExcludeSystemObjects] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaMsdtc",

@@ -28292,7 +28292,7 @@ function Get-DbaModule {
     
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -28302,6 +28302,8 @@ function Get-DbaModule {
         [string[]]$Type,
         [switch]$ExcludeSystemDatabases,
         [switch]$ExcludeSystemObjects,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -28347,48 +28349,41 @@ function Get-DbaModule {
     }
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a database or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            Write-Message -Level Verbose -Message "Creating InputObject from $SqlInstance"
+            $InputObject += Get-DbaDatabase -SqlInstance $PSBoundParameters.SqlInstance -SqlCredential $PSBoundParameters.SqlCredential -Database $PSBoundParameters.Database -ExcludeDatabase $PSBoundParameters.ExcludeDatabase -ExcludeSystem:$PSBoundParameters.ExcludeSystemDatabases
+        }
+
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
             }
 
-            $databases = Get-DbaDatabase -SqlInstance $server
+            $server = $db.Parent
+            Write-Message -Level Verbose -Message "Processing $db on $($server.DomainInstanceName)"
 
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-
-            foreach ($db in $databases) {
-
-                Write-Message -Level Verbose -Message "Processing $db on $instance"
-
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
-                }
-
-                foreach ($row in $server.Query($sql, $db.name)) {
-                    [PSCustomObject]@{
-                        ComputerName  = $server.ComputerName
-                        InstanceName  = $server.ServiceName
-                        SqlInstance   = $server.DomainInstanceName
-                        Database      = $row.DatabaseName
-                        Name          = $row.ModuleName
-                        ObjectID      = $row.object_id
-                        SchemaName    = $row.SchemaName
-                        Type          = $row.type_desc
-                        CreateDate    = $row.create_date
-                        ModifyDate    = $row.modify_date
-                        IsMsShipped   = $row.is_ms_shipped
-                        ExecIsStartUp = $row.startup
-                        Definition    = $row.definition
-                    } | Select-DefaultView -ExcludeProperty Definition
-                }
+            foreach ($row in $server.Query($sql, $db.name)) {
+                [PSCustomObject]@{
+                    ComputerName  = $server.ComputerName
+                    InstanceName  = $server.ServiceName
+                    SqlInstance   = $server.DomainInstanceName
+                    Database      = $row.DatabaseName
+                    Name          = $row.ModuleName
+                    ObjectID      = $row.object_id
+                    SchemaName    = $row.SchemaName
+                    Type          = $row.type_desc
+                    CreateDate    = $row.create_date
+                    ModifyDate    = $row.modify_date
+                    IsMsShipped   = $row.is_ms_shipped
+                    ExecIsStartUp = $row.startup
+                    Definition    = $row.definition
+                } | Select-DefaultView -ExcludeProperty Definition
             }
         }
     }
