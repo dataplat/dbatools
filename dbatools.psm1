@@ -373,7 +373,7 @@ $script:xplat = @(
     'Get-DbaPermission',
     'Get-DbaLastBackup',
     'Connect-DbaInstance',
-    ' Get-DbaDbBackupHistory',
+    'Get-DbaDbBackupHistory',
     'Read-DbaBackupHeader',
     'Test-DbaLastBackup',
     'Get-DbaMaxMemory',
