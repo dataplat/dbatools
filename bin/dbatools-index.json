@@ -31894,7 +31894,7 @@
         "CommandName":  "New-DbaEndpoint",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaEndpoint",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\nCreates all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring\nCreates a database mirroring endpoint on localhost\\sql2017 which using the default port\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring -Port 5055\nCreates a database mirroring endpoint on localhost\\sql2017 which uses alternative port 5055",
         "Params":  [
                        [
                            "SqlInstance",
