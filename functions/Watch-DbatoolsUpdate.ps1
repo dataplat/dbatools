@@ -34,7 +34,7 @@ function Watch-DbatoolsUpdate {
         }
 
         if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
-            Install-DbaWatchUpdate
+            Install-DbatoolsWatchUpdate
         }
 
         # leave this in for the scheduled task
