@@ -185,10 +185,10 @@ function Add-DbaAgDatabase {
                     $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
                 }
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
 
                 if (-not $agreplica) {
-                    Stop-Function -Continue -Message "Could not connect get secondary replica $($secondaryInstanceReplicaName) from $($Primary.Name)"
+                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($Primary.Name)"
                 }
 
                 if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
