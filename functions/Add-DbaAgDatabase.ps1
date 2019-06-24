@@ -175,7 +175,11 @@ function Add-DbaAgDatabase {
 
             foreach ($secondaryInstance in $secondaryInstances) {
 
-                $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
+                try {
+                    $secondaryInstanceReplicaName = $secondaryInstance.NetName
+                } catch {
+                    $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
+                }
 
                 if ($secondaryInstance.InstanceName) {
                     $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
