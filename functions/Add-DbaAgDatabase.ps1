@@ -174,13 +174,13 @@ function Add-DbaAgDatabase {
             }
 
             foreach ($secondaryInstance in $secondaryInstances) {
-			
-				$secondaryInstanceReplicaName = $secondaryInstance.ComputerName
-				
-				if ($secondaryInstance.InstanceName){	
-					$secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
-				}
-				
+
+                $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
+
+                if ($secondaryInstance.InstanceName) {
+                    $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
+                }
+
                 $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
 
                 if (-not $agreplica) {
