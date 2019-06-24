@@ -175,10 +175,20 @@ function Add-DbaAgDatabase {
 
             foreach ($secondaryInstance in $secondaryInstances) {
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstance.NetName
+                try {
+                    $secondaryInstanceReplicaName = $secondaryInstance.NetName
+                } catch {
+                    $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
+                }
+
+                if ($secondaryInstance.InstanceName) {
+                    $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
+                }
+
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
 
                 if (-not $agreplica) {
-                    Stop-Function -Continue -Message "Could not connect to instance $($secondaryInstance.Name)"
+                    Stop-Function -Continue -Message "Could not connect get secondary replica $($secondaryInstanceReplicaName) from $($Primary.Name)"
                 }
 
                 if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
