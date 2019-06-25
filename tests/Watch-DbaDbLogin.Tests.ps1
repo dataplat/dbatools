@@ -10,22 +10,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
-        $paramCount = 7
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Watch-DbaDbLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Database', 'Table', 'SqlCms', 'ServersFromFile'
-        it "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        it "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'Database', 'Table', 'SqlCredential', 'SqlCms', 'ServersFromFile', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -50,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command actually works" {
         Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -ServersFromFile $testFile -EnableException
-        $result = Get-DbaTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -IncludeSystemDBs
+        $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -IncludeSystemDBs
         It "Should have created table $tableName in database $databaseName" {
             $result.Name | Should Be $tableName
         }

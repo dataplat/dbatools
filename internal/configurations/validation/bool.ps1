@@ -1,5 +1,5 @@
-﻿Register-DbaConfigValidation -Name "bool" -ScriptBlock {
-    Param (
+Register-DbatoolsConfigValidation -Name "bool" -ScriptBlock {
+    param (
         $Value
     )
 
@@ -14,8 +14,7 @@
             $Result.Success = $False
             return $Result
         }
-    }
-    catch {
+    } catch {
         $Result.Message = "Not a boolean: $Value"
         $Result.Success = $False
         return $Result

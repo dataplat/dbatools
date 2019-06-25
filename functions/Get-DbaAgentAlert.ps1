@@ -1,60 +1,59 @@
 function Get-DbaAgentAlert {
     <#
     .SYNOPSIS
-    Returns all SQL Agent alerts on a SQL Server Agent.
+        Returns all SQL Agent alerts on a SQL Server Agent.
 
     .DESCRIPTION
-    This function returns SQL Agent alerts.
+        This function returns SQL Agent alerts.
 
     .PARAMETER SqlInstance
-    SqlInstance name or SMO object representing the SQL Server to connect to.
-    This can be a collection and receive pipeline input.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-    PSCredential object to connect as. If not specified, current Windows login will be used.
-
-    .NOTES
-    Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-    Tags: Agent, SMO
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Agent, SMO
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Get-DbaAgentAlert
+        https://dbatools.io/Get-DbaAgentAlert
 
     .EXAMPLE
-    Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
-    Returns all SQL Agent alerts on serverA and serverB\instanceB
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
+
+        Returns all SQL Agent alerts on serverA and serverB\instanceB
 
     .EXAMPLE
-    'serverA','serverB\instanceB' | Get-DbaAgentAlert
-    Returns all SQL Agent alerts  on serverA and serverB\instanceB
+        PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
 
-#>
+        Returns all SQL Agent alerts  on serverA and serverB\instanceB
+
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "Instance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Getting Edition from $server"
@@ -71,7 +70,7 @@ function Get-DbaAgentAlert {
             foreach ($alert in $alerts) {
                 $lastraised = [dbadatetime]$alert.LastOccurrenceDate
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()

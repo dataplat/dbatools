@@ -1,82 +1,71 @@
 function Test-DbaConnectionAuthScheme {
     <#
-        .SYNOPSIS
-            Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
+    .SYNOPSIS
+        Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
 
-        .DESCRIPTION
-            By default, this command will return the ConnectName, ServerName, Transport and AuthScheme of the current connection.
+    .DESCRIPTION
+        By default, this command will return the ConnectName, ServerName, Transport and AuthScheme of the current connection.
 
-            ConnectName is the name you used to connect. ServerName is the name that the SQL Server reports as its @@SERVERNAME which is used to register its SPN. If you were expecting a Kerberos connection and got NTLM instead, ensure ConnectName and ServerName match.
+        ConnectName is the name you used to connect. ServerName is the name that the SQL Server reports as its @@SERVERNAME which is used to register its SPN. If you were expecting a Kerberos connection and got NTLM instead, ensure ConnectName and ServerName match.
 
-            If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
+        If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to. Server(s) must be SQL Server 2005 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
-        .PARAMETER Kerberos
-            If this switch is enabled, checks will be made for Kerberos authentication.
+    .PARAMETER Kerberos
+        If this switch is enabled, checks will be made for Kerberos authentication.
 
-        .PARAMETER Ntlm
-            If this switch is enabled, checks will be made for NTLM authentication.
+    .PARAMETER Ntlm
+        If this switch is enabled, checks will be made for NTLM authentication.
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .NOTES
+        Tags: SPN, Kerberos
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .LINK
+        https://dbatools.io/Test-DbaConnectionAuthScheme
 
-            .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .EXAMPLE
+        PS C:\> Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a, sql2016
 
-        .NOTES
-            Tags: SPN, Kerberos
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Returns ConnectName, ServerName, Transport and AuthScheme for sqlserver2014a and sql2016.
 
-        .LINK
-            https://dbatools.io/Test-DbaConnectionAuthScheme
+    .EXAMPLE
+        PS C:\> Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a -Kerberos
 
-        .EXAMPLE
-            Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a, sql2016
+        Returns $true or $false depending on if the connection is Kerberos or not.
 
-            Returns ConnectName, ServerName, Transport and AuthScheme for sqlserver2014a and sql2016.
+    .EXAMPLE
+        PS C:\> Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a | Select-Object *
 
-        .EXAMPLE
-            Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a -Kerberos
-
-            Returns $true or $false depending on if the connection is Kerberos or not.
-
-        .EXAMPLE
-            Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a | Select-Object *
-
-            Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
+        Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
 
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
         [PSCredential]$SqlCredential,
         [switch]$Kerberos,
         [switch]$Ntlm,
-        [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                             SERVERPROPERTY('ServerName') AS SqlInstance,
@@ -95,25 +84,22 @@ function Test-DbaConnectionAuthScheme {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Getting results for the following query: $sql."
             try {
                 $results = $server.Query($sql)
-            }
-            catch {
-                Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
+            } catch {
+                Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
             }
 
             # sorry, standards!
             if ($Kerberos -or $Ntlm) {
                 if ($Ntlm) {
                     $auth = 'NTLM'
-                }
-                else {
+                } else {
                     $auth = 'Kerberos'
                 }
                 [PSCustomObject]@{
@@ -122,8 +108,7 @@ function Test-DbaConnectionAuthScheme {
                     SqlInstance  = $results.SqlInstance
                     Result       = ($server.AuthScheme -eq $auth)
                 } | Select-DefaultView -Property SqlInstance, Result
-            }
-            else {
+            } else {
                 Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
             }
         }

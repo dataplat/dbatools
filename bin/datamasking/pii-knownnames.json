@@ -1,0 +1,106 @@
+[
+    {
+        "Name": "Name",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(firstname|fname|lastname|lname|fullname|fname).*$",
+            "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$",
+            "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
+            "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$",
+            "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam|volnaam).*$"
+        ]
+    },
+    {
+        "Name": "Address",
+        "Category": "Location",
+        "Pattern": [
+            "^.*address.*$",
+            "^.*adresse.*$",
+            "^.*direccion.*$",
+            "^.*adres.*$"
+        ]
+    },
+    {
+        "Name": "City",
+        "Category": "Location",
+        "Pattern": [
+            "^.*city.*$",
+            "^.*stadt.*$",
+            "^.*ville.*$",
+            "^.*ciudad.*$",
+            "^.*stad.*$"
+        ]
+    },
+    {
+        "Name": "State",
+        "Category": "Location",
+        "Pattern": [
+            "^.*state.*$",
+            "^.*provin.*$"
+        ]
+    },
+    {
+        "Name": "County",
+        "Category": "Location",
+        "Pattern": [
+            "^.*county.*$",
+            "^.*bezirk.*$",
+            "^.*comte.*$",
+            "^.*condado.*$"
+        ]
+    },
+    {
+        "Name": "Country",
+        "Category": "Location",
+        "Pattern": [
+            "^.*country.*$",
+            "^.*land.*$",
+            "^.*pays.*$",
+            "^.*pais.*$"
+        ]
+    },
+    {
+        "Name": "E-mail",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*(email|e-mail|mail).*$"
+        ]
+    },
+    {
+        "Name": "IPAddres",
+        "Category": "System",
+        "Pattern": [
+            "^.*(ip|ipaddress|ipv4|ipv6).*$"
+        ]
+    },
+    {
+        "Name": "Username",
+        "Category": "Security",
+        "Pattern": [
+            "^.*(userid|user|username).*$",
+            "^.*(nutzerid|nutzer|nutzername).*$",
+            "^.*(nomutilisateur|utilisateur).*$",
+            "^.*(nombredeusuario|usuario).*$",
+            "^.*(gebruikersid|gebruiker|gebruikersnaam).*$"
+        ]
+    },
+    {
+        "Name": "Password",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*pass.*$",
+            "^.*contrasena.*$",
+            "^.*wachtwoord.*$"
+        ]
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Pattern": [
+            "^.*zip.*$",
+            "^.*postal.*$",
+            "^.*postleitzahl.*$",
+            "^.*postcode.*$"
+        ]
+    }
+]

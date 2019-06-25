@@ -1,10 +1,12 @@
 function Connect-DbaInstance {
     <#
     .SYNOPSIS
-        Creates a robust SMO SQL Server object.
+        Creates a robust, reusable SQL Server object.
 
     .DESCRIPTION
-        This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
+        This command creates a robus, reusable sql server object.
+
+        It is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
 
         By default, this command also sets the connection's ApplicationName property  to "dbatools PowerShell module - dbatools.io - custom connection". If you're doing anything that requires profiling, you can look for this client name.
 
@@ -17,16 +19,13 @@ function Connect-DbaInstance {
         To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server.
-
-    .PARAMETER AccessToken
-        Gets or sets the access token for the connection.
 
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
@@ -66,10 +65,6 @@ function Connect-DbaInstance {
         If you specify a failover partner but the failover partner server is not configured for database mirroring and the primary server (specified with the Server keyword) is not available, then the connection will fail.
 
         If you specify a failover partner and the primary server is not configured for database mirroring, the connection to the primary server (specified with the Server keyword) will succeed if the primary server is available.
-
-
-    .PARAMETER IsActiveDirectoryUniversalAuth
-        If this switch is enabled, the connection will be configured to use Azure Active Directory authentication.
 
     .PARAMETER LockTimeout
         Sets the time in seconds required for the connection to time out when the current transaction is locked.
@@ -121,220 +116,733 @@ function Connect-DbaInstance {
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
+    .PARAMETER AzureUnsupported
+        Terminate if Azure is detected but not supported
+
+    .PARAMETER AzureDomain
+
+        By default, this is set to database.windows.net
+
+        In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
+        This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
+
+    .PARAMETER MinimumVersion
+        Terminate if the target SQL Server instance version does not meet version requirements
+
+    .PARAMETER AuthenticationType
+        Basically used to force AD Universal with MFA Support when other types have been detected
+
+    .PARAMETER Tenant
+        The TenantId for an Azure Instance
+
+    .PARAMETER Thumbprint
+        Thumbprint for connections to Azure MSI
+
+    .PARAMETER Store
+        Store where the Azure MSI certificate is stored
+
+    .PARAMETER DisableException
+        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+
+        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
+
+        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+
     .NOTES
-        dbatools PowerShell module (https://dbatools.io)
+        Tags: Connect, Connection
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Connect-DbaInstance
 
     .EXAMPLE
-        Connect-DbaInstance -SqlInstance sql2014
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014
 
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
-        $wincred = Get-Credential ad\sqladmin
-        Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
-        $sqlcred = Get-Credential sqladmin
-        $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
+        PS C:\> $sqlcred = Get-Credential sqladmin
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
 
         Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection". So when you open up profiler or use extended events, you can search for "my connection".
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
 
         Creates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.
 
     .EXAMPLE
-        $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
         Creates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.
 
     .EXAMPLE
-        $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
+        PS C:\> $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
 
         Connects with ReadOnly ApplicationIntent.
-#>
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance "myserver.public.cust123.database.windows.net,3342" -Database mydb -Credential me@mydomain.onmicrosoft.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
+        This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using a preconstructed connstring, then performs a sample query.
+        ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from a non-Azure worksatation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -AuthenticationType 'AD Universal with MFA Support'
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        When connecting from an Azure VM with .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
+        PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig
+        PS C:\> Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig
+        PS C:\> Connect-DbaInstance -SqlInstance psdbatools.database.windows.net
+
+        Permenently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig
+        When connecting from a non-Azure worksatation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certifiate will be used instead.
+
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Alias("Connstring", "ConnectionString")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("SqlCredential")]
-        [PSCredential]$Credential,
-        [object[]]$Database,
-        [string]$AccessToken,
+        [PSCredential]$SqlCredential,
+        [string]$Database = (Get-DbatoolsConfigValue -FullName 'sql.connection.database'),
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$ApplicationIntent,
+        [switch]$AzureUnsupported,
         [string]$BatchSeparator,
-        [string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
+        [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
         [int]$ConnectTimeout = ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
-        [switch]$EncryptConnection,
+        [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
-        [switch]$IsActiveDirectoryUniversalAuth,
         [int]$LockTimeout,
         [int]$MaxPoolSize,
         [int]$MinPoolSize,
+        [int]$MinimumVersion,
         [switch]$MultipleActiveResultSets,
         [switch]$MultiSubnetFailover,
         [ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
-        [string]$NetworkProtocol,
+        [string]$NetworkProtocol = (Get-DbatoolsConfigValue -FullName 'sql.connection.protocol'),
         [switch]$NonPooledConnection,
-        [int]$PacketSize,
+        [int]$PacketSize = (Get-DbatoolsConfigValue -FullName 'sql.connection.packetsize'),
         [int]$PooledConnectionLifetime,
         [ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
         [string]$SqlExecutionModes,
-        [int]$StatementTimeout,
-        [switch]$TrustServerCertificate,
+        [int]$StatementTimeout = (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout'),
+        [switch]$TrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert'),
         [string]$WorkstationId,
         [string]$AppendConnectionString,
-        [switch]$SqlConnectionOnly
+        [switch]$SqlConnectionOnly,
+        [string]$AzureDomain = "database.windows.net",
+        #[ValidateSet('Auto', 'Windows Authentication', 'SQL Server Authentication', 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated')]
+        [ValidateSet('Auto', 'AD Universal with MFA Support')]
+        [string]$AuthenticationType = "Auto",
+        [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
+        [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
+        [ValidateSet('CurrentUser', 'LocalMachine')]
+        [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
+        [switch]$DisableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaSqlServer
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
+        $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
+        #region Utility functions
+        if ($Tenant -or $AuthenticationType -in 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated' -and ($null -eq $azurevm)) {
+            Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
+            # Do an Azure check - this will occur just once
+            try {
+                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true" } -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
+                if ($azurevmcheck.compute.azEnvironment) {
+                    $azurevm = $true
+                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
+                } else {
+                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
+                }
+            } catch {
+                $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
+            }
+        }
+        function Invoke-TEPPCacheUpdate {
+            [CmdletBinding()]
+            param (
+                [System.Management.Automation.ScriptBlock]$ScriptBlock
+            )
 
-        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+            try {
+                [ScriptBlock]::Create($scriptBlock).Invoke()
+            } catch {
+                # If the SQL Server version doesn't support the feature, we ignore it and silently continue
+                if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
+                    return
+                }
+
+                if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.Message.MEssageHost]::DeveloperMode)) { Stop-Function -Message }
+                else {
+                    Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
+                }
+            }
+        }
+        #endregion Utility functions
+
+        #region Ensure Credential integrity
+        <#
+        Usually, the parameter type should have been not object but off the PSCredential type.
+        When binding null to a PSCredential type parameter on PS3-4, it'd then show a prompt, asking for username and password.
+
+        In order to avoid that and having to refactor lots of functions (and to avoid making regular scripts harder to read), we created this workaround.
+        #>
+        if ($SqlCredential) {
+            if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
+                Stop-Function -Message "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+                return
+            }
+        }
+        #endregion Ensure Credential integrity
+
+        # In an unusual move, Connect-DbaInstance goes the exact opposite way of all commands when it comes to exceptions
+        # this means that by default it Stop-Function -Messages, but do not be tempted to Stop-Function -Message
+        if ($DisableException) {
+            $EnableException = $false
+        } else {
+            $EnableException = $true
+        }
+
+        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
+            $_.Fullname -like "Microsoft.SqlServer.SMO,*"
+        }
 
         if ($loadedSmoVersion) {
             $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
                 if ($_.Location -match "__") {
                     ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-                }
-                else {
+                } else {
                     ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
                 }
             }
         }
+
+        #'PrimaryFilePath' seems the culprit for slow SMO on databases
+        $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
+        $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
+        $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
+
+        $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
+        $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
+        $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
+        if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
-            if ($instance.Type -like "Server") {
+            if ($instance.IsConnectionString) {
+                $connstring = $instance.InputObject
+                $isconnectionstring = $true
+            }
+            if ($instance.Type -eq 'RegisteredServer' -and $instance.InputObject.ConnectionString) {
+                $connstring = $instance.InputObject.ConnectionString
+                $isconnectionstring = $true
+            }
+
+            if ($isconnectionstring) {
+                try {
+                    # ensure it's in the proper format
+                    $sb = New-Object System.Data.Common.DbConnectionStringBuilder
+                    $sb.ConnectionString = $connstring
+                } catch {
+                    $isconnectionstring = $false
+                }
+            }
+
+            # Gracefully handle Azure connections
+            if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+                # so far, this is not evaluating
+                if ($instance.InputObject.ConnectionContext.IsOpen) {
+                    $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
+                    if (($Database -and ($Database -eq $currentdb))) {
+                        $instance.InputObject
+                        continue
+                    }
+                }
+                $isAzure = $true
+                # Use available command to build the proper connection string
+                # but first, clean up passed params so that they match
+                $boundparams = $PSBoundParameters
+                [object[]]$connstringcmd = (Get-Command New-DbaConnectionString).Parameters.Keys
+                [object[]]$connectcmd = (Get-Command Connect-DbaInstance).Parameters.Keys
+
+                foreach ($key in $connectcmd) {
+                    if ($key -notin $connstringcmd -and $key -ne "SqlCredential") {
+                        $null = $boundparams.Remove($key)
+                    }
+                }
+                # Build connection string
+                if ($connstring) {
+                    $azureconnstring = $connstring
+                } else {
+                    if ($Tenant) {
+                        $azureconnstring = New-DbaConnectionString -SqlInstance $instance -AccessToken None -Database $Database
+                    } else {
+                        $azureconnstring = New-DbaConnectionString @boundparams
+                    }
+                }
+
+                if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
+                    $newway = ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808)
+
+                    $appid = Get-DbatoolsConfigValue -FullName 'azure.appid'
+                    $clientsecret = Get-DbatoolsConfigValue -FullName 'azure.clientsecret'
+
+                    if (($appid -and $clientsecret) -and -not $SqlCredential) {
+                        $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
+                    }
+
+                    if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed, even if client certificates are used; just specify the AppId as the credential username."
+                        return
+                    }
+
+                    if (-not $Database) {
+                        Stop-Function -Message "When using AD Universal with MFA Support, database must be specified unless .net 4.7.2 or above is installed"
+                        return
+                    }
+
+                    if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core) {
+                        if (-not $azurevm) {
+                            if ($Thumbprint) {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with Certificate'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;CertificateThumbprint=$Thumbprint;CertificateStoreLocation=$Store"
+                            } else {
+                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with appid/client'
+                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
+                            }
+                        }
+
+                        Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
+                        $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
+                    } else {
+                        if (-not $SqlCredential) {
+                            Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
+                            return
+                        }
+                        Write-Message -Level Verbose -Message "Creating renewable token"
+                        $accesstoken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential)
+                    }
+                }
+
+                try {
+                    # this is the way, as recommended by Microsoft
+                    # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    if ($accesstoken) {
+                        $sqlconn.AccessToken = $accesstoken
+                    }
+                    $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                    Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
+                    $null = $serverconn.Connect()
+                    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                    # Make ComputerName easily available in the server object
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $true -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
+                    $currentdb = $server.Databases | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
+                    if ($currentdb) {
+                        Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
+                    }
+                    $server
+                    continue
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+            }
+            #region Safely convert input into instance parameters
+            <#
+            This is a bit ugly, but:
+            In some cases functions would directly pass their own input through when the parameter on the calling function was typed as [object[]].
+            This would break the base parameter class, as it'd automatically be an array and the parameterclass is not designed to handle arrays (Shouldn't have to).
+
+            Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
+            #>
+            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
+                [DbaInstanceParameter]$instance = $instance
+                if ($instance.Type -like "SqlConnection") {
+                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                }
+            } else {
+                [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
+
+                if ($instance.Count -gt 1) {
+                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
+                }
+            }
+            #endregion Safely convert input into instance parameters
+
+            #region Input Object was a server object
+            if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
-                if ($SqlConnectionOnly) { return $instance.InputObject.ConnectionContext.SqlConnectionObject }
-                else { return $instance.InputObject }
+                if ($SqlConnectionOnly) {
+                    $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    continue
+                } else {
+                    $instance.InputObject
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $instance.InputObject.ConnectionContext.Copy(), ($instance.InputObject.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+
+                    # Update cache for instance names
+                    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
+                    }
+                    continue
+                }
             }
+            #endregion Input Object was a server object
+
+            #region Input Object was anything else
             if ($instance.Type -like "SqlConnection") {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     $server.ConnectionContext.Connect()
                 }
-                if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else { return $server }
+                if ($SqlConnectionOnly) {
+                    if ($MinimumVersion -and $server.VersionMajor) {
+                        if ($server.versionMajor -lt $MinimumVersion) {
+                            Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                        }
+                    }
+
+                    if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        Stop-Function -Message "Azure SQL Database not supported" -Continue
+                    }
+                    $server.ConnectionContext.SqlConnectionObject
+                    continue
+                } else {
+                    if (-not $server.ComputerName) {
+                        Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                        Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+                        Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    }
+                    if ($MinimumVersion -and $server.VersionMajor) {
+                        if ($server.versionMajor -lt $MinimumVersion) {
+                            Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                        }
+                    }
+
+                    if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        Stop-Function -Message "Azure SQL Database not supported" -Continue
+                    }
+
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+                    # Update cache for instance names
+                    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
+                    }
+                    $server
+                    continue
+                }
             }
 
-            if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
-            else { $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName }
+            if ($isconnectionstring) {
+                # this is the way, as recommended by Microsoft
+                # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
+                $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
+                $null = $serverconn.Connect()
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+            } elseif (-not $isAzure) {
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
+            }
 
             if ($AppendConnectionString) {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            }
-            else {
-
+            } elseif (-not $isAzure -and -not $isconnectionstring) {
+                # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
-                if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-                if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-                if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-                if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
-                if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
-                if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
-                if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
-                if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-                if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-                if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
-                if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-                if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
-                if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
-                if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-                if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-                if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-                if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
-                if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+                if (Test-Bound -ParameterName 'BatchSeparator') {
+                    $server.ConnectionContext.BatchSeparator = $BatchSeparator
+                }
+                if (Test-Bound -ParameterName 'ConnectTimeout') {
+                    $server.ConnectionContext.ConnectTimeout = $ConnectTimeout
+                }
+                if (Test-Bound -ParameterName 'Database') {
+                    $server.ConnectionContext.DatabaseName = $Database
+                }
+                if (Test-Bound -ParameterName 'EncryptConnection') {
+                    $server.ConnectionContext.EncryptConnection = $true
+                }
+                if (Test-Bound -ParameterName 'LockTimeout') {
+                    $server.ConnectionContext.LockTimeout = $LockTimeout
+                }
+                if (Test-Bound -ParameterName 'MaxPoolSize') {
+                    $server.ConnectionContext.MaxPoolSize = $MaxPoolSize
+                }
+                if (Test-Bound -ParameterName 'MinPoolSize') {
+                    $server.ConnectionContext.MinPoolSize = $MinPoolSize
+                }
+                if (Test-Bound -ParameterName 'MultipleActiveResultSets') {
+                    $server.ConnectionContext.MultipleActiveResultSets = $true
+                }
+                if (Test-Bound -ParameterName 'NetworkProtocol') {
+                    $server.ConnectionContext.NetworkProtocol = $NetworkProtocol
+                }
+                if (Test-Bound -ParameterName 'NonPooledConnection') {
+                    $server.ConnectionContext.NonPooledConnection = $true
+                }
+                if (Test-Bound -ParameterName 'PacketSize') {
+                    $server.ConnectionContext.PacketSize = $PacketSize
+                }
+                if (Test-Bound -ParameterName 'PooledConnectionLifetime') {
+                    $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime
+                }
+                if (Test-Bound -ParameterName 'StatementTimeout') {
+                    $server.ConnectionContext.StatementTimeout = $StatementTimeout
+                }
+                if (Test-Bound -ParameterName 'SqlExecutionModes') {
+                    $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
+                }
+                if (Test-Bound -ParameterName 'TrustServerCertificate') {
+                    $server.ConnectionContext.TrustServerCertificate = $TrustServerCertificate
+                }
+                if (Test-Bound -ParameterName 'WorkstationId') {
+                    $server.ConnectionContext.WorkstationId = $WorkstationId
+                }
+                if (Test-Bound -ParameterName 'ApplicationIntent') {
+                    $server.ConnectionContext.ApplicationIntent = $ApplicationIntent
+                }
 
                 $connstring = $server.ConnectionContext.ConnectionString
-                if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-                if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-                if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
+                if (Test-Bound -ParameterName 'MultiSubnetFailover') {
+                    $connstring = "$connstring;MultiSubnetFailover=True"
+                }
+                if (Test-Bound -ParameterName 'FailoverPartner') {
+                    $connstring = "$connstring;Failover Partner=$FailoverPartner"
+                }
 
                 if ($connstring -ne $server.ConnectionContext.ConnectionString) {
                     $server.ConnectionContext.ConnectionString = $connstring
                 }
 
                 try {
-                    if ($Credential.username -ne $null) {
-                        $username = ($Credential.username).TrimStart("\")
+                    # parse out sql credential to figure out if it's Windows or SQL Login
+                    if ($null -ne $SqlCredential.UserName -and -not $isAzure) {
+                        $username = ($SqlCredential.UserName).TrimStart("\")
 
-                        if ($username -like "*\*") {
-                            $username = $username.Split("\")[1]
-                            $authtype = "Windows Authentication with Credential"
+                        # support both ad\username and username@ad
+                        if ($username -like "*\*" -or $username -like "*@*") {
+                            if ($username -like "*\*") {
+                                $domain, $login = $username.Split("\")
+                                $authtype = "Windows Authentication with Credential"
+                                if ($domain) {
+                                    $formatteduser = "$login@$domain"
+                                } else {
+                                    $formatteduser = $username.Split("\")[1]
+                                }
+                            } else {
+                                $formatteduser = $SqlCredential.UserName
+                            }
+
                             $server.ConnectionContext.LoginSecure = $true
                             $server.ConnectionContext.ConnectAsUser = $true
-                            $server.ConnectionContext.ConnectAsUserName = $username
-                            $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-                        }
-                        else {
+                            $server.ConnectionContext.ConnectAsUserName = $formatteduser
+                            $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+                        } else {
                             $authtype = "SQL Authentication"
                             $server.ConnectionContext.LoginSecure = $false
                             $server.ConnectionContext.set_Login($username)
-                            $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                            $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
                         }
                     }
 
-                    $server.ConnectionContext.Connect()
-                }
-                catch {
-                    $message = $_.Exception.InnerException.InnerException
-                    $message = $message.ToString()
+                    if ($NonPooled) {
+                        # When the Connect method is called, the connection is not automatically released.
+                        # The Disconnect method must be called explicitly to release the connection to the connection pool.
+                        # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
+                        $server.ConnectionContext.Connect()
+                    } elseif ($authtype -eq "Windows Authentication with Credential") {
+                        # Make it connect in a natural way, hard to explain.
+                        # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
+                        $null = $server.Information.Version
+                        if ($server.ConnectionContext.IsOpen -eq $false) {
+                            # Sometimes, however, the above may not connect as promised. Force it.
+                            # See https://github.com/sqlcollaborative/dbatools/pull/4426
+                            $server.ConnectionContext.Connect()
+                        }
+                    } else {
+                        if (-not $isAzure) {
+                            # SqlConnectionObject.Open() enables connection pooling does not support
+                            # alternative Windows Credentials and passes default credentials
+                            # See https://github.com/sqlcollaborative/dbatools/pull/3809
+                            $server.ConnectionContext.SqlConnectionObject.Open()
+                        }
+                    }
+                } catch {
+                    $originalException = $_.Exception
+                    try {
+                        $message = $originalException.InnerException.InnerException.ToString()
+                    } catch {
+                        $message = $originalException.ToString()
+                    }
                     $message = ($message -Split '-->')[0]
                     $message = ($message -Split 'at System.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
-                    throw "Can't connect to $instance`: $message "
-                }
 
-            }
-
-
-
-            if ($loadedSmoVersion -ge 11) {
-                if ($server.VersionMajor -eq 8) {
-                    # 2000
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
-                }
-
-                elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
-                    # 2005 and 2008
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
-                }
-
-                else {
-                    # 2012 and above
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
                 }
             }
 
-            if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-            else { return $server }
+            # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+            [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+
+            # Update cache for instance names
+            if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
+            }
+
+            # Update lots of registered stuff
+            if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                    Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                }
+            }
+
+            # By default, SMO initializes several properties. We push it to the limit and gather a bit more
+            # this slows down the connect a smidge but drastically improves overall performance
+            # especially when dealing with a multitude of servers
+            if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
+                try {
+                    if ($server.VersionMajor -eq 8) {
+                        # 2000
+                        $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsDb.AddRange($Fields2000_Db)
+                        $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                    } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+                        # 2005 and 2008
+                        $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsDb.AddRange($Fields200x_Db)
+                        $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                    } else {
+                        # 2012 and above
+                        $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsDb.AddRange($Fields201x_Db)
+                        $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                        [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                    }
+                } catch {
+                    # perhaps a DLL issue, continue going
+                }
+            }
+
+            if ($SqlConnectionOnly) {
+                $server.ConnectionContext.SqlConnectionObject
+                continue
+            } else {
+                if (-not $server.ComputerName) {
+                    # Not every environment supports .NetName
+                    if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                        try {
+                            $computername = $server.NetName
+                        } catch {
+                            $computername = $instance.ComputerName
+                        }
+                    }
+                    # SQL on Linux is often on docker and the internal name is not useful
+                    if (-not $computername -or $server.HostPlatform -eq "Linux") {
+                        $computername = $instance.ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
+                    Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                }
+            }
+
+            if ($MinimumVersion -and $server.VersionMajor) {
+                if ($server.versionMajor -lt $MinimumVersion) {
+                    Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                }
+            }
+
+            if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                Stop-Function -Message "Azure SQL Database not supported" -Continue
+            }
+
+            $server
+            continue
         }
+        #endregion Input Object was anything else
     }
 }

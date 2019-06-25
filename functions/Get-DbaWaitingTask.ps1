@@ -1,66 +1,60 @@
 function Get-DbaWaitingTask {
     <#
-        .SYNOPSIS
-            Displays waiting task.
+    .SYNOPSIS
+        Displays waiting task.
 
-        .DESCRIPTION
-            This command is based on waiting task T-SQL script published by Paul Randal.
-            Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
+    .DESCRIPTION
+        This command is based on waiting task T-SQL script published by Paul Randal.
+        Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version XXXX or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    .PARAMETER Spid
+        Find the waiting task of one or more specific process ids
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    .PARAMETER IncludeSystemSpid
+        If this switch is enabled, the output will include the system sessions.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Spid
-            Find the waiting task of one or more specific process ids
+    .NOTES
+        Tags: Waits,Task,WaitTask
+        Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
-        .PARAMETER IncludeSystemSpid
-            If this switch is enabled, the output will include the system sessions.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .LINK
+        https://dbatools.io/Get-DbaWaitingTask
 
-        .NOTES
-            Tags: Waits,Task,WaitTask
-            Author: Shawn Melton (@wsmelton)
+    .EXAMPLE
+        PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Returns the waiting task for all sessions on sqlserver2014a
 
-        .LINK
-            https://dbatools.io/Get-DbaWaitingTask
+    .EXAMPLE
+        PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid
 
-        .EXAMPLE
-            Get-DbaWaitingTask -SqlInstance sqlserver2014a
+        Returns the waiting task for all sessions (user and system) on sqlserver2014a
 
-            Returns the waiting task for all sessions on sqlserver2014a
-
-        .EXAMPLE
-            Get-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid
-
-            Returns the waiting task for all sessions (user and system) on sqlserver2014a
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [object[]]$Spid,
         [switch]$IncludeSystemSpid,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -104,12 +98,10 @@ function Get-DbaWaitingTask {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $results = $server.Query($sql)
@@ -119,7 +111,7 @@ function Get-DbaWaitingTask {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Spid         = $row.Spid

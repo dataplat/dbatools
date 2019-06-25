@@ -1,159 +1,151 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJob {
     <#
-.SYNOPSIS
-Remove-DbaAgentJob removes a job.
+    .SYNOPSIS
+        Remove-DbaAgentJob removes a job.
 
-.DESCRIPTION
-Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+    .DESCRIPTION
+        Remove-DbaAgentJob removes a job in the SQL Server Agent.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Job
-The name of the job. Can be null if the the job id is being used.
+    .PARAMETER Job
+        The name of the job. Can be null if the the job id is being used.
 
-.PARAMETER KeepHistory
-Specifies to keep the history for the job. By default is history is deleted.
+    .PARAMETER KeepHistory
+        Specifies to keep the history for the job. By default history is deleted.
 
-.PARAMETER KeepUnusedSchedule
-Specifies to keep the schedules attached to this job if they are not attached to any other job.
-By default the unused schedule is deleted.
+    .PARAMETER KeepUnusedSchedule
+        Specifies to keep the schedules attached to this job if they are not attached to any other job.
+        By default the unused schedule is deleted.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER Mode
+        Default: Strict
+        How strict does the command take lesser issues?
+        Strict: Interrupt if the job specified doesn't exist.
+        Lazy:   Silently skip over jobs that don't exist.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER InputObject
+        Accepts piped input from Get-DbaAgentJob
 
-.PARAMETER EnableException
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job
+    .NOTES
+        Tags: Agent, Job
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Remove-DbaAgentJob
+    .LINK
+        https://dbatools.io/Remove-DbaAgentJob
 
-.EXAMPLE
-Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
-Removes the job from the instance with the name Job1
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
 
-.EXAMPLE
-Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory
-Removes the job but keeps the history
+        Removes the job from the instance with the name Job1
 
-.EXAMPLE
-Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
-Removes the job but keeps the unused schedules
+    .EXAMPLE
+        PS C:\> GetDbaAgentJob -SqlInstance sql1 -Job Job1 | Remove-DbaAgentJob -KeepHistory
 
-.EXAMPLE
-Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1
-Removes the job from multiple servers
+        Removes teh job but keeps the history
 
-.EXAMPLE
-sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1
-Removes the job from multiple servers using pipe line
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+        Removes the job but keeps the unused schedules
 
-    param(
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1
+
+        Removes the job from multiple servers
+
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    param (
         [DbaInstanceParameter[]]$SqlInstance,
-
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-
-        [Parameter(Mandatory = $false)]
         [switch]$KeepHistory,
-
-        [Parameter(Mandatory = $false)]
         [switch]$KeepUnusedSchedule,
-
-        [Parameter(Mandatory = $false)]
-        [switch][Alias('Silent')]$EnableException
+        [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
+        [switch]$EnableException
     )
-
     process {
-
-        foreach ($instance in $sqlinstance) {
-
-            # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($j in $Job) {
-
-                # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
-                }
-                else {
-                    # Get the job
-                    try {
-                        $currentjob = $Server.JobServer.Jobs[$j]
-                    }
-                    catch {
-                        Stop-Function -Message "Something went wrong creating the job" -Target $instance -ErrorRecord $_ -Continue
-                    }
-
-                    # Delete the history
-                    if (-not $KeepHistory) {
-                        Write-Message -Message "Purging job history" -Level Verbose
-                        $currentjob.PurgeHistory()
-                    }
-
-                    # Execute
-                    if ($PSCmdlet.ShouldProcess($instance, "Removing the job on $instance")) {
-                        try {
-                            Write-Message -Message "Removing the job" -Level Verbose
-
-                            if ($KeepUnusedSchedule) {
-                                # Drop the job keeping the unused schedules
-                                Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
-                                $currentjob.Drop($true)
-                            }
-                            else {
-                                # Drop the job removing the unused schedules
-                                Write-Message -Message "Removing job removing unused schedules" -Level Verbose
-                                $currentjob.Drop($false)
-                            }
-
+                    switch ($Mode) {
+                        'Lazy' {
+                            Write-Message -Level Verbose -Message "Job $j doesn't exists on $instance." -Target $instance
                         }
-                        catch {
-                            Stop-Function -Message  "Something went wrong removing the job" -Target $instance -ErrorRecord $_ -Continue
+                        'Strict' {
+                            Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                         }
                     }
                 }
+                $InputObject += ($Server.JobServer.Jobs | Where-Object Name -eq $j)
+            }
+        }
+        foreach ($currentJob in $InputObject) {
+            $j = $currentJob.Name
+            $server = $currentJob.Parent.Parent
 
-            } # foreach object job
-        } # forech object instance
-    } # process
+            if ($PSCmdlet.ShouldProcess($instance, "Removing the job $j from $server")) {
+                try {
+                    $dropHistory = $dropSchedule = 1
 
-    end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
+                    if (Test-Bound -ParameterName KeepHistory) {
+                        Write-Message -Level SomewhatVerbose -Message "Job history will be kept"
+                        $dropHistory = 0
+                    }
+                    if (Test-Bound -ParameterName KeepUnusedSchedule) {
+                        Write-Message -Level SomewhatVerbose -Message "Unused job schedules will be kept"
+                        $dropSchedule = 0
+                    }
+                    Write-Message -Level SomewhatVerbose -Message "Removing job"
+                    $dropJobQuery = ("EXEC dbo.sp_delete_job @job_name = '{0}', @delete_history = {1}, @delete_unused_schedule = {2}" -f $currentJob.Name.Replace("'", "''"), $dropHistory, $dropSchedule)
+                    $server.Databases['msdb'].ExecuteNonQuery($dropJobQuery)
+                    [pscustomobject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Name         = $currentJob.Name
+                        Status       = 'Dropped'
+                    }
+                } catch {
+                    Write-Message -Level Verbose -Message "Could not drop job $job on $server"
+
+                    [pscustomobject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Name         = $currentJob.Name
+                        Status       = "Failed. $(Get-ErrorMessage -Record $_)"
+                    }
+                }
+            }
+        }
     }
 }

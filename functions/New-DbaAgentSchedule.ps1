@@ -1,134 +1,127 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentSchedule {
     <#
-        .SYNOPSIS
-            New-DbaAgentSchedule creates a new schedule in the msdb database.
+    .SYNOPSIS
+        New-DbaAgentSchedule creates a new schedule in the msdb database.
 
-        .DESCRIPTION
-            New-DbaAgentSchedule will help create a new schedule for a job.
-            If the job parameter is not supplied the schedule will not be attached to a job.
+    .DESCRIPTION
+        New-DbaAgentSchedule will help create a new schedule for a job.
+        If the job parameter is not supplied the schedule will not be attached to a job.
 
-        .PARAMETER SqlInstance
-            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-            To use: $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Job
+        The name of the job that has the schedule.
 
-        .PARAMETER Job
-            The name of the job that has the schedule.
+    .PARAMETER Schedule
+        The name of the schedule.
 
-        .PARAMETER Schedule
-            The name of the schedule.
+    .PARAMETER Disabled
+        Set the schedule to disabled. Default is enabled
 
-        .PARAMETER Disabled
-            Set the schedule to disabled. Default is enabled
+    .PARAMETER FrequencyType
+        A value indicating when a job is to be executed.
 
-        .PARAMETER FrequencyType
-            A value indicating when a job is to be executed.
+        Allowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer
 
-            Allowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer
+        If force is used the default will be "Once".
 
-            If force is used the default will be "Once".
+    .PARAMETER FrequencyInterval
+        The days that a job is executed
 
-        .PARAMETER FrequencyInterval
-            The days that a job is executed
+        Allowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
+        The other allowed values are the numbers 1 to 31 for each day of the month.
 
-            Allowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
-            The other allowed values are the numbers 1 to 31 for each day of the month.
+        If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
 
-            If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
+        If force is used the default will be 1.
 
-            If force is used the default will be 1.
+    .PARAMETER FrequencySubdayType
+        Specifies the units for the subday FrequencyInterval.
 
-        .PARAMETER FrequencySubdayType
-            Specifies the units for the subday FrequencyInterval.
+        Allowed values: Time, Seconds, Minutes, or Hours
 
-            Allowed values: Time, Seconds, Minutes, or Hours
+    .PARAMETER FrequencySubdayInterval
+        The number of subday type periods to occur between each execution of a job.
 
-        .PARAMETER FrequencySubdayInterval
-            The number of subday type periods to occur between each execution of a job.
+    .PARAMETER FrequencyRelativeInterval
+        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
-        .PARAMETER FrequencyRelativeInterval
-            A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+        Allowed values: First, Second, Third, Fourth or Last
 
-            Allowed values: First, Second, Third, Fourth or Last
+    .PARAMETER FrequencyRecurrenceFactor
+        The number of weeks or months between the scheduled execution of a job.
 
-        .PARAMETER FrequencyRecurrenceFactor
-            The number of weeks or months between the scheduled execution of a job.
+        FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
 
-            FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
+    .PARAMETER StartDate
+        The date on which execution of a job can begin.
 
-        .PARAMETER StartDate
-            The date on which execution of a job can begin.
+        If force is used the start date will be the current day
 
-            If force is used the start date will be the current day
+    .PARAMETER EndDate
+        The date on which execution of a job can stop.
 
-        .PARAMETER EndDate
-            The date on which execution of a job can stop.
+        If force is used the end date will be '9999-12-31'
 
-            If force is used the end date will be '9999-12-31'
+    .PARAMETER StartTime
+        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
 
-        .PARAMETER StartTime
-            The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-            Example: '010000' for 01:00:00 AM.
-            Example: '140000' for 02:00:00 PM.
+        If force is used the start time will be '00:00:00'
 
-            If force is used the start time will be '00:00:00'
+    .PARAMETER EndTime
+        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        Example: '010000' for 01:00:00 AM.
+        Example: '140000' for 02:00:00 PM.
 
-        .PARAMETER EndTime
-            The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-            Example: '010000' for 01:00:00 AM.
-            Example: '140000' for 02:00:00 PM.
+        If force is used the start time will be '23:59:59'
 
-            If force is used the start time will be '23:59:59'
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Owner
-            The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        It will also remove the any present schedules with the same name for the specific job.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Force
-            The force parameter will ignore some errors in the parameters and assume defaults.
-            It will also remove the any present schedules with the same name for the specific job.
+    .NOTES
+        Tags: Agent, Job, JobStep
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .NOTES
-            Tags: Agent, Job, Job Step
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .LINK
+        https://dbatools.io/New-DbaAgentSchedule
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .EXAMPLE
+        PS C:\> New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
 
-        .LINK
-            https://dbatools.io/New-DbaAgentSchedule
+        Creates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.
 
-        .EXAMPLE
-            New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
+    .EXAMPLE
+        PS C:\> New-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
 
-            Creates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.
-
-        .EXAMPLE
-            New-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
-
-            Create a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.
+        Create a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -150,10 +143,12 @@ function New-DbaAgentSchedule {
         [string]$StartTime,
         [string]$EndTime,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # if a Schedule is not provided there is no much point
         if (!$Schedule) {
             Stop-Function -Message "A schedule was not provided! Please provide a schedule name."
@@ -189,7 +184,7 @@ function New-DbaAgentSchedule {
             }
         }
 
-        # Check of the relative FrequencyInterval value is of type string and set the integer value
+        # Check if the relative FrequencyInterval value is of type string and set the integer value
         [int]$FrequencyRelativeInterval =
         switch ($FrequencyRelativeInterval) {
             "First" { 1 }
@@ -198,7 +193,7 @@ function New-DbaAgentSchedule {
             "Fourth" { 8 }
             "Last" { 16 }
             "Unused" { 0 }
-            default {0}
+            default { 0 }
         }
 
         # Check if the interval is valid
@@ -212,8 +207,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
-            }
-            else {
+            } else {
                 Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor (parameter FrequencyRecurrenceFactor) needs to be at least one when using a weekly or monthly interval." -Target $SqlInstance
                 return
             }
@@ -223,8 +217,7 @@ function New-DbaAgentSchedule {
         if (($FrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
             return
-        }
-        elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+        } elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
             return
         }
@@ -236,8 +229,8 @@ function New-DbaAgentSchedule {
 
             # Create the interval to hold the value(s)
             switch ($FrequencyInterval) {
-                "EveryDay" { $Interval = 1}
-                default {$Interval = 1 }
+                "EveryDay" { $Interval = 1 }
+                default { $Interval = 1 }
             }
 
         }
@@ -260,7 +253,7 @@ function New-DbaAgentSchedule {
                     "Saturday" { $Interval += 64 }
                     "Weekdays" { $Interval = 62 }
                     "Weekend" { $Interval = 65 }
-                    "EveryDay" {$Interval = 127 }
+                    "EveryDay" { $Interval = 127 }
                     1 { $Interval += 1 }
                     2 { $Interval += 2 }
                     4 { $Interval += 4 }
@@ -270,7 +263,7 @@ function New-DbaAgentSchedule {
                     64 { $Interval += 64 }
                     62 { $Interval = 62 }
                     65 { $Interval = 65 }
-                    127 {$Interval = 127 }
+                    127 { $Interval = 127 }
                     default { $Interval = 0 }
                 }
             }
@@ -285,7 +278,7 @@ function New-DbaAgentSchedule {
             foreach ($Item in $FrequencyInterval) {
                 $FrequencyInterval
                 switch ($Item) {
-                    {[int]$_ -ge 1 -and [int]$_ -le 31} { $Interval = [int]$Item }
+                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $Interval = [int]$Item }
                 }
             }
 
@@ -329,8 +322,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyType must be set to at least [Once]. Setting it to 'Once'." -Level Warning
                 $FrequencyType = 1
-            }
-            else {
+            } else {
                 Stop-Function -Message "Parameter FrequencyType must be set to at least [Once]" -Target $SqlInstance
                 return
             }
@@ -341,8 +333,7 @@ function New-DbaAgentSchedule {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Level Warning
                 $Interval = 1
-            }
-            else {
+            } else {
                 Stop-Function -Message "Parameter FrequencyInterval must be provided for a recurring schedule." -Target $SqlInstance
                 return
             }
@@ -356,12 +347,10 @@ function New-DbaAgentSchedule {
         if (-not $StartDate -and $Force) {
             $StartDate = Get-Date -Format 'yyyyMMdd'
             Write-Message -Message "Start date was not set. Force is being used. Setting it to $StartDate" -Level Verbose
-        }
-        elseif (-not $StartDate) {
+        } elseif (-not $StartDate) {
             Stop-Function -Message "Please enter a start date or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($StartDate -notmatch $RegexDate) {
+        } elseif ($StartDate -notmatch $RegexDate) {
             Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
         }
@@ -370,8 +359,7 @@ function New-DbaAgentSchedule {
         if (-not $EndDate -and $Force) {
             $EndDate = '99991231'
             Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
-        }
-        elseif (-not $EndDate) {
+        } elseif (-not $EndDate) {
             Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance
             return
         }
@@ -379,8 +367,7 @@ function New-DbaAgentSchedule {
         elseif ($EndDate -notmatch $RegexDate) {
             Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
-        }
-        elseif ($EndDate -lt $StartDate) {
+        } elseif ($EndDate -lt $StartDate) {
             Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
@@ -389,12 +376,10 @@ function New-DbaAgentSchedule {
         if (-not $StartTime -and $Force) {
             $StartTime = '000000'
             Write-Message -Message "Start time was not set. Force is being used. Setting it to $StartTime" -Level Verbose
-        }
-        elseif (-not $StartTime) {
+        } elseif (-not $StartTime) {
             Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($StartTime -notmatch $RegexTime) {
+        } elseif ($StartTime -notmatch $RegexTime) {
             Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
@@ -403,14 +388,26 @@ function New-DbaAgentSchedule {
         if (-not $EndTime -and $Force) {
             $EndTime = '235959'
             Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
-        }
-        elseif (-not $EndTime) {
+        } elseif (-not $EndTime) {
             Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
             return
-        }
-        elseif ($EndTime -notmatch $RegexTime) {
+        } elseif ($EndTime -notmatch $RegexTime) {
             Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
+        }
+
+        #Format dates and times
+        if ($StartDate) {
+            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($EndDate) {
+            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
+        }
+        if ($StartTime) {
+            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($EndTime) {
+            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
         }
     }
 
@@ -419,12 +416,10 @@ function New-DbaAgentSchedule {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if the jobs parameter is set
@@ -435,8 +430,7 @@ function New-DbaAgentSchedule {
                     # Check if the job exists
                     if ($Server.JobServer.Jobs.Name -notcontains $j) {
                         Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-                    }
-                    else {
+                    } else {
                         # Create the job schedule object
                         try {
                             # Get the job
@@ -450,8 +444,7 @@ function New-DbaAgentSchedule {
                                         # Removing schedule
                                         Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Schedule $Schedule -Force:$Force
                                     }
-                                }
-                                else {
+                                } else {
                                     Stop-Function -Message "Schedule $Schedule already exists for job $j on instance $instance" -Target $instance -ErrorRecord $_ -Continue
                                 }
                             }
@@ -459,8 +452,7 @@ function New-DbaAgentSchedule {
                             # Create the job schedule
                             $JobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($smoJob, $Schedule)
 
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Something went wrong creating the job schedule $Schedule for job $j." -Target $instance -ErrorRecord $_ -Continue
                         }
 
@@ -468,8 +460,7 @@ function New-DbaAgentSchedule {
                         if ($Disabled) {
                             Write-Message -Message "Setting job schedule to disabled" -Level Verbose
                             $JobSchedule.IsEnabled = $false
-                        }
-                        else {
+                        } else {
                             Write-Message -Message "Setting job schedule to enabled" -Level Verbose
                             $JobSchedule.IsEnabled = $true
                         }
@@ -505,25 +496,21 @@ function New-DbaAgentSchedule {
                         }
 
                         if ($StartDate) {
-                            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
                             $JobSchedule.ActiveStartDate = $StartDate
                         }
 
                         if ($EndDate) {
-                            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                             Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
                             $JobSchedule.ActiveEndDate = $EndDate
                         }
 
                         if ($StartTime) {
-                            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
                             $JobSchedule.ActiveStartTimeOfDay = $StartTime
                         }
 
                         if ($EndTime) {
-                            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                             Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
                             $JobSchedule.ActiveEndTimeOfDay = $EndTime
                         }
@@ -537,8 +524,7 @@ function New-DbaAgentSchedule {
                                 $JobSchedule.Create()
 
                                 Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Something went wrong adding the schedule" -Target $instance -ErrorRecord $_ -Continue
 
                             }
@@ -557,8 +543,7 @@ function New-DbaAgentSchedule {
                 if ($Disabled) {
                     Write-Message -Message "Setting job schedule to disabled" -Level Verbose
                     $JobSchedule.IsEnabled = $false
-                }
-                else {
+                } else {
                     Write-Message -Message "Setting job schedule to enabled" -Level Verbose
                     $JobSchedule.IsEnabled = $true
                 }
@@ -594,25 +579,21 @@ function New-DbaAgentSchedule {
                 }
 
                 if ($StartDate) {
-                    $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
                     Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
                     $JobSchedule.ActiveStartDate = $StartDate
                 }
 
                 if ($EndDate) {
-                    $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
                     Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
                     $JobSchedule.ActiveEndDate = $EndDate
                 }
 
                 if ($StartTime) {
-                    $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
                     Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
                     $JobSchedule.ActiveStartTimeOfDay = $StartTime
                 }
 
                 if ($EndTime) {
-                    $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
                     Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
                     $JobSchedule.ActiveEndTimeOfDay = $EndTime
                 }
@@ -625,8 +606,7 @@ function New-DbaAgentSchedule {
                         $JobSchedule.Create()
 
                         Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
                     }
 

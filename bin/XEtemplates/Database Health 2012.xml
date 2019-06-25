@@ -1,0 +1,261 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+   <event_session name="Database Health 2012" maxMemory="4" eventRetentionMode="allowMultipleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="perNode">
+   <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Performance Store</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Database Health 2012</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Similar to system_health but for SQL Server 2012 databases by Ola Hallengren. This Extended Event captures most of the valuable data for troubleshooting such as deadlocks, blocking processes, slow statements, errors, file size changes, info for tempdb troubleshooting etc. To capture blocking processes, configure blocked threshold (Set-DbaSpConfigure -SqlInstance sql2017 -ConfigName BlockedProcessThreshold -Value 5)</templateDescription>
+      <event package="sqlos" name="wait_info">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="query_hash_signed" />
+         <action package="sqlserver" name="query_plan_hash_signed" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="tsql_frame" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <and>
+                  <and>
+                     <and>
+                        <and>
+                           <and>
+                              <and>
+                                 <leaf>
+                                    <comparator name="equal_uint64" package="package0" />
+                                    <event name="wait_info" package="sqlos" field="opcode" />
+                                    <value>1</value>
+                                 </leaf>
+                                 <leaf>
+                                    <comparator name="equal_boolean" package="package0" />
+                                    <global name="is_system" package="sqlserver" />
+                                    <value>false</value>
+                                 </leaf>
+                              </and>
+                              <leaf>
+                                 <comparator name="greater_than_equal_uint64" package="package0" />
+                                 <event name="wait_info" package="sqlos" field="duration" />
+                                 <value>5000</value>
+                              </leaf>
+                           </and>
+                           <leaf>
+                              <comparator name="not_equal_uint64" package="package0" />
+                              <event name="wait_info" package="sqlos" field="wait_type" />
+                              <value>225</value>
+                           </leaf>
+                        </and>
+                        <leaf>
+                           <comparator name="not_equal_uint64" package="package0" />
+                           <event name="wait_info" package="sqlos" field="wait_type" />
+                           <value>223</value>
+                        </leaf>
+                     </and>
+                     <leaf>
+                        <comparator name="not_equal_uint64" package="package0" />
+                        <event name="wait_info" package="sqlos" field="wait_type" />
+                        <value>377</value>
+                     </leaf>
+                  </and>
+                  <leaf>
+                     <comparator name="not_equal_uint64" package="package0" />
+                     <event name="wait_info" package="sqlos" field="wait_type" />
+                     <value>645</value>
+                  </leaf>
+               </and>
+               <leaf>
+                  <comparator name="not_equal_uint64" package="package0" />
+                  <event name="wait_info" package="sqlos" field="wait_type" />
+                  <value>738</value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlos" name="wait_info_external">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="query_hash_signed" />
+         <action package="sqlserver" name="query_plan_hash_signed" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="tsql_frame" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <and>
+                  <leaf>
+                     <comparator name="equal_uint64" package="package0" />
+                     <event name="wait_info_external" package="sqlos" field="opcode" />
+                     <value>1</value>
+                  </leaf>
+                  <leaf>
+                     <comparator name="equal_boolean" package="package0" />
+                     <global name="is_system" package="sqlserver" />
+                     <value>false</value>
+                  </leaf>
+               </and>
+               <leaf>
+                  <comparator name="greater_than_equal_uint64" package="package0" />
+                  <event name="wait_info_external" package="sqlos" field="duration" />
+                  <value>5000</value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="blocked_process_report" />
+      <event package="sqlserver" name="database_file_size_change">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="username" />
+         <parameter name="collect_database_name" value="1" />
+      </event>
+      <event package="sqlserver" name="error_reported">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="tsql_frame" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_int64" package="package0" />
+               <event name="error_reported" package="sqlserver" field="severity" />
+               <value>10</value>
+            </leaf>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="module_end">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="tsql_frame" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <leaf>
+                  <comparator name="equal_boolean" package="package0" />
+                  <global name="is_system" package="sqlserver" />
+                  <value>false</value>
+               </leaf>
+               <leaf>
+                  <comparator name="greater_than_equal_uint64" package="package0" />
+                  <event name="module_end" package="sqlserver" field="duration" />
+                  <value>5000000</value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="rpc_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <leaf>
+                  <comparator name="equal_boolean" package="package0" />
+                  <global name="is_system" package="sqlserver" />
+                  <value>false</value>
+               </leaf>
+               <or>
+                  <leaf>
+                     <comparator name="greater_than_equal_uint64" package="package0" />
+                     <event name="rpc_completed" package="sqlserver" field="duration" />
+                     <value>5000000</value>
+                  </leaf>
+                  <leaf>
+                     <comparator name="not_equal_uint64" package="package0" />
+                     <event name="rpc_completed" package="sqlserver" field="result" />
+                     <value>0</value>
+                  </leaf>
+               </or>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="sql_batch_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="client_pid" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="request_id" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_resource_group_id" />
+         <action package="sqlserver" name="transaction_id" />
+         <action package="sqlserver" name="username" />
+         <parameter name="collect_batch_text" value="1" />
+         <predicate>
+            <and>
+               <leaf>
+                  <comparator name="equal_boolean" package="package0" />
+                  <global name="is_system" package="sqlserver" />
+                  <value>false</value>
+               </leaf>
+               <or>
+                  <leaf>
+                     <comparator name="greater_than_equal_uint64" package="package0" />
+                     <event name="sql_batch_completed" package="sqlserver" field="duration" />
+                     <value>5000000</value>
+                  </leaf>
+                  <leaf>
+                     <comparator name="not_equal_uint64" package="package0" />
+                     <event name="sql_batch_completed" package="sqlserver" field="result" />
+                     <value>0</value>
+                  </leaf>
+               </or>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="xml_deadlock_report" />
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="Database Health 2012" />
+         <parameter name="max_file_size" value="5" />
+         <parameter name="max_rollover_files" value="100" />
+      </target>
+   </event_session>
+</event_sessions>

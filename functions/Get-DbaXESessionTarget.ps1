@@ -1,74 +1,71 @@
 function Get-DbaXESessionTarget {
     <#
     .SYNOPSIS
-    Get a list of Extended Events Session Targets
+        Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
 
     .DESCRIPTION
-    Retrieves a list of Extended Events Session Targets
+        Retrieves a list of Extended Events Session Targets from the specified SQL Server instance(s).
 
     .PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-    SqlCredential object to connect as. If not specified, current Windows login will be used.
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Session
-    Only return a specific session. This parameter is auto-populated.
+        Only return a specific session. Options for this parameter are auto-populated from the server.
 
     .PARAMETER Target
-    Only return a specific target.
+        Only return a specific target.
 
-    .PARAMETER SessionObject
-    Internal pipeline parameter
+    .PARAMETER InputObject
+        Specifies an XE session returned by Get-DbaXESession to search.
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Xevent
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Get-DbaXESessionTarget
+        https://dbatools.io/Get-DbaXESessionTarget
 
     .EXAMPLE
-    Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
+        PS C:\> Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
 
-    Shows targets for the system_health session on ServerA\sql987
-
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget
-
-    Returns the targets for the system_health session on sql2016
+        Shows targets for the system_health session on ServerA\sql987.
 
     .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
+        PS C:\> Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget
 
-    Return only the package0.event_file target for the system_health session on sql2016
-#>
+        Returns the targets for the system_health session on sql2016.
+
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
+
+        Return only the package0.event_file target for the system_health session on sql2016.
+
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Session,
         [string[]]$Target,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionObject,
-        [switch][Alias('Silent')]$EnableException
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
+        [switch]$EnableException
     )
 
     begin {
-        if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-            Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
-            return
-        }
-
         function Get-Target {
             [CmdletBinding()]
             param (
@@ -102,11 +99,11 @@ function Get-DbaXESessionTarget {
                                 $file = "$directory\$file"
                             }
                             $filecollection += $file
-                            $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                            $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                         }
                     }
 
-                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name Session -Value $sessionname
@@ -124,31 +121,8 @@ function Get-DbaXESessionTarget {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $xsessionEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-
-            Write-Message -Level Verbose -Message "Getting XEvents Session Targets on $instance."
-
-            $xsessions = $xsessionEStore.sessions
-
-            if ($Session) {
-                $xsessions = $xsessions | Where-Object { $_.Name -in $Session }
-            }
-
-            Get-Target -Sessions $xsessions -Session $Session -Server $server -Target $Target
+            $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session
         }
-
-        if ((Test-Bound -ParameterName SqlInstance -Not)) {
-            Get-Target -Sessions $SessionObject -Session $Session -Target $Target
-        }
+        Get-Target -Sessions $InputObject -Session $Session -Target $Target
     }
 }

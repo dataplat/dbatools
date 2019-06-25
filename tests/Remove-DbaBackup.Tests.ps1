@@ -5,11 +5,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Remove-DbaBackup).Parameters.Keys
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Path', 'BackupFileExtension', 'RetentionPeriod', 'CheckArchiveBit', 'RemoveEmptyBackupFolder', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     Context "It's Confirm impact should be medium" {
@@ -33,11 +33,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         { Remove-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '11y' -EnableException } | Should Throw "units invalid"
     }
     Context "BackupFileExtension validation" {
-        { Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException } | Should Not Throw
+        { Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } | Should Not Throw
     }
     Context "BackupFileExtension message validation" {
-        $warnmessage = Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' 3>&1
-        $warnmessage | Should BeLike '*period*'
+        Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -WarningAction SilentlyContinue -WarningVariable warnmessage
+        $warnmessage | Should -Match period
     }
     Context "Files are removed" {
         for ($i = 1; $i -le 5; $i++) {

@@ -1,23 +1,48 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$commandname Unit Tests" -Tag "UnitTests", Set-DbaMaxDop {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxDop', 'InputObject', 'AllDatabases', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+
+    Context "Input validation" {
+        BeforeAll {
+            Mock Stop-Function { } -ModuleName dbatools
+        }
+        It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
+            Set-DbaMaxDop -SqlInstance $script:instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should Be
+        }
+        It "Validates that Stop Function Mock has been called" {
+            $assertMockParams = @{
+                'CommandName' = 'Stop-Function'
+                'Times'       = 1
+                'Exactly'     = $true
+                'Module'      = 'dbatools'
+            }
+            Assert-MockCalled @assertMockParams
+        }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $singledb = "dbatoolsci_singledb"
         $dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $singledb
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance1
-
         foreach ($db in $dbs) {
-            $server.Query("CREATE DATABASE $db")
-            $server2.Query("CREATE DATABASE $db")
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db"
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "CREATE DATABASE $db"
         }
-
     }
     AfterAll {
-        # these for sure
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
     }
@@ -46,26 +71,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It 'Returns 8 for each database' {
                 $result.DatabaseMaxDop | Should Be 8
             }
-        }
-    }
-}
-
-Describe "$commandname Unit Tests" -Tags "UnitTests", Set-DbaMaxDop {
-    Context "Input validation" {
-        BeforeAll {
-            Mock Stop-Function { } -ModuleName dbatools
-        }
-        It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
-            Set-DbaMaxDop -SqlInstance $script:instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should Be
-        }
-        It "Validates that Stop Function Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Stop-Function'
-                'Times'       = 1
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
         }
     }
 }

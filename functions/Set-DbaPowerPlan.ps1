@@ -1,167 +1,221 @@
 function Set-DbaPowerPlan {
     <#
-        .SYNOPSIS
-            Sets the SQL Server OS's Power Plan.
+    .SYNOPSIS
+        Sets the SQL Server OS's Power Plan.
 
-        .DESCRIPTION
-            Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
+    .DESCRIPTION
+        Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
 
-            If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
+        If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
 
-            References:
-            https://support.microsoft.com/en-us/kb/2207548
-            http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
+        References:
+        https://support.microsoft.com/en-us/kb/2207548
+        http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
-        .PARAMETER ComputerName
-            The server(s) to set the Power Plan on.
+    .PARAMETER ComputerName
+        The server(s) to set the Power Plan on.
 
-        .PARAMETER PowerPlan
-            Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
+    .PARAMETER Credential
+        Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
-        .PARAMETER CustomPowerPlan
-            Specifies the name of a custom Power Plan to use.
+    .PARAMETER PowerPlan
+        Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER CustomPowerPlan
+        Specifies the name of a custom Power Plan to use.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER InputObject
+        Enables piping from Get-DbaPowerPlan
 
-        .NOTES
-            Requires: WMI access to servers
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .LINK
-            https://dbatools.io/Set-DbaPowerPlan
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .EXAMPLE
-            Set-DbaPowerPlan -ComputerName sqlserver2014a
+    .NOTES
+        Tags: PowerPlan, OS, Configure
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Sets the Power Plan to High Performance. Skips it if its already set.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
+        Requires: WMI access to servers
 
-            Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
+    .LINK
+        https://dbatools.io/Set-DbaPowerPlan
+
+    .EXAMPLE
+        PS C:\> Set-DbaPowerPlan -ComputerName sql2017
+
+        Sets the Power Plan to High Performance. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -PowerPlan Balanced
+
+        Sets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential 'Domain\User'
+        PS C:\> Set-DbaPowerPlan -ComputerName sql2017 -Credential $cred
+
+        Connects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
+
+        Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
-        [object[]]$ComputerName,
-        [ValidateSet('High Performance', 'Balanced', 'Power saver')]
+        [parameter(ValueFromPipeline)]
+        [DbaInstance[]]$ComputerName,
+        [PSCredential]$Credential,
         [string]$PowerPlan = 'High Performance',
-        [string]$CustomPowerPlan
+        [string]$CustomPowerPlan,
+        [parameter(ValueFromPipeline)]
+        [pscustomobject]$InputObject,
+        [switch]$EnableException
     )
 
     begin {
-        if ($CustomPowerPlan.Length -gt 0) {
-            $PowerPlan = $CustomPowerPlan
+        if ($CustomPowerPlan) {
+            $powerPlanRequested = $CustomPowerPlan
+        } else {
+            $powerPlanRequested = $PowerPlan
         }
+        function Set-DbaPowerPlanInternal {
+            [CmdletBinding(SupportsShouldProcess)]
+            param (
+                [string]$ComputerName,
+                [PSCredential]$Credential
+            )
 
-        function Set-DbaPowerPlan {
-            try {
-                Write-Verbose "Testing connection to $server and resolving IP address."
-                $ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-
+            if (Test-Bound -ParameterName Credential) {
+                $IncludeCred = $true
             }
-            catch {
-                Write-Warning "Can't connect to $server."
+            try {
+                Write-Message -Level Verbose -Message "Testing connection to $computer"
+                $computerResolved = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+
+                $computerResolved = $computerResolved.FullComputerName
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $computer
                 return
             }
 
+            $splatDbaCmObject = @{
+                ComputerName    = $computerResolved
+                EnableException = $true
+            }
+            if ($IncludeCred) {
+                $splatDbaCmObject["Credential"] = $Credential
+            }
+
             try {
-                Write-Verbose "Getting Power Plan information from $server."
-                $query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
-                $currentplan = Get-WmiObject -Namespace Root\CIMV2\Power -ComputerName $ipaddr -Query $query -ErrorAction SilentlyContinue
+                Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
+                $currentplan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" | Where-Object IsActive -eq 'True'
                 $currentplan = $currentplan.ElementName
-            }
-            catch {
-                Write-Warning "Can't connect to WMI on $server."
-                return
+            } catch {
+                if ($_.Exception -match "namespace") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
+                } else {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+                }
             }
 
-            if ($currentplan -eq $null) {
+            if ($null -eq $currentplan) {
                 # the try/catch above isn't working, so make it silent and handle it here.
-                Write-Warning "Cannot get Power Plan for $server."
+                Stop-Function -Message "Cannot get Power Plan for $computer." -Category ConnectionError -ErrorRecord $_ -Target $computer
                 return
             }
 
             $planinfo = [PSCustomObject]@{
-                Server            = $server
+                ComputerName      = $computer
                 PreviousPowerPlan = $currentplan
-                ActivePowerPlan   = $PowerPlan
+                ActivePowerPlan   = $powerPlanRequested
             }
+            if ($Pscmdlet.ShouldProcess($powerPlanRequested, "Setting Powerplan on $computer")) {
+                if ($powerPlanRequested -ne $currentplan) {
+                    if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $CurrentPlan to $powerPlanRequested")) {
+                        Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan"
+                        if ($IncludeCred) {
+                            $cimSession = New-CimSession -ComputerName $computer -ErrorAction SilentlyContinue -Credential $Credential
+                        } else {
+                            $cimSession = New-CimSession -ComputerName $computer -ErrorAction SilentlyContinue
+                        }
+                        if (-not $cimSession) {
+                            Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
+                            $sessionOption = New-CimSessionOption -Protocol DCom
+                            if ($IncludeCred) {
+                                $cimSession = New-CimSession -ComputerName $computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                            } else {
+                                $cimSession = New-CimSession -ComputerName $computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+                            }
+                        }
+                        if ($cimSession) {
+                            Write-Message -Level Verbose -Message "Setting Power Plan to $powerPlanRequested."
 
-            if ($PowerPlan -ne $currentplan) {
-                if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
-                    try {
-                        Write-Verbose "Setting Power Plan to $PowerPlan."
-                        $null = (Get-WmiObject -Name root\cimv2\power -ComputerName $ipaddr -Class Win32_PowerPlan -Filter "ElementName='$PowerPlan'").Activate()
+                            $cimInstance = Get-CimInstance -Namespace root\cimv2\power -ClassName win32_PowerPlan -Filter "ElementName = '$powerPlanRequested'" -CimSession $CIMSession
+                            if ($cimInstance) {
+                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession
+                                if (!$cimResult) {
+                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
+                                    return
+                                }
+                            } else {
+                                Stop-Function -Message "Couldn't find the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
+                                return
+                            }
+                        } else {
+                            Stop-Function -Message "Couldn't set Power Plan on $computer." -Category ConnectionError -ErrorRecord $_ -Target $computer
+                            return
+                        }
                     }
-                    catch {
-                        Write-Exception $_
-                        Write-Warning "Couldn't set Power Plan on $server."
-                        return
+                } else {
+                    if ($Pscmdlet.ShouldProcess($computer, "Stating power plan is already set to $powerPlanRequested, won't change.")) {
+                        Write-Message -Level Verbose -Message "PowerPlan on $computer is already set to $powerPlanRequested. Skipping."
                     }
                 }
-            }
-            else {
-                if ($Pscmdlet.ShouldProcess($server, "Stating power plan is already set to $PowerPlan, won't change.")) {
-                    Write-Warning "PowerPlan on $server is already set to $PowerPlan. Skipping."
-                }
-            }
 
-            return $planinfo
+                return $planInfo
+            }
         }
-
-
-        $collection = New-Object System.Collections.ArrayList
-        $processed = New-Object System.Collections.ArrayList
     }
 
     process {
-        foreach ($server in $ComputerName) {
-            if ($server -match 'Server\=') {
-                Write-Verbose "Matched that value was piped from Test-DbaPowerPlan."
-                # I couldn't properly unwrap the output from  Test-DbaPowerPlan so here goes.
-                $lol = $server.Split("\;")[0]
-                $lol = $lol.TrimEnd("\}")
-                $lol = $lol.TrimStart("\@\{Server")
-                # There was some kind of parsing bug here, don't clown
-                $server = $lol.TrimStart("\=")
-            }
+        # uses cim commands
 
-            if ($server -match '\\') {
-                $server = $server.Split('\\')[0]
-            }
 
-            if ($server -notin $processed) {
-                $null = $processed.Add($server)
-                Write-Verbose "Connecting to $server."
-            }
-            else {
-                continue
-            }
+        if (Test-Bound -ParameterName ComputerName) {
+            $InputObject += Get-DbaPowerPlan -ComputerName $ComputerName -Credential $Credential
+        }
 
-            $data = Set-DbaPowerPlan $server
+        foreach ($pplan in $InputObject) {
+            $computer = $pplan.ComputerName
+            $Credential = $pplan.Credential
+            Write-Message -Level Verbose -Message "Calling Set-DbaPowerPlanInternal for $computer"
+            if (Test-Bound -ParameterName Credential) {
+                $data = Set-DbaPowerPlanInternal -ComputerName $Computer -Credential $Credential
+            } else {
+                $data = Set-DbaPowerPlanInternal -ComputerName $Computer
+            }
 
             if ($data.Count -gt 1) {
-                $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
+                $data.GetEnumerator() | ForEach-Object {
+                    $_
+                }
+            } else {
+                $data
             }
-            else {
-                $null = $collection.Add($data)
-            }
-        }
-    }
-
-    end {
-        If ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-            return $collection
         }
     }
 }
