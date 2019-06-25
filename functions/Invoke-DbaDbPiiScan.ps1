@@ -265,7 +265,7 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
-                        $knownName = $null
+
                         if ($knownNames.Count -ge 1) {
                             # Go through the first check to see if any column is found with a known type
                             foreach ($knownName in $knownNames) {
@@ -295,6 +295,8 @@ function Invoke-DbaDbPiiScan {
 
                                 }
 
+                                $knownName = $null
+
                             }
                         } else {
                             Write-Message -Level Verbose -Message "No known names found to perform check on"
@@ -318,7 +320,7 @@ function Invoke-DbaDbPiiScan {
 
                                 # Check if there is any data
                                 if ($dataset.Count -ge 1) {
-                                    $patternobject = $null
+
                                     # Loop through the patterns
                                     foreach ($patternobject in $patterns) {
 
@@ -344,6 +346,8 @@ function Invoke-DbaDbPiiScan {
                                             }
 
                                         }
+
+                                        $patternobject = $null
 
                                     }
 
