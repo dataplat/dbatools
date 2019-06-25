@@ -112,7 +112,7 @@ function Get-SqlInstanceUpdate {
                     $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
                     $targetSP = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
                     if ($Type -eq 'CumulativeUpdate') {
-                        if ($currentVersion.SPLevel -notcontains 'LATEST') {
+                        if ($currentVersion.SPLevel -ne $targetSP) {
                             $currentSP = $currentVersion.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
                             Stop-Function -Message "Current SP version $currentMajorVersion$currentSP is not the latest available. Make sure to upgade to latest SP level before applying latest CU." -Continue
                         }
