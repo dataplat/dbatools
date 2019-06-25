@@ -42,9 +42,9 @@ function Invoke-DbatoolsFormatter {
         if (!($HasInvokeFormatter)) {
             Stop-Function -Message "You need a recent version of PSScriptAnalyzer installed"
         }
-        $CBHRex = [regex]'(?smi)\s+<#[^#]*#>'
-        $CBHStartRex = [regex]'(?<spaces>[ ]+)<#'
-        $CBHEndRex = [regex]'(?<spaces>[ ]*)#>'
+        $CBHRex = [regex]'(?smi)\s+\<\#[^#]*\#\>'
+        $CBHStartRex = [regex]'(?<spaces>[ ]+)\<\#'
+        $CBHEndRex = [regex]'(?<spaces>[ ]*)\#\>'
         $OSEOL = "`n"
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
