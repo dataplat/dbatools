@@ -86,6 +86,9 @@ function Export-DbaInstance {
     .PARAMETER BatchSeparator
         Batch separator for scripting output. "GO" by default.
 
+    .PARAMETER NoPrefix
+        If this switch is used, the scripts will not include prefix information containing creator and datetime.
+
     .PARAMETER ScriptingOption
         Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
 
@@ -119,6 +122,10 @@ function Export-DbaInstance {
 
         Exports everything but logins and database restore scripts to C:\dr\sqlcluster
 
+.EXAMPLE
+        PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Path C:\servers\ -NoPrefix
+
+        Exports everything to C:\servers but scripts do not include prefix information.
     #>
     [CmdletBinding()]
     param (
