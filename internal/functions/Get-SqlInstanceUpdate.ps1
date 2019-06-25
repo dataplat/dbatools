@@ -35,7 +35,7 @@ function Get-SqlInstanceUpdate {
         }
         $computer = $ComputerName.ComputerName
         $verCount = ($Component | Measure-Object).Count
-        $verDesc = ($Component | Foreach-Object { "$($_.Version.NameLevel) ($($_.Version.Build))" }) -join ', '
+        $verDesc = ($Component | ForEach-Object { "$($_.Version.NameLevel) ($($_.Version.Build))" }) -join ', '
         Write-Message -Level Debug -Message "Selected $verCount existing SQL Server version(s): $verDesc"
 
         # Group by version
@@ -92,7 +92,7 @@ function Get-SqlInstanceUpdate {
                     $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
                 } else {
                     #Service pack not present - using current SP level
-                    $targetSP = $currentVersion.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
+                    $targetSP = $currentVersion.SPLevel
                     $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
                 }
             } elseif ($ServicePack -gt 0) {
@@ -110,18 +110,18 @@ function Get-SqlInstanceUpdate {
                 if (!$latestCU.Compliant) {
                     #more recent build is found, get KB number depending on what is the current upgrade $Type
                     $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
-                    $targetSP = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
+                    $targetSP = $targetKB.SPLevel
                     if ($Type -eq 'CumulativeUpdate') {
-                        if ($currentVersion.SPLevel -notcontains 'LATEST') {
-                            $currentSP = $currentVersion.SPLevel | Where-Object { $_ -ne 'LATEST' } | Select-Object -First 1
+                        if ($currentVersion.SPLevel -ne $latestCU.SPTarget) {
+                            $currentSP = $currentVersion.SPLevel
                             Stop-Function -Message "Current SP version $currentMajorVersion$currentSP is not the latest available. Make sure to upgade to latest SP level before applying latest CU." -Continue
                         }
-                        $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
+                        $targetLevel = "$($targetKB.SPLevel)$($targetKB.CULevel)"
                         Write-Message -Level Debug -Message "Found a latest Cumulative Update $targetLevel (KB$($targetKB.KBLevel))"
                     } elseif ($Type -eq 'ServicePack') {
                         $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
-                        $targetLevel = $targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' }
-                        if ($currentVersion.SPLevel -contains 'LATEST') {
+                        $targetLevel = $targetKB.SPLevel
+                        if ($currentVersion.SPLevel -eq $latestCU.SPTarget) {
                             Write-Message -Message "No need to update $currentMajorVersion to $targetLevel - it's already on the latest SP version" -Level Verbose
                             continue
                         }
@@ -137,7 +137,7 @@ function Get-SqlInstanceUpdate {
                     Stop-Function -Message "Couldn't find an exact build match with specified parameters while updating $currentMajorVersion" -Continue
                 }
                 $output.TargetVersion = $targetKB
-                $targetLevel = "$($targetKB.SPLevel | Where-Object { $_ -ne 'LATEST' })$($targetKB.CULevel)"
+                $targetLevel = "$($targetKB.SPLevel)$($targetKB.CULevel)"
                 $targetKBLevel = $targetKB.KBLevel | Select-Object -First 1
                 Write-Message -Level Verbose -Message "Found applicable upgrade for SQL$($targetKB.NameLevel) to $targetLevel (KB$($targetKBLevel))"
                 $output.KB = $targetKBLevel
