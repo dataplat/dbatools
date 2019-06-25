@@ -36,7 +36,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                             "SqlInstance" = $null
                             "Build"       = "14.0.3038"
                             "NameLevel"   = "2017"
-                            "SPLevel"     = "RTM", "LATEST"
+                            "SPLevel"     = "RTM"
                             "CULevel"     = 'CU11'
                             "KBLevel"     = "4462262"
                             "BuildLevel"  = [version]'14.0.3038'
@@ -74,7 +74,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                     "BuildTarget" = [version]"14.0.3045"
                     "Compliant"   = $false
                     "NameLevel"   = "2017"
-                    "SPLevel"     = "RTM", "LATEST"
+                    "SPLevel"     = "RTM"
                     "SPTarget"    = "RTM"
                     "CULevel"     = 'CU11'
                     "CUTarget"    = 'CU12'
