@@ -112,7 +112,7 @@ function Get-SqlInstanceUpdate {
                     $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
                     $targetSP = $targetKB.SPLevel
                     if ($Type -eq 'CumulativeUpdate') {
-                        if ($currentVersion.SPLevel -ne $currentVersion.SPTarget) {
+                        if ($currentVersion.SPLevel -ne $latestCU.SPTarget) {
                             $currentSP = $currentVersion.SPLevel
                             Stop-Function -Message "Current SP version $currentMajorVersion$currentSP is not the latest available. Make sure to upgade to latest SP level before applying latest CU." -Continue
                         }
@@ -121,7 +121,7 @@ function Get-SqlInstanceUpdate {
                     } elseif ($Type -eq 'ServicePack') {
                         $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
                         $targetLevel = $targetKB.SPLevel
-                        if ($currentVersion.SPLevel -eq $currentVersion.SPTarget) {
+                        if ($currentVersion.SPLevel -eq $latestCU.SPTarget) {
                             Write-Message -Message "No need to update $currentMajorVersion to $targetLevel - it's already on the latest SP version" -Level Verbose
                             continue
                         }
