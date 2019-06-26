@@ -7003,7 +7003,7 @@
         "CommandName":  "Export-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlserver\\instance\nAll databases, logins, job objects and sp_configure options will be exported from\r\nsqlserver\\instance to an automatically generated folder name in Documents.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\\dr\\sqlcluster\nExports everything but logins and database restore scripts to C:\\dr\\sqlcluster",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlserver\\instance\nAll databases, logins, job objects and sp_configure options will be exported from\r\nsqlserver\\instance to an automatically generated folder name in Documents.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\\dr\\sqlcluster\nExports everything but logins and database restore scripts to C:\\dr\\sqlcluster\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Path C:\\servers\\ -NoPrefix\nExports everything to C:\\servers but scripts do not include prefix information.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -7094,6 +7094,14 @@
                            ""
                        ],
                        [
+                           "NoPrefix",
+                           "If this switch is used, the scripts will not include prefix information containing creator and datetime.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -7102,7 +7110,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [-Append] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [-Append] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaLinkedServer",
@@ -27295,7 +27303,7 @@
         "Syntax":  "Invoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] [-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] [-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] [[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] \r\n[-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Invoke-DbaXeReplay",
+        "Name":  "Invoke-DbaXEReplay",
         "Description":  "This command replays events from Read-DbaXEFile. It is simplistic in its approach.\n\n- Writes all queries to a temp sql file\n- Executes temp file using . $sqlcmd so that batches are executed properly\n- Deletes temp file",
         "Tags":  [
                      "ExtendedEvent",
@@ -27305,10 +27313,10 @@
         "Synopsis":  "This command replays events from Read-DbaXEFile on one or more target servers",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "CommandName":  "Invoke-DbaXeReplay",
+        "CommandName":  "Invoke-DbaXEReplay",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaXEReplay",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017\nRuns all batch_text for sql_batch_completed against tempdb on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed\nSets the *initial* database to planning then runs only sql_batch_completed against sql2017.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016\nRuns all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017\nRuns all batch_text for sql_batch_completed against tempdb on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed\nSets the *initial* database to planning then runs only sql_batch_completed against sql2017.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017, sql2016\nRuns all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -27367,7 +27375,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Invoke-DbaXeReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Event] \u003cString[]\u003e] [-InputObject] \u003cObject\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaXEReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Event] \u003cString[]\u003e] [-InputObject] \u003cObject\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Join-DbaAvailabilityGroup",
