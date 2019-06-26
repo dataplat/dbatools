@@ -152,7 +152,7 @@ if ($script:serialImport) {
 
 # if .net 4.7.2 load new sql auth config
 if ($psVersionTable.Platform -ne 'Unix') {
-    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
+    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core" -and $host.Name -ne 'Visual Studio Code Host') {
         Write-Verbose -Message "Loading app.config"
         # Load app.config that supports MFA
         $configpath = "$script:PSModuleRoot\bin\app.config"
