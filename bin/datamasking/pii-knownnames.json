@@ -11,13 +11,13 @@
         ]
     },
     {
-        "Name": "Birthdate",
+        "Name": "Date",
         "Category": "Personal",
         "Pattern": [
             "^.*(date_of_birth|dateofbirth|dob|date_of_death|dateofdeath).*$",
             "^.*(Geburtsdatum|Geburtsjahr).*$",
             "^.*(datedenaissance|date_de_naissance).*$",
-            "^.*(geboortedatum).*$",
+            "^.*(geboortedatum).*$"
         ]
     },
     {
@@ -28,10 +28,9 @@
             "^.*(Geschlecht).*$",
             "^.*(sexe).*$",
             "^.*(sexo).*$",
-            "^.*(geslacht).*$",
+            "^.*(geslacht).*$"
         ]
     },
-    ,
     {
         "Name": "Nationality",
         "Category": "Personal",
@@ -40,7 +39,7 @@
             "^.*(Staatsangehörigkeit|Staatsangehorigkeit).*$",
             "^.*(nationalité|nationalite).*$",
             "^.*(nacionalidad).*$",
-            "^.*(nationaliteit).*$",
+            "^.*(nationaliteit).*$"
         ]
     },
     {
