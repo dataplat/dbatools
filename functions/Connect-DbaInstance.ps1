@@ -465,7 +465,7 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core) {
+                    if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core -and $host.Name -ne 'Visual Studio Code Host') {
                         if (-not $azurevm) {
                             if ($Thumbprint) {
                                 Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with Certificate'
