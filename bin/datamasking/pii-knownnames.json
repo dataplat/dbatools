@@ -3,11 +3,43 @@
         "Name": "Name",
         "Category": "Personal",
         "Pattern": [
-            "^.*(firstname|fname|lastname|lname|fullname|fname).*$",
+            "^.*(firstname|fname|lastname|lname|fullname|fname|maidenname|first_name|second_name|third_name|last_name|maiden_name|nickname|name_suffix).*$",
             "^.*(vorname|vname|nachname|nname|vollstandigername|vollname).*$",
             "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
             "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$",
             "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam|volnaam).*$"
+        ]
+    },
+    {
+        "Name": "Date",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(date_of_birth|dateofbirth|dob|date_of_death|dateofdeath).*$",
+            "^.*(Geburtsdatum|Geburtsjahr).*$",
+            "^.*(datedenaissance|date_de_naissance).*$",
+            "^.*(geboortedatum).*$"
+        ]
+    },
+    {
+        "Name": "Gender",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(gender).*$",
+            "^.*(Geschlecht).*$",
+            "^.*(sexe).*$",
+            "^.*(sexo).*$",
+            "^.*(geslacht).*$"
+        ]
+    },
+    {
+        "Name": "Nationality",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(nationality).*$",
+            "^.*(Staatsangehörigkeit|Staatsangehorigkeit).*$",
+            "^.*(nationalité|nationalite).*$",
+            "^.*(nacionalidad).*$",
+            "^.*(nationaliteit).*$"
         ]
     },
     {
