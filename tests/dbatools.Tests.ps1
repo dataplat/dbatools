@@ -149,7 +149,7 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
 }
 
 Describe "$ModuleName Tests missing" -Tag 'Tests' {
-    $functions = Get-ChildItem .\functions\ -Recurse -Include *.ps1
+    $functions = Get-ChildItem "$ModulePath\functions\" -Recurse -Include *.ps1
     Context "Every function should have tests" {
         foreach ($f in $functions) {
             It "$($f.basename) has a tests.ps1 file" {
@@ -158,6 +158,65 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
             If (Test-Path "tests\$($f.basename).tests.ps1") {
                 It "$($f.basename) has validate parameters unit test" {
                     "tests\$($f.basename).tests.ps1" | should FileContentMatch 'Context "Validate parameters"'
+                }
+            }
+        }
+    }
+}
+
+Describe "$ModuleName Function Name" -Tag 'Compliance' {
+    $FunctionNameMatchesErrors = @()
+    $FunctionNameDbaErrors = @()
+    foreach($item in (Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1')) {
+        $Tokens = $null
+        $Errors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
+        $FunctionName = $Ast.EndBlock.Statements.Name
+        $BaseName = $item.BaseName
+        if ($FunctionName -cne $BaseName) {
+            $FunctionNameMatchesErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                BaseName = $BaseName
+                Message = "$FunctionName is not equal to $BaseName"
+            }
+        }
+        If ($FunctionName -NotMatch "-Dba") {
+            $FunctionNameDbaErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                Message = "$FunctionName does not contain -Dba"
+            }
+
+        }
+    }
+    foreach($item in (Get-ChildItem -Path "$ModulePath\internal\functions" -Filter '*.ps*1' | Where-Object BaseName -ne 'Where-DbaObject')) {
+        $Tokens = $null
+        $Errors = $null
+        $Ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
+        $FunctionName = $Ast.EndBlock.Statements.Name
+        $BaseName = $item.BaseName
+        if ($FunctionName -cne $BaseName) {
+            write-host "aaa $functionname bbb $basename"
+            $FunctionNameMatchesErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                BaseName = $BaseName
+                Message = "$FunctionName is not equal to $BaseName"
+            }
+        }
+    }
+    Context "Function Name Matching Filename Errors" {
+        if ($FunctionNameMatchesErrors.Count -gt 0) {
+            foreach ($err in $FunctionNameMatchesErrors) {
+                It "$($err.FunctionName) is not equal to $($err.BaseName)" {
+                    $err.Message | Should -Be $null
+                }
+            }
+        }
+    }
+    Context "Function Name has -Dba in it" {
+        if ($FunctionNameDbaErrors.Count -gt 0) {
+            foreach ($err in $FunctionNameDbaErrors) {
+                It "$($err.FunctionName) does not contain -Dba" {
+                    $err.Message | Should -Be $null
                 }
             }
         }
