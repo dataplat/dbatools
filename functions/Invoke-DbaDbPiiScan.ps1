@@ -296,7 +296,6 @@ function Invoke-DbaDbPiiScan {
                                 }
 
                                 $knownName = $null
-
                             }
                         } else {
                             Write-Message -Level Verbose -Message "No known names found to perform check on"
