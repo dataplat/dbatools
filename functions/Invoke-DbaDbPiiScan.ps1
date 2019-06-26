@@ -285,8 +285,8 @@ function Invoke-DbaDbPiiScan {
                                                 Schema         = $tableobject.Schema
                                                 Table          = $tableobject.Name
                                                 Column         = $columnobject.Name
-                                                "PII-Name"     = $knownName.Name
                                                 "PII-Category" = $knownName.Category
+                                                "PII-Name"     = $knownName.Name
                                             }
 
                                         }
@@ -339,8 +339,8 @@ function Invoke-DbaDbPiiScan {
                                                     Schema         = $tableobject.Schema
                                                     Table          = $tableobject.Name
                                                     Column         = $columnobject.Name
-                                                    "PII-Name"     = $patternobject.Name
                                                     "PII-Category" = $patternobject.category
+                                                    "PII-Name"     = $patternobject.Name
                                                 }
 
                                             }
