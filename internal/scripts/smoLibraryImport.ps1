@@ -95,7 +95,7 @@ $scriptBlock = {
 
     # New SQL Auth types require newer versions of .NET, check
     # https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
-    if ($psVersionTable.Platform -ne 'Unix') {
+    if ($psVersionTable.Platform -ne 'Unix' -and $host.Name -ne 'Visual Studio Code Host') {
         if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
             Write-Verbose -Message "Adding Azure DLLs"
             $names += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
