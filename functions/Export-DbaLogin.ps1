@@ -30,6 +30,9 @@ function Export-DbaLogin {
     .PARAMETER ExcludeDatabases
         If this switch is enabled, mappings for databases will not be exported.
 
+    .PARAMETER ExcludePassword
+        If this switch is enabled, hashed passwords will not be exported.
+
    .PARAMETER DefaultDatabase
         If this switch is enabled, all logins will be scripted with specified default database,
         that could help to successfuly import logins on server that is missing default database for login.
@@ -72,7 +75,6 @@ function Export-DbaLogin {
         -- UTF7: Encodes in UTF-7 format.
         -- UTF8: Encodes in UTF-8 format.
         -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
-
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -154,6 +156,7 @@ function Export-DbaLogin {
         [object[]]$Database,
         [switch]$ExcludeJobs,
         [switch]$ExcludeDatabases,
+        [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -311,35 +314,39 @@ function Export-DbaLogin {
 
                     # Attempt to script out SQL Login
                     if ($sourceLogin.LoginType -eq "SqlLogin") {
-                        $sourceLoginName = $sourceLogin.name
+                        if(!$ExcludePassword) {
+                            $sourceLoginName = $sourceLogin.name
 
-                        switch ($server.versionMajor) {
-                            0 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+                            switch ($server.versionMajor) {
+                                0 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+                                }
+                                8 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
+                                }
+                                9 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+                                }
+                                default {
+                                    $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
+                                }
                             }
-                            8 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
-                            }
-                            9 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
-                            }
-                            default {
-                                $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
-                            }
-                        }
 
-                        try {
-                            $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
-                        } catch {
-                            $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
-                            $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
-                        }
-
-                        if ($hashedPass.GetType().Name -ne "String") {
-                            $passString = "0x"; $hashedPass | ForEach-Object {
-                                $passString += ("{0:X}" -f $_).PadLeft(2, "0")
+                            try {
+                                $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
+                            } catch {
+                                $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
+                                $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                             }
-                            $hashedPass = $passString
+
+                            if ($hashedPass.GetType().Name -ne "String") {
+                                $passString = "0x"; $hashedPass | ForEach-Object {
+                                    $passString += ("{0:X}" -f $_).PadLeft(2, "0")
+                                }
+                                $hashedPass = $passString
+                            }
+                        } else {
+                            $hashedPass = '#######'
                         }
 
                         $sid = "0x"; $sourceLogin.sid | ForEach-Object {
