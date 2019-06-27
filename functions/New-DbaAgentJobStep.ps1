@@ -171,7 +171,7 @@ function New-DbaAgentJobStep {
 
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
-        
+
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
@@ -369,10 +369,10 @@ function New-DbaAgentJobStep {
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
-                    }
 
-                    # Return the job step
-                    $JobStep
+                        # Return the job step
+                        $JobStep
+                    }
                 }
             } # foreach object job
         } # foreach object instance

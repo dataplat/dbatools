@@ -16,15 +16,39 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Step is added properly" {
         AfterAll {
-            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One"
+            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One","dbatoolsci Job Two"
         }
         # Create job to add step to
         $job = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One" -Description "Just another job"
+        $jobTwo = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job Two" -Description "Just another job"
 
         It "Should have the right name and description" {
             $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "Step One"
             $results.Name | Should -Be "Step One"
         }
+
+        It "Should have the right properties" {
+            $jobStep = @{
+                SqlInstance = $script:instance2
+                Job = $jobTwo
+                StepName = "Step X"
+                Subsystem = "TransactSql"
+                Command = "select 1"
+                Database = "master"
+                RetryAttempts = 2
+                RetryInterval = 5
+                OutputFileName = "log.txt"
+            }
+            $results = New-DbaAgentJobStep @jobStep
+            $results.Name | Should -Be "Step X"
+            $results.Subsystem | Should -Be "TransactSql"
+            $results.Command | Should -Be "Select 1"
+            $results.DatabaseName | Should -Be "master"
+            $results.RetryAttempts | Should -Be 2
+            $results.RetryInterval | Should -Be 5
+            $results.OutputFileName | Should -Be "log.txt"
+        }
+
 
         It "Should actually for sure exist" {
             $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One"
