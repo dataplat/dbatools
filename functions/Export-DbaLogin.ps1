@@ -314,7 +314,7 @@ function Export-DbaLogin {
 
                     # Attempt to script out SQL Login
                     if ($sourceLogin.LoginType -eq "SqlLogin") {
-                        if(!$ExcludePassword) {
+                        if (!$ExcludePassword) {
                             $sourceLoginName = $sourceLogin.name
 
                             switch ($server.versionMajor) {
