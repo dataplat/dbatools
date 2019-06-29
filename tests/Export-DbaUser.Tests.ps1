@@ -1,7 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-$outputFile = "C:\temp\dbatoolsci_user.sql"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,6 +15,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $AltExportPath = "$env:USERPROFILE\Documents"
+        $outputFile = "$AltExportPath\Dbatoolsci_user_CustomFile.sql"
         try {
             $dbname = "dbatoolsci_exportdbauser"
             $login = "dbatoolsci_exportdbauser_login"
