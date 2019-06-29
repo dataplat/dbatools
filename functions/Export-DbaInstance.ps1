@@ -89,6 +89,9 @@ function Export-DbaInstance {
     .PARAMETER NoPrefix
         If this switch is used, the scripts will not include prefix information containing creator and datetime.
 
+    .PARAMETER ExcludePassword
+        If this switch is used, the scripts will not include passwords for Credentials, LinkedServers or Logins.
+
     .PARAMETER ScriptingOption
         Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
 
@@ -144,6 +147,7 @@ function Export-DbaInstance {
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$NoPrefix = $false,
+        [switch]$ExcludePassword,
         [switch]$EnableException
     )
     begin {
@@ -217,7 +221,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
-                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$Path\$fileCounter-credentials.sql" -Append:$Append
+                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$Path\$fileCounter-credentials.sql" -Append:$Append -ExcludePassword:$ExcludePassword
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-credentials.sql"
                 if (-not (Test-Path "$Path\$fileCounter-credentials.sql")) {
                     $fileCounter--
@@ -266,7 +270,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting linked servers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting linked servers"
-                Export-DbaLinkedServer -SqlInstance $server -FilePath "$Path\$fileCounter-linkedservers.sql" -Credential $Credential -Append:$Append
+                Export-DbaLinkedServer -SqlInstance $server -FilePath "$Path\$fileCounter-linkedservers.sql" -Credential $Credential -Append:$Append -ExcludePassword:$ExcludePassword
                 if (-not (Test-Path "$Path\$fileCounter-linkedservers.sql")) {
                     $fileCounter--
                 }
@@ -304,7 +308,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -WarningAction SilentlyContinue
+                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -WarningAction SilentlyContinue
                 if (-not (Test-Path "$Path\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }

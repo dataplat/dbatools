@@ -5,6 +5,7 @@ function Test-DbaBuild {
 
     .DESCRIPTION
         Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance".
+        The build data used can be found here: https://dbatools.io/builds
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.

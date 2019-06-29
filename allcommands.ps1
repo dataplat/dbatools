@@ -12080,6 +12080,7 @@ function Export-DbaInstance {
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$NoPrefix = $false,
+        [switch]$ExcludePassword,
         [switch]$EnableException
     )
     begin {
@@ -12153,7 +12154,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
-                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$Path\$fileCounter-credentials.sql" -Append:$Append
+                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$Path\$fileCounter-credentials.sql" -Append:$Append -ExcludePassword:$ExcludePassword
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-credentials.sql"
                 if (-not (Test-Path "$Path\$fileCounter-credentials.sql")) {
                     $fileCounter--
@@ -12202,7 +12203,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting linked servers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting linked servers"
-                Export-DbaLinkedServer -SqlInstance $server -FilePath "$Path\$fileCounter-linkedservers.sql" -Credential $Credential -Append:$Append
+                Export-DbaLinkedServer -SqlInstance $server -FilePath "$Path\$fileCounter-linkedservers.sql" -Credential $Credential -Append:$Append -ExcludePassword:$ExcludePassword
                 if (-not (Test-Path "$Path\$fileCounter-linkedservers.sql")) {
                     $fileCounter--
                 }
@@ -12240,7 +12241,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -WarningAction SilentlyContinue
+                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -WarningAction SilentlyContinue
                 if (-not (Test-Path "$Path\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
@@ -12493,6 +12494,7 @@ function Export-DbaLogin {
         [object[]]$Database,
         [switch]$ExcludeJobs,
         [switch]$ExcludeDatabases,
+        [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -12650,35 +12652,39 @@ function Export-DbaLogin {
 
                     # Attempt to script out SQL Login
                     if ($sourceLogin.LoginType -eq "SqlLogin") {
-                        $sourceLoginName = $sourceLogin.name
+                        if (!$ExcludePassword) {
+                            $sourceLoginName = $sourceLogin.name
 
-                        switch ($server.versionMajor) {
-                            0 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+                            switch ($server.versionMajor) {
+                                0 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+                                }
+                                8 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
+                                }
+                                9 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+                                }
+                                default {
+                                    $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
+                                }
                             }
-                            8 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
-                            }
-                            9 {
-                                $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
-                            }
-                            default {
-                                $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
-                            }
-                        }
 
-                        try {
-                            $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
-                        } catch {
-                            $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
-                            $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
-                        }
-
-                        if ($hashedPass.GetType().Name -ne "String") {
-                            $passString = "0x"; $hashedPass | ForEach-Object {
-                                $passString += ("{0:X}" -f $_).PadLeft(2, "0")
+                            try {
+                                $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
+                            } catch {
+                                $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
+                                $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                             }
-                            $hashedPass = $passString
+
+                            if ($hashedPass.GetType().Name -ne "String") {
+                                $passString = "0x"; $hashedPass | ForEach-Object {
+                                    $passString += ("{0:X}" -f $_).PadLeft(2, "0")
+                                }
+                                $hashedPass = $passString
+                            }
+                        } else {
+                            $hashedPass = '#######'
                         }
 
                         $sid = "0x"; $sourceLogin.sid | ForEach-Object {
@@ -13601,11 +13607,12 @@ function Export-DbaUser {
             }
             if (-not $Passthru) {
                 $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                Get-ChildItem -Path $FilePath
             } else {
                 $sql
             }
         }
-        Get-ChildItem -Path $script:pathcollection.Path
+
     }
 }
 
@@ -27604,6 +27611,7 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
+        [switch]$Detailed,
         [switch]$EnableException
     )
     begin {
@@ -27615,6 +27623,15 @@ function Get-DbaLogin {
         }
 
         $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
+        $loginProperty = "SELECT
+                            LOGINPROPERTY ('' , 'BadPasswordCount') as BadPasswordCount ,
+                            LOGINPROPERTY ('' , 'BadPasswordTime') as BadPasswordTime,
+                            LOGINPROPERTY ('' , 'DaysUntilExpiration') as DaysUntilExpiration,
+                            LOGINPROPERTY ('' , 'HistoryLength') as HistoryLength,
+                            LOGINPROPERTY ('' , 'IsMustChange') as IsMustChange,
+                            LOGINPROPERTY ('' , 'LockoutTime') as LockoutTime,
+                            CONVERT (varchar(514),  (LOGINPROPERTY('', 'PasswordHash')),1) as PasswordHash,
+                            LOGINPROPERTY ('' , 'PasswordLastSetTime') as PasswordLastSetTime"
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -27685,14 +27702,26 @@ function Get-DbaLogin {
 
             foreach ($serverLogin in $serverLogins) {
                 Write-Message -Level Verbose -Message "Processing $serverLogin on $instance"
-
                 $loginTime = $loginTimes | Where-Object { $_.login_name -eq $serverLogin.name } | Select-Object -ExpandProperty login_time
 
-                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
 
+                if ($Detailed) {
+                    $loginName = $serverLogin.name
+                    $query = $loginProperty.Replace('', "$loginName")
+                    $loginProperties = $server.ConnectionContext.ExecuteWithResults($query).Tables[0]
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordCount -Value $loginProperties.BadPasswordCount
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordTime -Value $loginProperties.BadPasswordTime
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name DaysUntilExpiration -Value $loginProperties.DaysUntilExpiration
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name HistoryLength -Value $loginProperties.HistoryLength
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name IsMustChange -Value $loginProperties.IsMustChange
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LockoutTime -Value $loginProperties.LockoutTime
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordHash -Value $loginProperties.PasswordHash
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordLastSetTime -Value $loginProperties.PasswordLastSetTime
+                }
                 Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
             }
         }
@@ -46327,7 +46356,7 @@ function New-DbaAgentJobStep {
 
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
-        
+
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
@@ -46525,10 +46554,10 @@ function New-DbaAgentJobStep {
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
-                    }
 
-                    # Return the job step
-                    $JobStep
+                        # Return the job step
+                        $JobStep
+                    }
                 }
             } # foreach object job
         } # foreach object instance
@@ -65391,6 +65420,7 @@ function Test-DbaBuild {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Test-DbaCmConnection {

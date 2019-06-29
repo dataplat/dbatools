@@ -7102,6 +7102,14 @@
                            "False"
                        ],
                        [
+                           "ExcludePassword",
+                           "If this switch is used, the scripts will not include passwords for Credentials, LinkedServers or Logins.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -7110,7 +7118,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [-Append] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [-Append] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-ExcludePassword] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaLinkedServer",
@@ -7287,6 +7295,14 @@
                            "False"
                        ],
                        [
+                           "ExcludePassword",
+                           "If this switch is enabled, hashed passwords will not be exported.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "DefaultDatabase",
                            "If this switch is enabled, all logins will be scripted with specified default database,\r\nthat could help to successfuly import logins on server that is missing default database for login.",
                            "",
@@ -7391,7 +7407,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabases] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabases] [-ExcludePassword] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
@@ -16713,7 +16729,7 @@
         "CommandName":  "Get-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016\nGets all the logins from server sql2016 using NT authentication and returns the SMO login objects\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\nGet specific logins from server sql2016 returned as SMO login objects.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -IncludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser\nGet all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows\nGet all user objects from server sql2016 that are Windows Logins\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are Windows Logins and have Rob in the name\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL\nGet all user objects from server sql2016 that are SQL Logins\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are SQL Logins and have Rob in the name\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogin\nGet all user objects from server sql2016 that are not system objects\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 except any beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\nUsing Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016\nGets all the logins from server sql2016 using NT authentication and returns the SMO login objects\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\nGet specific logins from server sql2016 returned as SMO login objects.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -IncludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser\nGet all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows\nGet all user objects from server sql2016 that are Windows Logins\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type Windows -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are Windows Logins and have Rob in the name\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL\nGet all user objects from server sql2016 that are SQL Logins\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL -IncludeFilter *Rob*\nGet all user objects from server sql2016 that are SQL Logins and have Rob in the name\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeSystemLogin\nGet all user objects from server sql2016 that are not system objects\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeFilter \u0027##*\u0027,\u0027NT *\u0027\nGet all user objects from server sql2016 except any beginning with \u0027##\u0027 or \u0027NT \u0027, returned as SMO login objects.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\nUsing Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -Type SQL -Detailed\nGet all user objects from server sql2016 that are SQL Logins. Get additional info for login available from LoginProperty function",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16804,6 +16820,14 @@
                            "False"
                        ],
                        [
+                           "Detailed",
+                           "A Switch to return additional information available from the LoginProperty function",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16812,7 +16836,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-IncludeFilter] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-ExcludeFilter] \u003cObject[]\u003e] [-ExcludeSystemLogin] [[-Type] \u003cString\u003e] [-HasAccess] [-Locked] [-Disabled] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cObject[]\u003e] [[-IncludeFilter] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-ExcludeFilter] \u003cObject[]\u003e] [-ExcludeSystemLogin] [[-Type] \u003cString\u003e] [-HasAccess] [-Locked] [-Disabled] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaMaintenanceSolutionLog",
@@ -44439,7 +44463,7 @@
     },
     {
         "Name":  "Test-DbaBuild",
-        "Description":  "Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the \"targeted compliance\".",
+        "Description":  "Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the \"targeted compliance\".\nThe build data used can be found here: https://dbatools.io/builds",
         "Tags":  [
                      "SqlBuild",
                      "Version"
