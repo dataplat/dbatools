@@ -45,6 +45,9 @@ function Get-DbaLogin {
     .PARAMETER HasAccess
         A Switch to return Logins that have access to the instance of SQL Server.
 
+    .PARAMETER GetLoginProperty
+        A Switch to return additional information available from the LoginProperty function
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -131,6 +134,11 @@ function Get-DbaLogin {
 
         Using Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.
 
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type SQL -GetLoginProperty
+
+        Get all user objects from server sql2016 that are SQL Logins. Get additional info for login available from LoginProperty function
+
 #>
     [CmdletBinding()]
     param (
@@ -148,6 +156,7 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
+        [switch]$GetLoginProperty,
         [switch]$EnableException
     )
     begin {
@@ -159,6 +168,15 @@ function Get-DbaLogin {
         }
 
         $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
+        $loginProperty = "SELECT
+                            LOGINPROPERTY ('<#LoginName#>' , 'BadPasswordCount') as BadPasswordCount ,
+                            LOGINPROPERTY ('<#LoginName#>' , 'BadPasswordTime') as BadPasswordTime,
+                            LOGINPROPERTY ('<#LoginName#>' , 'DaysUntilExpiration') as DaysUntilExpiration,
+                            LOGINPROPERTY ('<#LoginName#>' , 'HistoryLength') as HistoryLength,
+                            LOGINPROPERTY ('<#LoginName#>' , 'IsMustChange') as IsMustChange,
+                            LOGINPROPERTY ('<#LoginName#>' , 'LockoutTime') as LockoutTime,
+                            CONVERT (varchar(514),  (LOGINPROPERTY('<#LoginName#>', 'PasswordHash')),1) as PasswordHash,
+                            LOGINPROPERTY ('<#LoginName#>' , 'PasswordLastSetTime') as PasswordLastSetTime"
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -229,14 +247,26 @@ function Get-DbaLogin {
 
             foreach ($serverLogin in $serverLogins) {
                 Write-Message -Level Verbose -Message "Processing $serverLogin on $instance"
-
                 $loginTime = $loginTimes | Where-Object { $_.login_name -eq $serverLogin.name } | Select-Object -ExpandProperty login_time
 
-                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
 
+                if ($GetLoginProperty) {
+                    $loginName = $serverLogin.name
+                    $query = $loginProperty.Replace('<#LoginName#>', "$loginName")
+                    $loginProperties = $server.ConnectionContext.ExecuteWithResults($query).Tables[0]
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordCount -Value $loginProperties.BadPasswordCount
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordTime -Value $loginProperties.BadPasswordTime
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name DaysUntilExpiration -Value $loginProperties.DaysUntilExpiration
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name HistoryLength -Value $loginProperties.HistoryLength
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name IsMustChange -Value $loginProperties.IsMustChange
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LockoutTime -Value $loginProperties.LockoutTime
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordHash -Value $loginProperties.PasswordHash
+                    Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordLastSetTime -Value $loginProperties.PasswordLastSetTime
+                }
                 Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
             }
         }
