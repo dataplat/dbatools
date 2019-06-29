@@ -45,7 +45,7 @@ function Get-DbaLogin {
     .PARAMETER HasAccess
         A Switch to return Logins that have access to the instance of SQL Server.
 
-    .PARAMETER GetLoginProperty
+    .PARAMETER Detailed
         A Switch to return additional information available from the LoginProperty function
 
     .PARAMETER EnableException
@@ -135,7 +135,7 @@ function Get-DbaLogin {
         Using Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.
 
     .EXAMPLE
-        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type SQL -GetLoginProperty
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -Type SQL -Detailed
 
         Get all user objects from server sql2016 that are SQL Logins. Get additional info for login available from LoginProperty function
 
@@ -156,7 +156,7 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
-        [switch]$GetLoginProperty,
+        [switch]$Detailed,
         [switch]$EnableException
     )
     begin {
@@ -254,7 +254,7 @@ function Get-DbaLogin {
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $loginTime
 
-                if ($GetLoginProperty) {
+                if ($Detailed) {
                     $loginName = $serverLogin.name
                     $query = $loginProperty.Replace('<#LoginName#>', "$loginName")
                     $loginProperties = $server.ConnectionContext.ExecuteWithResults($query).Tables[0]
