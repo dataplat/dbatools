@@ -416,10 +416,11 @@ function Export-DbaUser {
             }
             if (-not $Passthru) {
                 $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                Get-ChildItem -Path $FilePath
             } else {
                 $sql
             }
         }
-        Get-ChildItem -Path $script:pathcollection.Path
+
     }
 }
