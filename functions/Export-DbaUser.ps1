@@ -415,7 +415,7 @@ function Export-DbaUser {
                 $sql += "`r`nGO"
             }
             if (-not $Passthru) {
-                $sql | Out-File -Encoding UTF8 -FilePath  -Append:$Append -NoClobber:$NoClobber
+                $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                 Get-ChildItem -Path $FilePath
             } else {
                 $sql
