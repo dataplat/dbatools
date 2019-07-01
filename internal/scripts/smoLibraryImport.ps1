@@ -58,7 +58,6 @@ $scriptBlock = {
         )
     } else {
         $names = @(
-            'Bogus',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -93,26 +92,29 @@ $scriptBlock = {
         $basePath = "$(Join-Path $dllRoot coreclr)"
     }
 
+    $shared = @()
     # New SQL Auth types require newer versions of .NET, check
     # https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
-    if ($psVersionTable.Platform -ne 'Unix' -and $host.Name -ne 'Visual Studio Code Host') {
-        if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne "Core") {
+    if ($psVersionTable.Platform -ne 'Unix') {
+        if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne 'Core' -and $host.Name -ne 'Visual Studio Code Host') {
             Write-Verbose -Message "Adding Azure DLLs"
-            $names += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
+            $shared += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
         }
-    } else {
-        $shared = "bogus"
-        $separator = [IO.Path]::DirectorySeparatorChar
-        foreach ($name in $shared) {
-            $assemblyPath = "$dllRoot$separator$name.dll"
-            $null = try {
-                Import-Module $assemblyPath
+    }
+
+    $separator = [IO.Path]::DirectorySeparatorChar
+    $shared += "third-party" + $separator + "Bogus" + $separator + "bogus"
+
+    foreach ($name in $shared) {
+        $assemblyPath = "$script:PSModuleRoot" + $separator + "bin\libraries" + $separator + "$name.dll"
+
+        $null = try {
+            Import-Module $assemblyPath
+        } catch {
+            try {
+                [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {
-                try {
-                    [Reflection.Assembly]::LoadFrom($assemblyPath)
-                } catch {
-                    Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
-                }
+                Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
             }
         }
     }
@@ -161,6 +163,6 @@ if ($psVersionTable.Platform -ne 'Unix' -and $PSVersionTable.PSEdition -ne "Core
         # Clear some cache to make sure it loads
         [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
         [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
-        ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object {$_.FullName -eq "System.Configuration.ClientConfigPaths"})[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
+        ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object { $_.FullName -eq "System.Configuration.ClientConfigPaths" })[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
     }
 }
