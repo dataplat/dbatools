@@ -36,10 +36,11 @@ if (-not (Test-Path -Path $docs)) {
 }
 
 if (-not $script:AppData) {
-    $script:AppData = $home
-    if (-not (Test-Path -Path $script:AppData)) {
-        New-Item -Path $script:AppData -ItemType Directory -Force
-    }
+    $script:AppData = "$temp\AppData"
+}
+
+if (-not (Test-Path -Path $script:AppData)) {
+    $null = New-Item -Path $script:AppData -ItemType Directory -Force
 }
 
 # The default path where dbatools stores persistent data
