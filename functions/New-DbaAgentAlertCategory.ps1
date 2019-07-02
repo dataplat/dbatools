@@ -1,10 +1,10 @@
-function New-DbaAgentJobCategory {
+function New-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentJobCategory creates a new job category.
+        New-DbaAgentAlertCategory creates a new job category.
 
     .DESCRIPTION
-        New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
+        New-DbaAgentAlertCategory makes it possible to create a job category that can be used with jobs.
         It returns an array of the job categories created .
 
     .PARAMETER SqlInstance
@@ -43,15 +43,15 @@ function New-DbaAgentJobCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentJobCategory
+        https://dbatools.io/New-DbaAgentAlertCategory
 
     .EXAMPLE
-        PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
+        PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 
         Creates a new job category with the name 'Category 1'.
 
     .EXAMPLE
-        PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
+        PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
 
         Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
 

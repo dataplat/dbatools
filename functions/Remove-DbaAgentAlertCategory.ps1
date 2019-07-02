@@ -1,10 +1,10 @@
-function Remove-DbaAgentJobCategory {
+function Remove-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJobCategory removes a job category.
+        Remove-DbaAgentAlertCategory removes a job category.
 
     .DESCRIPTION
-        Remove-DbaAgentJobCategory makes it possible to remove a job category.
+        Remove-DbaAgentAlertCategory makes it possible to remove a job category.
         Be assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].
 
     .PARAMETER SqlInstance
@@ -39,20 +39,20 @@ function Remove-DbaAgentJobCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentJobCategory
+        https://dbatools.io/Remove-DbaAgentAlertCategory
 
     .EXAMPLE
-        PS C:\> Remove-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 
         Remove the job category Category 1 from the instance.
 
     .EXAMPLE
-        PS C:\> Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3
 
         Remove multiple job categories from the instance.
 
     .EXAMPLE
-        PS C:\> Remove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
 
         Remove multiple job categories from the multiple instances.
 
