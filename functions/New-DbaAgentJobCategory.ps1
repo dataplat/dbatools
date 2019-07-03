@@ -84,7 +84,7 @@ function New-DbaAgentJobCategory {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -99,10 +99,10 @@ function New-DbaAgentJobCategory {
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
                         try {
-                            $jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
-                            $jobcategory.CategoryType = $CategoryType
+                            $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+                            $jobCategory.CategoryType = $CategoryType
 
-                            $jobcategory.Create()
+                            $jobCategory.Create()
 
                             $server.JobServer.Refresh()
                         } catch {

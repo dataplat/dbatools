@@ -1,11 +1,11 @@
 function Remove-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        Remove-DbaAgentAlertCategory removes a job category.
+        Remove-DbaAgentAlertCategory removes an alert category.
 
     .DESCRIPTION
-        Remove-DbaAgentAlertCategory makes it possible to remove a job category.
-        Be assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].
+        Remove-DbaAgentAlertCategory makes it possible to remove an alert category.
+        Insure that the category you want to remove is not used with any alerts. If an alert uses this category it will be get the category [Uncategorized].
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -31,8 +31,8 @@ function Remove-DbaAgentAlertCategory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Agent, Job, JobCategory
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Agent, Alert, AlertCategory
+        Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -44,17 +44,17 @@ function Remove-DbaAgentAlertCategory {
     .EXAMPLE
         PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 
-        Remove the job category Category 1 from the instance.
+        Remove the alert category Category 1 from the instance.
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3
 
-        Remove multiple job categories from the instance.
+        Remove multiple alert categories from the instance.
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
 
-        Remove multiple job categories from the multiple instances.
+        Remove multiple alert categories from the multiple instances.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -72,7 +72,7 @@ function Remove-DbaAgentAlertCategory {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -83,22 +83,22 @@ function Remove-DbaAgentAlertCategory {
             # Loop through each of the categories
             foreach ($cat in $Category) {
 
-                # Check if the job category exists
-                if ($cat -notin $server.JobServer.JobCategories.Name) {
-                    Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
+                # Check if the alert category exists
+                if ($cat -notin $server.JobServer.AlertCategories.Name) {
+                    Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
                 }
 
                 # Remove the category
-                if ($PSCmdlet.ShouldProcess($instance, "Removing the job category $Category")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
                     try {
                         # Get the category
-                        $currentCategory = $server.JobServer.JobCategories[$cat]
+                        $currentCategory = $server.JobServer.AlertCategories[$cat]
 
-                        Write-Message -Message "Removing job category $cat" -Level Verbose
+                        Write-Message -Message "Removing alert category $cat" -Level Verbose
 
                         $currentCategory.Drop()
                     } catch {
-                        Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+                        Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
 
                 } #if should process
@@ -111,7 +111,7 @@ function Remove-DbaAgentAlertCategory {
 
     end {
         if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished removing job category." -Level Verbose
+        Write-Message -Message "Finished removing alert category." -Level Verbose
     }
 
 }

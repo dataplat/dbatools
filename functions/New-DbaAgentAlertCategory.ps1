@@ -1,11 +1,11 @@
 function New-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentAlertCategory creates a new job category.
+        New-DbaAgentAlertCategory creates a new alert category.
 
     .DESCRIPTION
-        New-DbaAgentAlertCategory makes it possible to create a job category that can be used with jobs.
-        It returns an array of the job categories created .
+        New-DbaAgentAlertCategory makes it possible to create a Agent Alert category that can be used with Alerts.
+        It returns an array of the alert categories created .
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -15,10 +15,6 @@ function New-DbaAgentAlertCategory {
 
     .PARAMETER Category
         The name of the category
-
-    .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        The default is "LocalJob" and will automatically be set when no option is chosen.
 
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
@@ -35,8 +31,8 @@ function New-DbaAgentAlertCategory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Agent, Job, JobCategory
-        Author: Sander Stad (@sqlstad), sqlstad.nl
+        Tags: Agent, Alert, AlertCategory
+        Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -48,12 +44,12 @@ function New-DbaAgentAlertCategory {
     .EXAMPLE
         PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 
-        Creates a new job category with the name 'Category 1'.
+        Creates a new alert category with the name 'Category 1'.
 
     .EXAMPLE
-        PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
+        PS C:\>'sql1' | New-DbaAgentAlertCategory -Category 'Category 2'
 
-        Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
+        Creates a new alert category with the name 'Category 2'.
 
     #>
 
@@ -65,26 +61,17 @@ function New-DbaAgentAlertCategory {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
-        [ValidateSet("LocalJob", "MultiServerJob", "None")]
-        [string]$CategoryType,
         [switch]$Force,
         [switch]$EnableException
     )
 
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
-
-        # Check the category type
-        if (-not $CategoryType) {
-            # Setting category type to default
-            Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
-            $CategoryType = "LocalJob"
-        }
     }
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -94,27 +81,26 @@ function New-DbaAgentAlertCategory {
 
             foreach ($cat in $Category) {
                 # Check if the category already exists
-                if ($cat -in $server.JobServer.JobCategories.Name) {
-                    Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
+                if ($cat -in $server.JobServer.AlertCategories.Name) {
+                    Stop-Function -Message "Alert category $cat already exists on $instance" -Target $instance -Continue
                 } else {
-                    if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Adding the alert category $cat")) {
                         try {
-                            $jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
-                            $jobcategory.CategoryType = $CategoryType
+                            $alertCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.AlertCategory($server.JobServer, $cat)
 
-                            $jobcategory.Create()
+                            $alertCategory.Create()
 
                             $server.JobServer.Refresh()
                         } catch {
-                            Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+                            Stop-Function -Message "Something went wrong creating the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
 
                     } # if should process
 
                 } # end else category exists
 
-                # Return the job category
-                Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
+                # Return the alert category
+                Get-DbaAgentAlertCategory -SqlInstance $server -Category $cat
 
             } # for each category
 
@@ -123,7 +109,7 @@ function New-DbaAgentAlertCategory {
 
     end {
         if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished creating job category." -Level Verbose
+        Write-Message -Message "Finished creating alert category." -Level Verbose
     }
 
 }

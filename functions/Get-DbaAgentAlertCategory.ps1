@@ -60,11 +60,11 @@ function Get-DbaAgentAlertCategory {
             }
 
             # get all the alert categories
-            $alertCategories = $server.JobServer.AlertCategories 
+            $alertCategories = $server.JobServer.AlertCategories
             if (Test-Bound -ParameterName Category) {
-                $alertCategories = $exportObjects | Where-Object { $Category -contains $_ }
+                $alertCategories = $alertCategories | Where-Object { $_.Name -in $Category }
             }
-              
+
             # Set the default output
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'AlertCount'
 
@@ -79,7 +79,7 @@ function Get-DbaAgentAlertCategory {
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $alertCount
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name AlertCount -Value $alertCount
 
                     # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
@@ -94,7 +94,7 @@ function Get-DbaAgentAlertCategory {
 
     end {
         if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished retrieving job category." -Level Verbose
+        Write-Message -Message "Finished retrieving alert category." -Level Verbose
     }
 
 }
