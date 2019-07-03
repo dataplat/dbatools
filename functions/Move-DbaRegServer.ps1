@@ -18,7 +18,7 @@ function Move-DbaRegServer {
     .PARAMETER ServerName
         Specifies one or more reg servers to move. Server Name is the actual instance name (labeled Server Name)
 
-    .PARAMETER NewGroup
+    .PARAMETER Group
         The new group. If no new group is specified, the default root will used
 
     .PARAMETER InputObject
@@ -49,12 +49,12 @@ function Move-DbaRegServer {
         https://dbatools.io/Move-DbaRegServer
 
     .EXAMPLE
-        PS C:\> Move-DbaRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
+        PS C:\> Move-DbaRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -Group HR\Prod
 
         Moves the registered server on sql2012 titled 'Web SQL Cluster' to the Prod group within the HR group
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaRegServer -NewGroup Web
+        PS C:\> Get-DbaRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaRegServer -Group Web
 
         Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017
 
@@ -66,7 +66,8 @@ function Move-DbaRegServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [string]$NewGroup,
+        [Alias("NewGroup")]
+        [string]$Group,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
@@ -94,11 +95,11 @@ function Move-DbaRegServer {
 
             $server = $regserver.ParentServer
 
-            if ((Test-Bound -ParameterName NewGroup)) {
-                $group = Get-DbaRegServerGroup -SqlInstance $server -Group $NewGroup
+            if ((Test-Bound -ParameterName Group)) {
+                $group = Get-DbaRegServerGroup -SqlInstance $server -Group $Group
 
                 if (-not $group) {
-                    Stop-Function -Message "$NewGroup not found on $server" -Continue
+                    Stop-Function -Message "$Group not found on $server" -Continue
                 }
             } else {
                 $group = Get-DbaRegServerGroup -SqlInstance $server -Id 1
@@ -110,7 +111,7 @@ function Move-DbaRegServer {
                     Get-DbaRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
-                    Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to move $($regserver.Name) to $Group on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }
