@@ -1,11 +1,11 @@
-function New-DbaAgentJobCategory {
+function Remove-DbaAgentAlertCategory {
     <#
     .SYNOPSIS
-        New-DbaAgentJobCategory creates a new job category.
+        Remove-DbaAgentAlertCategory removes an alert category.
 
     .DESCRIPTION
-        New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
-        It returns an array of the job categories created .
+        Remove-DbaAgentAlertCategory makes it possible to remove an alert category.
+        Insure that the category you want to remove is not used with any alerts. If an alert uses this category it will be get the category [Uncategorized].
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -15,10 +15,6 @@ function New-DbaAgentJobCategory {
 
     .PARAMETER Category
         The name of the category
-
-    .PARAMETER CategoryType
-        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-        The default is "LocalJob" and will automatically be set when no option is chosen.
 
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
@@ -35,25 +31,30 @@ function New-DbaAgentJobCategory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Agent, Job, JobCategory
-        Author: Sander Stad (@sqlstad), sqlstad.nl
+        Tags: Agent, Alert, AlertCategory
+        Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentJobCategory
+        https://dbatools.io/Remove-DbaAgentAlertCategory
 
     .EXAMPLE
-        PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 
-        Creates a new job category with the name 'Category 1'.
+        Remove the alert category Category 1 from the instance.
 
     .EXAMPLE
-        PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3
 
-        Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
+        Remove multiple alert categories from the instance.
+
+    .EXAMPLE
+        PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
+
+        Remove multiple alert categories from the multiple instances.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -61,24 +62,14 @@ function New-DbaAgentJobCategory {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
-        [ValidateSet("LocalJob", "MultiServerJob", "None")]
-        [string]$CategoryType,
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
-
-        if (-not $CategoryType) {
-            Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
-            $CategoryType = "LocalJob"
-        }
     }
-
     process {
 
         foreach ($instance in $SqlInstance) {
@@ -89,23 +80,21 @@ function New-DbaAgentJobCategory {
             }
 
             foreach ($cat in $Category) {
-                if ($cat -in $server.JobServer.JobCategories.Name) {
-                    Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
-                } else {
-                    if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
-                        try {
-                            $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
-                            $jobCategory.CategoryType = $CategoryType
+                if ($cat -notin $server.JobServer.AlertCategories.Name) {
+                    Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
+                }
 
-                            $jobCategory.Create()
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
+                    try {
+                        $currentCategory = $server.JobServer.AlertCategories[$cat]
 
-                            $server.JobServer.Refresh()
-                        } catch {
-                            Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-                        }
+                        Write-Message -Message "Removing alert category $cat" -Level Verbose
+
+                        $currentCategory.Drop()
+                    } catch {
+                        Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
                 }
-                Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
             }
         }
     }

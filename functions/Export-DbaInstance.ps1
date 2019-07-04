@@ -368,7 +368,7 @@ function Export-DbaInstance {
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$stepCounter-resourcegov.sql"
+                $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$fileCounter-resourcegov.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-resourcegov.sql"
                 if (-not (Test-Path "$Path\$fileCounter-resourcegov.sql")) {
                     $fileCounter--

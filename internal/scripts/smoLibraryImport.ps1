@@ -103,7 +103,7 @@ $scriptBlock = {
     }
 
     $separator = [IO.Path]::DirectorySeparatorChar
-    $shared += "third-party" + $separator + "Bogus" + $separator + "bogus"
+    $shared += "third-party" + $separator + "Bogus" + $separator + "Bogus"
 
     foreach ($name in $shared) {
         $assemblyPath = "$script:PSModuleRoot" + $separator + "bin\libraries" + $separator + "$name.dll"
