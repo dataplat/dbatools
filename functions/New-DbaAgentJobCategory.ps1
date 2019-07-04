@@ -56,7 +56,6 @@ function New-DbaAgentJobCategory {
         Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
 
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -74,9 +73,7 @@ function New-DbaAgentJobCategory {
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
 
-        # Check the category type
         if (-not $CategoryType) {
-            # Setting category type to default
             Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
             $CategoryType = "LocalJob"
         }
@@ -85,7 +82,6 @@ function New-DbaAgentJobCategory {
     process {
 
         foreach ($instance in $SqlInstance) {
-            # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -93,7 +89,6 @@ function New-DbaAgentJobCategory {
             }
 
             foreach ($cat in $Category) {
-                # Check if the category already exists
                 if ($cat -in $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
                 } else {
@@ -108,22 +103,10 @@ function New-DbaAgentJobCategory {
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
-
-                    } # if should process
-
-                } # end else category exists
-
-                # Return the job category
+                    }
+                }
                 Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
-
-            } # for each category
-
-        } # for each instance
+            }
+        }
     }
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished creating job category." -Level Verbose
-    }
-
 }

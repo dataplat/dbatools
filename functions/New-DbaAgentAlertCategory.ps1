@@ -52,7 +52,6 @@ function New-DbaAgentAlertCategory {
         Creates a new alert category with the name 'Category 2'.
 
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -72,7 +71,6 @@ function New-DbaAgentAlertCategory {
     process {
 
         foreach ($instance in $SqlInstance) {
-            # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -80,7 +78,6 @@ function New-DbaAgentAlertCategory {
             }
 
             foreach ($cat in $Category) {
-                # Check if the category already exists
                 if ($cat -in $server.JobServer.AlertCategories.Name) {
                     Stop-Function -Message "Alert category $cat already exists on $instance" -Target $instance -Continue
                 } else {
@@ -94,22 +91,10 @@ function New-DbaAgentAlertCategory {
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
-
-                    } # if should process
-
-                } # end else category exists
-
-                # Return the alert category
+                    }
+                }
                 Get-DbaAgentAlertCategory -SqlInstance $server -Category $cat
-
-            } # for each category
-
-        } # for each instance
+            }
+        }
     }
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished creating alert category." -Level Verbose
-    }
-
 }

@@ -45,13 +45,14 @@ function Get-DbaAgentAlertCategory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Category,
         [switch]$EnableException
     )
 
     process {
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -59,42 +60,27 @@ function Get-DbaAgentAlertCategory {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # get all the alert categories
             $alertCategories = $server.JobServer.AlertCategories
             if (Test-Bound -ParameterName Category) {
                 $alertCategories = $alertCategories | Where-Object { $_.Name -in $Category }
             }
 
-            # Set the default output
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'AlertCount'
 
-            # Loop through each of the categories
             try {
                 foreach ($cat in $alertCategories) {
-
-                    # Get the alerts associated with the category
                     $alertCount = ($server.JobServer.Alerts | Where-Object {$_.CategoryName -eq $cat.Name}).Count
 
-                    # Add new properties to the category object
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name AlertCount -Value $alertCount
 
-                    # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
                 }
             } catch {
-                Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
+                Stop-Function -Message "Something went wrong getting the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
             }
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished retrieving alert category." -Level Verbose
+        }
     }
-
 }

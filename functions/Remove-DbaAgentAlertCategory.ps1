@@ -73,25 +73,19 @@ function Remove-DbaAgentAlertCategory {
     process {
 
         foreach ($instance in $SqlInstance) {
-            # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Loop through each of the categories
             foreach ($cat in $Category) {
-
-                # Check if the alert category exists
                 if ($cat -notin $server.JobServer.AlertCategories.Name) {
                     Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
                 }
 
-                # Remove the category
                 if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
                     try {
-                        # Get the category
                         $currentCategory = $server.JobServer.AlertCategories[$cat]
 
                         Write-Message -Message "Removing alert category $cat" -Level Verbose
@@ -100,18 +94,8 @@ function Remove-DbaAgentAlertCategory {
                     } catch {
                         Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
-
-                } #if should process
-
-            } # for each category
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished removing alert category." -Level Verbose
+                }
+            }
+        }
     }
-
 }
