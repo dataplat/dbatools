@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.13'
+    ModuleVersion          = '1.0.14'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -302,7 +302,6 @@
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
         'Get-DbaAgentJobCategory',
-        'New-DbaAgentJobCategory',
         'Remove-DbaAgentJobCategory',
         'Set-DbaAgentJobCategory',
         'Get-DbaServerRole',
@@ -484,7 +483,6 @@
         'Test-DbaDbDataMaskingConfig',
         'Get-DbaAgentAlertCategory',
         'New-DbaAgentAlertCategory',
-        'Remove-DbaAgentAlertCategory',
         'New-DbaAgentJobCategory',
         'Remove-DbaAgentAlertCategory',
         # noncoresmo
