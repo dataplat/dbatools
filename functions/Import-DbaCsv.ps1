@@ -254,7 +254,7 @@ function Import-DbaCsv {
         [ValidateSet('AdvanceToNextLine', 'ThrowException')]
         [string]$ParseErrorAction = 'ThrowException',
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
-        [string]$Encoding,
+        [string]$Encoding = 'UTF8',
         [string]$NullValue,
         [int]$MaxQuotedFieldLength,
         [switch]$SkipEmptyLine,
@@ -300,7 +300,7 @@ function Import-DbaCsv {
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
             $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                (New-Object System.IO.StreamReader($Path)),
+                (New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::$Encoding)),
                 $FirstRowHeader,
                 $Delimiter,
                 $Quote,
@@ -550,8 +550,15 @@ function Import-DbaCsv {
                     # Write to server :D
                     try {
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                            (New-Object System.IO.StreamReader($file)),
-                            [System.Text.Encoding]::$Encoding
+                            (New-Object System.IO.StreamReader($file, [System.Text.Encoding]::$Encoding)),
+                            $FirstRowHeader,
+                            $Delimiter,
+                            $Quote,
+                            $Escape,
+                            $Comment,
+                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                            $BufferSize,
+                            $NullValue
                         )
 
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
@@ -568,32 +575,6 @@ function Import-DbaCsv {
                         }
                         if ($PSBoundParameters.ParseErrorAction) {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
-                        }
-
-                        # constructors were misleading so here's some brute forcing of readonly (get;) properties. it works :O
-                        if ($PSBoundParameters.BufferSize) {
-                            Add-Member -Type NoteProperty -Name BufferSize -Value $BufferSize -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.NullValue) {
-                            Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.FirstRowHeader) {
-                            $reader.hasHeaders = $FirstRowHeader
-                        }
-                        if ($PSBoundParameters.Delimiter) {
-                            Add-Member -Type NoteProperty -Name Delimiter -Value $Delimiter -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Quote) {
-                            Add-Member -Type NoteProperty -Name Quote -Value $Quote -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Escape) {
-                            Add-Member -Type NoteProperty -Name Escape -Value $Escape -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Comment) {
-                            Add-Member -Type NoteProperty -Name Comment -Value $Comment -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.TrimmingOption) {
-                            Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
                         }
 
                         # Add rowcount output
