@@ -128,6 +128,8 @@ function Import-DbaCsv {
         You can also choose AdvanceToNextLine which basically ignores parse errors.
 
     .PARAMETER Encoding
+        By default, set to UTF-8.
+
         The encoding of the file.
 
     .PARAMETER NullValue
