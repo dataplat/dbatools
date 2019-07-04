@@ -72,26 +72,20 @@ function Remove-DbaAgentJobCategory {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Loop through each of the categories
             foreach ($cat in $Category) {
-
-                # Check if the job category exists
                 if ($cat -notin $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
                 }
 
-                # Remove the category
-                if ($PSCmdlet.ShouldProcess($instance, "Changing the job category $Category")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the job category $Category")) {
                     try {
-                        # Get the category
                         $currentCategory = $server.JobServer.JobCategories[$cat]
 
                         Write-Message -Message "Removing job category $cat" -Level Verbose
@@ -100,18 +94,8 @@ function Remove-DbaAgentJobCategory {
                     } catch {
                         Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
-
-                } #if should process
-
-            } # for each category
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished removing job category." -Level Verbose
+                }
+            }
+        }
     }
-
 }

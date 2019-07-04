@@ -727,7 +727,12 @@ $script:xplat = @(
     'Remove-DbaDbRoleMember',
     'Remove-DbaServerRole',
     'Test-DbaDbDataGeneratorConfig',
-    'Test-DbaDbDataMaskingConfig'
+    'Test-DbaDbDataMaskingConfig',
+    'Get-DbaAgentAlertCategory',
+    'New-DbaAgentAlertCategory',
+    'Remove-DbaAgentAlertCategory',
+    'New-DbaAgentJobCategory',
+    'Remove-DbaAgentAlertCategory'
 )
 
 $script:noncoresmo = @(

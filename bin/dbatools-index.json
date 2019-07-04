@@ -9691,6 +9691,57 @@
         "Syntax":  "Get-DbaAgentAlert [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaAgentAlertCategory",
+        "Description":  "Get-DbaAgentAlertCategory makes it possible to retrieve the alert categories.",
+        "Tags":  [
+                     "Agent",
+                     "Alert",
+                     "AlertCategory"
+                 ],
+        "Synopsis":  "Get-DbaAgentAlertCategory retrieves the alert categories.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Get-DbaAgentAlertCategory",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaAgentAlertCategory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentAlertCategory -SqlInstance sql1\nReturn all the agent alert categories.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentAlertCategory -SqlInstance sql1 -Category \u0027Severity Alert\u0027\nReturn all the agent alert categories that have the name \u0027Severity Alert\u0027.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Category",
+                           "The name of the category to filter out. If no category is used all categories will be returned.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaAgentAlertCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaAgentJob",
         "Description":  "The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.",
         "Tags":  [
@@ -22282,11 +22333,11 @@
                        ],
                        [
                            "Encoding",
-                           "The encoding of the file.",
+                           "By default, set to UTF-8.\nThe encoding of the file.",
                            "",
                            false,
                            "false",
-                           ""
+                           "UTF8"
                        ],
                        [
                            "NullValue",
@@ -28029,6 +28080,81 @@
         "Syntax":  "Move-DbaRegServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \u003cString[]\u003e] [-NewGroup] \u003cString\u003e [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaAgentAlertCategory",
+        "Description":  "New-DbaAgentAlertCategory makes it possible to create a Agent Alert category that can be used with Alerts.\nIt returns an array of the alert categories created .",
+        "Tags":  [
+                     "Agent",
+                     "Alert",
+                     "AlertCategory"
+                 ],
+        "Synopsis":  "New-DbaAgentAlertCategory creates a new alert category.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "New-DbaAgentAlertCategory",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaAgentAlertCategory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentAlertCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nCreates a new alert category with the name \u0027Category 1\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027 | New-DbaAgentAlertCategory -Category \u0027Category 2\u0027\nCreates a new alert category with the name \u0027Category 2\u0027.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Category",
+                           "The name of the category",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "The force parameter will ignore some errors in the parameters and assume defaults.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaAgentAlertCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Category] \u003cString[]\u003e [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaAgentJob",
         "Description":  "New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.\nIt returns an array of the job(s) created",
         "Tags":  [
@@ -28217,7 +28343,7 @@
     },
     {
         "Name":  "New-DbaAgentJobCategory",
-        "Description":  "New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.\nIt returns an array of the job(s) created .",
+        "Description":  "New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.\nIt returns an array of the job categories created .",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -33844,6 +33970,81 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaAgentAlertCategory",
+        "Description":  "Remove-DbaAgentAlertCategory makes it possible to remove an alert category.\nInsure that the category you want to remove is not used with any alerts. If an alert uses this category it will be get the category [Uncategorized].",
+        "Tags":  [
+                     "Agent",
+                     "Alert",
+                     "AlertCategory"
+                 ],
+        "Synopsis":  "Remove-DbaAgentAlertCategory removes an alert category.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Remove-DbaAgentAlertCategory",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaAgentAlertCategory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nRemove the alert category Category 1 from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3\nRemove multiple alert categories from the instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\nRemove multiple alert categories from the multiple instances.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Category",
+                           "The name of the category",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "The force parameter will ignore some errors in the parameters and assume defaults.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaAgentAlertCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentJob",

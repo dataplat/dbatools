@@ -12301,7 +12301,7 @@ function Export-DbaInstance {
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$Path\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$stepCounter-resourcegov.sql"
+                $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$Path\$fileCounter-resourcegov.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-resourcegov.sql"
                 if (-not (Test-Path "$Path\$fileCounter-resourcegov.sql")) {
                     $fileCounter--
@@ -17166,6 +17166,52 @@ function Get-DbaAgentAlert {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Get-DbaAgentAlertCategory {
+    
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Category,
+        [switch]$EnableException
+    )
+
+    process {
+
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $alertCategories = $server.JobServer.AlertCategories
+            if (Test-Bound -ParameterName Category) {
+                $alertCategories = $alertCategories | Where-Object { $_.Name -in $Category }
+            }
+
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'AlertCount'
+
+            try {
+                foreach ($cat in $alertCategories) {
+                    $alertCount = ($server.JobServer.Alerts | Where-Object {$_.CategoryName -eq $cat.Name}).Count
+
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name AlertCount -Value $alertCount
+
+                    Select-DefaultView -InputObject $cat -Property $defaults
+                }
+            } catch {
+                Stop-Function -Message "Something went wrong getting the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Get-DbaAgentJob {
     
     [CmdletBinding()]
@@ -17227,7 +17273,7 @@ function Get-DbaAgentJobCategory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
@@ -17246,45 +17292,30 @@ function Get-DbaAgentJobCategory {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # get all the job categories
             $jobCategories = $server.JobServer.JobCategories |
                 Where-Object {
                 ($_.Name -in $Category -or !$Category) -and
                 ($_.CategoryType -in $CategoryType -or !$CategoryType)
             }
 
-            # Set the default output
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
 
-            # Loop through each of the categories
             try {
                 foreach ($cat in $jobCategories) {
-
-                    # Get the jobs associated with the category
                     $jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
 
-                    # Add new properties to the category object
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $jobCount
 
-                    # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
                 }
             } catch {
-                Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
+                Stop-Function -Message "Something went wrong getting the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
             }
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished retrieving job category." -Level Verbose
+        }
     }
-
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -36202,7 +36233,7 @@ function Import-DbaCsv {
         [ValidateSet('AdvanceToNextLine', 'ThrowException')]
         [string]$ParseErrorAction = 'ThrowException',
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
-        [string]$Encoding,
+        [string]$Encoding = 'UTF8',
         [string]$NullValue,
         [int]$MaxQuotedFieldLength,
         [switch]$SkipEmptyLine,
@@ -36236,7 +36267,7 @@ function Import-DbaCsv {
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
             $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                (New-Object System.IO.StreamReader($Path)),
+                (New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::$Encoding)),
                 $FirstRowHeader,
                 $Delimiter,
                 $Quote,
@@ -36486,8 +36517,15 @@ function Import-DbaCsv {
                     # Write to server :D
                     try {
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                            (New-Object System.IO.StreamReader($file)),
-                            [System.Text.Encoding]::$Encoding
+                            (New-Object System.IO.StreamReader($file, [System.Text.Encoding]::$Encoding)),
+                            $FirstRowHeader,
+                            $Delimiter,
+                            $Quote,
+                            $Escape,
+                            $Comment,
+                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                            $BufferSize,
+                            $NullValue
                         )
 
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
@@ -36504,32 +36542,6 @@ function Import-DbaCsv {
                         }
                         if ($PSBoundParameters.ParseErrorAction) {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
-                        }
-
-                        # constructors were misleading so here's some brute forcing of readonly (get;) properties. it works :O
-                        if ($PSBoundParameters.BufferSize) {
-                            Add-Member -Type NoteProperty -Name BufferSize -Value $BufferSize -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.NullValue) {
-                            Add-Member -Type NoteProperty -Name NullValue -Value $NullValue -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.FirstRowHeader) {
-                            $reader.hasHeaders = $FirstRowHeader
-                        }
-                        if ($PSBoundParameters.Delimiter) {
-                            Add-Member -Type NoteProperty -Name Delimiter -Value $Delimiter -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Quote) {
-                            Add-Member -Type NoteProperty -Name Quote -Value $Quote -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Escape) {
-                            Add-Member -Type NoteProperty -Name Escape -Value $Escape -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.Comment) {
-                            Add-Member -Type NoteProperty -Name Comment -Value $Comment -Force -InputObject $reader
-                        }
-                        if ($PSBoundParameters.TrimmingOption) {
-                            Add-Member -Type NoteProperty -Name TrimmingOptions -Value [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption -Force -InputObject $reader
                         }
 
                         # Add rowcount output
@@ -44827,7 +44839,7 @@ function Invoke-DbatoolsRenameHelper {
             'Backup-DbaDatabaseCertificate'     = 'Backup-DbaDbCertificate'
             'Backup-DbaDatabaseMasterKey'       = 'Backup-DbaDbMasterKey'
             'Clear-DbaSqlConnectionPool'        = 'Clear-DbaConnectionPool'
-            'Connect-DbaInstance'               = 'Connect-DbaInstance'
+            'Connect-DbaServer'                 = 'Connect-DbaInstance'
             'Copy-DbaAgentCategory'             = 'Copy-DbaAgentJobCategory'
             'Copy-DbaAgentProxyAccount'         = 'Copy-DbaAgentProxy'
             'Copy-DbaAgentSharedSchedule'       = 'Copy-DbaAgentSchedule'
@@ -45070,6 +45082,7 @@ function Invoke-DbatoolsRenameHelper {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaWhoIsActive {
@@ -45956,6 +45969,56 @@ function Move-DbaRegServerGroup {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function New-DbaAgentAlertCategory {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Category,
+        [switch]$Force,
+        [switch]$EnableException
+    )
+
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
+
+    process {
+
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($cat in $Category) {
+                if ($cat -in $server.JobServer.AlertCategories.Name) {
+                    Stop-Function -Message "Alert category $cat already exists on $instance" -Target $instance -Continue
+                } else {
+                    if ($PSCmdlet.ShouldProcess($instance, "Adding the alert category $cat")) {
+                        try {
+                            $alertCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.AlertCategory($server.JobServer, $cat)
+
+                            $alertCategory.Create()
+
+                            $server.JobServer.Refresh()
+                        } catch {
+                            Stop-Function -Message "Something went wrong creating the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+                        }
+                    }
+                }
+                Get-DbaAgentAlertCategory -SqlInstance $server -Category $cat
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function New-DbaAgentJob {
     
 
@@ -46243,7 +46306,6 @@ function New-DbaAgentJob {
 #.ExternalHelp dbatools-Help.xml
 function New-DbaAgentJobCategory {
     
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -46261,9 +46323,7 @@ function New-DbaAgentJobCategory {
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
 
-        # Check the category type
         if (-not $CategoryType) {
-            # Setting category type to default
             Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
             $CategoryType = "LocalJob"
         }
@@ -46271,8 +46331,7 @@ function New-DbaAgentJobCategory {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -46280,39 +46339,26 @@ function New-DbaAgentJobCategory {
             }
 
             foreach ($cat in $Category) {
-                # Check if the category already exists
                 if ($cat -in $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
                         try {
-                            $jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
-                            $jobcategory.CategoryType = $CategoryType
+                            $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+                            $jobCategory.CategoryType = $CategoryType
 
-                            $jobcategory.Create()
+                            $jobCategory.Create()
 
                             $server.JobServer.Refresh()
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
-
-                    } # if should process
-
-                } # end else category exists
-
-                # Return the job category
+                    }
+                }
                 Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
-
-            } # for each category
-
-        } # for each instance
+            }
+        }
     }
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished creating job category." -Level Verbose
-    }
-
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -52767,6 +52813,52 @@ function Remove-DbaAgDatabase {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Remove-DbaAgentAlertCategory {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Category,
+        [switch]$Force,
+        [switch]$EnableException
+    )
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
+    process {
+
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($cat in $Category) {
+                if ($cat -notin $server.JobServer.AlertCategories.Name) {
+                    Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
+                }
+
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
+                    try {
+                        $currentCategory = $server.JobServer.AlertCategories[$cat]
+
+                        Write-Message -Message "Removing alert category $cat" -Level Verbose
+
+                        $currentCategory.Drop()
+                    } catch {
+                        Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+                    }
+                }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Remove-DbaAgentJob {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -52863,26 +52955,20 @@ function Remove-DbaAgentJobCategory {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Loop through each of the categories
             foreach ($cat in $Category) {
-
-                # Check if the job category exists
                 if ($cat -notin $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
                 }
 
-                # Remove the category
-                if ($PSCmdlet.ShouldProcess($instance, "Changing the job category $Category")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing the job category $Category")) {
                     try {
-                        # Get the category
                         $currentCategory = $server.JobServer.JobCategories[$cat]
 
                         Write-Message -Message "Removing job category $cat" -Level Verbose
@@ -52891,20 +52977,10 @@ function Remove-DbaAgentJobCategory {
                     } catch {
                         Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                     }
-
-                } #if should process
-
-            } # for each category
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished removing job category." -Level Verbose
+                }
+            }
+        }
     }
-
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -78235,7 +78311,7 @@ function Update-SqlDbOwner {
                 Write-Message -Level Output -Message "Database status not normal. Skipping dbowner update."
                 continue
             }
-            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }

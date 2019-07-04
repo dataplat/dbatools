@@ -5,7 +5,7 @@ function New-DbaAgentJobCategory {
 
     .DESCRIPTION
         New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
-        It returns an array of the job(s) created .
+        It returns an array of the job categories created .
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -56,7 +56,6 @@ function New-DbaAgentJobCategory {
         Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
 
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -74,9 +73,7 @@ function New-DbaAgentJobCategory {
     begin {
         if ($Force) {$ConfirmPreference = 'none'}
 
-        # Check the category type
         if (-not $CategoryType) {
-            # Setting category type to default
             Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
             $CategoryType = "LocalJob"
         }
@@ -84,8 +81,7 @@ function New-DbaAgentJobCategory {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -93,37 +89,24 @@ function New-DbaAgentJobCategory {
             }
 
             foreach ($cat in $Category) {
-                # Check if the category already exists
                 if ($cat -in $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
                         try {
-                            $jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
-                            $jobcategory.CategoryType = $CategoryType
+                            $jobCategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+                            $jobCategory.CategoryType = $CategoryType
 
-                            $jobcategory.Create()
+                            $jobCategory.Create()
 
                             $server.JobServer.Refresh()
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
                         }
-
-                    } # if should process
-
-                } # end else category exists
-
-                # Return the job category
+                    }
+                }
                 Get-DbaAgentJobCategory -SqlInstance $server -Category $cat
-
-            } # for each category
-
-        } # for each instance
+            }
+        }
     }
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished creating job category." -Level Verbose
-    }
-
 }
