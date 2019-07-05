@@ -72,7 +72,6 @@ function Move-DbaRegServer {
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Name) -and (Test-Bound -Not -ParameterName ServerName)) {
             Stop-Function -Message "Name or ServerName must be specified when using -SqlInstance"
@@ -83,7 +82,6 @@ function Move-DbaRegServer {
 
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
-
         }
 
         foreach ($regserver in $InputObject) {
@@ -96,18 +94,18 @@ function Move-DbaRegServer {
             $server = $regserver.ParentServer
 
             if ((Test-Bound -ParameterName Group)) {
-                $group = Get-DbaRegServerGroup -SqlInstance $server -Group $Group
+                $movetogroup = Get-DbaRegServerGroup -SqlInstance $server -Group $Group
 
-                if (-not $group) {
+                if (-not $movetogroup) {
                     Stop-Function -Message "$Group not found on $server" -Continue
                 }
             } else {
-                $group = Get-DbaRegServerGroup -SqlInstance $server -Id 1
+                $movetogroup = Get-DbaRegServerGroup -SqlInstance $server -Id 1
             }
 
-            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
+            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $movetogroup")) {
                 try {
-                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($movetogroup).GetScript())
                     Get-DbaRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
