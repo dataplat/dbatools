@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!-- Named this way to avoid VS Code conflicts -->
 <configuration>
 	<configSections>
 	   <!-- Change #1: Register the new SqlAuthenticationProvider configuration section -->

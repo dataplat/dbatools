@@ -157,7 +157,7 @@ if ($psVersionTable.Platform -ne 'Unix' -and $PSVersionTable.PSEdition -ne "Core
     if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
         Write-Verbose -Message "Loading app.config"
         # Load app.config that supports MFA
-        $configpath = "$script:PSModuleRoot\bin\app.config"
+        $configpath = "$script:PSModuleRoot\bin\appconfig.txt"
         [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
         Add-Type -AssemblyName System.Configuration
         # Clear some cache to make sure it loads
