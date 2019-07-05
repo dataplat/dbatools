@@ -485,8 +485,8 @@
         'New-DbaAgentAlertCategory',
         'New-DbaAgentJobCategory',
         'Remove-DbaAgentAlertCategory',
-		'Save-DbaUpdate',
-		'Get-DbaUpdateDetail',
+        'Save-DbaUpdate',
+        'Get-DbaUpdateDetail',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
