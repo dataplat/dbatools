@@ -197,7 +197,7 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 if (-not ('Microsoft.SqlServer.Management.Smo.Server' -as [type])) {
-    . $script:psScriptRoot\internal\scripts\smoLibraryImport.ps1
+    . $script:psScriptRoot\internal\scripts\libraryimport.ps1
     Write-ImportTime -Text "Starting import SMO libraries"
 }
 
@@ -730,7 +730,9 @@ $script:xplat = @(
     'Test-DbaDbDataMaskingConfig',
     'Get-DbaAgentAlertCategory',
     'New-DbaAgentAlertCategory',
-    'Remove-DbaAgentAlertCategory'
+    'Remove-DbaAgentAlertCategory',
+    'Save-DbaUpdate',
+    'Get-DbaUpdateDetail'
 )
 
 $script:noncoresmo = @(
@@ -962,6 +964,38 @@ if ($option.LoadTypes -or
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
 #Write-ImportTime -Text "Loaded type extensions"
+
+# if .net 4.7.2 load new sql auth config
+if ($psVersionTable.Platform -ne 'Unix' -and $PSVersionTable.PSEdition -ne "Core" -and $host.Name -ne 'Visual Studio Code Host') {
+    if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
+        Write-Verbose -Message "Loading app.config"
+        # avoid issues with app.config file and VS Integrated Console
+        $appconfig = "$(Get-DbatoolsConfigValue -FullName path.dbatoolstemp)\app.config"
+        if (-not (Test-Path -Path $appconfig)) {
+            $appconfigtext = '<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <configSections>
+        <!-- Change #1: Register the new SqlAuthenticationProvider configuration section -->
+        <section name="SqlAuthenticationProviders" type="System.Data.SqlClient.SqlAuthenticationProviderConfigurationSection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+    </configSections>
+    <!-- Change #3: Add the new SqlAuthenticationProvider configuration section, registering the built-in authentication provider in AppAuth library -->
+    <SqlAuthenticationProviders>
+        <providers>
+        <add name="Active Directory Interactive" type="Microsoft.Azure.Services.AppAuthentication.SqlAppAuthenticationProvider, Microsoft.Azure.Services.AppAuthentication" />
+        </providers>
+    </SqlAuthenticationProviders>
+</configuration>'
+            $null = Set-Content -Path $appconfig -Value $appconfigtext -Encoding UTF8
+        }
+        # Load app.config that supports MFA
+        [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $appconfig)
+        Add-Type -AssemblyName System.Configuration
+        # Clear some cache to make sure it loads
+        [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)
+        [Configuration.ConfigurationManager].GetField("s_configSystem", "NonPublic, Static").SetValue($null, $null)
+        ([Configuration.ConfigurationManager].Assembly.GetTypes() | Where-Object { $_.FullName -eq "System.Configuration.ClientConfigPaths" })[0].GetField("s_current", "NonPublic, Static").SetValue($null, $null)
+    }
+}
 
 $td = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
