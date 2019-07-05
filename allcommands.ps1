@@ -33867,6 +33867,68 @@ function Get-DbaTraceFlag {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Get-DbaUpdateDetail {
+    
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Name,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($kb in $Name) {
+            try {
+                # Thanks! https://keithga.wordpress.com/2017/05/21/new-tool-get-the-latest-windows-10-cumulative-updates/
+                $kb = $kb.Replace("KB", "").Replace("kb", "").Replace("Kb", "")
+
+                $results = Invoke-TlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb"
+                $kbids = $results.InputFields |
+                    Where-Object { $_.type -eq 'Button' -and $_.Value -eq 'Download' } |
+                    Select-Object -ExpandProperty  ID
+
+                if (-not $kbids) {
+                    Write-Message -Level Warning -Message "No results found for $Name"
+                    return
+                }
+
+                Write-Message -Level Verbose -Message "$kbids"
+
+                $guids = $results.Links |
+                    Where-Object ID -match '_link' |
+                    Where-Object { $_.OuterHTML -match ( "(?=.*" + ( $Filter -join ")(?=.*" ) + ")" ) } |
+                    ForEach-Object { $_.id.replace('_link', '') } |
+                    Where-Object { $_ -in $kbids }
+
+                foreach ($guid in $guids) {
+                    Write-Message -Level Verbose -Message "Downloading information for $guid"
+                    $post = @{ size = 0; updateID = $guid; uidInfo = $guid } | ConvertTo-Json -Compress
+                    $body = @{ updateIDs = "[$post]" }
+                    $detailresults = Invoke-TlsWebRequest -Uri 'http://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body | Select-Object -ExpandProperty Content
+
+                    # sorry, don't know regex. this is ugly af.
+                    $title = $detailresults -Split "enTitle ="
+                    $title = ($title[1] -Split ';')[0].Replace("'", "")
+
+                    $links = $detailresults | Select-String -AllMatches -Pattern "(http[s]?\://download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
+                    foreach ($link in $links) {
+                        $build = Get-DbaBuildReference -Kb "KB$kb" -WarningAction SilentlyContinue
+                        if ($build.NameLevel) {
+                            $properties = "Title", "NameLevel", "SPLevel", "KBLevel", "CULevel", "BuildLevel", "SupportedUntil", "Link"
+                        } else {
+                            $properties = "Title", "Link"
+                        }
+                        Add-Member -InputObject $build -MemberType NoteProperty -Name Title -Value $title
+                        Add-Member -InputObject $build -MemberType NoteProperty -Name Link -Value ($link.matches.value) -PassThru | Select-DefaultView -Property $properties
+                    }
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Get-DbaUptime {
     
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -45853,12 +45915,12 @@ function Move-DbaRegServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [string]$NewGroup,
+        [Alias("NewGroup")]
+        [string]$Group,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Name) -and (Test-Bound -Not -ParameterName ServerName)) {
             Stop-Function -Message "Name or ServerName must be specified when using -SqlInstance"
@@ -45869,7 +45931,6 @@ function Move-DbaRegServer {
 
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
-
         }
 
         foreach ($regserver in $InputObject) {
@@ -45881,23 +45942,23 @@ function Move-DbaRegServer {
 
             $server = $regserver.ParentServer
 
-            if ((Test-Bound -ParameterName NewGroup)) {
-                $group = Get-DbaRegServerGroup -SqlInstance $server -Group $NewGroup
+            if ((Test-Bound -ParameterName Group)) {
+                $movetogroup = Get-DbaRegServerGroup -SqlInstance $server -Group $Group
 
-                if (-not $group) {
-                    Stop-Function -Message "$NewGroup not found on $server" -Continue
+                if (-not $movetogroup) {
+                    Stop-Function -Message "$Group not found on $server" -Continue
                 }
             } else {
-                $group = Get-DbaRegServerGroup -SqlInstance $server -Id 1
+                $movetogroup = Get-DbaRegServerGroup -SqlInstance $server -Id 1
             }
 
-            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
+            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $movetogroup")) {
                 try {
-                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($movetogroup).GetScript())
                     Get-DbaRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
                 } catch {
-                    Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to move $($regserver.Name) to $Group on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }
@@ -58348,6 +58409,80 @@ function Save-DbaDiagnosticQueryScript {
         } catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Save-DbaUpdate {
+    
+    [CmdletBinding()]
+    param(
+        [string[]]$Name,
+        [string]$Path = ".",
+        [string]$FilePath,
+        [ValidateSet("x64", "x86", "All")]
+        [string]$Architecture = "x64",
+        [parameter(ValueFromPipeline)]
+        [pscustomobject]$InputObject,
+        [switch]$EnableException
+    )
+    process {
+        if ($Name.Count -gt 0 -and $PSBoundParameters.FilePath) {
+            Stop-Function -Message "You can only specify one KB when using FilePath"
+            return
+        }
+
+        if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Name) {
+            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaUpdateDetail"
+            return
+        }
+
+        foreach ($kb in $Name) {
+            $InputObject += Get-DbaUpdateDetail -Name $kb
+        }
+
+        foreach ($item in $InputObject.Link) {
+            if ($item.Count -gt 1 -and $Architecture -ne "All") {
+                $templinks = $item | Where-Object { $PSItem -match "$($Architecture)_" }
+                if ($templinks) {
+                    $item = $templinks
+                } else {
+                    Write-Message -Level Warning -Message "Could not find architecture match, downloading all"
+                }
+            }
+
+            foreach ($link in $item) {
+                if (-not $PSBoundParameters.FilePath) {
+                    $FilePath = Split-Path -Path $link -Leaf
+                } else {
+                    $Path = Split-Path -Path $FilePath
+                }
+
+                $file = "$Path$([IO.Path]::DirectorySeparatorChar)$FilePath"
+
+                if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
+                    Start-BitsTransfer -Source $link -Destination $file
+                } else {
+                    # IWR is crazy slow for large downloads
+                    $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
+                    $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
+                    $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
+                    $availableTls | ForEach-Object {
+                        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
+                    }
+
+                    Write-Progress -Activity "Downloading $FilePath" -Id 1
+                    (New-Object Net.WebClient).DownloadFile($link, $file)
+                    Write-Progress -Activity "Downloading $FilePath" -Id 1 -Completed
+
+
+                    [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
+                }
+                if (Test-Path -Path $file) {
+                    Get-ChildItem -Path $file
+                }
+            }
         }
     }
 }

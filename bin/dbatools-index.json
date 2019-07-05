@@ -20823,6 +20823,37 @@
         "Syntax":  "Get-DbaTraceFlag [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-TraceFlag] \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaUpdateDetail",
+        "Description":  "Parses catalog.update.microsoft.com and grabs details for KB files (SPs/hotfixes/CUs, etc)",
+        "Tags":  "Update",
+        "Synopsis":  "Gets download links and detailed information for KB files (SPs/hotfixes/CUs, etc)",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Get-DbaUpdateDetail",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaUpdateDetail",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaUpdateDetail -Name KB4057119\nGets information about KB4057119. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaUpdateDetail -Name KB4057119, 4057114\nGets information about KB4057119 and KB4057114. This works for SQL Server or any other KB.",
+        "Params":  [
+                       [
+                           "Name",
+                           "The KB name or number. For example, KB4057119 or 4057119.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaUpdateDetail [-Name] \u003cString[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaUptime",
         "Description":  "By default, this command returns for each SQL Server instance passed in:\nSQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string\nHosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string",
         "Tags":  "CIM",
@@ -27920,7 +27951,7 @@
         "CommandName":  "Move-DbaRegServer",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaRegServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaRegServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -Group HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaRegServer -Group Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
         "Params":  [
                        [
                            "SqlInstance",
@@ -27955,9 +27986,9 @@
                            ""
                        ],
                        [
-                           "NewGroup",
+                           "Group",
                            "The new group. If no new group is specified, the default root will used",
-                           "",
+                           "NewGroup",
                            false,
                            "false",
                            ""
@@ -27995,7 +28026,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Move-DbaRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-NewGroup] \u003cString\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Move-DbaRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cString\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Move-DbaRegServerGroup",
@@ -38504,6 +38535,69 @@
                        ]
                    ],
         "Syntax":  "Save-DbaDiagnosticQueryScript [[-Path] \u003cFileInfo\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Save-DbaUpdate",
+        "Description":  "Downloads patches from Microsoft",
+        "Tags":  "Update",
+        "Synopsis":  "Downloads patches from Microsoft",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Save-DbaUpdate",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Save-DbaUpdate",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaUpdate -Name KB4057119\nDownloads KB4057119 to the current directory. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaUpdateDetail -Name KB4057119 | Out-GridView -Passthru | Save-DbaUpdate\nDownloads the selected files from KB4057119 to the current directory.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSave-DbaUpdate -Name KB4057119, 4057114 -Path C:\\temp\nDownloads KB4057119 and the x64 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSave-DbaUpdate -Name KB4057114 -Architecture All -Path C:\\temp\nDownloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.",
+        "Params":  [
+                       [
+                           "Name",
+                           "The KB name or number. For example, KB4057119 or 4057119.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The directory to save the file.",
+                           "",
+                           false,
+                           "false",
+                           "."
+                       ],
+                       [
+                           "FilePath",
+                           "The exact file name to save to, otherwise, it uses the name given by the webserver",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Architecture",
+                           "Defaults to x64. Can be x64, x86 or \"All\"",
+                           "",
+                           false,
+                           "false",
+                           "x64"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaUpdateDetail",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Save-DbaUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-InputObject] \u003cPSObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Select-DbaBackupInformation",
