@@ -730,7 +730,9 @@ $script:xplat = @(
     'Test-DbaDbDataMaskingConfig',
     'Get-DbaAgentAlertCategory',
     'New-DbaAgentAlertCategory',
-    'Remove-DbaAgentAlertCategory'
+    'Remove-DbaAgentAlertCategory',
+    'Save-DbaUpdate',
+    'Get-DbaUpdateDetail'
 )
 
 $script:noncoresmo = @(
