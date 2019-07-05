@@ -18,6 +18,9 @@ function Save-DbaUpdate {
      .PARAMETER Architecture
         Defaults to x64. Can be x64, x86 or "All"
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaUpdateDetail
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -41,6 +44,10 @@ function Save-DbaUpdate {
 
         Downloads KB4057119 to the current directory. This works for SQL Server or any other KB.
 
+    .EXAMPLE
+        PS C:\> Get-DbaUpdateDetail -Name KB4057119 | Out-GridView -Passthru | Save-DbaUpdate
+
+        Downloads the selected files from KB4057119 to the current directory.
 
     .EXAMPLE
         PS C:\> Save-DbaUpdate -Name KB4057119, 4057114 -Path C:\temp
@@ -54,12 +61,13 @@ function Save-DbaUpdate {
 #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
         [string[]]$Name,
         [string]$Path = ".",
         [string]$FilePath,
         [ValidateSet("x64", "x86", "All")]
         [string]$Architecture = "x64",
+        [parameter(ValueFromPipeline)]
+        [pscustomobject]$InputObject,
         [switch]$EnableException
     )
     process {
@@ -67,19 +75,27 @@ function Save-DbaUpdate {
             Stop-Function -Message "You can only specify one KB when using FilePath"
             return
         }
-        foreach ($kb in $Name) {
-            $links = (Get-KBLink -Name $kb).Link
 
-            if ($links.Count -gt 1 -and $Architecture -ne "All") {
-                $templinks = $links | Where-Object { $PSItem -match "$($Architecture)_" }
+        if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Name) {
+            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaUpdateDetail"
+            return
+        }
+
+        foreach ($kb in $Name) {
+            $InputObject += Get-DbaUpdateDetail -Name $kb
+        }
+
+        foreach ($item in $InputObject.Link) {
+            if ($item.Count -gt 1 -and $Architecture -ne "All") {
+                $templinks = $item | Where-Object { $PSItem -match "$($Architecture)_" }
                 if ($templinks) {
-                    $links = $templinks
+                    $item = $templinks
                 } else {
                     Write-Message -Level Warning -Message "Could not find architecture match, downloading all"
                 }
             }
 
-            foreach ($link in $links) {
+            foreach ($link in $item) {
                 if (-not $PSBoundParameters.FilePath) {
                     $FilePath = Split-Path -Path $link -Leaf
                 } else {
@@ -91,7 +107,7 @@ function Save-DbaUpdate {
                 if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
                     Start-BitsTransfer -Source $link -Destination $file
                 } else {
-                    # Invoke-WebRequest is crazy slow for large downloads
+                    # IWR is crazy slow for large downloads
                     Write-Progress -Activity "Downloading $FilePath" -Id 1
                     (New-Object Net.WebClient).DownloadFile($link, $file)
                     Write-Progress -Activity "Downloading $FilePath" -Id 1 -Completed
