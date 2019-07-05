@@ -156,9 +156,26 @@ if ($script:serialImport) {
 if ($psVersionTable.Platform -ne 'Unix' -and $PSVersionTable.PSEdition -ne "Core" -and $host.Name -ne 'Visual Studio Code Host') {
     if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808) {
         Write-Verbose -Message "Loading app.config"
+        # avoid issues with app.config file and VS Integrated Console
+        $appconfig = "$(Get-DbatoolsConfigValue -FullName path.dbatoolstemp)\app.config"
+        if (-not (Test-Path -Path $appconfig)) {
+            $appconfigtext = '<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<configSections>
+	   <!-- Change #1: Register the new SqlAuthenticationProvider configuration section -->
+	   <section name="SqlAuthenticationProviders" type="System.Data.SqlClient.SqlAuthenticationProviderConfigurationSection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+	</configSections>
+	<!-- Change #3: Add the new SqlAuthenticationProvider configuration section, registering the built-in authentication provider in AppAuth library -->
+	<SqlAuthenticationProviders>
+	   <providers>
+		 <add name="Active Directory Interactive" type="Microsoft.Azure.Services.AppAuthentication.SqlAppAuthenticationProvider, Microsoft.Azure.Services.AppAuthentication" />
+	   </providers>
+	</SqlAuthenticationProviders>
+</configuration>'
+            $null = Set-Content -Path $appconfig -Value $appconfigtext -Encoding UTF8
+        }
         # Load app.config that supports MFA
-        $configpath = "$script:PSModuleRoot\bin\appconfig.txt"
-        [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $configpath)
+        [appdomain]::CurrentDomain.SetData("APP_CONFIG_FILE", $appconfig)
         Add-Type -AssemblyName System.Configuration
         # Clear some cache to make sure it loads
         [Configuration.ConfigurationManager].GetField("s_initState", "NonPublic, Static").SetValue($null, 0)

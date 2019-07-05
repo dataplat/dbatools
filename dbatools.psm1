@@ -197,7 +197,7 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 if (-not ('Microsoft.SqlServer.Management.Smo.Server' -as [type])) {
-    . $script:psScriptRoot\internal\scripts\smoLibraryImport.ps1
+    . $script:psScriptRoot\internal\scripts\libraryimport.ps1
     Write-ImportTime -Text "Starting import SMO libraries"
 }
 
