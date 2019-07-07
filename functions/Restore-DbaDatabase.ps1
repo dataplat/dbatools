@@ -102,7 +102,7 @@ function Restore-DbaDatabase {
         Useful if restoring a copy to the same sql server for testing.
 
     .PARAMETER TrustDbBackupHistory
-        This switch can be used when piping the output of Get-DbaBackupHistory or Backup-DbaDatabase into this command.
+        This switch can be used when piping the output of Get-DbaDbBackupHistory or Backup-DbaDatabase into this command.
         It allows the user to say that they trust that the output from those commands is correct, and skips the file header read portion of the process. This means a faster process, but at the risk of not knowing till halfway through the restore that something is wrong with a file.
 
     .PARAMETER MaxTransferSize
@@ -176,9 +176,6 @@ function Restore-DbaDatabase {
 
     .PARAMETER PageRestoreTailFolder
         This parameter passes in a location for the tail log backup required for page level restore
-
-    .PARAMETER AllowContinue
-        This parameter has been deprecated and will be removed in v1.0
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -293,10 +290,10 @@ function Restore-DbaDatabase {
         In this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.
 
     .EXAMPLE
-        PS C:\> Get-DbaBackupHistory - SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore
+        PS C:\> Get-DbaDbBackupHistory - SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore
         PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
 
-        Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
+        Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaDbBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
 
     .EXAMPLE
@@ -323,11 +320,11 @@ function Restore-DbaDatabase {
 
         Restores 'database' to 'server1' and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.
 
-#>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
     param (
-        [parameter(Mandatory)][Alias("ServerInstance", "SqlServer")][DbaInstanceParameter]$SqlInstance,
+        [parameter(Mandatory)][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")][parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")][object[]]$Path,
         [parameter(ValueFromPipeline)][Alias("Name")][object[]]$DatabaseName,
@@ -370,8 +367,7 @@ function Restore-DbaDatabase {
         [switch]$StopAfterTestBackupInformation,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
-        [int]$StatementTimeout = 0,
-        [switch]$AllowContinue
+        [int]$StatementTimeout = 0
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -400,9 +396,6 @@ function Restore-DbaDatabase {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
-            if (Test-Bound "AllowContinue") {
-                Write-Message -Level Warning -Message "AllowContinue is deprecated and will be removed in v1.0"
-            }
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
             }
@@ -644,7 +637,7 @@ function Restore-DbaDatabase {
             return
         }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
-            if ($BackupHistory.Count -eq 0) {
+            if ($BackupHistory.Count -eq 0 -and $RestoreInstance.VersionMajor -ne 8) {
                 Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
                 return
             }

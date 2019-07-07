@@ -18,7 +18,7 @@ function Get-DbaLastGoodCheckDb {
 
         SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
 
-        This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
+        This script will only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -31,6 +31,9 @@ function Get-DbaLastGoodCheckDb {
 
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
+
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,50 +74,69 @@ function Get-DbaLastGoodCheckDb {
 
         Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. All databases except for "TempDB" will be displayed in the output.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database DB1, DB2 | Get-DbaLastGoodCheckDb | Format-Table -AutoSize
+
+        Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Only databases DB1 abd DB2 will be displayed in the output.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound -not 'SqlInstance', 'InputObject') {
+            Write-Message -Level Warning -Message "You must specify either a SQL instance or supply an InputObject"
+            return
+        }
+
+        #if ($SqlInstance) {
+        #    Write-Message -Level Verbose -Message "Processing via SQL Instance."
+        #    $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        #}
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $databases = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or database."
+                    return
+                }
             }
 
-            if ($server.versionMajor -lt 9) {
-                Stop-Function -Message "Get-DbaLastGoodCheckDb is only supported on SQL Server 2005 and above. Skipping Instance." -Continue -Target $instance
-            }
-
-            $dbs = $server.Databases
-
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -In $Database
-            }
-
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instances."
+            foreach ($db in $databases) {
+                $server = $db.Parent
+                Write-Message -Level Verbose -Message "Processing $($db.Name) on $($server.Name)."
 
                 if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
+                    Stop-Function -Message "The database $($db.Name) is not accessible. Skipping database." -Continue -Target $db
                 }
 
-                $sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
+                $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
+                $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
                 Write-Message -Level Debug -Message "T-SQL: $sql"
 
                 $resultTable = $db.ExecuteWithResults($sql).Tables[0]

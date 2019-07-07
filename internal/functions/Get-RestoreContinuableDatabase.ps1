@@ -13,7 +13,6 @@ function Get-RestoreContinuableDatabase {
         [parameter(Mandatory, ValueFromPipeline)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

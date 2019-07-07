@@ -6,7 +6,7 @@ function ConvertTo-DbaTimeline {
     .DESCRIPTION
         This function accepts input as pipeline from the following dbatools functions:
         Get-DbaAgentJobHistory
-        Get-DbaBackupHistory
+        Get-DbaDbBackupHistory
         (more to come...)
         And generates Bootstrap based, HTML file with Google Chart Timeline
 
@@ -43,14 +43,14 @@ function ConvertTo-DbaTimeline {
         Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+        PS C:\> Get-DbaRegServer -SqlInstance sqlcm | Get-DbaDbBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
 
         Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
 
     .EXAMPLE
         PS C:\> $messageParameters = @{
         >> Subject = "Backup history for sql2017 and sql2016"
-        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
+        >> Body = Get-DbaDbBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
         >> From = "dba@ad.local"
         >> To = "dba@ad.local"
         >> SmtpServer = "smtp.ad.local"
@@ -58,7 +58,7 @@ function ConvertTo-DbaTimeline {
         >>
         PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
 
-        Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
+        Sends an email to dba@ad.local with the results of Get-DbaDbBackupHistory. Note that viewing these reports may not be supported in all email clients.
 
     #>
     [CmdletBinding()]
@@ -140,24 +140,15 @@ function ConvertTo-DbaTimeline {
             $servers += $InputObject[0].SqlInstance
         }
         <#
-            Initially I wanted the server name to appear dynamically based on whether a single or multiple servers were passed as input
-            However (as usual) this is not so simple as we're in pipe mode which means PS is processing each input at once and
-            it does not know how many parameters it has until it has gone through them all. For example $servers.count will start with 1
-            and will be increasing as the process goes through the pipe, or it will stop t 1 if there's only 1 server passed.
-            The $InputObject[0].* is also not available in the begin block. All this means that we will alway show server name next to job name now.
-            I am not 100% happy with this but not sure how to solve it for now.
-        #>
-
-        <#
             This is where do column mapping.
             Check for types - this will help support if someone assigns a variable then pipes
             AgentJobHistory is a forced type while backuphistory is a legit type
         #>
         if ($InputObject[0].TypeName -eq 'AgentJobHistory') {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Job -replace "\'", '' } }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
         } elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
-            $CallerName = "Get-DbaBackupHistory"
+            $CallerName = " Get-DbaDbBackupHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
         } else {
             # sorry to be so formal, can't help it ;)
@@ -168,6 +159,10 @@ function ConvertTo-DbaTimeline {
     }
     end {
         if (Test-FunctionInterrupt) { return }
+        If ($servers.count -eq 1) {
+            # Remove instance name label for single instance
+            $body = $body -replace ("(?!\[')(\[.*?)\] ", "")
+        }
         $end = @"
 ]);
         var paddingHeight = 20;

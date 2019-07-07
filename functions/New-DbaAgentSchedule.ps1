@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentSchedule {
     <#
     .SYNOPSIS
@@ -123,7 +122,6 @@ function New-DbaAgentSchedule {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -145,11 +143,12 @@ function New-DbaAgentSchedule {
         [string]$StartTime,
         [string]$EndTime,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # if a Schedule is not provided there is no much point
         if (!$Schedule) {
             Stop-Function -Message "A schedule was not provided! Please provide a schedule name."

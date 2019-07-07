@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName','Credential','EnableException'
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -35,7 +35,7 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         TimeZoneStandard: StandardName from win32_timezone
         TimeZoneDaylight: DaylightName from win32_timezone
         TimeZone: Caption from win32_timezone
-       #>
+    #>
     Context "Validate standard output" {
         foreach ($prop in $props) {
             $p = $result.PSObject.Properties[$prop]

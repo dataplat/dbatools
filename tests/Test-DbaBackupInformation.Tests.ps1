@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock New-DbaDirectory {$True}
             It "Should pass as all systems Green" {
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
                 $false -in ($Output.IsVerified) | Should be $False
                 ($null -ne $WarnVar) | Should be $True
@@ -102,7 +102,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock New-DbaDirectory {$True}
             It "Should return fail as backup files don't exist" {
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
                 $true -in ($Output.IsVerified) | Should be $false
                 ($null -ne $WarnVar) | Should be $True
@@ -149,7 +149,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock New-DbaDirectory {$True}
             It "Should return fail as 2 origin dbs" {
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
                 $true -in ($Output.IsVerified) | Should be $False
                 ($null -ne $WarnVar) | Should be $True
@@ -196,7 +196,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock New-DbaDirectory {$True}
             It "Should return fail if dest db exists" {
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
                 $true -in ($Output.IsVerified) | Should be $False
                 ($null -ne $WarnVar) | Should be $True
@@ -243,7 +243,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock New-DbaDirectory {$True}
             It "Should pass if destdb exists and WithReplace specified" {
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue -WithReplace
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue -WithReplace
                 ($output.Count) -gt 0 | Should be $true
                 $true -in ($Output.IsVerified) | Should be $False
                 ($null -ne $WarnVar) | Should be $True

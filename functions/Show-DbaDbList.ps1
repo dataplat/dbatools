@@ -58,7 +58,6 @@ function Show-DbaDbList {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Title = "Select Database",
@@ -211,8 +210,5 @@ function Show-DbaDbList {
         if ($script:selected.length -gt 0 -and $script:okay -eq $true) {
             return $script:selected
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlDatabaseList
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-DbaDatabaseList
     }
 }

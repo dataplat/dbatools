@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Disable-DbaFilestream {
     <#
     .SYNOPSIS
@@ -54,7 +53,7 @@ function Disable-DbaFilestream {
 
         Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
@@ -75,6 +74,8 @@ function Disable-DbaFilestream {
             2 = 'FileStream enabled for T-Sql and IO streaming access'
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         foreach ($instance in $SqlInstance) {

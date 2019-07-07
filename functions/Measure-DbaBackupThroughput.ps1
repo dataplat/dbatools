@@ -91,12 +91,9 @@ function Measure-DbaBackupThroughput {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "Instance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
@@ -104,7 +101,6 @@ function Measure-DbaBackupThroughput {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string]$Type = "Full",
         [string[]]$DeviceType,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -132,9 +128,9 @@ function Measure-DbaBackupThroughput {
 
                 # Splatting didn't work
                 if ($Since) {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $Since -DeviceType $DeviceType -Type $Type
+                    $histories = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.name -Since $Since -DeviceType $DeviceType -Type $Type
                 } else {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$Last -DeviceType $DeviceType -Type $Type
+                    $histories = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.name -Last:$Last -DeviceType $DeviceType -Type $Type
                 }
 
                 foreach ($history in $histories) {

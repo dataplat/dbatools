@@ -58,20 +58,17 @@ function Set-DbaAgentJobCategory {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [string[]]$NewName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
+        if ($Force) {$ConfirmPreference = 'none'}
 
         # Check if multiple categories are being changed
         if ($Category.Count -gt 1 -and $NewName.Count -eq 1) {
@@ -81,7 +78,7 @@ function Set-DbaAgentJobCategory {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -109,7 +106,6 @@ function Set-DbaAgentJobCategory {
                         Write-Message -Message "Changing job category $cat" -Level Verbose
 
                         # Get and set the original and new values
-                        $originalCategoryName = $currentCategory.Name
                         $newCategoryName = $null
 
                         # Check if the job category needs to be renamed

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirroring {
     <#
     .SYNOPSIS
@@ -133,7 +132,7 @@ function Invoke-DbaDbMirroring {
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$Primary,
@@ -144,7 +143,6 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -153,7 +151,7 @@ function Invoke-DbaDbMirroring {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        if ($Force) {$ConfirmPreference = 'none'}
 
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackup')
@@ -227,7 +225,7 @@ function Invoke-DbaDbMirroring {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
                 if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                     if ($UseLastBackup) {
-                        $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                        $allbackups = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                     } else {
                         if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
                             $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full
@@ -257,7 +255,7 @@ function Invoke-DbaDbMirroring {
                 if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                     if (-not $allbackups) {
                         if ($UseLastBackup) {
-                            $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                            $allbackups = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
                         } else {
                             if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
                                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full

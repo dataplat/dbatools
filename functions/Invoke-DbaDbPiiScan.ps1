@@ -242,8 +242,7 @@ function Invoke-DbaDbPiiScan {
                 }
 
                 $tableNumber = 1
-                $progressStepText = "Scanning tables for database $dbName"
-                $progressStatusText = '"Table $($tableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | $progressStepText"'
+                $progressStatusText = '"Table $($tableNumber.ToString().PadLeft($($tables.Count).Count.ToString().Length)) of $($tables.Count) | Scanning tables for database $dbName"'
                 $progressStatusBlock = [ScriptBlock]::Create($progressStatusText)
 
 
@@ -286,8 +285,8 @@ function Invoke-DbaDbPiiScan {
                                                 Schema         = $tableobject.Schema
                                                 Table          = $tableobject.Name
                                                 Column         = $columnobject.Name
-                                                "PII-Name"     = $knownName.Name
                                                 "PII-Category" = $knownName.Category
+                                                "PII-Name"     = $knownName.Name
                                             }
 
                                         }
@@ -296,6 +295,7 @@ function Invoke-DbaDbPiiScan {
 
                                 }
 
+                                $knownName = $null
                             }
                         } else {
                             Write-Message -Level Verbose -Message "No known names found to perform check on"
@@ -338,13 +338,15 @@ function Invoke-DbaDbPiiScan {
                                                     Schema         = $tableobject.Schema
                                                     Table          = $tableobject.Name
                                                     Column         = $columnobject.Name
-                                                    "PII-Name"     = $patternobject.Name
                                                     "PII-Category" = $patternobject.category
+                                                    "PII-Name"     = $patternobject.Name
                                                 }
 
                                             }
 
                                         }
+
+                                        $patternobject = $null
 
                                     }
 

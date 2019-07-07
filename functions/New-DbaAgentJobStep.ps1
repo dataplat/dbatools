@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
     <#
     .SYNOPSIS
@@ -138,7 +137,6 @@ function New-DbaAgentJobStep {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -168,11 +166,12 @@ function New-DbaAgentJobStep {
         [string[]]$Flag,
         [string]$ProxyName,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
@@ -370,10 +369,10 @@ function New-DbaAgentJobStep {
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
-                    }
 
-                    # Return the job step
-                    $JobStep
+                        # Return the job step
+                        $JobStep
+                    }
                 }
             } # foreach object job
         } # foreach object instance

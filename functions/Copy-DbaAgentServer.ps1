@@ -69,7 +69,7 @@ function Copy-DbaAgentServer {
         Shows what would happen if the command were executed.
 
     #>
-    [cmdletbinding(SupportsShouldProcess)]
+    [cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -80,7 +80,6 @@ function Copy-DbaAgentServer {
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -93,6 +92,8 @@ function Copy-DbaAgentServer {
         }
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -173,9 +174,5 @@ function Copy-DbaAgentServer {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerAgent
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }

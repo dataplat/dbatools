@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaQueryExecutionTime {
     <#
     .SYNOPSIS
@@ -65,25 +64,19 @@ function Get-DbaQueryExecutionTime {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 1)]
         [int]$MaxResultsPerDb = 100,
-        [parameter(Position = 2)]
         [int]$MinExecs = 100,
         [parameter(Position = 3)]
         [int]$MinExecMs = 500,
         [parameter(Position = 4)]
         [Alias("ExcludeSystemDatabases")]
         [switch]$ExcludeSystem,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -62,8 +62,7 @@ function Get-InternalService {
         [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
         $DoNotUse,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {

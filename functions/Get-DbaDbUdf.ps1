@@ -63,13 +63,11 @@ function Get-DbaDbUdf {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -113,9 +111,5 @@ function Get-DbaDbUdf {
                 }
             }
         }
-    }
-
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUdf
     }
 }

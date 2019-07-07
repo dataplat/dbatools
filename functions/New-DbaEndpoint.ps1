@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
     <#
     .SYNOPSIS
@@ -75,19 +74,19 @@ function New-DbaEndpoint {
         https://dbatools.io/New-DbaEndpoint
 
     .EXAMPLE
-        PS C:\> New-DbaEndpoint -SqlInstance localhost
+        PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring
 
-        Creates all Endpoint(s) on the local default SQL Server instance
+        Creates a database mirroring endpoint on localhost\sql2017 which using the default port
 
     .EXAMPLE
-        PS C:\> New-DbaEndpoint -SqlInstance localhost, sql2016
+        PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring -Port 5055
 
-        Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+        Creates a database mirroring endpoint on localhost\sql2017 which uses alternative port 5055
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,

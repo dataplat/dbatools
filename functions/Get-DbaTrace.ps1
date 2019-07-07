@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaTrace {
     <#
     .SYNOPSIS
@@ -45,17 +44,14 @@ function Get-DbaTrace {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int[]]$Id,
         [switch]$Default,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
 
         # A Microsoft.SqlServer.Management.Trace.TraceServer class exists but is buggy
         # and requires x86 PowerShell. So we'll go with T-SQL.

@@ -52,7 +52,6 @@ function New-DbaLogShippingPrimarySecondary {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -65,7 +64,6 @@ function New-DbaLogShippingPrimarySecondary {
         [ValidateNotNullOrEmpty()]
         [DBAInstanceParameter]$SecondaryServer,
         [PSCredential]$SecondarySqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

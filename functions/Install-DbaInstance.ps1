@@ -296,6 +296,8 @@ function Install-DbaInstance {
             Set-Content -Path $Path -Value $output -Force
         }
         Function Update-ServiceCredential {
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             # updates a service account entry and returns the password as a command line argument
             Param (
                 $Node,
@@ -315,7 +317,6 @@ function Install-DbaInstance {
         # defining local vars
         $notifiedCredentials = $false
         $notifiedUnsecure = $false
-        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*'} -End { $o -contains $true }
 
         # read component names
         $components = Get-Content -Path $Script:PSModuleRoot\bin\dbatools-sqlinstallationcomponents.json -Raw | ConvertFrom-Json
@@ -381,7 +382,7 @@ function Install-DbaInstance {
         if ($isNetworkPath) {
             Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
             try {
-                $localSetupFile = Find-SqlServerSetup -Version $canonicVersion -Path $Path
+                $localSetupFile = Find-SqlInstanceSetup -Version $canonicVersion -Path $Path
             } catch {
                 Write-Message -Level Verbose -Message "Failed to access $($Path) on a local machine, ignoring for now"
             }
@@ -395,7 +396,7 @@ function Install-DbaInstance {
             # Test elevated console
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             # notify about credentials once
-            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
+            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $isNetworkPath) {
                 Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
@@ -475,7 +476,7 @@ function Install-DbaInstance {
                     Path           = $Path
                 }
                 try {
-                    $setupFile = Find-SqlServerSetup @findSetupParams
+                    $setupFile = Find-SqlInstanceSetup @findSetupParams
                 } catch {
                     Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
                 }

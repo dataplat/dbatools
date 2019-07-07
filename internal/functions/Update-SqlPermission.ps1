@@ -29,7 +29,6 @@ function Update-SqlPermission {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$DestLogin,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -225,7 +224,7 @@ function Update-SqlPermission {
                 $destRoleName = $destRole.Name
                 $sourceRole = $sourceDb.Roles[$destRoleName]
                 if ($null -eq $sourceRole) {
-                    if ($sourceRole.EnumMembers() -notcontains $dbUsername -and $destRole.EnumMembers() -contains $dbUsername) {
+                    if ($destRole.EnumMembers() -contains $dbUsername) {
                         if ($dbUsername -ne "dbo") {
                             if ($Pscmdlet.ShouldProcess($destination, "Dropping user $userName from $destRoleName database role in $dbName.")) {
                                 try {

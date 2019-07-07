@@ -92,7 +92,7 @@ function Publish-DbaDacPackage {
     .EXAMPLE
         PS C:\> $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
         PS C:\> Publish-DbaDacPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc -Confirm
-    
+
         Publishes the dacpac using a specific dacfx library. Prompts for confirmation.
 
     .EXAMPLE
@@ -107,9 +107,7 @@ function Publish-DbaDacPackage {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,
@@ -373,8 +371,5 @@ function Publish-DbaDacPackage {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Publish-DbaDacpac
     }
 }

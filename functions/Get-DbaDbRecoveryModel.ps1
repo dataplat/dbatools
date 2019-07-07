@@ -50,11 +50,10 @@ function Get-DbaDbRecoveryModel {
 
         Gets recovery model information for TestDB. If TestDB does not exist on the instance nothing is returned.
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateSet('Simple', 'Full', 'BulkLogged')]

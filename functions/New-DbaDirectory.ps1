@@ -56,15 +56,12 @@ function New-DbaDirectory {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory)]
         [string]$Path,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlDirectory
 
     foreach ($instance in $SqlInstance) {
         try {

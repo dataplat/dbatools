@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaInstanceProperty {
     <#
     .SYNOPSIS
@@ -69,13 +68,11 @@ function Get-DbaInstanceProperty {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$InstanceProperty,
         [object[]]$ExcludeInstanceProperty,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -147,8 +144,5 @@ function Get-DbaInstanceProperty {
                 Stop-Function -Message "Issue gathering settings for $instance." -Target $instance -ErrorRecord $_ -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlInstanceProperty
     }
 }
