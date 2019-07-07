@@ -16,7 +16,7 @@ function Save-DbaUpdate {
         The exact file name to save to, otherwise, it uses the name given by the webserver
 
      .PARAMETER Architecture
-        Defaults to x64. Can be x64, x86 or "All"
+        Defaults to x64. Can be x64, x86, ia64 or "All"
 
     .PARAMETER InputObject
         Enables piping from Get-DbaUpdateDetail
@@ -45,7 +45,7 @@ function Save-DbaUpdate {
         Downloads KB4057119 to the current directory. This works for SQL Server or any other KB.
 
     .EXAMPLE
-        PS C:\> Get-DbaUpdateDetail -Name KB4057119 | Out-GridView -Passthru | Save-DbaUpdate
+        PS C:\> Get-DbaUpdateDetail -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaUpdate
 
         Downloads the selected files from KB4057119 to the current directory.
 
@@ -64,7 +64,7 @@ function Save-DbaUpdate {
         [string[]]$Name,
         [string]$Path = ".",
         [string]$FilePath,
-        [ValidateSet("x64", "x86", "All")]
+        [ValidateSet("x64", "x86", "ia64", "All")]
         [string]$Architecture = "x64",
         [parameter(ValueFromPipeline)]
         [pscustomobject]$InputObject,
