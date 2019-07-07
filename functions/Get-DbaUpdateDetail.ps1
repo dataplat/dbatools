@@ -78,7 +78,7 @@ function Get-DbaUpdateDetail {
             } else {
                 $part = ($info[1] -Split '<div id="languageBox" style="display: none">')[0]
             }
-            $nomarkup = ($part -replace '<[^>]+>', '').Trim() -split "`r`n"
+            $nomarkup = ($part -replace '<[^>]+>', '').Trim() -split [Environment]::NewLine
             foreach ($line in $nomarkup) {
                 $clean = $line.Trim()
                 if ($clean) { $clean }
