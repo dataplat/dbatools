@@ -1,4 +1,4 @@
-function Save-DbaUpdate {
+function Save-DbaKbUpdate {
     <#
     .SYNOPSIS
         Downloads patches from Microsoft
@@ -19,7 +19,7 @@ function Save-DbaUpdate {
         Defaults to x64. Can be x64, x86, ia64 or "All"
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaUpdateDetail
+        Enables piping from Get-DbaKbUpdate
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -37,25 +37,25 @@ function Save-DbaUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Save-DbaUpdate
+        https://dbatools.io/Save-DbaKbUpdate
 
     .EXAMPLE
-        PS C:\> Save-DbaUpdate -Name KB4057119
+        PS C:\> Save-DbaKbUpdate -Name KB4057119
 
         Downloads KB4057119 to the current directory. This works for SQL Server or any other KB.
 
     .EXAMPLE
-        PS C:\> Get-DbaUpdateDetail -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaUpdate
+        PS C:\> Get-DbaKbUpdate -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaKbUpdate
 
         Downloads the selected files from KB4057119 to the current directory.
 
     .EXAMPLE
-        PS C:\> Save-DbaUpdate -Name KB4057119, 4057114 -Path C:\temp
+        PS C:\> Save-DbaKbUpdate -Name KB4057119, 4057114 -Path C:\temp
 
         Downloads KB4057119 and the x64 version of KB4057114 to C:\temp. This works for SQL Server or any other KB.
 
     .EXAMPLE
-        PS C:\> Save-DbaUpdate -Name KB4057114 -Architecture All -Path C:\temp
+        PS C:\> Save-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\temp
 
         Downloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\temp. This works for SQL Server or any other KB.
 #>
@@ -77,12 +77,12 @@ function Save-DbaUpdate {
         }
 
         if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Name) {
-            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaUpdateDetail"
+            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaKbUpdate"
             return
         }
 
         foreach ($kb in $Name) {
-            $InputObject += Get-DbaUpdateDetail -Name $kb
+            $InputObject += Get-DbaKbUpdate -Name $kb
         }
 
         foreach ($item in $InputObject.Link) {
