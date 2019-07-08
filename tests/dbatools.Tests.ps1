@@ -111,7 +111,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
         foreach ($f in $AllPublicFunctions) {
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
-            if ($NotAllowed.Count -gt 0 -and $f -notmatch 'DbaUpdate') {
+            if ($NotAllowed.Count -gt 0 -and $f -notmatch 'DbaKbUpdate') {
                 It "$f should instead use Invoke-TlsWebRequest, see #4250" {
                     $NotAllowed.Count | Should -Be 0
                 }
