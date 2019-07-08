@@ -2,9 +2,18 @@
 function Connect-ReplicationDB {
     param (
         [object]$Server,
-        [object]$Database
+        [object]$Database,
+        [switch]$EnableException
     )
 
+	try {
+		Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+		Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+	} catch {
+		Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+		return
+	}
+		
     $repDB = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
 
     $repDB.Name = $Database.Name

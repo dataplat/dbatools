@@ -80,9 +80,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
-            'Microsoft.SqlServer.XEvent.Linq',
-            'Microsoft.SqlServer.Replication',
-            'Microsoft.SqlServer.Rmo'
+            'Microsoft.SqlServer.XEvent.Linq'
         )
     }
     #endregion Names
