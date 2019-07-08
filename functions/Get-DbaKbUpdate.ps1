@@ -1,4 +1,4 @@
-function Get-DbaUpdateDetail {
+function Get-DbaKbUpdate {
     <#
     .SYNOPSIS
         Gets download links and detailed information for KB files (SPs/hotfixes/CUs, etc)
@@ -32,20 +32,20 @@ function Get-DbaUpdateDetail {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaUpdateDetail
+        https://dbatools.io/Get-DbaKbUpdate
 
     .EXAMPLE
-        PS C:\> Get-DbaUpdateDetail -Name KB4057119
+        PS C:\> Get-DbaKbUpdate -Name KB4057119
 
         Gets detailed information about KB4057119. This works for SQL Server or any other KB.
 
     .EXAMPLE
-        PS C:\> Get-DbaUpdateDetail -Name KB4057119, 4057114
+        PS C:\> Get-DbaKbUpdate -Name KB4057119, 4057114
 
         Gets detailed information about KB4057119 and KB4057114. This works for SQL Server or any other KB.
 
     .EXAMPLE
-        PS C:\> Get-DbaUpdateDetail -Name KB4057119, 4057114 -Simple
+        PS C:\> Get-DbaKbUpdate -Name KB4057119, 4057114 -Simple
 
         A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
 #>

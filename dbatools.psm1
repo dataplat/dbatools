@@ -731,8 +731,8 @@ $script:xplat = @(
     'Get-DbaAgentAlertCategory',
     'New-DbaAgentAlertCategory',
     'Remove-DbaAgentAlertCategory',
-    'Save-DbaUpdate',
-    'Get-DbaUpdateDetail'
+    'Save-DbaKbUpdate',
+    'Get-DbaKbUpdate'
 )
 
 $script:noncoresmo = @(
