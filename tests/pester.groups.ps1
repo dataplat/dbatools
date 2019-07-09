@@ -63,6 +63,7 @@ $TestsRunGroups = @{
         'New-DbaDbUser',
         # doesn't work on appveyor but so works locally D:
         'Read-DbaXeFile'
+        'Find-DbaCommand'
     )
     # do not run everywhere
     "disabled"          = @()
