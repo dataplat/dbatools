@@ -13009,6 +13009,13 @@ function Export-DbaRepServerSetting {
         [switch]$EnableException
     )
     begin {
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
+        }
         $null = Test-ExportDirectory -Path $Path
     }
     process {
@@ -14002,6 +14009,15 @@ function Find-DbaCommand {
     begin {
         function Get-DbaTrimmedString($Text) {
             return $Text.Trim() -replace '(\r\n){2,}', "`n"
+        }
+
+        # no idea why this is required
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
         }
 
         $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
@@ -27237,6 +27253,201 @@ function Get-DbaIoLatency {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Get-DbaKbUpdate {
+    
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Name,
+        [switch]$Simple,
+        [switch]$EnableException
+    )
+    begin {
+        # Wishing Microsoft offered an RSS feed. Since they don't, we are forced to parse webpages.
+        function Get-Info ($Text, $Pattern) {
+            $info = $Text -Split $Pattern
+            if ($Pattern -match "labelTitle") {
+                $part = ($info[1] -Split '</span>')[1]
+                $part = $part.Replace("<div>", "")
+                ($part -Split '</div>')[0].Trim()
+            } elseif ($Pattern -match "span ") {
+                ($info[1] -Split '</span>')[0].Trim()
+            } else {
+                ($info[1] -Split ';')[0].Replace("'", "").Trim()
+            }
+        }
+
+        function Get-SuperInfo ($Text, $Pattern) {
+            $info = $Text -Split $Pattern
+            if ($Pattern -match "supersededbyInfo") {
+                $part = ($info[1] -Split '<span id="ScopedViewHandler_labelSupersededUpdates_Separator" class="labelTitle">')[0]
+            } else {
+                $part = ($info[1] -Split '<div id="languageBox" style="display: none">')[0]
+            }
+            $nomarkup = ($part -replace '<[^>]+>', '').Trim() -split [Environment]::NewLine
+            foreach ($line in $nomarkup) {
+                $clean = $line.Trim()
+                if ($clean) { $clean }
+            }
+        }
+
+        $baseproperties = "Title",
+        "Description",
+        "Architecture",
+        "NameLevel",
+        "SPLevel",
+        "KBLevel",
+        "CULevel",
+        "BuildLevel",
+        "SupportedUntil",
+        "Language",
+        "Classification",
+        "SupportedProducts",
+        "MSRCNumber",
+        "MSRCSeverity",
+        "Hotfix",
+        "Size",
+        "UpdateId",
+        "RebootBehavior",
+        "RequestsUserInput",
+        "ExclusiveInstall",
+        "NetworkRequired",
+        "UninstallNotes",
+        "UninstallSteps",
+        "SupersededBy",
+        "Supersedes",
+        "LastModified",
+        "Link"
+    }
+    process {
+        foreach ($kb in $Name) {
+            try {
+                # Thanks! https://keithga.wordpress.com/2017/05/21/new-tool-get-the-latest-windows-10-cumulative-updates/
+                $kb = $kb.Replace("KB", "").Replace("kb", "").Replace("Kb", "")
+
+                $results = Invoke-TlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb" -UseBasicParsing -ErrorAction Stop
+
+                $kbids = $results.InputFields |
+                    Where-Object { $_.type -eq 'Button' -and $_.Value -eq 'Download' } |
+                    Select-Object -ExpandProperty  ID
+
+                if (-not $kbids) {
+                    Write-Message -Level Warning -Message "No results found for $Name"
+                    return
+                }
+
+                Write-Message -Level Verbose -Message "$kbids"
+
+                $guids = $results.Links |
+                    Where-Object ID -match '_link' |
+                    Where-Object { $_.OuterHTML -match ( "(?=.*" + ( $Filter -join ")(?=.*" ) + ")" ) } |
+                    ForEach-Object { $_.id.replace('_link', '') } |
+                    Where-Object { $_ -in $kbids }
+
+                foreach ($guid in $guids) {
+                    Write-Message -Level Verbose -Message "Downloading information for $guid"
+                    $post = @{ size = 0; updateID = $guid; uidInfo = $guid } | ConvertTo-Json -Compress
+                    $body = @{ updateIDs = "[$post]" }
+                    $downloaddialog = Invoke-TlsWebRequest -Uri 'http://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
+
+                    # sorry, don't know regex. this is ugly af.
+                    $title = Get-Info -Text $downloaddialog -Pattern 'enTitle ='
+                    $arch = Get-Info -Text $downloaddialog -Pattern 'architectures ='
+                    $longlang = Get-Info -Text $downloaddialog -Pattern 'longLanguages ='
+                    $updateid = Get-Info -Text $downloaddialog -Pattern 'updateID ='
+                    $ishotfix = Get-Info -Text $downloaddialog -Pattern 'isHotFix ='
+
+                    if ($arch -eq "AMD64") {
+                        $arch = "x64"
+                    }
+                    if ($title -match '64-Bit' -and $title -notmatch '32-Bit' -and -not $arch) {
+                        $arch = "x64"
+                    }
+                    if ($title -notmatch '64-Bit' -and $title -match '32-Bit' -and -not $arch) {
+                        $arch = "x86"
+                    }
+
+                    if (-not $Simple) {
+                        $detaildialog = Invoke-TlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" -UseBasicParsing -ErrorAction Stop
+                        $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
+                        $lastmodified = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_date">'
+                        $size = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_size">'
+                        $classification = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelClassification_Separator" class="labelTitle">'
+                        $supportedproducts = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelSupportedProducts_Separator" class="labelTitle">'
+                        $msrcnumber = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelSecurityBulliten_Separator" class="labelTitle">'
+                        $msrcseverity = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_msrcSeverity">'
+                        $rebootbehavior = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_rebootBehavior">'
+                        $requestuserinput = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_userInput">'
+                        $exclusiveinstall = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_installationImpact">'
+                        $networkrequired = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_connectivity">'
+                        $uninstallnotes = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelUninstallNotes_Separator" class="labelTitle">'
+                        $uninstallsteps = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelUninstallSteps_Separator" class="labelTitle">'
+                        $supersededby = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersededbyInfo" TABINDEX="1" >'
+                        $supersedes = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersedesInfo" TABINDEX="1">'
+
+                        $product = $supportedproducts -split ","
+                        if ($product.Count -gt 1) {
+                            $supportedproducts = @()
+                            foreach ($line in $product) {
+                                $clean = $line.Trim()
+                                if ($clean) { $supportedproducts += $clean }
+                            }
+                        }
+                    }
+
+                    $links = $downloaddialog | Select-String -AllMatches -Pattern "(http[s]?\://download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
+
+                    foreach ($link in $links) {
+                        $build = Get-DbaBuildReference -Kb "KB$kb" -WarningAction SilentlyContinue
+                        $properties = $baseproperties
+
+                        if (-not $build.NameLevel) {
+                            $properties = $properties | Where-Object { $PSItem -notin "NameLevel", "SPLevel", "KBLevel", "CULevel", "BuildLevel", "SupportedUntil" }
+                        }
+
+                        if ($Simple) {
+                            $properties = $properties | Where-Object { $PSItem -notin "LastModified", "Description", "Size", "Classification", "SupportedProducts", "MSRCNumber", "MSRCSeverity", "RebootBehavior", "RequestsUserInput", "ExclusiveInstall", "NetworkRequired", "UninstallNotes", "UninstallSteps", "SupersededBy", "Supersedes" }
+                        }
+
+                        [pscustomobject]@{
+                            Title             = $title
+                            NameLevel         = $build.NameLevel
+                            SPLevel           = $build.SPLevel
+                            KBLevel           = $build.KBLevel
+                            CULevel           = $build.CULevel
+                            BuildLevel        = $build.BuildLevel
+                            SupportedUntil    = $build.SupportedUntil
+                            Architecture      = $arch
+                            Language          = $longlang
+                            Hotfix            = $ishotfix
+                            Description       = $description
+                            LastModified      = $lastmodified
+                            Size              = $size
+                            Classification    = $classification
+                            SupportedProducts = $supportedproducts
+                            MSRCNumber        = $msrcnumber
+                            MSRCSeverity      = $msrcseverity
+                            RebootBehavior    = $rebootbehavior
+                            RequestsUserInput = $requestuserinput
+                            ExclusiveInstall  = $exclusiveinstall
+                            NetworkRequired   = $networkrequired
+                            UninstallNotes    = $uninstallnotes
+                            UninstallSteps    = $uninstallsteps
+                            UpdateId          = $updateid
+                            Supersedes        = $supersedes
+                            SupersededBy      = $supersededby
+                            Link              = $link.matches.value
+                        } | Select-DefaultView -Property $properties
+                    }
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Get-DbaLastBackup {
     
     [CmdletBinding()]
@@ -31579,11 +31790,14 @@ function Get-DbaRepDistributor {
         [switch]$EnableException
     )
     begin {
-        if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
-            Stop-Function -Message "Replication management objects not available. Please install SQL Server Management Studio."
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -31600,8 +31814,7 @@ function Get-DbaRepDistributor {
 
             # Connect to the distributor of the instance
             try {
-                $sourceSqlConn = $server.ConnectionContext.SqlConnectionObject
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sourceSqlConn
+                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -31690,7 +31903,17 @@ function Get-DbaRepServer {
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
+    begin {
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -33861,68 +34084,6 @@ function Get-DbaTraceFlag {
                     Session      = $tflag.Session
                     Status       = $tflag.Status
                 } | Select-DefaultView -ExcludeProperty 'Session'
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbaUpdateDetail {
-    
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string[]]$Name,
-        [switch]$EnableException
-    )
-    process {
-        foreach ($kb in $Name) {
-            try {
-                # Thanks! https://keithga.wordpress.com/2017/05/21/new-tool-get-the-latest-windows-10-cumulative-updates/
-                $kb = $kb.Replace("KB", "").Replace("kb", "").Replace("Kb", "")
-
-                $results = Invoke-TlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb"
-                $kbids = $results.InputFields |
-                    Where-Object { $_.type -eq 'Button' -and $_.Value -eq 'Download' } |
-                    Select-Object -ExpandProperty  ID
-
-                if (-not $kbids) {
-                    Write-Message -Level Warning -Message "No results found for $Name"
-                    return
-                }
-
-                Write-Message -Level Verbose -Message "$kbids"
-
-                $guids = $results.Links |
-                    Where-Object ID -match '_link' |
-                    Where-Object { $_.OuterHTML -match ( "(?=.*" + ( $Filter -join ")(?=.*" ) + ")" ) } |
-                    ForEach-Object { $_.id.replace('_link', '') } |
-                    Where-Object { $_ -in $kbids }
-
-                foreach ($guid in $guids) {
-                    Write-Message -Level Verbose -Message "Downloading information for $guid"
-                    $post = @{ size = 0; updateID = $guid; uidInfo = $guid } | ConvertTo-Json -Compress
-                    $body = @{ updateIDs = "[$post]" }
-                    $detailresults = Invoke-TlsWebRequest -Uri 'http://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body | Select-Object -ExpandProperty Content
-
-                    # sorry, don't know regex. this is ugly af.
-                    $title = $detailresults -Split "enTitle ="
-                    $title = ($title[1] -Split ';')[0].Replace("'", "")
-
-                    $links = $detailresults | Select-String -AllMatches -Pattern "(http[s]?\://download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
-                    foreach ($link in $links) {
-                        $build = Get-DbaBuildReference -Kb "KB$kb" -WarningAction SilentlyContinue
-                        if ($build.NameLevel) {
-                            $properties = "Title", "NameLevel", "SPLevel", "KBLevel", "CULevel", "BuildLevel", "SupportedUntil", "Link"
-                        } else {
-                            $properties = "Title", "Link"
-                        }
-                        Add-Member -InputObject $build -MemberType NoteProperty -Name Title -Value $title
-                        Add-Member -InputObject $build -MemberType NoteProperty -Name Link -Value ($link.matches.value) -PassThru | Select-DefaultView -Property $properties
-                    }
-                }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
@@ -36269,7 +36430,7 @@ function Import-DbaCsv {
         [Parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [string]$Schema = "dbo",
+        [string]$Schema,
         [switch]$Truncate,
         [char]$Delimiter = ",",
         [switch]$SingleColumn,
@@ -36286,6 +36447,7 @@ function Import-DbaCsv {
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
+        [switch]$UseFileNameForSchema,
         [char]$Quote = '"',
         [char]$Escape = '"',
         [char]$Comment = '#',
@@ -36307,6 +36469,10 @@ function Import-DbaCsv {
     begin {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
+
+        if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
+            Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
+        }
 
         try {
             # SilentContinue isn't enough
@@ -36422,10 +36588,36 @@ function Import-DbaCsv {
                 }
             }
 
-            # Automatically generate Table name if not specified, then prompt user to confirm
-            if (-not ($PSBoundParameters.Table)) {
-                $table = [IO.Path]::GetFileNameWithoutExtension($file)
-                Write-Message -Level Verbose -Message "Table name not specified, using $table"
+            # Automatically generate Table name if not specified
+            if (-not $PSBoundParameters.Table) {
+                $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+
+                if ($filename.IndexOf('.') -ne -1) { $periodFound = $true }
+
+                if ($UseFileNameForSchema -and $periodFound -and -not $PSBoundParameters.Schema) {
+                    $table = $filename.Remove(0, $filename.IndexOf('.') + 1)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table from file name"
+                } else {
+                    $table = [IO.Path]::GetFileNameWithoutExtension($file)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table"
+                }
+            }
+
+            # Use dbo as schema name if not specified in parms, or as first string before a period in filename
+            if (-not ($PSBoundParameters.Schema)) {
+                if ($UseFileNameForSchema) {
+                    $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+                    if ($filename.IndexOf('.') -eq -1) {
+                        $schema = "dbo"
+                        Write-Message -Level Verbose -Message "Schema not specified, and not found in file name, using dbo"
+                    } else {
+                        $schema = $filename.SubString(0, $filename.IndexOf('.'))
+                        Write-Message -Level Verbose -Message "Schema detected in filename, using $schema"
+                    }
+                } else {
+                    $schema = 'dbo'
+                    Write-Message -Level Verbose -Message "Schema not specified, using dbo"
+                }
             }
 
             foreach ($instance in $SqlInstance) {
@@ -58414,14 +58606,14 @@ function Save-DbaDiagnosticQueryScript {
 }
 
 #.ExternalHelp dbatools-Help.xml
-function Save-DbaUpdate {
+function Save-DbaKbUpdate {
     
     [CmdletBinding()]
     param(
         [string[]]$Name,
         [string]$Path = ".",
         [string]$FilePath,
-        [ValidateSet("x64", "x86", "All")]
+        [ValidateSet("x64", "x86", "ia64", "All")]
         [string]$Architecture = "x64",
         [parameter(ValueFromPipeline)]
         [pscustomobject]$InputObject,
@@ -58434,12 +58626,12 @@ function Save-DbaUpdate {
         }
 
         if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Name) {
-            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaUpdateDetail"
+            Stop-Function -Message "You must specify a KB name or pipe in results from Get-DbaKbUpdate"
             return
         }
 
         foreach ($kb in $Name) {
-            $InputObject += Get-DbaUpdateDetail -Name $kb
+            $InputObject += Get-DbaKbUpdate -Name $kb
         }
 
         foreach ($item in $InputObject.Link) {
@@ -72218,8 +72410,17 @@ function Connect-ConnstringInstance {
 function Connect-ReplicationDB {
     param (
         [object]$Server,
-        [object]$Database
+        [object]$Database,
+        [switch]$EnableException
     )
+
+    try {
+        Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+        Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+    } catch {
+        Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+        return
+    }
 
     $repDB = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
 
