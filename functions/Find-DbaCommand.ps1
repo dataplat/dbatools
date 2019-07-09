@@ -97,6 +97,15 @@ function Find-DbaCommand {
             return $Text.Trim() -replace '(\r\n){2,}', "`n"
         }
 
+        # no idea why this is required
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
+        }
+
         $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
         $authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
         $minverRex = ([regex]'(?m)^[\s]{0,15}MinimumVersion:(.*)$')
