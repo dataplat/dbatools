@@ -91,15 +91,6 @@ $scriptBlock = {
     }
 
     $shared = @()
-    # New SQL Auth types require newer versions of .NET, check
-    # https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
-    if ($psVersionTable.Platform -ne 'Unix') {
-        if ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808 -and $PSVersionTable.PSEdition -ne 'Core' -and $host.Name -ne 'Visual Studio Code Host') {
-            Write-Verbose -Message "Adding Azure DLLs"
-            $shared += 'Microsoft.IdentityModel.Clients.ActiveDirectory', 'Microsoft.Azure.Services.AppAuthentication'
-        }
-    }
-
     $separator = [IO.Path]::DirectorySeparatorChar
     $shared += "third-party" + $separator + "Bogus" + $separator + "Bogus"
 
