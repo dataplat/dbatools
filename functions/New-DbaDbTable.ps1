@@ -336,7 +336,7 @@ function New-DbaDbTable {
                         $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
                         if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
                             if ($column.MaxLength -gt 0) {
-                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $maxlength
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
                             } else {
                                 $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
