@@ -72,11 +72,9 @@ function Find-DbaTrigger {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(Mandatory)]
@@ -85,7 +83,6 @@ function Find-DbaTrigger {
         [string]$TriggerLevel = 'All',
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -219,6 +216,10 @@ function Find-DbaTrigger {
                                 if ($row.TextBody -match $Pattern) {
 
                                     $tr = ($db.Tables | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                    if ($null -eq $tr) {
+                                        Write-Message -Level Verbose -Message "Could not find table named $($row.Name). Will try to find on Views."
+                                        $tr = ($db.Views | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                    }
 
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
@@ -278,6 +279,7 @@ function Find-DbaTrigger {
                         if ($TriggerLevel -in @('All', 'Object')) {
                             #Get Object Level triggers (DML)
                             $triggers = $db.Tables | ForEach-Object {$_.Triggers}
+                            $triggers += $db.Views | ForEach-Object {$_.Triggers}
 
                             $triggercount = 0
 

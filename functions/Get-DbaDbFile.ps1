@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbFile {
     <#
     .SYNOPSIS
@@ -60,7 +59,6 @@ function Get-DbaDbFile {
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
@@ -87,7 +85,6 @@ function Get-DbaDbFile {
             case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
             case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             vfs.num_of_writes as NumberOfDiskWrites,
             vfs.num_of_reads as NumberOfDiskReads,
             vfs.num_of_bytes_read as BytesReadFromDisk,
@@ -120,7 +117,6 @@ function Get-DbaDbFile {
             fileproperty(df.name, 'spaceused') as UsedSpace,
             df.size as Size,
             case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
-            case CONVERT(INT,df.status & 0x10) / 16 when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case CONVERT(INT,df.status & 0x10000000) / 268435456 when 1 then 'True' when 0 then 'False' End as IsSparse,
             case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
@@ -256,8 +252,5 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
     }
 }

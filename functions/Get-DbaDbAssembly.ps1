@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaDbAssembly {
     <#
     .SYNOPSIS
@@ -43,10 +42,9 @@ function Get-DbaDbAssembly {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -73,8 +71,5 @@ function Get-DbaDbAssembly {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseAssembly
     }
 }

@@ -68,9 +68,7 @@ function New-DbaDacProfile {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [string[]]$Database,
@@ -125,6 +123,8 @@ function New-DbaDacProfile {
                 $instance = $builder['server']
             }
 
+            $instance = $instance.ToString().Replace('TCP:', '')
+            $instance = $instance.ToString().Replace('tcp:', '')
             return $instance.ToString().Replace('\', '--')
         }
     }
@@ -168,8 +168,5 @@ function New-DbaDacProfile {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }

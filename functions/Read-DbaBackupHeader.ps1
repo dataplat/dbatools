@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaBackupHeader {
     <#
     .SYNOPSIS
@@ -88,7 +87,6 @@ function Read-DbaBackupHeader {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]
@@ -96,14 +94,14 @@ function Read-DbaBackupHeader {
         [switch]$Simple,
         [switch]$FileList,
         [string]$AzureCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        foreach ($p in $path) {
-            if ([System.IO.Path]::GetExtension($p).Length -eq 0) {
-                Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
+        foreach ($p in $Path) {
+            Write-Message -Level Verbose -Message "Checking: $p"
+            if ([System.IO.Path]::GetExtension("$p").Length -eq 0) {
+                Stop-Function -Message "Path ("$p") should be a file, not a folder" -Category InvalidArgument
                 return
             }
         }

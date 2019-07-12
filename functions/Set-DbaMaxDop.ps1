@@ -78,15 +78,12 @@ function Set-DbaMaxDop {
 
         Set recommended Max DOP for all databases on server sql2016.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [int]$MaxDop = -1,

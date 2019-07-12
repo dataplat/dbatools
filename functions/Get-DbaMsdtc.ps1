@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Get-DbaMsdtc {
     <#
     .SYNOPSIS
@@ -12,6 +11,15 @@ function Get-DbaMsdtc {
     .PARAMETER ComputerName
         The target computer.
 
+    .PARAMETER Credential
+        Alternative credential
+
+    .PARAMETER EnableException
+        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+
+        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
+
+        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
     .NOTES
         Tags: Msdtc, dtc
         Author: Klaas Vandenberghe (@powerdbaklaas)
@@ -49,11 +57,12 @@ function Get-DbaMsdtc {
     param (
         [Parameter(ValueFromPipeline)]
         [Alias('cn', 'host', 'Server')]
-        [string[]]$ComputerName = $env:COMPUTERNAME
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [pscredential]$Credential,
+        [switch]$EnableException
     )
 
     begin {
-        $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
         $query = "Select * FROM Win32_Service WHERE Name = 'MSDTC'"
         $dtcSecurity = {
             Get-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security |
@@ -69,10 +78,15 @@ function Get-DbaMsdtc {
         }
     }
     process {
-        foreach ($computer in $ComputerName) {
+        foreach ($computer in $ComputerName.ComputerName) {
             $reg = $cids = $null
             $cidHash = @{}
-            if ( Test-PSRemoting -ComputerName $computer ) {
+            if ($Credential) {
+                $result = Test-PSRemoting -ComputerName $computer -Credential $Credential
+            } else {
+                $result = Test-PSRemoting -ComputerName $computer
+            }
+            if ($result) {
                 $dtcservice = $null
                 Write-Message -Level Verbose -Message "Getting DTC on $computer via WSMan"
                 $dtcservice = Get-Ciminstance -ComputerName $computer -Query $query
@@ -81,12 +95,20 @@ function Get-DbaMsdtc {
                 }
 
                 Write-Message -Level Verbose -Message "Getting MSDTC Security Registry Values on $computer"
-                $reg = Invoke-Command -ComputerName $computer -ScriptBlock $dtcSecurity
+                try {
+                    $reg = Invoke-Command2 -ComputerName $computer -ScriptBlock $dtcSecurity -Credential $Credential
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
                 if ( $null -eq $reg ) {
                     Write-Message -Level Warning -Message "Can't connect to MSDTC Security registry on $computer"
                 }
                 Write-Message -Level Verbose -Message "Getting MSDTC CID Registry Values on $computer"
-                $cids = Invoke-Command -ComputerName $computer -ScriptBlock $dtcCids
+                try {
+                    $cids = Invoke-Command2 -ComputerName $computer -ScriptBlock $dtcCids -Credential $Credential
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
                 if ( $null -ne $cids ) {
                     foreach ($key in $cids) {
                         $cidHash.Add($key.Data, $key.CID)

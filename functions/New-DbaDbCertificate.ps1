@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbCertificate {
     <#
     .SYNOPSIS
@@ -83,9 +82,6 @@ function New-DbaDbCertificate {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseCertificate
-    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
@@ -129,7 +125,7 @@ function New-DbaDbCertificate {
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                         Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
-
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Credential -value $Credential
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     } catch {
                         $ErrorActionPreference = $eap

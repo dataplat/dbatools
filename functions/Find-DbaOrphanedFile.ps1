@@ -1,4 +1,3 @@
-#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
     <#
     .SYNOPSIS
@@ -83,14 +82,12 @@ function Find-DbaOrphanedFile {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [pscredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [switch]$LocalOnly,
         [switch]$RemoteOnly,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -169,7 +166,7 @@ function Find-DbaOrphanedFile {
         $FileType += "mdf", "ldf", "ndf"
         $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
 
-        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object | Get-Unique
+        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLowerInvariant()} | Where-Object { $_ } | Sort-Object | Get-Unique
     }
 
     process {
@@ -218,7 +215,7 @@ function Find-DbaOrphanedFile {
 
             foreach ($file in $dirtreefiles.Comparison) {
                 foreach ($type in $FileTypeComparison) {
-                    if ($file.ToLower().EndsWith($type)) {
+                    if ($file.ToLowerInvariant().EndsWith($type)) {
                         $matching += $file
                         break
                     }

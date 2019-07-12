@@ -81,11 +81,10 @@ function Set-DbaDbRecoveryModel {
 
         Sets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs without asking for confirmation.
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -113,7 +112,7 @@ function Set-DbaDbRecoveryModel {
 
             # We need to be able to change the RecoveryModel for model database
             $systemdbs = @("tempdb")
-            $databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name -and $_.IsAccessible }
+            $databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name -and $_.IsAccessible -and -Not($_.IsDatabaseSnapshot) }
 
             # filter collection based on -Database/-Exclude parameters
             if ($Database) {

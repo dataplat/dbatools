@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle, Messaging, FlowControl, Pipeline#
 function Get-DbaDbRoleMember {
     <#
     .SYNOPSIS
@@ -30,6 +29,9 @@ function Get-DbaDbRoleMember {
 
     .PARAMETER IncludeSystemUser
         Includes system users. By default system users are not included.
+
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaDbRole or Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -78,13 +80,16 @@ function Get-DbaDbRoleMember {
 
         Returns all members of the db_owner role in the msdb database on localhost.
 
+    .EXAMPLE
+        PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost -Database msdb -Role 'db_owner'
+        PS C:\> $roles | Get-DbaDbRoleMember
+
+        Returns all members of the db_owner role in the msdb database on localhost.
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
@@ -92,82 +97,71 @@ function Get-DbaDbRoleMember {
         [string[]]$ExcludeRole,
         [switch]$ExcludeFixedRole,
         [switch]$IncludeSystemUser,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            return
+        }
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
 
-            foreach ($item in $Database) {
-                Write-Message -Level Verbose -Message "Check if database: $item on $instance is accessible or not"
-                if ($server.Databases[$item].IsAccessible -eq $false) {
-                    Stop-Function -Message "Database: $item is not accessible. Check your permissions or database state." -Category ResourceUnavailable -ErrorRecord $_ -Target $instance -Continue
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $dbRoles = $input | Get-DbaDBRole -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
+                    Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
+                    $dbRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or database role."
+                    return
                 }
             }
+            foreach ($dbRole in $dbRoles) {
+                $db = $dbRole.Parent
+                $server = $db.Parent
+                Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $server"
 
-            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
+                $members = $dbRole.EnumMembers()
+                foreach ($member in $members) {
+                    $user = $db.Users | Where-Object { $_.Name -eq $member }
 
-            if (Test-Bound -Parameter 'Database') {
-                $databases = $databases | Where-Object { $_.Name -in $Database }
-            }
+                    if (Test-Bound -Not -ParameterName 'IncludeSystemUser') {
+                        $user = $user | Where-Object { $_.IsSystemObject -eq $false }
+                    }
 
-            if (Test-Bound -Parameter 'ExcludeDatabase') {
-                $databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase}
-            }
+                    if ($user) {
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
+                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
 
-            foreach ($db in $databases) {
-                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
-
-                $dbRoles = $db.roles
-
-                if (Test-Bound -Parameter 'Role') {
-                    $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-                }
-
-                if (Test-Bound -Parameter 'ExcludeRole') {
-                    $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
-                }
-
-                if (Test-Bound -Parameter 'ExcludeFixedRole') {
-                    $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
-                }
-
-                foreach ($dbRole in $dbRoles) {
-                    Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
-
-                    $members = $dbRole.EnumMembers()
-                    foreach ($member in $members) {
-                        $user = $db.Users | Where-Object { $_.Name -eq $member }
-
-                        if (Test-Bound -Not -ParameterName 'IncludeSystemUser') {
-                            $user = $user | Where-Object { $_.IsSystemObject -eq $false }
-                        }
-
-                        if ($user) {
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
-                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
-
-                            # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                            Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject', 'LoginType'
-                        }
+                        # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
+                        Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject', 'LoginType'
                     }
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRoleMember
     }
 }

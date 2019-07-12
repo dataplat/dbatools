@@ -10,11 +10,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'ExcludeFixedRole', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $results = Get-DbaServerRole -SqlInstance $script:instance2
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,DateCreated,DateModified,Login,DatabaseEngineEdition,DatabaseEngineType,Events,ExecutionManager,Name,Parent,Properties,State,Urn,UserData'.Split(',')
+            $ExpectedProps = 'ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerVersion,SqlInstance,State,Urn,UserData'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
 

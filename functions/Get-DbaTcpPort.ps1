@@ -21,9 +21,6 @@ function Get-DbaTcpPort {
     .PARAMETER All
         If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release. Use All instead.
-
     .PARAMETER ExcludeIpv6
         If this switch is enabled, IPv6 information is excluded from All output.
 
@@ -61,28 +58,21 @@ function Get-DbaTcpPort {
         Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -All
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -All
 
         Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             if ($All) {

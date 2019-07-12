@@ -69,7 +69,6 @@ function Test-DbaBackupInformation {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$WithReplace,

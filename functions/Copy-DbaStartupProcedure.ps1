@@ -21,7 +21,7 @@ function Copy-DbaStartupProcedure {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Procedure
-        The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedrues will be processed.
+        The startup procedure(s) to process. This list is auto-populated from the server. If unspecified, all startup procedures will be processed.
 
     .PARAMETER ExcludeProcedure
         The startup procedure(s) to exclude. This list is auto-populated from the server.
@@ -71,7 +71,7 @@ function Copy-DbaStartupProcedure {
 
         Shows what would happen if the command were executed using force.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -89,11 +89,13 @@ function Copy-DbaStartupProcedure {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         # Includes properties: Name, Schema (both as strings)
         $startupProcs = Get-DbaModule -SqlInstance $sourceServer -Type StoredProcedure -Database master | Where-Object ExecIsStartup
+
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -163,9 +165,9 @@ function Copy-DbaStartupProcedure {
                         $sql = $header + $body
                         Write-Message -Level Verbose -Message $sql
                         $null = Invoke-DbaQuery -SqlInstance $destServer -Query $sql -Database master -EnableException
-                        $startupsql = "EXEC SP_PROCOPTION '$currentProcName', 'STARTUP', 'ON'"
-                        Write-Message -Level Verbose -Message $startupsql
-                        $null = Invoke-DbaQuery -SqlInstance $destServer -Query $startupsql -Database master -EnableException
+                        $startupSql = "EXEC SP_PROCOPTION '$currentProcName', 'STARTUP', 'ON'"
+                        Write-Message -Level Verbose -Message $startupSql
+                        $null = Invoke-DbaQuery -SqlInstance $destServer -Query $startupSql -Database master -EnableException
 
                         $copyStartupProcStatus.Status = "Successful"
                         $copyStartupProcStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

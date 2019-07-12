@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Backup-DbaDbCertificate {
     <#
     .SYNOPSIS
@@ -113,7 +112,6 @@ function Backup-DbaDbCertificate {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = "instance")]
@@ -128,7 +126,6 @@ function Backup-DbaDbCertificate {
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -136,8 +133,6 @@ function Backup-DbaDbCertificate {
         if (-not $EncryptionPassword -and $DecryptionPassword) {
             Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
 
         function export-cert ($cert) {
             $certName = $cert.Name
@@ -240,7 +235,7 @@ function Backup-DbaDbCertificate {
 
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
-                Write-Message -Level Output -Message "Skipping system cert $cert"
+                Write-Message -Level Verbose -Message "Skipping system cert $cert"
             } else {
                 export-cert $cert
             }

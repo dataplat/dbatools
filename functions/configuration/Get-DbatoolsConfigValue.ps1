@@ -47,8 +47,8 @@ function Get-DbatoolsConfigValue {
         [object]$Fallback,
         [switch]$NotNull
     )
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfigValue
-    $FullName = $FullName.ToLower()
+
+    $FullName = $FullName.ToLowerInvariant()
 
     $temp = $null
     $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value

@@ -108,7 +108,6 @@ function Invoke-DbaAdvancedRestore {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Object[]]$BackupHistory,
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$OutputScriptOnly,
@@ -160,7 +159,7 @@ function Invoke-DbaAdvancedRestore {
         foreach ($Database in $Databases) {
             $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
-                if (-not $OutputScriptOnly -and -not $VerifyOnly) {
+                if (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
                             Write-Message -Level Verbose -Message "Killing processes on $Database"
@@ -171,6 +170,18 @@ function Invoke-DbaAdvancedRestore {
                             Write-Message -Level Verbose -Message "No processes to kill in $Database"
                         }
                     }
+                } elseif (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -eq "SqlManagedInstance") {
+                    if ($Pscmdlet.ShouldProcess("Dropping $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if database exist, ", "Database Exists and WithReplace specified, need to drop database to restore")) {
+                        try {
+                            Write-Message -Level Verbose "$SqlInstance is a Managed instance so dropping database was WithReplace not supported"
+                            $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
+                            $null = Remove-DbaDatabase -SqlInstance $Server -Database $Database -Confirm:$false
+                            $server.ConnectionContext.Connect()
+                        } catch {
+                            Write-Message -Level Verbose -Message "No processes to kill in $Database"
+                        }
+                    }
+
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
                     Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
                     continue
@@ -179,6 +190,7 @@ function Invoke-DbaAdvancedRestore {
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
+
             foreach ($backup in $backups) {
                 $FileRestoreStartTime = Get-Date
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -199,8 +211,11 @@ function Invoke-DbaAdvancedRestore {
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
+
                 $Restore.Database = $database
-                $Restore.ReplaceDatabase = $WithReplace
+                if ($Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
+                    $Restore.ReplaceDatabase = $WithReplace
+                }
                 if ($MaxTransferSize) {
                     $Restore.MaxTransferSize = $MaxTransferSize
                 }
@@ -304,8 +319,8 @@ function Invoke-DbaAdvancedRestore {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                         $RestoreComplete = $False
                         $ExitError = $_.Exception.InnerException
-                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_
-                        return
+                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_ -Continue
+                        break
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server
@@ -323,14 +338,14 @@ function Invoke-DbaAdvancedRestore {
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
-                                BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / 1mb, 2) } else { $null }
-                                CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / 1mb, 2) } else { $null }
+                                BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count / 1mb, 2) } else { $null }
+                                CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count / 1mb, 2) } else { $null }
                                 BackupFile             = $backup.FullName -Join ','
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
                                 RestoreDirectory       = $RestoreDirectory
-                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum) } else { $null }
-                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum) } else { $null }
+                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count) } else { $null }
+                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count) } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
@@ -350,7 +365,7 @@ function Invoke-DbaAdvancedRestore {
                 $BackupCnt++
             }
             Write-Progress -id 2 -Activity "Finished" -Completed
-            if ($server.ConnsectionContext.exists) {
+            if ($server.ConnectionContext.exists) {
                 $server.ConnectionContext.Disconnect()
             }
             Write-Progress -id 1 -Activity "Finished" -Completed

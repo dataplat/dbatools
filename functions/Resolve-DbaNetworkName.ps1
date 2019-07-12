@@ -78,20 +78,18 @@ function Resolve-DbaNetworkName {
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegServer
 
     #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias('FastParrot')]
         [switch]$Turbo,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -105,7 +103,7 @@ function Resolve-DbaNetworkName {
                 if ($ComputerName -match "\.") {
                     return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
                 } else {
-                    return "$env:USERDNSDOMAIN".ToLower()
+                    return "$env:USERDNSDOMAIN".ToLowerInvariant()
                 }
             } else {
                 return $fqdn.Substring($fqdn.IndexOf(".") + 1)
@@ -130,7 +128,7 @@ function Resolve-DbaNetworkName {
             }
             return
         }
-        
+
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true

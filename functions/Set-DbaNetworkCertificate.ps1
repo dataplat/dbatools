@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaNetworkCertificate {
     <#
     .SYNOPSIS
@@ -61,20 +60,21 @@ function Set-DbaNetworkCertificate {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
-        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [Alias("ComputerName")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
-        [parameter(Mandatory, ParameterSetName = "Thumbprint")]
+        [parameter(Mandatory, ParameterSetName = "Thumbprint", ValueFromPipelineByPropertyName)]
         [string]$Thumbprint,
         [switch]$EnableException
     )
-    
+
     process {
         # Registry access
-        
+
         if (Test-FunctionInterrupt) { return }
 
         if (-not $Certificate -and -not $Thumbprint) {
@@ -88,6 +88,7 @@ function Set-DbaNetworkCertificate {
         }
 
         foreach ($instance in $sqlinstance) {
+            $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
@@ -131,10 +132,10 @@ function Set-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-            Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regroot = $args[0]
@@ -158,16 +159,29 @@ function Set-DbaNetworkCertificate {
                 $permission = $serviceaccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
-                $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
-                $keyFullPath = $keyPath + $keyName
+                if ($null -ne $cert.PrivateKey) {
+                    $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
+                    $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+                    $keyFullPath = $keyPath + $keyName
+                } else {
+                    $keyPath = $env:ProgramData + '\Microsoft\Crypto\Keys\'
+                    $rsaKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+                    $keyName = $rsaKey.Key.UniqueName
+                    $KeyFullPath = $keyPath + $keyName
+                }
+
+                if (-not (Test-Path $KeyFullPath -Type Leaf)) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
+                    Write-Warning "Read-only permissions could not be granted to certificate, unable to determine private key path."
+                    return
+                }
 
                 $acl = Get-Acl -Path $keyFullPath
                 $null = $acl.AddAccessRule($accessRule)
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
-                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLower() # to make it compat with SQL config
+                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate"

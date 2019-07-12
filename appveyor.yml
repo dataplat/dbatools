@@ -18,7 +18,8 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
-shallow_clone: true
+#shallow_clone: true
+clone_depth: 100
 
 # Set build info
 environment:
@@ -85,7 +86,7 @@ before_test:
 
   # Setting up the local SQL Server environments
   - ps: .\Tests\appveyor.sqlserver.ps1
-  # - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 test_script:
    # Test with native PS version
@@ -98,4 +99,4 @@ after_test:
   - ps: .\Tests\appveyor.post.ps1
 
 # on_finish:
-#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

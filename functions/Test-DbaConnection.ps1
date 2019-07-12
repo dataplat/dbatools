@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-DbaConnection {
     <#
@@ -63,11 +62,9 @@ function Test-DbaConnection {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -97,7 +94,7 @@ function Test-DbaConnection {
                         FQDN             :
                         FullComputerName :
                      #>
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
             } catch {
                 Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
@@ -118,29 +115,13 @@ function Test-DbaConnection {
             $reply = $ping.Send($instance.ComputerName, $timeout)
             $pingable = $reply.Status -eq 'Success'
 
-            # this whole section does nothing and returns errors for default instances with a non-default port - baseaddress not defined
-            # commenting it all out
-            # SQL Server connection
-            # if ($instance.InstanceName -ne "MSSQLSERVER") {
-            #     #Variable marked as unused by PSScriptAnalyzer, need to be in PSCustomObject?
-            #     #$sqlport = "N/A"
-            # } else {
-            #     Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
-            #     $tcp = New-Object System.Net.Sockets.TcpClient
-            #     try {
-            #         $tcp.Connect($baseaddress, 1433)
-            #         $tcp.Close()
-            #         $tcp.Dispose()
-            #     } catch {
-            #         # here to avoid an empty catch
-            #         $null = 1
-            #     }
-            # }
-
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
+                if (-not $instanceName) {
+                    $instanceName = $instance.InstanceName
+                }
             } catch {
                 $connectSuccess = $false
                 $instanceName = $instance.InstanceName
@@ -162,14 +143,15 @@ function Test-DbaConnection {
             }
 
             # Auth Scheme
+            $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -WarningVariable authwarning -WarningAction SilentlyContinue).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
 
             if ($authwarning) {
-                $authscheme = "N/A"
+                #$authscheme = "N/A"
             }
 
             [pscustomobject]@{
@@ -196,8 +178,5 @@ function Test-DbaConnection {
                 LocalEdition         = $localInfo.Edition
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlConnection
     }
 }

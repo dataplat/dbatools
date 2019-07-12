@@ -1,12 +1,11 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-$outputFile = "$env:temp\dbatoolsci_user.sql"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','User','DestinationVersion','Path','NoClobber','Append','EnableException','ScriptingOptionsObject','ExcludeGoBatchSeparator'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'DestinationVersion', 'Path', 'FilePath', 'InputObject', 'NoClobber', 'Append', 'EnableException', 'ScriptingOptionsObject', 'ExcludeGoBatchSeparator', 'Passthru'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -16,6 +15,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $AltExportPath = "$env:USERPROFILE\Documents"
+        $outputFile = "$AltExportPath\Dbatoolsci_user_CustomFile.sql"
         try {
             $dbname = "dbatoolsci_exportdbauser"
             $login = "dbatoolsci_exportdbauser_login"
@@ -38,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check if output file was created" {
         if (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $user) {
-            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -FilePath $outputFile
+            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -FilePath $outputFile
             It "Exports results to one sql file" {
                 (Get-ChildItem $outputFile).Count | Should Be 1
             }

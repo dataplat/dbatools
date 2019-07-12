@@ -19,7 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith {}
         Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{NumberOfCores = 24} } -ParameterFilter { $ClassName -eq 'Win32_processor' }
         # mock searching for setup, proper file should always it find
-        Mock -CommandName Find-SqlServerSetup -MockWith {
+        Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
         } -ModuleName dbatools
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
@@ -87,7 +87,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             It "Should install SQL$version with all features enabled" {
                 $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -Feature All
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
@@ -118,7 +118,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
@@ -148,7 +148,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
@@ -176,7 +176,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Find-SqlServerSetup -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
@@ -145,7 +144,7 @@ function New-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HA
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -227,7 +226,6 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$Force,
@@ -240,7 +238,7 @@ function New-DbaAvailabilityGroup {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
@@ -256,7 +254,7 @@ function New-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         $stepCounter = $wait = 0
@@ -266,10 +264,20 @@ function New-DbaAvailabilityGroup {
             return
         }
 
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
+            }
+        }
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+            Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
 
@@ -393,6 +401,7 @@ function New-DbaAvailabilityGroup {
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
                     $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
+                    $ag.DtcSupportEnabled = $DtcSupport
                 }
 
                 if ($server.VersionMajor -ge 14) {
@@ -417,7 +426,7 @@ function New-DbaAvailabilityGroup {
                 }
 
                 if ($server.VersionMajor -ge 13) {
-                    $replicaparams += @{SeedingMode = $SeedingMode}
+                    $replicaparams += @{SeedingMode = $SeedingMode }
                 }
 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
@@ -579,13 +588,7 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         $dbdone = $false
         do {
-            $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
             foreach ($second in $secondaries) {
-                if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
-                    if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                        $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
-                    }
-                }
                 if ($SeedingMode -eq 'Automatic') {
                     $done = $false
                     try {
@@ -606,6 +609,9 @@ function New-DbaAvailabilityGroup {
                         # Log the exception but keep going
                         Stop-Function -Message "Failure" -ErrorRecord $_
                     }
+                }
+                if ($Database) {
+                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
                 }
             }
 

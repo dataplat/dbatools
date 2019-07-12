@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXESessionTemplate {
     <#
     .SYNOPSIS
@@ -17,7 +16,10 @@ function Export-DbaXESessionTemplate {
         The Name of the session(s) to export.
 
     .PARAMETER Path
-        The path to export the file into. Can be .xml or directory.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER InputObject
         Specifies an XE Session output by Get-DbaXESession.
@@ -51,16 +53,22 @@ function Export-DbaXESessionTemplate {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Session,
+        # intentionally left because this is where SSMS defaults
         [string]$Path = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates",
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
@@ -76,14 +84,12 @@ function Export-DbaXESessionTemplate {
                 Stop-Function -Message "$Path does not exist." -Target $Path
             }
 
-            if ($path.EndsWith(".xml")) {
-                $filename = $path
-            } else {
-                $filename = "$path\$xesname.xml"
+            if (-not $PSBoundParameters.FilePath) {
+                $FilePath = "$Path\$xesname.xml"
             }
-            Write-Message -Level Verbose -Message "Wrote $xesname to $filename"
-            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
-            Get-ChildItem -Path $filename
+            Write-Message -Level Verbose -Message "Wrote $xesname to $FilePath"
+            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $FilePath, $true)
+            Get-ChildItem -Path $FilePath
         }
     }
 }

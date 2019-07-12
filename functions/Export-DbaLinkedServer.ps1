@@ -18,7 +18,10 @@ function Export-DbaLinkedServer {
         Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
 
     .PARAMETER Path
-        The path to the exported sql file.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER LinkedServer
         The linked server(s) to export. If unspecified, all linked servers will be processed.
@@ -59,18 +62,23 @@ function Export-DbaLinkedServer {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [string[]]$LinkedServer,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [switch]$ExcludePassword,
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -103,11 +111,7 @@ function Export-DbaLinkedServer {
                 return
             }
 
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-linkedserver.sql"
-            }
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 
             $sql = @()
 
@@ -138,13 +142,13 @@ function Export-DbaLinkedServer {
             }
             try {
                 if ($Append) {
-                    Add-Content -Path $path -Value $sql
+                    Add-Content -Path $FilePath -Value $sql
                 } else {
-                    Set-Content -Path $path -Value $sql
+                    Set-Content -Path $FilePath -Value $sql
                 }
-                Get-ChildItem -Path $path
+                Get-ChildItem -Path $FilePath
             } catch {
-                Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
             }
         }
     }

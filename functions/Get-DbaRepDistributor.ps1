@@ -36,20 +36,20 @@ function Get-DbaRepDistributor {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [parameter(Position = 1)]
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
-            Stop-Function -Message "Replication management objects not available. Please install SQL Server Management Studio."
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -66,8 +66,7 @@ function Get-DbaRepDistributor {
 
             # Connect to the distributor of the instance
             try {
-                $sourceSqlConn = $server.ConnectionContext.SqlConnectionObject
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sourceSqlConn
+                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -78,8 +77,5 @@ function Get-DbaRepDistributor {
 
             Select-DefaultView -InputObject $distributor -Property ComputerName, InstanceName, SqlInstance, IsPublisher, IsDistributor, DistributionServer, DistributionDatabase, DistributorInstalled, DistributorAvailable, HasRemotePublisher
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDistributor
     }
 }

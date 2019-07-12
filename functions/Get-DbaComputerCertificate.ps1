@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerCertificate {
     <#
     .SYNOPSIS
@@ -21,6 +20,9 @@ function Get-DbaComputerCertificate {
 
     .PARAMETER Path
         The path to a certificate - basically changes the path into a certificate object
+
+    .PARAMETER Type
+        The type of certificates to return. All or Service. Default is Service since this is SQL specific.
 
     .PARAMETER Thumbprint
         Return certificate based on thumbprint
@@ -57,11 +59,12 @@ function Get-DbaComputerCertificate {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [string]$Store = "LocalMachine",
-        [string]$Folder = "My",
+        [string[]]$Store = "LocalMachine",
+        [string[]]$Folder = "My",
+        [ValidateSet("All", "Service")]
+        [string]$Type = "Service",
         [string]$Path,
         [string[]]$Thumbprint,
         [switch]$EnableException
@@ -83,7 +86,7 @@ function Get-DbaComputerCertificate {
                 $Certificate.Import($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                 return $Certificate
             }
-            
+
             function Get-CoreCertStore {
                 [CmdletBinding()]
                 param (
@@ -94,16 +97,16 @@ function Get-DbaComputerCertificate {
                     [ValidateSet("ReadOnly", "ReadWrite")]
                     [string]$Flag = "ReadOnly"
                 )
-                
+
                 $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
                 $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
                 $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
                 $certstore = [System.Security.Cryptography.X509Certificates.X509Store]::New($foldername, $storename)
                 $certstore.Open($flags)
-                
+
                 $certstore
             }
-            
+
             function Get-CoreCertificate {
                 [CmdletBinding()]
                 param (
@@ -116,20 +119,27 @@ function Get-DbaComputerCertificate {
                     [string[]]$Thumbprint,
                     [System.Security.Cryptography.X509Certificates.X509Store[]]$InputObject
                 )
-                
+
                 if (-not $InputObject) {
                     $InputObject += Get-CoreCertStore -Store $Store -Folder $Folder -Flag $Flag
                 }
-                
+
                 $certs = ($InputObject).Certificates
-                
+
                 if ($Thumbprint) {
                     $certs = $certs | Where-Object Thumbprint -in $Thumbprint
                 }
-                
-                $certs
+
+                foreach ($c in $certs) {
+                    Add-Member -Force -InputObject $c -NotePropertyName Algorithm -NotePropertyValue $c.SignatureAlgorithm.FriendlyName
+                    Add-Member -Force -InputObject $c -NotePropertyName ComputerName -NotePropertyValue $env:ComputerName
+                    # had to add Name because remotely, "FriendlyName" refused to work. no idea why.
+                    Add-Member -Force -InputObject $c -NotePropertyName Name -NotePropertyValue $c.FriendlyName.ToString()
+                    Add-Member -Force -InputObject $c -NotePropertyName Store -NotePropertyValue $Store
+                    Add-Member -Force -InputObject $c -NotePropertyName Folder -NotePropertyValue $Folder -Passthru
+                }
             }
-            
+
             if ($Thumbprint) {
                 try {
                     <# DO NOT use Write-Message as this is inside of a script block #>
@@ -144,7 +154,11 @@ function Get-DbaComputerCertificate {
                 try {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Searching Cert:\$Store\$Folder"
-                    Get-CoreCertificate -Store $Store -Folder $Folder | Where-Object EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1'
+                    if ($Type -eq "Service") {
+                        Get-CoreCertificate -Store $Store -Folder $Folder | Where-Object EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1'
+                    } else {
+                        Get-CoreCertificate -Store $Store -Folder $Folder
+                    }
                 } catch {
                     # still don't care
                     # here to avoid an empty catch
@@ -154,13 +168,31 @@ function Get-DbaComputerCertificate {
         }
         #endregion Scriptblock for remoting
     }
-    
+
     process {
         foreach ($computer in $computername) {
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $Store, $Folder, $Path -ErrorAction Stop | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-            } catch {
-                Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+            if ($Store -eq "All") {
+                try {
+                    $Store = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { Get-ChildItem Cert: | Select-Object -ExpandProperty Location } -Raw
+                } catch {
+                    Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                }
+            }
+            if ($Folder -eq "All") {
+                try {
+                    $Folder = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { Get-ChildItem Cert: | Select-Object -ExpandProperty StoreNames | Select-Object -ExpandProperty Keys } -Raw
+                } catch {
+                    Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                }
+            }
+            foreach ($currentStore in $Store) {
+                foreach ($currentFolder in $Folder) {
+                    try {
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
+                    } catch {
+                        Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                    }
+                }
             }
         }
     }

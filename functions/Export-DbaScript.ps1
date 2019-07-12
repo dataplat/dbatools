@@ -10,7 +10,11 @@ function Export-DbaScript {
         A SQL Management Object such as the one returned from Get-DbaLogin
 
     .PARAMETER Path
-        The output filename and location. If no path is specified, one will be created. If the file already exists, the output will be appended.
+        Specifies the directory where the file or files will be exported.
+        Will default to Path.DbatoolsExport Configuration entry
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Encoding
         Specifies the file encoding. The default is UTF8.
@@ -30,9 +34,10 @@ function Export-DbaScript {
 
     .PARAMETER ScriptingOptionsObject
         An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
+        Options set in the ScriptingOptionsObject may override other parameter values
 
     .PARAMETER BatchSeparator
-        Specifies the Batch Separator to use. Default is None
+        Specifies the Batch Separator to use. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
 
     .PARAMETER NoPrefix
         Do not include a Prefix
@@ -68,21 +73,21 @@ function Export-DbaScript {
     .EXAMPLE
         PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
 
-        Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
+        Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename based on the Path.DbatoolsExport configuration setting, current time and server name.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -FilePath C:\temp\export.sql -Append
 
         Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
-        Script does not include Batch Separator and will not compile
+        Inclusion of Batch Separator in script depends on the configuration s not include Batch Separator and will not compile
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql
+        PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaScript -FilePath C:\temp\export.sql
 
         Exports only script for 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql -NoPrefix
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -FilePath C:\temp\export.sql -NoPrefix
 
         Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
         Suppress the output of a Prefix
@@ -95,10 +100,10 @@ function Export-DbaScript {
         PS C:\> $Options.NoCommandTerminator = $false
         PS C:\> $Options.ScriptBatchTerminator = $true
         PS C:\> $Options.AnsiFile = $true
-        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -FilePath C:\temp\export.sql -ScriptingOptionsObject $options
 
         Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
-        Appends a batch separator at end of each script.
+        Uses Scripting options to ensure Batch Terminator is set
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
@@ -115,7 +120,7 @@ function Export-DbaScript {
         PS C:\> $Options.AnsiFile = $true
         PS C:\> $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb, tempdb
         PS C:\> foreach ($db in $Databases) {
-        >>        Export-DbaScript -InputObject $db -Path C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
+        >>        Export-DbaScript -InputObject $db -FilePath C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
         >> }
 
         Exports Script for each database on sql2016 excluding system databases
@@ -129,26 +134,41 @@ function Export-DbaScript {
         [object[]]$InputObject,
         [Alias("ScriptingOptionObject")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
-        [string]$BatchSeparator = '',
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
         [switch]$NoPrefix,
         [switch]$Passthru,
         [switch]$NoClobber,
         [switch]$Append,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
     begin {
+        $null = Test-ExportDirectory -Path $Path
         $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         $commandName = $MyInvocation.MyCommand.Name
-        $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
         $prefixArray = @()
+
+        $appendToScript = $Append
+        if ($ScriptingOptionsObject) {
+            # Check if BatchTerminator is consistent
+            if (($($ScriptingOptionsObject.ScriptBatchTerminator)) -and ([string]::IsNullOrWhitespace($BatchSeparator))) {
+                Write-Message -Level Warning -Message "Setting ScriptBatchTerminator to true and also having BatchSeperarator as an empty or null string may produce unintended results."
+            }
+
+            if ($ScriptingOptionsObject.AppendToFile) {
+                Write-Message -Level Verbose -Message "The ScriptingOptionsObject AppendToFile setting of true will override Append parameter."
+                $appendToScript = $true
+            }
+        }
+
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($object in $InputObject) {
 
             $typename = $object.GetType().ToString()
@@ -185,99 +205,108 @@ function Export-DbaScript {
 
             try {
                 $server = $parent
-                if (-not $server) {
-                    $server = $object.Parent
-                }
                 $serverName = $server.Name.Replace('\', '$')
 
+                $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter $server
                 if ($ScriptingOptionsObject) {
-                    $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter $server
                     $scripter.Options = $ScriptingOptionsObject
+                    $scriptBatchTerminator = $ScriptingOptionsObject.ScriptBatchTerminator
+                    $soAppendToFile = $ScriptingOptionsObject.AppendToFile
+                    $soToFileOnly = $ScriptingOptionsObject.ToFileOnly
+                    $soFileName = $ScriptingOptionsObject.FileName
                 }
 
-                if (!$passthru) {
-                    if ($path) {
-                        $actualPath = $path
-                    } else {
-                        $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
-                    }
+                if (-not $passthru) {
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $serverName
+                } else {
+                    $scriptPath = 'Console'
                 }
 
                 if ($NoPrefix) {
-                    $prefix = ""
+                    $prefix = $null
                 } else {
                     $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
                 }
 
                 if ($passthru) {
-                    $prefix | Out-String
+                    if ($null -ne $prefix) {
+                        $prefix | Out-String
+                    }
                 } else {
-                    if ($prefixArray -notcontains $actualPath) {
-
-                        if ((Test-Path -Path $actualPath) -and $NoClobber) {
-                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $actualPath -Continue
+                    if ($prefixArray -notcontains $scriptPath) {
+                        if ((Test-Path -Path $scriptPath) -and $NoClobber) {
+                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
                         }
                         #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
-                        $prefix | Out-File -FilePath $actualPath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
-                        $prefixArray += $actualPath
+                        if ($null -ne $prefix) {
+                            $prefix | Out-File -FilePath $scriptPath -Encoding $encoding -Append:$appendToScript -NoClobber:$NoClobber
+                            $prefixArray += $scriptPath
+                            Write-Message -Level Verbose -Message "Writing prefix to file $scriptPath"
+                        }
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualPath")) {
+                if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $scriptPath")) {
                     Write-Message -Level Verbose -Message "Exporting $object"
 
                     if ($passthru) {
                         if ($ScriptingOptionsObject) {
-                            foreach ($script in $scripter.EnumScript($object)) {
-                                if ($BatchSeparator -ne "") {
-                                    $script = "$script`r`n$BatchSeparator`r`n"
+                            $ScriptingOptionsObject.FileName = $null
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                if ($scriptBatchTerminator) {
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                 }
-                                $script | Out-String
+                                $scriptpart | Out-String
                             }
                         } else {
-                            if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $script = $object.ScriptCreate().GetScript()
-                            } else {
-                                $script = $object.Script()
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                if ($BatchSeparator) {
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                } else {
+                                    $scriptpart = "$scriptpart`r`n"
+                                }
+                                $scriptpart  | Out-String
                             }
-
-                            if ($BatchSeparator -ne "") {
-                                $script = "$script`r`n$BatchSeparator`r`n"
-                            }
-                            $script  | Out-String
                         }
                     } else {
                         if ($ScriptingOptionsObject) {
-                            if ($ScriptingOptionsObject.ScriptBatchTerminator) {
-                                $ScriptingOptionsObject.AppendToFile = $true
+                            if ($scriptBatchTerminator) {
+                                # Option to script batch terminator via ScriptingOptionsObject needs to write to file only
+                                $ScriptingOptionsObject.AppendToFile = (($null -ne $prefix) -or $appendToScript )
                                 $ScriptingOptionsObject.ToFileOnly = $true
-                                $ScriptingOptionsObject.FileName = $actualPath
-                                $object.Script($ScriptingOptionsObject)
-                            } else {
-                                foreach ($script in $scripter.EnumScript($object)) {
-                                    if ($BatchSeparator -ne "") {
-                                        $script = "$script`r`n$BatchSeparator`r`n"
-                                    }
-                                    $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                                if (-not  $ScriptingOptionsObject.FileName) {
+                                    $ScriptingOptionsObject.FileName = $scriptPath
                                 }
-                            }
-
-                        } else {
-                            if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $script = $object.ScriptCreate().GetScript()
+                                $null = $object.Script($ScriptingOptionsObject)
+                                # Reset the changed values of the $ScriptingOptionsObject in case it is reused later
+                                $ScriptingOptionsObject.AppendToFile = $soAppendToFile
+                                $ScriptingOptionsObject.ToFileOnly = $soToFileOnly
+                                $ScriptingOptionsObject.FileName = $soFileName
                             } else {
-                                $script = $object.Script()
+                                $ScriptingOptionsObject.FileName = $null
+                                foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                    if ($scriptBatchTerminator) {
+                                        $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    }
+                                    $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                }
+                                $ScriptingOptionsObject.FileName = $soFileName
                             }
-                            if ($BatchSeparator -ne "") {
-                                $script = "$script`r`n$BatchSeparator`r`n"
+                        } else {
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                if ($BatchSeparator) {
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                } else {
+                                    $scriptpart = "$scriptpart`r`n"
+                                }
+                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                             }
-                            $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }
                     }
 
                     if (-not $passthru) {
-                        Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $actualPath"
-                        Get-ChildItem -Path $actualPath
+                        Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $scriptPath"
+                        Get-ChildItem -Path $scriptPath
                     }
                 }
             } catch {

@@ -69,7 +69,6 @@ function Mount-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
@@ -79,7 +78,6 @@ function Mount-DbaDatabase {
         [string]$DatabaseOwner,
         [ValidateSet('None', 'RebuildLog', 'EnableBroker', 'NewBroker', 'ErrorBrokerConversations')]
         [string]$AttachOption = "None",
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -109,7 +107,7 @@ function Mount-DbaDatabase {
                 }
 
                 if (-Not (Test-Bound -Parameter FileStructure)) {
-                    $backuphistory = Get-DbaBackupHistory -SqlInstance $server -Database $db -Type Full | Sort-Object End -Descending | Select-Object -First 1
+                    $backuphistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $db -Type Full | Sort-Object End -Descending | Select-Object -First 1
 
                     if (-not $backuphistory) {
                         $message = "Could not enumerate backup history to automatically build FileStructure. Rerun the command and provide the filestructure parameter."

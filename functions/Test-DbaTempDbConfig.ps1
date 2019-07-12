@@ -1,5 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Test-DbaTempdbConfig {
+function Test-DbaTempDbConfig {
     <#
     .SYNOPSIS
         Evaluates tempdb against several rules to match best practices.
@@ -22,9 +21,6 @@ function Test-DbaTempdbConfig {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -41,35 +37,30 @@ function Test-DbaTempdbConfig {
         Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
     .LINK
-        https://dbatools.io/Test-DbaTempdbConfig
+        https://dbatools.io/Test-DbaTempddbConfig
 
     .EXAMPLE
-        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost
+        PS C:\> Test-DbaTempDbConfig -SqlInstance localhost
 
         Checks tempdb on the localhost machine.
 
     .EXAMPLE
-        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost | Select-Object *
+        PS C:\> Test-DbaTempDbConfig -SqlInstance localhost | Select-Object *
 
         Checks tempdb on the localhost machine. All rest results are shown.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaTempdbConfig | Select-Object * | Out-GridView
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaTempDbConfig | Select-Object * | Out-GridView
 
         Checks tempdb configuration for a group of servers from SQL Server Central Management Server (CMS). Output includes all columns. Send output to GridView.
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -189,7 +180,7 @@ function Test-DbaTempdbConfig {
                 $equalSizeDataFiles = $false
             }
 
-            $value = [PSCustomObject]@{
+            [PSCustomObject]@{
                 ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
@@ -201,9 +192,5 @@ function Test-DbaTempdbConfig {
             }
             Write-Message -Level Verbose -Message "Data File Size Equal evaluated."
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlTempDbConfiguration
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaTempDbConfiguration
     }
 }

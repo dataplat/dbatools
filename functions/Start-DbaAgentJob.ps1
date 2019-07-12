@@ -84,7 +84,6 @@ function Start-DbaAgentJob {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
@@ -95,7 +94,6 @@ function Start-DbaAgentJob {
         [switch]$Wait,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -165,7 +163,14 @@ function Start-DbaAgentJob {
                 # Wait for the job
                 if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        $currentRunStatus = $currentjob.CurrentRunStatus
+                        $currentStep = $currentjob.CurrentRunStep
+                        $jobStepsCount = $currentjob.JobSteps.Count
+                        $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
+                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
+                        $currentStepRetries = $currentjob.RetryAttempts
+                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
+                        Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }

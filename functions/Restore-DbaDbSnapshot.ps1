@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbSnapshot {
     <#
     .SYNOPSIS
@@ -80,23 +79,21 @@ function Restore-DbaDbSnapshot {
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) {$ConfirmPreference = 'none'}
+    }
     process {
         if (-not $Snapshot -and -not $Database -and -not $ExcludeDatabase -and -not $InputObject) {
             Stop-Function -Message "You must specify either -Snapshot (to restore from) or -Database/-ExcludeDatabase (to restore to) or pipe in a snapshot"
@@ -194,8 +191,5 @@ function Restore-DbaDbSnapshot {
                 Get-DbaDatabase -SqlInstance $server -Database $db.Name
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
     }
 }

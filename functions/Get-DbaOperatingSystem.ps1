@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOperatingSystem {
     <#
     .SYNOPSIS
@@ -56,7 +55,6 @@ function Get-DbaOperatingSystem {
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -114,7 +112,7 @@ function Get-DbaOperatingSystem {
             }
 
             try {
-                $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Select-Object ElementName, InstanceId, IsActive
+                $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" | Select-Object ElementName, InstanceId, IsActive
             } catch {
                 Write-Message -Level Warning -Message "Power plan information not available on $computer."
                 $powerPlan = $null
@@ -130,7 +128,7 @@ function Get-DbaOperatingSystem {
 
             try {
                 $ss = Get-DbaCmObject @splatDbaCmObject -Class Win32_SystemServices
-                if ($ss | Select-Object PartComponent | Where-Object {$_ -like "*ClusSvc*"}) {
+                if ($ss | Select-Object PartComponent | Where-Object { $_ -like "*ClusSvc*" }) {
                     $IsWsfc = $true
                 } else {
                     $IsWsfc = $false
@@ -147,8 +145,8 @@ function Get-DbaOperatingSystem {
                 Architecture             = $os.OSArchitecture
                 Version                  = $os.Version
                 Build                    = $os.BuildNumber
-                OSVersion                = $os.caption;
-                SPVersion                = $os.servicepackmajorversion;
+                OSVersion                = $os.caption
+                SPVersion                = $os.servicepackmajorversion
                 InstallDate              = [DbaDateTime]$os.InstallDate
                 LastBootTime             = [DbaDateTime]$os.LastBootUpTime
                 LocalDateTime            = [DbaDateTime]$os.LocalDateTime
@@ -178,7 +176,7 @@ function Get-DbaOperatingSystem {
                 CountryCode              = $os.CountryCode
                 Locale                   = $os.Locale
                 IsWsfc                   = $IsWsfc
-            } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, Caption, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
+            } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, OSVersion, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
         }
     }
 }

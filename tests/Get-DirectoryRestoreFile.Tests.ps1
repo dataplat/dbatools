@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
-        Context "Test Path handling" {
+    Context "Test Path handling" {
         It "Should throw on an invalid Path" {
             { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -EnableException } | Should Throw
         }

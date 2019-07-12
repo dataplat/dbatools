@@ -34,8 +34,7 @@ function Invoke-ManagedComputerCommand {
         [Parameter(Mandatory)]
         [scriptblock]$ScriptBlock,
         [string[]]$ArgumentList,
-        [switch][Alias('Silent')]
-        $EnableException # Left in for legacy but this command needs to throw
+        [switch]$EnableException # Left in for legacy but this command needs to throw
     )
 
     $computer = $ComputerName.ComputerName

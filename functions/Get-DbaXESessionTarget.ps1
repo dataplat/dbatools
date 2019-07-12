@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTarget {
     <#
     .SYNOPSIS
@@ -57,15 +56,13 @@ function Get-DbaXESessionTarget {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Session,
         [string[]]$Target,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {

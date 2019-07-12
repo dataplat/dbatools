@@ -72,7 +72,7 @@ function Copy-DbaAgentAlert {
         Shows what would happen if the command were executed using force.
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -84,7 +84,6 @@ function Copy-DbaAgentAlert {
         [object[]]$ExcludeAlert,
         [switch]$IncludeDefaults,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -95,6 +94,7 @@ function Copy-DbaAgentAlert {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
+        if ($Force) {$ConfirmPreference = 'none'}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -134,6 +134,8 @@ function Copy-DbaAgentAlert {
                     $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
+
+            $destServerOperators = $destServer.JobServer.Operators
 
             foreach ($serverAlert in $serverAlerts) {
                 $alertName = $serverAlert.name
@@ -319,8 +321,5 @@ function Copy-DbaAgentAlert {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
     }
 }

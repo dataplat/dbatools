@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
     <#
     .SYNOPSIS
@@ -145,11 +144,9 @@ function Get-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
@@ -168,7 +165,6 @@ function Get-DbaDatabase {
         [datetime]$NoFullBackupSince,
         [switch]$NoLogBackup,
         [datetime]$NoLogBackupSince,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$IncludeLastUsed,
         [switch]$OnlyAccessible
@@ -251,7 +247,7 @@ function Get-DbaDatabase {
                 'ReadWrite' { @($false) }
                 default { @($true, $false) }
             }
-            $Encrypt = switch (Test-Bound $Encrypted) {
+            $Encrypt = switch (Test-Bound -Parameter 'Encrypted') {
                 $true { @($true) }
                 default { @($true, $false, $null) }
             }
@@ -295,7 +291,7 @@ function Get-DbaDatabase {
                 $_.EncryptionEnabled -in $Encrypt
             }
             if ($NoFullBackup -or $NoFullBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
 
@@ -306,7 +302,7 @@ function Get-DbaDatabase {
 
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastLog )
                 if ($null -ne $NoLogBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
                     $inputobject = $inputobject |

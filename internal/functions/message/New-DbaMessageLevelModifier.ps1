@@ -88,8 +88,7 @@ function New-DbaMessageLevelModifier {
         [string[]]
         $ExcludeTags,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     if (Test-Bound -ParameterName IncludeFunctionName, ExcludeFunctionName, IncludeModuleName, ExcludeModuleName, IncludeTags, ExcludeTags -Not) {
@@ -98,7 +97,7 @@ function New-DbaMessageLevelModifier {
     }
 
     $levelModifier = New-Object Sqlcollaborative.Dbatools.Message.MessageLevelModifier
-    $levelModifier.Name = $Name.ToLower()
+    $levelModifier.Name = $Name.ToLowerInvariant()
     $levelModifier.Modifier = $Modifier
 
     if (Test-Bound -ParameterName IncludeFunctionName) {

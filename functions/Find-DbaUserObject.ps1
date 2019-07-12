@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaUserObject {
     <#
     .SYNOPSIS
@@ -56,12 +55,10 @@ function Find-DbaUserObject {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstances")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Pattern,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaTrace {
     <#
     .SYNOPSIS
@@ -56,7 +55,6 @@ function Stop-DbaTrace {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int[]]$Id,

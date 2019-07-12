@@ -72,7 +72,6 @@ function Test-DbaLoginPassword {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [String[]]$Login,

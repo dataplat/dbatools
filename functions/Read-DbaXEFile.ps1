@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaXEFile {
     <#
     .SYNOPSIS
@@ -55,10 +54,17 @@ function Read-DbaXEFile {
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
+    begin {
+        # there's sometimes a compat issue with XE.Core. Until we get this resolved with the new dlls, here's a potential workaround.
+        $hasdll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object Fullname -like "Microsoft.SqlServer.XEvent.Linq,*"
+        if (-not $hasdll.Location) {
+            Stop-Function -Message "Could not load XEvent DLLs. This is a known issue and will be resolved as time allows."
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($file in $path) {
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object

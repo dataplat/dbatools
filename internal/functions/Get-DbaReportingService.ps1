@@ -79,7 +79,6 @@ function Get-DbaReportingService {
         [string[]]$InstanceName,
         [PSCredential]$Credential,
         [string[]]$ServiceName,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {

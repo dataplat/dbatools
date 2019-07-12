@@ -45,15 +45,25 @@ $TestsRunGroups = @{
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Test-DbaDeprecatedFeature',
-        'Test-DbaServerName',
+        'Test-DbaInstanceName',
         'Test-DbaTempDbConfig',
-        'Test-DbaDbVirtualLogFile',
+        'Measure-DbaDbVirtualLogFile',
         'Test-DbaAgentJobOwner',
         'Resume-DbaAgDbDataMovement',
         'Get-DbaDbMasterKey',
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
-        'Get-DbaPrivilege'
+        'Get-DbaPrivilege',
+        'Find-DbaAgentJob', # strange pester issue
+        'Remove-DbaDatabaseSafely', # strange pester issue
+        'Set-DbaDbOwner',
+        'Test-DbaManagementObject',
+        'Test-DbaMaxDop',
+        'New-DbaLogin',
+        'New-DbaDbUser',
+        # doesn't work on appveyor but so works locally D:
+        'Read-DbaXeFile'
+        'Find-DbaCommand'
     )
     # do not run everywhere
     "disabled"          = @()

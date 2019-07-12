@@ -25,6 +25,53 @@
     </Controls>
 
     <ViewDefinitions>
+        <View>
+          <Name>Microsoft.SqlServer.Management.Smo.Server</Name>
+          <ViewSelectedBy>
+            <TypeName>Microsoft.SqlServer.Management.Smo.Server</TypeName>
+          </ViewSelectedBy>
+          <TableControl>
+            <AutoSize />
+            <TableHeaders>
+              <TableColumnHeader>
+              </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
+            </TableHeaders>
+            <TableRowEntries>
+              <TableRowEntry>
+                <TableColumnItems>
+                  <TableColumnItem>
+                    <PropertyName>Name</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>Product</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>Version</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>Platform</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>IsAzure</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>IsClustered</PropertyName>
+                  </TableColumnItem>
+                </TableColumnItems>
+              </TableRowEntry>
+            </TableRowEntries>
+          </TableControl>
+        </View>
         <!-- Sqlcollaborative.Dbatools.Computer.DiskSpace -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Computer.DiskSpace</Name>
@@ -475,7 +522,44 @@
                 </TableRowEntries>
             </TableControl>
         </View>
-        
+        <!-- Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -->
+        <View>
+            <Name>Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer</Name>
+            <ViewSelectedBy>
+                <TypeName>Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize/>
+                <TableHeaders>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>ServerName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Group</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Description</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Source</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
         <!-- Sqlcollaborative.Dbatools.Validation.LinkedServerResult -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</Name>

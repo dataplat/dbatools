@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-ElevationRequirement {
     <#
@@ -69,7 +68,6 @@ function Test-ElevationRequirement {
         $NoStop,
 
         [bool]
-        [Alias('Silent')]
         $EnableException = $EnableException
     )
 
