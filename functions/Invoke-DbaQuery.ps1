@@ -276,8 +276,9 @@ function Invoke-DbaQuery {
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
             if ($conncontext.DatabaseName -ne $db.Name) {
-                $conncontext = $server.ConnectionContext.Copy()
-                $conncontext.DatabaseName = $db.Name
+                #$conncontext = $server.ConnectionContext.Copy()
+                #$conncontext.DatabaseName = $db.Name
+                $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($db.Name)
             }
             try {
                 if ($File -or $SqlObject) {
@@ -309,8 +310,9 @@ function Invoke-DbaQuery {
             $conncontext = $server.ConnectionContext
             try {
                 if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
+                    #$conncontext = $server.ConnectionContext.Copy()
+                    #$conncontext.DatabaseName = $Database
+                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
