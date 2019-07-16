@@ -45070,6 +45070,7 @@ function Invoke-DbatoolsRenameHelper {
             UseLastBackups     = 'UseLastBackup'
             PasswordExpiration = 'PasswordExpirationEnabled'
             PasswordPolicy     = 'PasswordPolicyEnforced'
+            ServerInstance     = 'SqlInstance'
         }
 
         $commandrenames = @{
@@ -45243,6 +45244,7 @@ function Invoke-DbatoolsRenameHelper {
             'Test-DbaDatabaseCollation'         = 'Test-DbaDbCollation'
             'Test-DbaDatabaseCompatibility'     = 'Test-DbaDbCompatibility'
             'Test-DbaDatabaseOwner'             = 'Test-DbaDbOwner'
+            'Test-DbaDbVirtualLogFile'          = 'Measure-DbaDbVirtualLogFile'
             'Test-DbaFullRecoveryModel'         = 'Test-DbaDbRecoveryModel'
             'Test-DbaJobOwner'                  = 'Test-DbaAgentJobOwner'
             'Test-DbaLogShippingStatus'         = 'Test-DbaDbLogShipStatus'
