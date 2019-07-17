@@ -61,7 +61,7 @@ function Remove-DbaAgentJob {
     .EXAMPLE
         PS C:\> GetDbaAgentJob -SqlInstance sql1 -Job Job1 | Remove-DbaAgentJob -KeepHistory
 
-        Removes teh job but keeps the history
+        Removes the job but keeps the history
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
