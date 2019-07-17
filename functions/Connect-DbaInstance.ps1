@@ -496,10 +496,11 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
-                    $currentdb = $server.Databases | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
+                    <# Fixing that changed the db context back to master so we're SOL here until we can figure out another way.
+                    # $currentdb = $server.Databases[$Database] | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
                     if ($currentdb) {
                         Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
-                    }
+                    }#>
                     $server
                     continue
                 } catch {
