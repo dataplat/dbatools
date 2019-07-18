@@ -446,7 +446,10 @@ function Connect-DbaInstance {
                 }
 
                 if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
-                    $newway = ((Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461808)
+                    if ($Thumbprint) {
+                        Stop-Function -Message "Thumbprint is unsupported at this time. Sorry, some DLLs were all messed up."
+                        return
+                    }
 
                     $appid = Get-DbatoolsConfigValue -FullName 'azure.appid'
                     $clientsecret = Get-DbatoolsConfigValue -FullName 'azure.clientsecret'
@@ -456,36 +459,23 @@ function Connect-DbaInstance {
                     }
 
                     if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed, even if client certificates are used; just specify the AppId as the credential username."
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
                     }
 
                     if (-not $Database) {
-                        Stop-Function -Message "When using AD Universal with MFA Support, database must be specified unless .net 4.7.2 or above is installed"
+                        Stop-Function -Message "When using AD Universal with MFA Support, database must be specified."
                         return
                     }
 
-                    if (($newway -and $AuthenticationType -in "Auto", "AD Universal with MFA Support") -and -not $script:core -and $host.Name -ne 'Visual Studio Code Host') {
-                        if (-not $azurevm) {
-                            if ($Thumbprint) {
-                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with Certificate'
-                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;CertificateThumbprint=$Thumbprint;CertificateStoreLocation=$Store"
-                            } else {
-                                Write-Message -Level Verbose -Message 'Setting $env:AzureServicesAuthConnectionString with appid/client'
-                                $env:AzureServicesAuthConnectionString = "RunAs=App;AppId=$($SqlCredential.Username);TenantId=$Tenant;AppKey=$($SqlCredential.GetNetworkCredential().Password)"
-                            }
-                        }
-
-                        Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
-                        $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
-                    } else {
-                        if (-not $SqlCredential) {
-                            Stop-Function -Message "When using Tenant, SqlCredential must be specified unless .net 4.7.2 or above is installed"
-                            return
-                        }
-                        Write-Message -Level Verbose -Message "Creating renewable token"
-                        $accesstoken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential)
+                    Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
+                    $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
+                    if (-not $SqlCredential) {
+                        Stop-Function -Message "When using Tenant, SqlCredential must be specified."
+                        return
                     }
+                    Write-Message -Level Verbose -Message "Creating renewable token"
+                    $accesstoken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential)
                 }
 
                 try {
@@ -506,10 +496,11 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
-                    $currentdb = $server.Databases | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
+                    <# Fixing that changed the db context back to master so we're SOL here until we can figure out another way.
+                    # $currentdb = $server.Databases[$Database] | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
                     if ($currentdb) {
                         Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
-                    }
+                    }#>
                     $server
                     continue
                 } catch {

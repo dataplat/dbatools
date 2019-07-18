@@ -38,11 +38,11 @@ function Import-DbaCsv {
         Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
 
     .PARAMETER Schema
-        Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo
+        Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo.
 
-        If a schema name is not specified, and a CSV name with multiple dots is specified (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something].
+        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
 
-        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
+        This parameter overrides -UseFileNameForSchema.
 
     .PARAMETER Table
         Specifies the SQL table or view where CSV will be imported into.
@@ -75,6 +75,20 @@ function Import-DbaCsv {
 
     .PARAMETER BatchSize
         Specifies the batch size for the import. Defaults to 50000.
+
+    .PARAMETER UseFileNameForSchema
+        If this switch is enabled, the script will try to find the schema name in the input file by looking for a period (.) in the file name.
+
+        If used with the -Table parameter you may still specify the target table name. If -Table is not used the file name after the first period will
+        be used for the table name.
+
+        For example test.data.csv will import the csv contents to a table in the test schema.
+
+        If it finds one it will use the file name up to the first period as the schema. If there is no period in the filename it will default to dbo.
+
+        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
+
+        This behaviour will be overridden if the -Schema parameter is specified.
 
     .PARAMETER TableLock
         If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
@@ -210,6 +224,16 @@ function Import-DbaCsv {
         Import only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.
 
     .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\schema.data.csv -SqlInstance sql2016 -database tempdb -UseFileNameForSchema
+
+        Will import the contents of C:\temp\schema.data.csv to table 'data' in schema 'schema'.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\schema.data.csv -SqlInstance sql2016 -database tempdb -UseFileNameForSchema -Table testtable
+
+        Will import the contents of C:\temp\schema.data.csv to table 'testtable' in schema 'schema'.
+
+    .EXAMPLE
         PS C:\> $columns = @{
         >> Text = 'FirstName'
         >> Number = 'PhoneNumber'
@@ -230,7 +254,7 @@ function Import-DbaCsv {
         [Parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [string]$Schema = "dbo",
+        [string]$Schema,
         [switch]$Truncate,
         [char]$Delimiter = ",",
         [switch]$SingleColumn,
@@ -247,6 +271,7 @@ function Import-DbaCsv {
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
+        [switch]$UseFileNameForSchema,
         [char]$Quote = '"',
         [char]$Escape = '"',
         [char]$Comment = '#',
@@ -268,6 +293,10 @@ function Import-DbaCsv {
     begin {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
+
+        if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
+            Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
+        }
 
         try {
             # SilentContinue isn't enough
@@ -395,10 +424,36 @@ function Import-DbaCsv {
                 }
             }
 
-            # Automatically generate Table name if not specified, then prompt user to confirm
-            if (-not ($PSBoundParameters.Table)) {
-                $table = [IO.Path]::GetFileNameWithoutExtension($file)
-                Write-Message -Level Verbose -Message "Table name not specified, using $table"
+            # Automatically generate Table name if not specified
+            if (-not $PSBoundParameters.Table) {
+                $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+
+                if ($filename.IndexOf('.') -ne -1) { $periodFound = $true }
+
+                if ($UseFileNameForSchema -and $periodFound -and -not $PSBoundParameters.Schema) {
+                    $table = $filename.Remove(0, $filename.IndexOf('.') + 1)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table from file name"
+                } else {
+                    $table = [IO.Path]::GetFileNameWithoutExtension($file)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table"
+                }
+            }
+
+            # Use dbo as schema name if not specified in parms, or as first string before a period in filename
+            if (-not ($PSBoundParameters.Schema)) {
+                if ($UseFileNameForSchema) {
+                    $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+                    if ($filename.IndexOf('.') -eq -1) {
+                        $schema = "dbo"
+                        Write-Message -Level Verbose -Message "Schema not specified, and not found in file name, using dbo"
+                    } else {
+                        $schema = $filename.SubString(0, $filename.IndexOf('.'))
+                        Write-Message -Level Verbose -Message "Schema detected in filename, using $schema"
+                    }
+                } else {
+                    $schema = 'dbo'
+                    Write-Message -Level Verbose -Message "Schema not specified, using dbo"
+                }
             }
 
             foreach ($instance in $SqlInstance) {
