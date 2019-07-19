@@ -198,7 +198,7 @@ function Export-DbaUser {
             Write-Message -Level Verbose -Message "Validating users on database $db"
 
             if ($User) {
-                $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
+                $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
             } else {
                 $users = $db.Users
             }
