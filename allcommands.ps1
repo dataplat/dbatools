@@ -2107,10 +2107,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
-                    $currentdb = $server.Databases | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
-                    if ($currentdb) {
-                        Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
-                    }
+                    
                     $server
                     continue
                 } catch {
@@ -13386,7 +13383,7 @@ function Export-DbaUser {
             Write-Message -Level Verbose -Message "Validating users on database $db"
 
             if ($User) {
-                $users = $db.Users | Where-Object { $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
+                $users = $db.Users | Where-Object { $User -contains $_.Name -and $_.IsSystemObject -eq $false -and $_.Name -notlike "##*" }
             } else {
                 $users = $db.Users
             }
@@ -13612,6 +13609,7 @@ function Export-DbaUser {
 
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Export-DbaXECsv {
@@ -44912,8 +44910,9 @@ function Invoke-DbaQuery {
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
             if ($conncontext.DatabaseName -ne $db.Name) {
-                $conncontext = $server.ConnectionContext.Copy()
-                $conncontext.DatabaseName = $db.Name
+                #$conncontext = $server.ConnectionContext.Copy()
+                #$conncontext.DatabaseName = $db.Name
+                $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($db.Name)
             }
             try {
                 if ($File -or $SqlObject) {
@@ -44945,8 +44944,9 @@ function Invoke-DbaQuery {
             $conncontext = $server.ConnectionContext
             try {
                 if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
+                    #$conncontext = $server.ConnectionContext.Copy()
+                    #$conncontext.DatabaseName = $Database
+                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
