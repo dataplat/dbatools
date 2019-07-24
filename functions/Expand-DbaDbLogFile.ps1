@@ -418,15 +418,8 @@ function Expand-DbaDbLogFile {
                         if ($IncrementSize -eq -1) {
                             $LogIncrementSize = $SuggestLogIncrementSize
                         } else {
-                            $title = "Choose increment value for database '$db':"
-                            $message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
-                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
-                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will use parameter value."
-                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                            #yes
-                            if ($result -eq 0) {
-                                $LogIncrementSize = $SuggestLogIncrementSize
+                            if ($LogIncrementSize -lt $SuggestLogIncrementSize) {
+                                Write-Message -Level Warning -Message "The input value for increment size is $([System.Math]::Round($LogIncrementSize / 1024, 0))MB, which is less than the suggested value of $($SuggestLogIncrementSize / 1024)MB."
                             }
                         }
 
