@@ -12,9 +12,9 @@
     // editor settings that will auto add the closing quote or curly brace
     "editor.autoClosingBrackets": "always",
     "editor.autoClosingQuotes": "always",
-    "editor.autoSurround": "languageDefined"
-	// now your double clicks on a variable names include the dollar sign '$'
-	// https://twitter.com/TylerLeonhardt/status/1102749805233737729
+    "editor.autoSurround": "languageDefined",
+    // now your double clicks on a variable names include the dollar sign '$'
+    // https://twitter.com/TylerLeonhardt/status/1102749805233737729
 	"[powershell]": {
 		"editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
 	}
