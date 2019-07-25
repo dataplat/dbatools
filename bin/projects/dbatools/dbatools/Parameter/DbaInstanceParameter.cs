@@ -286,7 +286,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
 
             // Named Pipe path notation interpretation
-            if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}[t]{0,1}sql\\query$", RegexOptions.IgnoreCase))
             {
                 try
                 {
