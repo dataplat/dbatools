@@ -70,8 +70,7 @@ function Get-DbaDbQueryStoreOption {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
                 continue
             }
@@ -99,8 +98,7 @@ function Get-DbaDbQueryStoreOption {
 
                 if ($server.VersionMajor -eq 13) {
                     Select-DefaultView -InputObject $QSO -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
-                }
-                elseif ($server.VersionMajor -eq 14) {
+                } elseif ($server.VersionMajor -eq 14) {
                     Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name MaxPlansPerQuery -value $QueryStoreOptions.MaxPlansPerQuery
                     Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name WaitStatsCaptureMode -value $QueryStoreOptions.WaitStatsCaptureMode
                     Select-DefaultView -InputObject $QSO -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode

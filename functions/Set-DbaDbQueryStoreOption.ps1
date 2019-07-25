@@ -146,8 +146,7 @@ function Set-DbaDbQueryStoreOption {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
 
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
             }
 
@@ -267,8 +266,7 @@ function Set-DbaDbQueryStoreOption {
                         if ($query -ne "") {
                             $db.Query($query, $db.Name)
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
                     }
                 }

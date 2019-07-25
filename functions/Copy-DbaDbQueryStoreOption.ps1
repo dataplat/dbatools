@@ -82,8 +82,7 @@ function Copy-DbaDbQueryStoreOption {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        }
-        catch {
+        } catch {
             Stop-Function -Message "Can't connect to $Source." -ErrorRecord $_ -Target $Source
             return
         }
@@ -114,8 +113,7 @@ function Copy-DbaDbQueryStoreOption {
 
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
@@ -174,8 +172,7 @@ function Copy-DbaDbQueryStoreOption {
                                     CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
                                     StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
                                 }
-                            }
-                            elseif ($sourceServer.VersionMajor -ge 14) {
+                            } elseif ($sourceServer.VersionMajor -ge 14) {
                                 $setDbaDbQueryStoreOptionParameters = @{
 
                                     SqlInstance          = $destinationServer;
@@ -216,8 +213,7 @@ function Copy-DbaDbQueryStoreOption {
 
                             $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
                             $copyQueryStoreStatus.Status = "Successful"
-                        }
-                        catch {
+                        } catch {
                             $copyQueryStoreStatus.Status = "Failed"
                             Stop-Function -Message "Issue setting Query Store on $db." -Target $db -ErrorRecord $_ -Continue
                         }
