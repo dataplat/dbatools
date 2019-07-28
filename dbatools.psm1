@@ -399,6 +399,7 @@ $script:xplat = @(
     'Find-DbaAgentJob',
     'Find-DbaDatabase',
     'Get-DbaXESession',
+    'Export-DbaXESession',
     'Test-DbaOptimizeForAdHoc',
     'Find-DbaStoredProcedure',
     'Measure-DbaBackupThroughput',
