@@ -1,4 +1,4 @@
-function Export-DbaXeSession {
+function Export-DbaXESession {
     <#
     .SYNOPSIS
         Exports Extened Events creation script to a T-SQL file or console.
@@ -68,7 +68,7 @@ function Export-DbaXeSession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaXeSession
+        https://dbatools.io/Export-DbaXESession
 
     .INPUTS
         A DbaInstanceParameter representing an array of SQL Server instances or output from Get-DbaSession
@@ -77,39 +77,39 @@ function Export-DbaXeSession {
         Creates a new file for each SQL Server Instance
 
     .EXAMPLE
-        PS C:\> Export-DbaXeSession -SqlInstance sourceserver -Passthru
+        PS C:\> Export-DbaXESession -SqlInstance sourceserver -Passthru
 
         Exports a script to create all Extended Events Sessions on sourceserver to the console
         Will include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator
 
     .EXAMPLE
-        PS C:\> Export-DbaXeSession -SqlInstance sourceserver
+        PS C:\> Export-DbaXESession -SqlInstance sourceserver
 
         Exports a script to create all Extended Events Sessions on sourceserver. As no Path was defined - automatically determines filename based on the Path.DbatoolsExport configuration setting, current time and server name like Servername-YYYYMMDDhhmmss-sp_configure.sql
         Will include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator
 
     .EXAMPLE
-        PS C:\> Export-DbaXeSession -SqlInstance sourceserver -FilePath C:\temp
+        PS C:\> Export-DbaXESession -SqlInstance sourceserver -FilePath C:\temp
 
         Exports a script to create all Extended Events Sessions on sourceserver to the directory C:\temp using the default name format of Servername-YYYYMMDDhhmmss-sp_configure.sql
         Will include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
-        PS C:\> Export-DbaXeSession -SqlInstance sourceserver -SqlCredential $cred -FilePath C:\temp\EEvents.sql -BatchSeparator "" -NoPrefix -NoClobber
+        PS C:\> Export-DbaXESession -SqlInstance sourceserver -SqlCredential $cred -FilePath C:\temp\EEvents.sql -BatchSeparator "" -NoPrefix -NoClobber
 
         Exports a script to create all Extended Events Sessions on sourceserver to the file C:\temp\EEvents.sql.
         Will exclude prefix information containing creator and datetime and does not include a BatchSeparator
         Will not overwrite file if it already exists
 
     .EXAMPLE
-        PS C:\> 'Server1', 'Server2' | Export-DbaXeSession -FilePath 'C:\Temp\EE.sql' -Append
+        PS C:\> 'Server1', 'Server2' | Export-DbaXESession -FilePath 'C:\Temp\EE.sql' -Append
 
         Exports a script to create all Extended Events Sessions for Server1 and Server2 using pipeline.
         Writes to a single file using the Append switch
 
     .EXAMPLE
-        PS C:\> Get-DbaXESession -SqlInstance Server1, Server2 -Session system_health | Export-DbaXeSession -Path 'C:\Temp'
+        PS C:\> Get-DbaXESession -SqlInstance Server1, Server2 -Session system_health | Export-DbaXESession -Path 'C:\Temp'
 
         Exports a script to create the System_Health Extended Events Sessions for Server1 and Server2 using pipeline.
         Write to the directory C:\temp using the default name format of Servername-YYYYMMDDhhmmss-sp_configure.sql
