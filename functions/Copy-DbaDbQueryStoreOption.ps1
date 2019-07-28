@@ -82,7 +82,8 @@ function Copy-DbaDbQueryStoreOption {
     begin {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        } catch {
+        }
+        catch {
             Stop-Function -Message "Can't connect to $Source." -ErrorRecord $_ -Target $Source
             return
         }
@@ -113,7 +114,8 @@ function Copy-DbaDbQueryStoreOption {
 
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
@@ -172,7 +174,8 @@ function Copy-DbaDbQueryStoreOption {
                                     CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
                                     StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
                                 }
-                            } elseif ($sourceServer.VersionMajor -ge 14) {
+                            }
+                            elseif ($sourceServer.VersionMajor -ge 14) {
                                 $setDbaDbQueryStoreOptionParameters = @{
 
                                     SqlInstance          = $destinationServer;
@@ -189,31 +192,32 @@ function Copy-DbaDbQueryStoreOption {
                                     WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode;
                                 }
                             }
-                            #For 2019 RTM
-                            #elseif ($sourceServer.VersionMajor -ge 15) {
-                            #    $setDbaDbQueryStoreOptionParameters = @{
-
-                            #SqlInstance          = $destinationServer;
-                            #SqlCredential        = $DestinationSqlCredential;
-                            #Database             = $db.name;
-                            #State                = $SourceQSConfig.ActualState;
-                            #FlushInterval        = $SourceQSConfig.DataFlushIntervalInSeconds;
-                            #CollectionInterval   = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
-                            #MaxSize              = $SourceQSConfig.MaxStorageSizeInMB;
-                            #CaptureMode          = $SourceQSConfig.QueryCaptureMode;
-                            #CleanupMode          = $SourceQSConfig.SizeBasedCleanupMode;
-                            #StaleQueryThreshold  = $SourceQSConfig.StaleQueryThresholdInDays;
-                            #MaxPlansPerQuery     = $QueryStoreOptions.MaxPlansPerQuery;
-                            #WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode;
-                            #CustomCapturePolicyExecutionCount =         $QueryStoreOptions.CustomCapturePolicyExecutionCount;
-                            #CustomCapturePolicyTotalCompileCPUTimeMS =  $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS ;
-                            #CustomCapturePolicyTotalExecutionCPUTimeMS = $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS;
-                            #CustomCapturePolicyStaleThresholdHours =    $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours;
-                            #}
+                            <# For 2019 RTM
+                            elseif ($sourceServer.VersionMajor -ge 15) {
+                               $setDbaDbQueryStoreOptionParameters = @{
+                            SqlInstance          = $destinationServer;
+                            SqlCredential        = $DestinationSqlCredential;
+                            Database             = $db.name;
+                            State                = $SourceQSConfig.ActualState;
+                            FlushInterval        = $SourceQSConfig.DataFlushIntervalInSeconds;
+                            CollectionInterval   = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
+                            MaxSize              = $SourceQSConfig.MaxStorageSizeInMB;
+                            CaptureMode          = $SourceQSConfig.QueryCaptureMode;
+                            CleanupMode          = $SourceQSConfig.SizeBasedCleanupMode;
+                            StaleQueryThreshold  = $SourceQSConfig.StaleQueryThresholdInDays;
+                            MaxPlansPerQuery     = $QueryStoreOptions.MaxPlansPerQuery;
+                            WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode;
+                            CustomCapturePolicyExecutionCount =         $QueryStoreOptions.CustomCapturePolicyExecutionCount;
+                            CustomCapturePolicyTotalCompileCPUTimeMS =  $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS ;
+                            CustomCapturePolicyTotalExecutionCPUTimeMS = $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS;
+                            CustomCapturePolicyStaleThresholdHours =    $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours;
+                            }
+                            #>
 
                             $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
                             $copyQueryStoreStatus.Status = "Successful"
-                        } catch {
+                        }
+                        catch {
                             $copyQueryStoreStatus.Status = "Failed"
                             Stop-Function -Message "Issue setting Query Store on $db." -Target $db -ErrorRecord $_ -Continue
                         }
