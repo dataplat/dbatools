@@ -12160,8 +12160,8 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO'
-                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO'
+                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
+                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-regserver.sql"
                 if (-not (Test-Path "$Path\$fileCounter-regserver.sql")) {
                     $fileCounter--
@@ -12221,7 +12221,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -WarningAction SilentlyContinue
+                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
                 if (-not (Test-Path "$Path\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
@@ -12264,9 +12264,9 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
-                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
-                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
-                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
+                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
+                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
+                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-policymanagement.sql"
                 if (-not (Test-Path "$Path\$fileCounter-policymanagement.sql")) {
                     $fileCounter--
@@ -12292,7 +12292,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
-                $null = Get-DbaXESession -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO'
+                $null = Get-DbaXESession -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-extendedevents.sql"
                 if (-not (Test-Path "$Path\$fileCounter-extendedevents.sql")) {
                     $fileCounter--
@@ -12342,7 +12342,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting availability group"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append:$Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix #-ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql"
                 if (-not (Test-Path "$Path\$fileCounter-DbaAvailabilityGroups.sql")) {
                     $fileCounter--
@@ -13081,19 +13081,24 @@ function Export-DbaScript {
             $typename = $object.GetType().ToString()
 
             if ($typename.StartsWith('Microsoft.SqlServer.')) {
-                $shortype = $typename.Split(".")[-1]
+                $shorttype = $typename.Split(".")[-1]
             } else {
                 Stop-Function -Message "InputObject is of type $typename which is not a SQL Management Object. Only SMO objects are supported." -Category InvalidData -Target $object -Continue
             }
 
-            if ($shortype -in "LinkedServer", "Credential", "Login") {
-                Write-Message -Level Warning -Message "Support for $shortype is limited at this time. No passwords, hashed or otherwise, will be exported if they exist."
+            if ($shorttype -in "LinkedServer", "Credential", "Login") {
+                Write-Message -Level Warning -Message "Support for $shorttype is limited at this time. No passwords, hashed or otherwise, will be exported if they exist."
             }
 
             # Just gotta add the stuff that Nic Cain added to his script
 
-            if ($shortype -eq "Configuration") {
-                Write-Message -Level Warning -Message "Support for $shortype is limited at this time."
+            if ($shorttype -eq "Configuration") {
+                Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
+            }
+
+            if ($shorttype -eq "Session" -and $ScriptingOptionsObject) {
+                Write-Message -Level Warning -Message "$shorttype doesn't support Scripting Options at this time."
+                Remove-Variable ScriptingOptionsObject
             }
 
             # Find the server object to pass on to the function
@@ -13172,7 +13177,7 @@ function Export-DbaScript {
                                 } else {
                                     $scriptpart = "$scriptpart`r`n"
                                 }
-                                $scriptpart  | Out-String
+                                $scriptpart | Out-String
                             }
                         }
                     } else {
@@ -13200,14 +13205,19 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
-                                if ($BatchSeparator) {
-                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
-                                } else {
-                                    $scriptpart = "$scriptpart`r`n"
-                                }
-                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+
+                            if (Get-Member -Name ScriptCreate -InputObject $object) {
+                                $scriptpart = $object.ScriptCreate().GetScript()
+                            } else {
+                                $scriptpart = $object.Script()
                             }
+
+                            if ($BatchSeparator) {
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                            } else {
+                                $scriptpart = "$scriptpart`r`n"
+                            }
+                            $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
                     }
 
@@ -13700,6 +13710,106 @@ function Export-DbaXECsv {
                 }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Export-DbaXESession {
+    
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
+        [string[]]$Session,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$Passthru,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
+        [switch]$NoPrefix,
+        [switch]$NoClobber,
+        [switch]$Append,
+        [switch]$EnableException
+    )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+        $instanceArray = @()
+        $SessionCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a Credential or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = Get-DbaXeSession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
+        }
+
+        foreach ($xe in $InputObject) {
+            $server = $xe.Parent
+            $serverName = $server.Name.Replace('\', '$')
+
+            $outsql = $xe.ScriptCreate().GetScript()
+
+            $SessionObject = [PSCustomObject]@{
+                Name     = $xe.Name
+                Instance = $serverName
+                Sql      = $outsql[0]
+            }
+            $SessionCollection.Add($SessionObject) | Out-Null
+        }
+    }
+    end {
+        foreach ($SessionObject in $SessionCollection) {
+
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($SessionObject.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
+
+            if ($BatchSeparator) {
+                $sql = $SessionObject.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $SessionObject.SQL
+            }
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = "$prefix`r`n$sql"
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                if ($instanceArray -notcontains $($SessionObject.Instance)) {
+                    if ($null -ne $prefix) {
+                        $sql = "$prefix`r`n$sql"
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $SessionObject.Instance
+                    if ((Test-Path -Path $scriptPath) -and $NoClobber) {
+                        Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
+                    }
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $instanceArray += $SessionObject.Instance
+                    Get-ChildItem $scriptPath
+                } else {
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append
+                }
+            } else {
+                $sql
             }
         }
     }
