@@ -174,19 +174,24 @@ function Export-DbaScript {
             $typename = $object.GetType().ToString()
 
             if ($typename.StartsWith('Microsoft.SqlServer.')) {
-                $shortype = $typename.Split(".")[-1]
+                $shorttype = $typename.Split(".")[-1]
             } else {
                 Stop-Function -Message "InputObject is of type $typename which is not a SQL Management Object. Only SMO objects are supported." -Category InvalidData -Target $object -Continue
             }
 
-            if ($shortype -in "LinkedServer", "Credential", "Login") {
-                Write-Message -Level Warning -Message "Support for $shortype is limited at this time. No passwords, hashed or otherwise, will be exported if they exist."
+            if ($shorttype -in "LinkedServer", "Credential", "Login") {
+                Write-Message -Level Warning -Message "Support for $shorttype is limited at this time. No passwords, hashed or otherwise, will be exported if they exist."
             }
 
             # Just gotta add the stuff that Nic Cain added to his script
 
-            if ($shortype -eq "Configuration") {
-                Write-Message -Level Warning -Message "Support for $shortype is limited at this time."
+            if ($shorttype -eq "Configuration") {
+                Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
+            }
+
+            if ($shorttype -eq "Session" -and $ScriptingOptionsObject) {
+                Write-Message -Level Warning -Message "$shorttype doesn't support Scripting Options at this time."
+                Remove-Variable ScriptingOptionsObject
             }
 
             # Find the server object to pass on to the function
@@ -265,7 +270,7 @@ function Export-DbaScript {
                                 } else {
                                     $scriptpart = "$scriptpart`r`n"
                                 }
-                                $scriptpart  | Out-String
+                                $scriptpart | Out-String
                             }
                         }
                     } else {
@@ -293,14 +298,19 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
-                                if ($BatchSeparator) {
-                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
-                                } else {
-                                    $scriptpart = "$scriptpart`r`n"
-                                }
-                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+
+                            if (Get-Member -Name ScriptCreate -InputObject $object) {
+                                $scriptpart = $object.ScriptCreate().GetScript()
+                            } else {
+                                $scriptpart = $object.Script()
                             }
+
+                            if ($BatchSeparator) {
+                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                            } else {
+                                $scriptpart = "$scriptpart`r`n"
+                            }
+                            $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
                     }
 
