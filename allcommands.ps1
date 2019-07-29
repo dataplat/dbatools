@@ -12292,7 +12292,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
-                $null = Get-DbaXESession -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
+                $null = Get-DbaXESession -SqlInstance $server | Export-DbaXeSession -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-extendedevents.sql"
                 if (-not (Test-Path "$Path\$fileCounter-extendedevents.sql")) {
                     $fileCounter--
@@ -13096,11 +13096,6 @@ function Export-DbaScript {
                 Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
             }
 
-            if ($shorttype -eq "Session" -and $ScriptingOptionsObject) {
-                Write-Message -Level Warning -Message "$shorttype doesn't support Scripting Options at this time."
-                Remove-Variable ScriptingOptionsObject
-            }
-
             # Find the server object to pass on to the function
             $parent = $object.parent
 
@@ -13205,19 +13200,14 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
-
-                            if (Get-Member -Name ScriptCreate -InputObject $object) {
-                                $scriptpart = $object.ScriptCreate().GetScript()
-                            } else {
-                                $scriptpart = $object.Script()
+                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                if ($BatchSeparator) {
+                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                } else {
+                                    $scriptpart = "$scriptpart`r`n"
+                                }
+                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                             }
-
-                            if ($BatchSeparator) {
-                                $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
-                            } else {
-                                $scriptpart = "$scriptpart`r`n"
-                            }
-                            $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
                     }
 
