@@ -1,0 +1,1618 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<helpItems schema="maml" xmlns="http://msh">
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Set-DbatoolsConfig</command:name>
+      <command:verb>Set</command:verb>
+      <command:noun>DbatoolsConfig</command:noun>
+      <maml:description>
+        <maml:para>Sets configuration entries.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>This function creates or changes configuration values. These can be used to provide dynamic configuration information outside the PowerShell variable system.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Set-DbatoolsConfig</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>FullName</maml:name>
+          <maml:Description>
+            <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Value</maml:name>
+          <maml:Description>
+            <maml:para>The value to assign to the named configuration element.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Description</maml:name>
+          <maml:Description>
+            <maml:para>Using this, the configuration setting is given a description, making it easier for a user to comprehend, what a specific setting is for.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Validation</maml:name>
+          <maml:Description>
+            <maml:para>The name of the validation script used for input validation. These can be used to validate make sure that input is of the proper data type. New validation scripts can be registered using Register-DbatoolsConfigValidation</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Handler</maml:name>
+          <maml:Description>
+            <maml:para>A scriptblock that is executed when a value is being set. Is only executed if the validation was successful (assuming there was a validation, of course)</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ScriptBlock</command:parameterValue>
+          <dev:type>
+            <maml:name>ScriptBlock</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Hidden</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter hides the configuration from casual discovery. Configurations with this set will only be returned by Get-Config, if the parameter "-Force" is used. This should be set for all system settings a user should have no business changing (e.g. for Infrastructure related settings such as mail server).</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Default</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed. Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Initialize</maml:name>
+          <maml:Description>
+            <maml:para>Use this when setting configurations as part of module import. When initializing a configuration, it will only do a thing if the configuration hasn't already been initialized (So if you load the module multiple times or in multiple runspaces, it won't make a difference) Also, if there already was a non-initialized setting set for a given configuration, it will then try to set the old value again. This value will be processed by handlers, if any are set.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableValidation</maml:name>
+          <maml:Description>
+            <maml:para>This parameters disables the input validation - if any - when processing a setting. Normally this shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableHandler</maml:name>
+          <maml:Description>
+            <maml:para>This parameter disables the configuration handlers. Configuration handlers are designed to automatically process input set to a config value, in addition to writing the value. In many cases, this is used to improve performance, by forking the value location also to a static C#-field, which is then used, rather than searching a Hashtable. Normally these shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>EnableException</maml:name>
+          <maml:Description>
+            <maml:para>Replaces user friendly yellow warnings with bloody red exceptions of doom! Use this if you want the function to throw terminating errors you want to catch.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SimpleExport</maml:name>
+          <maml:Description>
+            <maml:para>Enabling this will cause the module to use friendly json notation on export to file. This may result in loss of data precision, but makes it easier to edit settings in file.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ModuleExport</maml:name>
+          <maml:Description>
+            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>PassThru</maml:name>
+          <maml:Description>
+            <maml:para>Return the changed configuration setting object.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AllowDelete</maml:name>
+          <maml:Description>
+            <maml:para>By default, settings that have been once defined are considered unremovable. Some workflows however require being able to fully dump configuration settings. Enable this switch to make a configuration setting deletable.</maml:para>
+            <maml:para>Note:</maml:para>
+            <maml:para>- Settings that are initialized, can only be declared deletable during initialization. Later attempts to change this, as well as previous settings will be ignored.</maml:para>
+            <maml:para>- Settings that are defined and enforced by policy cannot be deleted no matter what.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Set-DbatoolsConfig</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>FullName</maml:name>
+          <maml:Description>
+            <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Description</maml:name>
+          <maml:Description>
+            <maml:para>Using this, the configuration setting is given a description, making it easier for a user to comprehend, what a specific setting is for.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Validation</maml:name>
+          <maml:Description>
+            <maml:para>The name of the validation script used for input validation. These can be used to validate make sure that input is of the proper data type. New validation scripts can be registered using Register-DbatoolsConfigValidation</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Handler</maml:name>
+          <maml:Description>
+            <maml:para>A scriptblock that is executed when a value is being set. Is only executed if the validation was successful (assuming there was a validation, of course)</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ScriptBlock</command:parameterValue>
+          <dev:type>
+            <maml:name>ScriptBlock</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Hidden</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter hides the configuration from casual discovery. Configurations with this set will only be returned by Get-Config, if the parameter "-Force" is used. This should be set for all system settings a user should have no business changing (e.g. for Infrastructure related settings such as mail server).</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Default</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed. Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Initialize</maml:name>
+          <maml:Description>
+            <maml:para>Use this when setting configurations as part of module import. When initializing a configuration, it will only do a thing if the configuration hasn't already been initialized (So if you load the module multiple times or in multiple runspaces, it won't make a difference) Also, if there already was a non-initialized setting set for a given configuration, it will then try to set the old value again. This value will be processed by handlers, if any are set.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableValidation</maml:name>
+          <maml:Description>
+            <maml:para>This parameters disables the input validation - if any - when processing a setting. Normally this shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableHandler</maml:name>
+          <maml:Description>
+            <maml:para>This parameter disables the configuration handlers. Configuration handlers are designed to automatically process input set to a config value, in addition to writing the value. In many cases, this is used to improve performance, by forking the value location also to a static C#-field, which is then used, rather than searching a Hashtable. Normally these shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>EnableException</maml:name>
+          <maml:Description>
+            <maml:para>Replaces user friendly yellow warnings with bloody red exceptions of doom! Use this if you want the function to throw terminating errors you want to catch.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>PersistedValue</maml:name>
+          <maml:Description>
+            <maml:para>In most circumstances an internal parameter. Applies the serialized value to a setting. Used for restoring data from configuration files that should only be deserialized when the module consuming it is already imported.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>PersistedType</maml:name>
+          <maml:Description>
+            <maml:para>In most circumstances an internal parameter. Paired with PersistedValue, used to specify the data type of the serialized object set in its serialized state.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ConfigurationValueType</command:parameterValue>
+          <dev:type>
+            <maml:name>ConfigurationValueType</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SimpleExport</maml:name>
+          <maml:Description>
+            <maml:para>Enabling this will cause the module to use friendly json notation on export to file. This may result in loss of data precision, but makes it easier to edit settings in file.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ModuleExport</maml:name>
+          <maml:Description>
+            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>PassThru</maml:name>
+          <maml:Description>
+            <maml:para>Return the changed configuration setting object.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AllowDelete</maml:name>
+          <maml:Description>
+            <maml:para>By default, settings that have been once defined are considered unremovable. Some workflows however require being able to fully dump configuration settings. Enable this switch to make a configuration setting deletable.</maml:para>
+            <maml:para>Note:</maml:para>
+            <maml:para>- Settings that are initialized, can only be declared deletable during initialization. Later attempts to change this, as well as previous settings will be ignored.</maml:para>
+            <maml:para>- Settings that are defined and enforced by policy cannot be deleted no matter what.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Set-DbatoolsConfig</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Name</maml:name>
+          <maml:Description>
+            <maml:para>Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten. Duplicate names across different modules are possible and will be treated separately.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Module</maml:name>
+          <maml:Description>
+            <maml:para>This allows grouping configuration elements into groups based on the module/component they serve. If this parameter is not set, the configuration element must have a module name in the name parameter (the first segment will be taken, irrespective of whether that makes sense).</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Value</maml:name>
+          <maml:Description>
+            <maml:para>The value to assign to the named configuration element.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Description</maml:name>
+          <maml:Description>
+            <maml:para>Using this, the configuration setting is given a description, making it easier for a user to comprehend, what a specific setting is for.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Validation</maml:name>
+          <maml:Description>
+            <maml:para>The name of the validation script used for input validation. These can be used to validate make sure that input is of the proper data type. New validation scripts can be registered using Register-DbatoolsConfigValidation</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Handler</maml:name>
+          <maml:Description>
+            <maml:para>A scriptblock that is executed when a value is being set. Is only executed if the validation was successful (assuming there was a validation, of course)</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">ScriptBlock</command:parameterValue>
+          <dev:type>
+            <maml:name>ScriptBlock</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Hidden</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter hides the configuration from casual discovery. Configurations with this set will only be returned by Get-Config, if the parameter "-Force" is used. This should be set for all system settings a user should have no business changing (e.g. for Infrastructure related settings such as mail server).</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Default</maml:name>
+          <maml:Description>
+            <maml:para>Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed. Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Initialize</maml:name>
+          <maml:Description>
+            <maml:para>Use this when setting configurations as part of module import. When initializing a configuration, it will only do a thing if the configuration hasn't already been initialized (So if you load the module multiple times or in multiple runspaces, it won't make a difference) Also, if there already was a non-initialized setting set for a given configuration, it will then try to set the old value again. This value will be processed by handlers, if any are set.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableValidation</maml:name>
+          <maml:Description>
+            <maml:para>This parameters disables the input validation - if any - when processing a setting. Normally this shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>DisableHandler</maml:name>
+          <maml:Description>
+            <maml:para>This parameter disables the configuration handlers. Configuration handlers are designed to automatically process input set to a config value, in addition to writing the value. In many cases, this is used to improve performance, by forking the value location also to a static C#-field, which is then used, rather than searching a Hashtable. Normally these shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>EnableException</maml:name>
+          <maml:Description>
+            <maml:para>Replaces user friendly yellow warnings with bloody red exceptions of doom! Use this if you want the function to throw terminating errors you want to catch.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SimpleExport</maml:name>
+          <maml:Description>
+            <maml:para>Enabling this will cause the module to use friendly json notation on export to file. This may result in loss of data precision, but makes it easier to edit settings in file.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ModuleExport</maml:name>
+          <maml:Description>
+            <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>PassThru</maml:name>
+          <maml:Description>
+            <maml:para>Return the changed configuration setting object.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AllowDelete</maml:name>
+          <maml:Description>
+            <maml:para>By default, settings that have been once defined are considered unremovable. Some workflows however require being able to fully dump configuration settings. Enable this switch to make a configuration setting deletable.</maml:para>
+            <maml:para>Note:</maml:para>
+            <maml:para>- Settings that are initialized, can only be declared deletable during initialization. Later attempts to change this, as well as previous settings will be ignored.</maml:para>
+            <maml:para>- Settings that are defined and enforced by policy cannot be deleted no matter what.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>FullName</maml:name>
+        <maml:Description>
+          <maml:para>The full name of a configuration element. Must be namespaced &lt;dbatools&gt;.&lt;Name&gt;. The name can have any number of sub-segments, in order to better group configurations thematically.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Name</maml:name>
+        <maml:Description>
+          <maml:para>Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten. Duplicate names across different modules are possible and will be treated separately. If a name contains namespace notation and no module is set, the first namespace element will be used as module instead of name. Example: -Name "Nordwind.Server" Is Equivalent to -Name "Server" -Module "Nordwind"</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Module</maml:name>
+        <maml:Description>
+          <maml:para>This allows grouping configuration elements into groups based on the module/component they serve. If this parameter is not set, the configuration element must have a module name in the name parameter (the first segment will be taken, irrespective of whether that makes sense).</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Value</maml:name>
+        <maml:Description>
+          <maml:para>The value to assign to the named configuration element.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Description</maml:name>
+        <maml:Description>
+          <maml:para>Using this, the configuration setting is given a description, making it easier for a user to comprehend, what a specific setting is for.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Validation</maml:name>
+        <maml:Description>
+          <maml:para>The name of the validation script used for input validation. These can be used to validate make sure that input is of the proper data type. New validation scripts can be registered using Register-DbatoolsConfigValidation</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Handler</maml:name>
+        <maml:Description>
+          <maml:para>A scriptblock that is executed when a value is being set. Is only executed if the validation was successful (assuming there was a validation, of course)</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ScriptBlock</command:parameterValue>
+        <dev:type>
+          <maml:name>ScriptBlock</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Hidden</maml:name>
+        <maml:Description>
+          <maml:para>Setting this parameter hides the configuration from casual discovery. Configurations with this set will only be returned by Get-Config, if the parameter "-Force" is used. This should be set for all system settings a user should have no business changing (e.g. for Infrastructure related settings such as mail server).</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Default</maml:name>
+        <maml:Description>
+          <maml:para>Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed. Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Initialize</maml:name>
+        <maml:Description>
+          <maml:para>Use this when setting configurations as part of module import. When initializing a configuration, it will only do a thing if the configuration hasn't already been initialized (So if you load the module multiple times or in multiple runspaces, it won't make a difference) Also, if there already was a non-initialized setting set for a given configuration, it will then try to set the old value again. This value will be processed by handlers, if any are set.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>DisableValidation</maml:name>
+        <maml:Description>
+          <maml:para>This parameters disables the input validation - if any - when processing a setting. Normally this shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>DisableHandler</maml:name>
+        <maml:Description>
+          <maml:para>This parameter disables the configuration handlers. Configuration handlers are designed to automatically process input set to a config value, in addition to writing the value. In many cases, this is used to improve performance, by forking the value location also to a static C#-field, which is then used, rather than searching a Hashtable. Normally these shouldn't be circumvented, but just in case, it can be disabled.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>EnableException</maml:name>
+        <maml:Description>
+          <maml:para>Replaces user friendly yellow warnings with bloody red exceptions of doom! Use this if you want the function to throw terminating errors you want to catch.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>PersistedValue</maml:name>
+        <maml:Description>
+          <maml:para>In most circumstances an internal parameter. Applies the serialized value to a setting. Used for restoring data from configuration files that should only be deserialized when the module consuming it is already imported.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>PersistedType</maml:name>
+        <maml:Description>
+          <maml:para>In most circumstances an internal parameter. Paired with PersistedValue, used to specify the data type of the serialized object set in its serialized state.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">ConfigurationValueType</command:parameterValue>
+        <dev:type>
+          <maml:name>ConfigurationValueType</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SimpleExport</maml:name>
+        <maml:Description>
+          <maml:para>Enabling this will cause the module to use friendly json notation on export to file. This may result in loss of data precision, but makes it easier to edit settings in file.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ModuleExport</maml:name>
+        <maml:Description>
+          <maml:para>Using 'Export-DbatoolsConfig -ModuleName &lt;dbatools&gt;' settings flagged with this switch will be exported to a default path if they have been changed from the initial default value.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>PassThru</maml:name>
+        <maml:Description>
+          <maml:para>Return the changed configuration setting object.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AllowDelete</maml:name>
+        <maml:Description>
+          <maml:para>By default, settings that have been once defined are considered unremovable. Some workflows however require being able to fully dump configuration settings. Enable this switch to make a configuration setting deletable.</maml:para>
+          <maml:para>Note:</maml:para>
+          <maml:para>- Settings that are initialized, can only be declared deletable during initialization. Later attempts to change this, as well as previous settings will be ignored.</maml:para>
+          <maml:para>- Settings that are defined and enforced by policy cannot be deleted no matter what.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>Sqlcollaborative.Dbatools.Configuration.Config</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+	    <command:examples>
+      <command:example>
+        <maml:title>---------------------- Example 1: Simple ----------------------</maml:title>
+        <dev:code>C:\PS&gt; Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools</dev:code>
+        <dev:remarks>
+          <maml:para>Updates the configuration entry for Path.DbatoolsData to E:\temp\dbatools</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Documentation</maml:linkText>
+        <maml:uri>https://dbatools.io/Set-DbatoolsConfig</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Select-DbaObject</command:name>
+      <command:verb>Select</command:verb>
+      <command:noun>DbaObject</command:noun>
+      <maml:description>
+        <maml:para>Wrapper around Select-Object, extends property parameter.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Wrapper around Select-Object, extends property parameter.</maml:para>
+      <maml:para>This function allows specifying in-line transformation of the properties specified without needing to use complex hashtables. For example, renaming a property becomes as simple as "Length as Size"</maml:para>
+      <maml:para>Also supported:</maml:para>
+      <maml:para>- Specifying a typename</maml:para>
+      <maml:para>- Picking the default display properties</maml:para>
+      <maml:para>- Adding to an existing object without destroying its type</maml:para>
+      <maml:para>See the description of the Property parameter for an exhaustive list of legal notations for in-line transformations.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Select-DbaObject</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByValue)" position="named" aliases="none">
+          <maml:name>InputObject</maml:name>
+          <maml:Description>
+            <maml:para>The object(s) to select from.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">PSObject</command:parameterValue>
+          <dev:type>
+            <maml:name>PSObject</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Property</maml:name>
+          <maml:Description>
+            <maml:para>The properties to select. - Supports hashtables, which will be passed through to Select-Object.</maml:para>
+            <maml:para>- Supports renaming as it is possible in SQL: "Length AS Size" will select the Length property but rename it to size.</maml:para>
+            <maml:para>- Supports casting to a specified type: "Address to IPAddress" or "Length to int".</maml:para>
+            <maml:para>Uses PowerShell type-conversion. - Supports parsing numbers to sizes: "Length size GB:2" Converts numeric input (presumed to be bytes) to gigabyte with two decimals.   Also supports toggling on Unit descriptors by adding another element: "Length size GB:2:1" - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)</maml:para>
+            <maml:para>- Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExcludeProperty</maml:name>
+          <maml:Description>
+            <maml:para>Properties to not list.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExpandProperty</maml:name>
+          <maml:Description>
+            <maml:para>Properties to expand.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Unique</maml:name>
+          <maml:Description>
+            <maml:para>Do not list multiples of the same value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Last</maml:name>
+          <maml:Description>
+            <maml:para>Select the last n items.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>First</maml:name>
+          <maml:Description>
+            <maml:para>Select the first n items.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Skip</maml:name>
+          <maml:Description>
+            <maml:para>Skip the first (or last if used with -Last) n items.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Wait</maml:name>
+          <maml:Description>
+            <maml:para>Indicates that the cmdlet turns off optimization. Windows PowerShell runs commands in the order that they appear in the command pipeline and lets them generate all objects. By default, if you include a Select-DbaObject command with the First or Index parameters in a command pipeline, Windows PowerShell stops the command that generates the objects as soon as the selected number of objects is generated.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowProperty</maml:name>
+          <maml:Description>
+            <maml:para>Only the specified properties will be shown by default. Supersedes ShowExcludeProperty</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowExcludeProperty</maml:name>
+          <maml:Description>
+            <maml:para>Hides the specified properties from the default display style of the output object. Is ignored if used together with ShowProperty.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>TypeName</maml:name>
+          <maml:Description>
+            <maml:para>Adds a typename to the selected object. Will automatically prefix the module.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>KeepInputObject</maml:name>
+          <maml:Description>
+            <maml:para>Keeps the original input object, adding new properties the select added without removing any. This allows you to use this command to add properties without losing the input object's type.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Alias</maml:name>
+          <maml:Description>
+            <maml:para>Create an alias property. This can be in simple SQL notation, such as "Length as Size" or a hashtable with the alias name being the key and the referenced property being the value.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectAliasParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectAliasParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ScriptMethod</maml:name>
+          <maml:Description>
+            <maml:para>Add script methods to the object. This can be done using either:</maml:para>
+            <maml:para>- String syntax 'GetDouble =&gt; $this.Length * 2'</maml:para>
+            <maml:para>- Hashtable defining any number of methods, with the name being the key and the scriptblock being the value.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectScriptMethodParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectScriptMethodParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ScriptProperty</maml:name>
+          <maml:Description>
+            <maml:para>Add script properties to the object. This parameter takes a hashtable that can be either simply Name --&gt; Scriptblock binding (for readonly properties) or Name --&gt; Hashtable binding, with the inner hashtable containing two keys: get &amp; set. Each pointing at their respective scriptblock.</maml:para>
+            <maml:para>-ScriptProperty @{</maml:para>
+            <maml:para>    DoubleSize = { $this.Length * 2}</maml:para>
+            <maml:para>    MegaSize = @{</maml:para>
+            <maml:para>        get = { $this.Length * 10 }</maml:para>
+            <maml:para>        set = { $this.Length = $_ / 10 }</maml:para>
+            <maml:para>    }</maml:para>
+            <maml:para>}</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectScriptPropertyParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectScriptPropertyParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Select-DbaObject</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByValue)" position="named" aliases="none">
+          <maml:name>InputObject</maml:name>
+          <maml:Description>
+            <maml:para>The object(s) to select from.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">PSObject</command:parameterValue>
+          <dev:type>
+            <maml:name>PSObject</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Property</maml:name>
+          <maml:Description>
+            <maml:para>The properties to select. - Supports hashtables, which will be passed through to Select-Object.</maml:para>
+            <maml:para>- Supports renaming as it is possible in SQL: "Length AS Size" will select the Length property but rename it to size.</maml:para>
+            <maml:para>- Supports casting to a specified type: "Address to IPAddress" or "Length to int".</maml:para>
+            <maml:para>Uses PowerShell type-conversion. - Supports parsing numbers to sizes: "Length size GB:2" Converts numeric input (presumed to be bytes) to gigabyte with two decimals.   Also supports toggling on Unit descriptors by adding another element: "Length size GB:2:1" - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)</maml:para>
+            <maml:para>- Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExcludeProperty</maml:name>
+          <maml:Description>
+            <maml:para>Properties to not list.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ExpandProperty</maml:name>
+          <maml:Description>
+            <maml:para>Properties to expand.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Unique</maml:name>
+          <maml:Description>
+            <maml:para>Do not list multiples of the same value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SkipLast</maml:name>
+          <maml:Description>
+            <maml:para>Skip the last n items.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowProperty</maml:name>
+          <maml:Description>
+            <maml:para>Only the specified properties will be shown by default. Supersedes ShowExcludeProperty</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowExcludeProperty</maml:name>
+          <maml:Description>
+            <maml:para>Hides the specified properties from the default display style of the output object. Is ignored if used together with ShowProperty.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>TypeName</maml:name>
+          <maml:Description>
+            <maml:para>Adds a typename to the selected object. Will automatically prefix the module.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>KeepInputObject</maml:name>
+          <maml:Description>
+            <maml:para>Keeps the original input object, adding new properties the select added without removing any. This allows you to use this command to add properties without losing the input object's type.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Alias</maml:name>
+          <maml:Description>
+            <maml:para>Create an alias property. This can be in simple SQL notation, such as "Length as Size" or a hashtable with the alias name being the key and the referenced property being the value.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectAliasParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectAliasParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ScriptMethod</maml:name>
+          <maml:Description>
+            <maml:para>Add script methods to the object. This can be done using either:</maml:para>
+            <maml:para>- String syntax 'GetDouble =&gt; $this.Length * 2'</maml:para>
+            <maml:para>- Hashtable defining any number of methods, with the name being the key and the scriptblock being the value.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectScriptMethodParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectScriptMethodParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ScriptProperty</maml:name>
+          <maml:Description>
+            <maml:para>Add script properties to the object. This parameter takes a hashtable that can be either simply Name --&gt; Scriptblock binding (for readonly properties) or Name --&gt; Hashtable binding, with the inner hashtable containing two keys: get &amp; set. Each pointing at their respective scriptblock.</maml:para>
+            <maml:para>-ScriptProperty @{</maml:para>
+            <maml:para>    DoubleSize = { $this.Length * 2}</maml:para>
+            <maml:para>    MegaSize = @{</maml:para>
+            <maml:para>        get = { $this.Length * 10 }</maml:para>
+            <maml:para>        set = { $this.Length = $_ / 10 }</maml:para>
+            <maml:para>    }</maml:para>
+            <maml:para>}</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">SelectScriptPropertyParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>SelectScriptPropertyParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Select-DbaObject</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByValue)" position="named" aliases="none">
+          <maml:name>InputObject</maml:name>
+          <maml:Description>
+            <maml:para>The object(s) to select from.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">PSObject</command:parameterValue>
+          <dev:type>
+            <maml:name>PSObject</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Unique</maml:name>
+          <maml:Description>
+            <maml:para>Do not list multiples of the same value.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Wait</maml:name>
+          <maml:Description>
+            <maml:para>Indicates that the cmdlet turns off optimization. Windows PowerShell runs commands in the order that they appear in the command pipeline and lets them generate all objects. By default, if you include a Select-DbaObject command with the First or Index parameters in a command pipeline, Windows PowerShell stops the command that generates the objects as soon as the selected number of objects is generated.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Index</maml:name>
+          <maml:Description>
+            <maml:para>Specifies an array of objects based on their index values. Enter the indexes in a comma-separated list.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">Int32[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Int32[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowProperty</maml:name>
+          <maml:Description>
+            <maml:para>Only the specified properties will be shown by default. Supersedes ShowExcludeProperty</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ShowExcludeProperty</maml:name>
+          <maml:Description>
+            <maml:para>Hides the specified properties from the default display style of the output object. Is ignored if used together with ShowProperty.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>TypeName</maml:name>
+          <maml:Description>
+            <maml:para>Adds a typename to the selected object. Will automatically prefix the module.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>KeepInputObject</maml:name>
+          <maml:Description>
+            <maml:para>Keeps the original input object, adding new properties the select added without removing any. This allows you to use this command to add properties without losing the input object's type.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByValue)" position="named" aliases="none">
+        <maml:name>InputObject</maml:name>
+        <maml:Description>
+          <maml:para>The object(s) to select from.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">PSObject</command:parameterValue>
+        <dev:type>
+          <maml:name>PSObject</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Property</maml:name>
+        <maml:Description>
+          <maml:para>The properties to select. - Supports hashtables, which will be passed through to Select-Object.</maml:para>
+          <maml:para>- Supports renaming as it is possible in SQL: "Length AS Size" will select the Length property but rename it to size.</maml:para>
+          <maml:para>- Supports casting to a specified type: "Address to IPAddress" or "Length to int".</maml:para>
+          <maml:para>Uses PowerShell type-conversion. - Supports parsing numbers to sizes: "Length size GB:2" Converts numeric input (presumed to be bytes) to gigabyte with two decimals.   Also supports toggling on Unit descriptors by adding another element: "Length size GB:2:1" - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)</maml:para>
+          <maml:para>- Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">SelectParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>SelectParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ExcludeProperty</maml:name>
+        <maml:Description>
+          <maml:para>Properties to not list.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ExpandProperty</maml:name>
+        <maml:Description>
+          <maml:para>Properties to expand.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Unique</maml:name>
+        <maml:Description>
+          <maml:para>Do not list multiples of the same value.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Last</maml:name>
+        <maml:Description>
+          <maml:para>Select the last n items.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>First</maml:name>
+        <maml:Description>
+          <maml:para>Select the first n items.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Skip</maml:name>
+        <maml:Description>
+          <maml:para>Skip the first (or last if used with -Last) n items.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SkipLast</maml:name>
+        <maml:Description>
+          <maml:para>Skip the last n items.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Wait</maml:name>
+        <maml:Description>
+          <maml:para>Indicates that the cmdlet turns off optimization. Windows PowerShell runs commands in the order that they appear in the command pipeline and lets them generate all objects. By default, if you include a Select-DbaObject command with the First or Index parameters in a command pipeline, Windows PowerShell stops the command that generates the objects as soon as the selected number of objects is generated.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Index</maml:name>
+        <maml:Description>
+          <maml:para>Specifies an array of objects based on their index values. Enter the indexes in a comma-separated list.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">Int32[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Int32[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ShowProperty</maml:name>
+        <maml:Description>
+          <maml:para>Only the specified properties will be shown by default. Supersedes ShowExcludeProperty</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ShowExcludeProperty</maml:name>
+        <maml:Description>
+          <maml:para>Hides the specified properties from the default display style of the output object. Is ignored if used together with ShowProperty.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>TypeName</maml:name>
+        <maml:Description>
+          <maml:para>Adds a typename to the selected object. Will automatically prefix the module.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>KeepInputObject</maml:name>
+        <maml:Description>
+          <maml:para>Keeps the original input object, adding new properties the select added without removing any. This allows you to use this command to add properties without losing the input object's type.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Alias</maml:name>
+        <maml:Description>
+          <maml:para>Create an alias property. This can be in simple SQL notation, such as "Length as Size" or a hashtable with the alias name being the key and the referenced property being the value.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">SelectAliasParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>SelectAliasParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ScriptMethod</maml:name>
+        <maml:Description>
+          <maml:para>Add script methods to the object. This can be done using either:</maml:para>
+          <maml:para>- String syntax 'GetDouble =&gt; $this.Length * 2'</maml:para>
+          <maml:para>- Hashtable defining any number of methods, with the name being the key and the scriptblock being the value.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">SelectScriptMethodParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>SelectScriptMethodParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ScriptProperty</maml:name>
+        <maml:Description>
+          <maml:para>Add script properties to the object. This parameter takes a hashtable that can be either simply Name --&gt; Scriptblock binding (for readonly properties) or Name --&gt; Hashtable binding, with the inner hashtable containing two keys: get &amp; set. Each pointing at their respective scriptblock.</maml:para>
+          <maml:para>-ScriptProperty @{</maml:para>
+          <maml:para>    DoubleSize = { $this.Length * 2}</maml:para>
+          <maml:para>    MegaSize = @{</maml:para>
+          <maml:para>        get = { $this.Length * 10 }</maml:para>
+          <maml:para>        set = { $this.Length = $_ / 10 }</maml:para>
+          <maml:para>    }</maml:para>
+          <maml:para>}</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">SelectScriptPropertyParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>SelectScriptPropertyParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues />
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>---------------- Example 1: Renaming a property ----------------</maml:title>
+        <dev:code>Get-ChildItem | Select-DbaObject Name, "Length as Size"</dev:code>
+        <dev:remarks>
+          <maml:para>Selects the properties Name and Length, renaming Length to Size in the process.</maml:para>
+          <maml:para>_</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>------------------ Example 2: Converting type ------------------</maml:title>
+        <dev:code>Import-Csv .\file.csv | Select-DbaObject Name, "Length as Size to DbaSize"</dev:code>
+        <dev:remarks>
+          <maml:para>Selects the properties Name and Length, renaming Length to Size and converting it to [DbaSize] (a userfriendly representation of size numbers contained in the dbatools module)</maml:para>
+          <maml:para>_</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>---------- Example 3: Selecting from another object 1 ----------</maml:title>
+        <dev:code>$obj = [PSCustomObject]@{ Name = "Foo" }
+Get-ChildItem | Select-DbaObject FullName, Length, "Name from obj"</dev:code>
+        <dev:remarks>
+          <maml:para>Selects the properties FullName and Length from the input and the Name property from the object stored in $obj</maml:para>
+          <maml:para>_</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>---------- Example 4: Selecting from another object 2 ----------</maml:title>
+        <dev:code>$list = @()
+$list += [PSCustomObject]@{ Type = "Foo"; ID = 1 }
+$list += [PSCustomObject]@{ Type = "Bar"; ID = 2 }
+$obj | Select-DbaObject Name, "ID from list WHERE Type = Name"</dev:code>
+        <dev:remarks>
+          <maml:para>This allows you to LEFT JOIN contents of another variable. Note that it can only do simple property-matching at this point.</maml:para>
+          <maml:para>It will select Name from the objects stored in $obj, and for each of those the ID Property on any object in $list that has a Type property of equal value as Name on the input.</maml:para>
+          <maml:para>_</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>---------------- Example 5: Naming and styling ----------------</maml:title>
+        <dev:code>Get-ChildItem | Select-DbaObject Name, Length, FullName, Used, LastWriteTime, Mode -TypeName MyType -ShowExcludeProperty Mode, Used</dev:code>
+        <dev:remarks>
+          <maml:para>Lists all items in the current path, selects the properties specified (whether they exist or not) , then ...</maml:para>
+          <maml:para>- Sets the name to "MyType"</maml:para>
+          <maml:para>- Hides the properties "Mode" and "Used" from the default display set, causing them to be hidden from default view</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Documentation</maml:linkText>
+        <maml:uri>https://dbatools.io/Select-DbaObject</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+</helpItems>

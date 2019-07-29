@@ -1,0 +1,208 @@
+﻿TOPIC
+	about_dbatools_support
+	
+SHORT DESCRIPTION
+	Describes how to contact support and what information we need
+	
+LONG DESCRIPTION
+	Welcome to the dbatools support guide.
+	If you are reading this, odds are, something went wrong and you are looking
+	for support. Sorry for the inconvenience - we try our best to have dbatools
+	as free of bugs as we can manage. Doesn't always work out.
+	
+	This article describes how you can reach us and what information we need
+	when you do.
+	
+	
+	#-------------------------------------------------------------------------#
+	#                           Table of Contents                             #
+	#-------------------------------------------------------------------------#
+
+	- Getting Help
+	- Troubleshooting Support
+	- A matter of timing
+	- What happens now?
+	- The world need not burn
+	
+	
+	#-------------------------------------------------------------------------#
+	#                              Getting Help                               #
+	#-------------------------------------------------------------------------#
+	
+	When something breaks unexpectedly, you'll probably want help. Well, most of
+	us in the team work on dbatools, because we a) have fun coding and b) like
+	the community (there is no pay involved whatsoever). So, come see us in our
+	Slack channel or file an issue on github. We will gladly attempt to help you
+	with any technical issues using our module (we love our module, we'll remove
+	any malfunctioning blemishes that we can!).
+	
+	In order to find us, you can visit us on Slack by following this link:
+	https://dbatools.io/slack/
+	This has the advantage of the easiest interaction and often the fastest
+	resolution times for smaller issues.
+	
+	Alternatively, you can file an issue on github:
+	https://github.com/sqlcollaborative/dbatools/issues
+	(Don't worry: It's relatively straightforward and easy to do)
+	
+	When you describe an error, please be prepared to provide some information,
+	such as what code you were trying to execute and what the error was. For
+	more details on this, see the next chapter: "Troubleshooting Support"
+	
+	
+	#-------------------------------------------------------------------------#
+	#                         Troubleshooting Support                         #
+	#-------------------------------------------------------------------------#
+	
+	When trying to figure out, what went wrong, we usually need information,
+	quite a bit of it, in fact. Usual information we care about:
+	- Code/line you were running
+	- Output / Error / Warning received
+	- Exception contents
+	- Execution log
+	- PowerShell Version
+	- Operating System
+	Now, we rarely need all of that, but often we don't know what of it we need
+	before looking at it in more detail. That said, I highly recommend providing
+	the first three points immediately, as they are fast to gather and already
+	help a lot. We may ask for more as it comes up.
+	
+	# Code/line you were running #
+	#----------------------------#
+	
+	Literally the code you executed. Make it as simple as possible and still
+	produce the error. Make sure to replace sensitive data before posting it.
+	If you can reduce it to a single line, that's great! (But don't sweat it if
+	it's still more)
+	
+	# Output / Error / Warning received #
+	#-----------------------------------#
+	
+	Generally, we catch errors and write warnings by default. Report what it
+	wrote if that is the case. Same for red exception textes. Sometimes however,
+	a command may just refuse to do anything at all. In that case it might just
+	return nothing. If it doesn't write a warning or throw an exception, tell us
+	what you expected it to do and what it did instead.
+	Screenshots work very well for this.
+	
+	# Exception Contents #
+	#--------------------#
+	
+	If the code threw an exception or wrote a warning, behind the scenes some
+	code failed to work as designed. This failure information is usually the
+	most valuable piece of information for troubleshooting. Generally, you can
+	see that exception content by running the following line:
+	
+	  $error[0] | Select-Object *
+	
+	Directly after the command failed. Screenshot it.
+	
+	# Execution Log #
+	#---------------#
+	
+	Dbatools logs a lot of information about how a function processes its logic.
+	You can access that information by running Get-DbatoolsLog. In order to 
+	send in this information, start a new process and produce the error, then
+	execute the following line:
+	
+	  Get-DbatoolsLog | Export-Csv messagelog.csv
+	
+	This will export the entire log into a csv file. You may want to edit out
+	confidential information (replace it with something harmles) before
+	submitting it.
+	
+	# PowerShell Version #
+	#--------------------#
+	
+	We try to support versions 3-5.1 of PowerShell. Sometimes however we mess up
+	and something doesn't work on all versions. Thus the actual PowerShell
+	version is often of interest. You can find this information by running the
+	following line:
+	
+	  $PSVersionTable
+	
+	# Operating System #
+	#------------------#
+	
+	What version of Windows are you running your code on?
+	
+	# Ugh, this is a bit much, can't you just gather what you need yourself?! #
+	#-------------------------------------------------------------------------#
+	
+	Yes, we can! We've got a command that gathers all the data that it can and
+	bundles it in a zip file for submission. Beware though: It is seriously hard
+	to hide or redact data from it, as it gathers a lot and stores it in an XML
+	file that must be edited from PowerShell, if at all. If you don't
+	particularly worry about sharing the data though, simply run this command:
+	
+	  New-DbatoolsSupportPackage
+	
+	It'll handle the gathering. Just submit the resultant zip file and we have
+	all the information your console has to give.
+	
+	
+	#-------------------------------------------------------------------------#
+	#                            A matter of timing                           #
+	#-------------------------------------------------------------------------#
+	
+	When gathering information for an error, we highly recommend taking the
+	following steps:
+	
+	- Start a new PowerShell console
+	- Perform the action necessary to reproduce the error
+	- Gather data
+	
+	This has two key benefits:
+	- The least amount of data gets collected, meaning we have to search through
+	  less material to find the cause.
+	- Reduces the likelyhood of accidentally sharing confidential data
+	
+	
+	#-------------------------------------------------------------------------#
+	#                            What happens now?                            #
+	#-------------------------------------------------------------------------#
+	
+	Alright, you've gathered the data needed and told us about the issue? Good.
+	What happens next usually depends on what kind of issue it is and where you
+	went to report it:
+	
+	Reported on Slack
+	- Minor bug: When you report what turns out to be a minor bug (minor
+	  refering to the technical complexity of the issue, not your problem that
+	  lead you to us), especially on the slack channels, odds are, on of us
+	  picked it up and immediately resolved it. In this case we'll tell you
+	  "it's handled" and that's it as far as you go: In the next release, the
+	  issue will be gone.
+	- Major issue: Some bugs are just too technically complex to solve on the
+	  fly. In those cases we will ask you to file an issue or file it for you,
+	  whichever you prefer. We'll try to see it resolved in a timely manner and
+	  inform you as it has been resolved or ask you to try out a current build
+	  and confirm it.
+	
+	Reported on GitHub
+	The key differences between reporting a problem on Github and doing so on
+	Slack is that are:
+	
+	a) We cannot ask questions directly as you post.
+	b) Reporting the issue does not require team members to be present.
+	
+	We often ARE there, hanging out in Slack, but it is not automatically
+	guaranteed. That being said, after you have filed an issue on GitHub, please
+	keep track of that issue, as we will likely ask questions or ask you to test
+	out solutions. Really, the process is mostly the same, only that since we
+	can't make sure all the information we need is there when you report it, we
+	may need to ask for it.
+	
+	
+	#-------------------------------------------------------------------------#
+	#                         The world need not burn                         #
+	#-------------------------------------------------------------------------#
+	
+	Thank you for reading our advisory on receiving support. Note however: It is
+	totally not necessary to wait until something breaks to contact us: Come on
+	over into the slack channels and hang out, discuss sql server or the
+	benefits of the	local breweries.
+	
+	
+KEYWORDS
+	dbatools general support help

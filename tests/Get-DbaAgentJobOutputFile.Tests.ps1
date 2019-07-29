@@ -1,46 +1,102 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
 
-if(-not $PSScriptRoot)
-{
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{}
-if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose",$True)
-}
-
-
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-Import-Module $PSScriptRoot\..\functions\$sut -Force
-. $PSScriptRoot\..\Internal\Connect-SQLServer.ps1 -Force
-Import-Module PSScriptAnalyzer
-## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
-$Rules = (Get-ScriptAnalyzerRule).Where{$_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
-$Name = $sut.Split('.')[0]
-
-   Describe 'Script Analyzer Tests' -Tag @('ScriptAnalyzer'){ 
-            Context 'Testing $sut for Standard Processing' {
-                foreach ($rule in $rules) { 
-                    $i = $rules.IndexOf($rule)
-                    It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                        (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\functions\$sut" -IncludeRule $rule.RuleName ).Count | Should Be 0 
-                    }
-                }
-            }
-        } 
-   ## needs some proper tests for the function here
-    Describe "$Name Tests" -Tag @('Command'){
-        Context "Input Validation" { 
-          It 'SqlServer parameter is empty' { 
-            { Get-DbaJobOutputFile -SqlServer ''  -WarningAction Stop 3> $null } | Should Throw 
-         } 
-          It 'SqlServer parameter host cannot be found' { 
-            Mock Connect-SqlServer { throw System.Data.SqlClient.SqlException } 
-            { Get-DbaJobOutputFile  -SqlServer 'ABC' -WarningAction Stop 3> $null } | Should Throw 
-         } 
-		} ## End Context Input
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
     }
-    
-    
+}
+
+Describe "$CommandName Unittests" -Tag 'UnitTests' {
+    InModuleScope 'dbatools' {
+        Context "Return values" {
+            Mock Connect-SQLInstance -MockWith {
+                [object]@{
+                    Name         = 'SQLServerName'
+                    ComputerName = 'SQLServerName'
+                    JobServer    = @{
+                        Jobs = @(
+                            @{
+                                Name     = 'Job1'
+                                JobSteps = @(
+                                    @{
+                                        Id             = 1
+                                        Name           = 'Job1Step1'
+                                        OutputFileName = 'Job1Output1'
+                                    },
+                                    @{
+                                        Id             = 2
+                                        Name           = 'Job1Step2'
+                                        OutputFileName = 'Job1Output2'
+                                    }
+                                )
+                            },
+                            @{
+                                Name     = 'Job2'
+                                JobSteps = @(
+                                    @{
+                                        Id             = 1
+                                        Name           = 'Job2Step1'
+                                        OutputFileName = 'Job2Output1'
+                                    },
+                                    @{
+                                        Id   = 2
+                                        Name = 'Job2Step2'
+                                    }
+                                )
+                            },
+                            @{
+                                Name     = 'Job3'
+                                JobSteps = @(
+                                    @{
+                                        Id   = 1
+                                        Name = 'Job3Step1'
+                                    },
+                                    @{
+                                        Id   = 2
+                                        Name = 'Job3Step2'
+                                    }
+                                )
+                            }
+                        )
+                    }
+                } #object
+            } #mock connect-SqlInstance
+            It "Gets only steps with output files" {
+                $Results = @()
+                $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName'
+                $Results.Length | Should Be 3
+                $Results.Job | Should Match 'Job[12]'
+                $Results.JobStep | Should Match 'Job[12]Step[12]'
+                $Results.OutputFileName | Should Match 'Job[12]Output[12]'
+                $Results.RemoteOutputFileName | Should Match '\\\\SQLServerName\\Job[12]Output[12]'
+            }
+            It "Honors the Job parameter" {
+                $Results = @()
+                $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName' -Job 'Job1'
+                $Results.Job | Should Match 'Job1'
+                $Results.JobStep | Should Match 'Job1Step[12]'
+                $Results.OutputFileName | Should Match 'Job1Output[12]'
+            }
+            It "Honors the ExcludeJob parameter" {
+                $Results = @()
+                $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName' -ExcludeJob 'Job1'
+                $Results.Length | Should Be 1
+                $Results.Job | Should Match 'Job2'
+                $Results.OutputFileName | Should Be 'Job2Output1'
+                $Results.StepId | Should Be 1
+            }
+            It "Does not return even with a specific job without outputfiles" {
+                $Results = @()
+                $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName' -Job 'Job3'
+                $Results.Length | Should Be 0
+            }
+        }
+    }
+}
