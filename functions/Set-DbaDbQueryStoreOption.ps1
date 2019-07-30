@@ -48,6 +48,18 @@ function Set-DbaDbQueryStoreOption {
     .PARAMETER WaitStatsCaptureMode
         Set wait stats capture on or off.
 
+    .PARAMETER CustomCapturePolicyExecutionCount
+        Set the custom capture policy execution count. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyTotalCompileCPUTimeMS
+        Set the custom capture policy total compile CPU time. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyTotalExecutionCPUTimeMS
+        Set the custom capture policy total execution CPU time. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyStaleThresholdHours
+        Set the custom capture policy stale threshold. Only available in SQL Server 2019 and above.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
 
@@ -109,10 +121,7 @@ function Set-DbaDbQueryStoreOption {
         [int64]$FlushInterval,
         [int64]$CollectionInterval,
         [int64]$MaxSize,
-        <# For 2019 RTM
         [ValidateSet('Auto', 'All', 'None', 'Custom')]
-        #>
-        [ValidateSet('Auto', 'All', 'None')]
         [string[]]$CaptureMode,
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
@@ -120,12 +129,10 @@ function Set-DbaDbQueryStoreOption {
         [int64]$MaxPlansPerQuery,
         [ValidateSet('On', 'Off')]
         [string[]]$WaitStatsCaptureMode,
-        <# For 2019 RTM, parameters need to be added above
         [int64]$CustomCapturePolicyExecutionCount,
         [int64]$CustomCapturePolicyTotalCompileCPUTimeMS,
         [int64]$CustomCapturePolicyTotalExecutionCPUTimeMS,
         [int64]$CustomCapturePolicyStaleThresholdHours,
-        #>
         [switch]$EnableException
     )
     begin {
@@ -133,13 +140,12 @@ function Set-DbaDbQueryStoreOption {
     }
 
     process {
-        if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
+        if (-not $Database -and -not $ExcludeDatabase -and -not $AllDatabases) {
             Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
             return
         }
 
-        # For 2019 RTM and the following -and !$CustomCapturePolicyExecutionCount -and !$CustomCapturePolicyTotalCompileCPUTimeMS -and !$CustomCapturePolicyTotalExecutionCPUTimeMS -and !$CustomCapturePolicyStaleThresholdHours
-        if (!$State -and !$FlushInterval -and !$CollectionInterval -and !$MaxSize -and !$CaptureMode -and !$CleanupMode -and !$StaleQueryThreshold -and !$MaxPlansPerQuery -and !$WaitStatsCaptureMode) {
+        if (-not $State -and -not $FlushInterval -and -not $CollectionInterval -and -not $MaxSize -and -not $CaptureMode -and -not $CleanupMode -and -not $StaleQueryThreshold -and -not $MaxPlansPerQuery -and -not $WaitStatsCaptureMode -and -not $CustomCapturePolicyExecutionCount -and -not $CustomCapturePolicyTotalCompileCPUTimeMS -and -not $CustomCapturePolicyTotalExecutionCPUTimeMS -and -not $CustomCapturePolicyStaleThresholdHours) {
             Stop-Function -Message "You must specify something to change."
             return
         }
@@ -147,9 +153,16 @@ function Set-DbaDbQueryStoreOption {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-
             } catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($CaptureMode -contains "Custom" -and $server.VersionMajor -lt 15) {
+                Stop-Function -Message "Custom capture mode can onlly be set in SQL Server 2019 and above" -Continue
+            }
+
+            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and $server.VersionMajor -lt 15) {
+                Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -230,21 +243,20 @@ function Set-DbaDbQueryStoreOption {
                     }
                 }
 
-                <# For 2019 RTM
                 if ($server.VersionMajor -ge 15) {
-                    if ($QSO.QueryCaptureMode = "CUSTOM") {
+                    if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
                         if ($CustomCapturePolicyStaleThresholdHours) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {
                                 $query = "ALTER DATABASE $db SET QUERY_STORE = ON ( QUERY_CAPTURE_POLICY = ( STALE_CAPTURE_POLICY_THRESHOLD = $($CustomCapturePolicyStaleThresholdHours))); "
                             }
                         }
 
-                       if ($CustomCapturePolicyExecutionCount) {
+                        if ($CustomCapturePolicyExecutionCount) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyExecutionCount to $($CustomCapturePolicyExecutionCount)")) {
                                 $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (EXECUTION_COUNT = $($CustomCapturePolicyExecutionCount))); "
                             }
-                       }
-                        if ($.CustomCapturePolicyTotalCompileCPUTimeMS) {
+                        }
+                        if ($CustomCapturePolicyTotalCompileCPUTimeMS) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyTotalCompileCPUTimeMS to $($CustomCapturePolicyTotalCompileCPUTimeMS)")) {
                                 $query = "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (TOTAL_COMPILE_CPU_TIME_MS = $($CustomCapturePolicyTotalCompileCPUTimeMS))); "
                             }
@@ -257,7 +269,6 @@ function Set-DbaDbQueryStoreOption {
                         }
                     }
                 }
-                #>
 
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
@@ -275,7 +286,6 @@ function Set-DbaDbQueryStoreOption {
                 }
 
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOption")) {
-                    # Display resulting changes
                     Get-DbaDbQueryStoreOption -SqlInstance $server -Database $db.name -Verbose:$false
                 }
             }
