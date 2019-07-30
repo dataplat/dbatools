@@ -8125,6 +8125,129 @@
         "Syntax":  "Export-DbaXECsv [-InputObject] \u003cObject[]\u003e [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Export-DbaXESession",
+        "Description":  "Exports script to create Extended Events Session to sql file  or console.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "XEvent"
+                 ],
+        "Synopsis":  "Exports Extened Events creation script to a T-SQL file or console.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Export-DbaXESession",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaXESession",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaXESession -SqlInstance sourceserver -Passthru\nExports a script to create all Extended Events Sessions on sourceserver to the console\r\nWill include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaXESession -SqlInstance sourceserver\nExports a script to create all Extended Events Sessions on sourceserver. As no Path was defined - automatically determines filename based on the Path.DbatoolsExport configuration setting, current \r\ntime and server name like Servername-YYYYMMDDhhmmss-sp_configure.sql\r\nWill include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaXESession -SqlInstance sourceserver -FilePath C:\\temp\nExports a script to create all Extended Events Sessions on sourceserver to the directory C:\\temp using the default name format of Servername-YYYYMMDDhhmmss-sp_configure.sql\r\nWill include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Export-DbaXESession -SqlInstance sourceserver -SqlCredential $cred -FilePath C:\\temp\\EEvents.sql -BatchSeparator \"\" -NoPrefix -NoClobber\nExports a script to create all Extended Events Sessions on sourceserver to the file C:\\temp\\EEvents.sql.\r\nWill exclude prefix information containing creator and datetime and does not include a BatchSeparator\r\nWill not overwrite file if it already exists\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Export-DbaXESession -FilePath \u0027C:\\Temp\\EE.sql\u0027 -Append\nExports a script to create all Extended Events Sessions for Server1 and Server2 using pipeline.\r\nWrites to a single file using the Append switch\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaXESession -SqlInstance Server1, Server2 -Session system_health | Export-DbaXESession -Path \u0027C:\\Temp\u0027\nExports a script to create the System_Health Extended Events Sessions for Server1 and Server2 using pipeline.\r\nWrite to the directory C:\\temp using the default name format of Servername-YYYYMMDDhhmmss-sp_configure.sql\r\nWill include prefix information containing creator and datetime. and uses the default value for BatchSeparator value from configuration Formatting.BatchSeparator",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input.\r\nServer version must be SQL Server version 2008 or higher.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "A SQL Management Object - Microsoft.SqlServer.Management.XEvent.Session such as the one returned from Get-DbaSession",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Session",
+                           "The Extended Event Session(s) to process. If unspecified, all Extended Event Sessions will be processed. This is ignored if An input object from Get-DbaSession is specified",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FilePath",
+                           "Specifies the full file path of the output file.\r\nIf FilePath is specified and more than one Server is in input then -Append parameter is required to avoid overwriting data",
+                           "OutFile,FileName",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally \"GO\"",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Formatting.BatchSeparator\u0027)"
+                       ],
+                       [
+                           "NoPrefix",
+                           "If this switch is used, the scripts will not include prefix information containing creator and datetime.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file. Only required if FilePath is specified",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "Append to file. Only required if FilePath is specified",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Export-DbaXESession [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cSession[]\u003e] [[-Session] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-Passthru] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-NoClobber] [-Append] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Export-DbaXESessionTemplate",
         "Description":  "Exports an XESession XML Template either from the Target SQL Server or XE Session(s) output by Get-DbaXESession. Exports to \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\" by default",
         "Tags":  [
