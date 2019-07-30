@@ -397,6 +397,7 @@ function Export-DbaLogin {
                     $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
 
                     foreach ($ownedJob in $ownedJobs) {
+                        $ownedJob = $ownedJob -replace ("'", "''")
                         $outsql += "`n`rUSE msdb`n"
                         $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
                     }
