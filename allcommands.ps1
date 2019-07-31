@@ -12715,6 +12715,7 @@ function Export-DbaLogin {
                     $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
 
                     foreach ($ownedJob in $ownedJobs) {
+                        $ownedJob = $ownedJob -replace ("'", "''")
                         $outsql += "`n`rUSE msdb`n"
                         $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
                     }
@@ -20874,7 +20875,8 @@ function Get-DbaDbBackupHistory {
                 if ($groupedResults.Count -gt 0) {
                     $backupSetIdsWhere = "backup_set_id IN ($backupSetIdsList)"
                     $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                                   FROM msdb..backupfile WHERE $backupSetIdsWhere"
+                                   FROM msdb..backupfile WHERE $backupSetIdsWhere
+                                    AND [State] <> 8;" #Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {
