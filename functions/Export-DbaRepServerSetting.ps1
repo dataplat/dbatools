@@ -79,7 +79,7 @@ function Export-DbaRepServerSetting {
         [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
+        [object[]]$InputObject,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [switch]$Passthru,
