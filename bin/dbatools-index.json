@@ -7658,7 +7658,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaRepServerSetting [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-ScriptOption] \u003cObject[]\u003e] [[-InputObject] \u003cReplicationServer[]\u003e] [[-Encoding] \u003cString\u003e] [-Passthru] [-NoClobber] [-Append] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaRepServerSetting [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-ScriptOption] \u003cObject[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Encoding] \u003cString\u003e] [-Passthru] [-NoClobber] [-Append] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaScript",
