@@ -107,7 +107,7 @@
     },
     {
         "Name": "Username",
-        "Category": "Security",
+        "Category": "Credentials",
         "Pattern": [
             "^.*(userid|user|username).*$",
             "^.*(nutzerid|nutzer|nutzername).*$",
@@ -118,7 +118,7 @@
     },
     {
         "Name": "Password",
-        "Category": "Communication",
+        "Category": "Credentials",
         "Pattern": [
             "^.*pass.*$",
             "^.*contrasena.*$",
