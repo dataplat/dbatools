@@ -247,8 +247,8 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO'
-                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO'
+                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
+                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-regserver.sql"
                 if (-not (Test-Path "$Path\$fileCounter-regserver.sql")) {
                     $fileCounter--
@@ -308,7 +308,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -WarningAction SilentlyContinue
+                Export-DbaLogin -SqlInstance $server -FilePath "$Path\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
                 if (-not (Test-Path "$Path\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
@@ -351,9 +351,9 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
-                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
-                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
-                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator
+                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
+                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
+                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-policymanagement.sql"
                 if (-not (Test-Path "$Path\$fileCounter-policymanagement.sql")) {
                     $fileCounter--
@@ -379,7 +379,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
-                $null = Get-DbaXESession -SqlInstance $server | Export-DbaScript -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO'
+                $null = Get-DbaXESession -SqlInstance $server | Export-DbaXeSession -FilePath "$Path\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-extendedevents.sql"
                 if (-not (Test-Path "$Path\$fileCounter-extendedevents.sql")) {
                     $fileCounter--
@@ -429,7 +429,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting availability group"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append:$Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix #-ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql"
                 if (-not (Test-Path "$Path\$fileCounter-DbaAvailabilityGroups.sql")) {
                     $fileCounter--
