@@ -30,7 +30,7 @@ function Invoke-DbaQuery {
         Specifies the path to one or several files to be used as the query input.
 
     .PARAMETER SqlObject
-        Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
+        Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
     .PARAMETER As
         Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
