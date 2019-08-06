@@ -66,7 +66,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Piping servers works" {
-        $results = $script:instance1 | Get-DbaDbTLogSpace
+        $results = $script:instance2 | Get-DbaDbTLogSpace
         It "Should have database name of $db1" {
             $results.Database | Should Contain $db1
         }
