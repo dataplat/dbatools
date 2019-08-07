@@ -26,7 +26,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbTLogSpace -SqlInstance $script:instance2 -Database $db1
+        $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -Database $db1
         It "Should have correct properties" {
             $results | Should Not BeNullOrEmpty
         }
@@ -39,14 +39,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object { $_.Database -eq $db1 }).LogSize.Kilobyte | Should Be 10232
         }
 
-        It "Calculation for space used should work" {
-            $db1Result = $results | Where-Object { $_.Database -eq $db1 }
-            $db1Result.logspaceused | should be ($db1Result.logsize * ($db1Result.LogSpaceUsedPercent / 100))
+        if ((Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential).versionMajor -lt 11) {
+            It "Calculation for space used should work for servers < 2012" {
+                $db1Result = $results | Where-Object { $_.Database -eq $db1 }
+                $db1Result.logspaceused | should be ($db1Result.logsize * ($db1Result.LogSpaceUsedPercent / 100))
+            }
         }
     }
 
     Context "System databases exclusions work" {
-        $results = Get-DbaDbTLogSpace -SqlInstance $script:instance2 -ExcludeSystemDatabase
+        $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -ExcludeSystemDatabase
         It "Should exclude system databases" {
             $results.Database | Should Not Bein ('model', 'master', 'tempdb', 'msdb')
         }
@@ -56,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "User databases exclusions work" {
-        $results = Get-DbaDbTLogSpace -SqlInstance $script:instance2 -ExcludeDatabase db1
+        $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -ExcludeDatabase db1
         It "Should include system databases" {
             ('model', 'master', 'tempdb', 'msdb') | Should Bein $results.Database
         }
@@ -66,7 +68,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Piping servers works" {
-        $results = $script:instance2 | Get-DbaDbTLogSpace
+        $results = $script:instance2 | Get-DbaDbLogSpace
         It "Should have database name of $db1" {
             $results.Database | Should Contain $db1
         }

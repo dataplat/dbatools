@@ -1,4 +1,4 @@
-Function Get-DbaDbTLogSpace {
+Function Get-DbaDbLogSpace {
     <#
     .SYNOPSIS
         Gets information on the database transaction log usage for each instance(s) of SQL Server.
@@ -37,30 +37,30 @@ Function Get-DbaDbTLogSpace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbTLogSpace
+        https://dbatools.io/Get-DbaDbLogSpace
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTLogSpace -SqlInstance Server1
+        PS C:\> Get-DbaDbLogSpace -SqlInstance Server1
 
         Returns the transaction log usage information for all databases on Server1
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTLogSpace -SqlInstance Server1 -Database Database1, Database2
+        PS C:\> Get-DbaDbLogSpace -SqlInstance Server1 -Database Database1, Database2
 
         Returns the transaction log usage information for both Database1 and Database 2 on Server1
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTLogSpace -SqlInstance Server1 -ExcludeDatabase Database3
+        PS C:\> Get-DbaDbLogSpace -SqlInstance Server1 -ExcludeDatabase Database3
 
         Returns the transaction log usage information for all databases on Server1, except Database3
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTLogSpace -SqlInstance Server1 -ExcludeSystemDatabase
+        PS C:\> Get-DbaDbLogSpace -SqlInstance Server1 -ExcludeSystemDatabase
 
         Returns the transaction log usage information for all databases on Server1, except the system databases
 
     .EXAMPLE
-        PS C:\> Get-DbaRegisteredServer -SqlInstance cmsServer | Get-DbaDbTLogSpace -Database Database1
+        PS C:\> Get-DbaRegisteredServer -SqlInstance cmsServer | Get-DbaDbLogSpace -Database Database1
 
         Returns the transaction log usage information for Database1 for a group of servers from SQL Server Central Management Server (CMS).
 
@@ -96,21 +96,42 @@ Function Get-DbaDbTLogSpace {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
-            try {
-                $logspace = Invoke-DbaQuery -SqlInstance $server -Query "dbcc sqlperf(logspace)" | Where-Object { $dbs.name -contains $_.'Database Name' }
-            } catch {
-                Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
-            }
+            # 2012+ use new DMV
+            if ($server.versionMajor -ge 11) {
+                foreach ($db in $dbs) {
+                    try {
+                        $logspace = $server.query('select * from sys.dm_db_log_space_usage', $db.name)
+                    } catch {
+                        Stop-Function -Message "Unable to select from sys.dm_db_log_space_usage on $instance." -ErrorRecord $_ -Target $db -Continue
+                    }
+                    [pscustomobject]@{
+                        ComputerName        = $server.ComputerName
+                        InstanceName        = $server.ServiceName
+                        SqlInstance         = $server.DomainInstanceName
+                        Database            = $db.name
+                        LogSize             = [dbasize]($logspace.total_log_size_in_bytes)
+                        LogSpaceUsedPercent = $logspace.used_log_space_in_percent
+                        LogSpaceUsed        = [dbasize]($logspace.used_log_space_in_bytes)
+                    }
+                }
+            } else {
+                write-host 'under 2012'
+                try {
+                    $logspace = $server.Query("dbcc sqlperf(logspace)") | Where-Object { $dbs.name -contains $_.'Database Name' }
+                } catch {
+                    Stop-Function -Message "Unable to run dbcc sqlperf on $instance." -ErrorRecord $_ -Target $db -Continue
+                }
 
-            foreach ($ls in $logspace) {
-                [pscustomobject]@{
-                    ComputerName        = $server.ComputerName
-                    InstanceName        = $server.ServiceName
-                    SqlInstance         = $server.DomainInstanceName
-                    Database            = $ls.'Database Name'
-                    LogSize             = [dbasize]($ls.'Log Size (MB)' * 1MB)
-                    LogSpaceUsedPercent = $ls.'Log Space Used (%)'
-                    LogSpaceUsed        = [dbasize]($ls.'Log Size (MB)' * ($ls.'Log Space Used (%)' / 100) * 1MB)
+                foreach ($ls in $logspace) {
+                    [pscustomobject]@{
+                        ComputerName        = $server.ComputerName
+                        InstanceName        = $server.ServiceName
+                        SqlInstance         = $server.DomainInstanceName
+                        Database            = $ls.'Database Name'
+                        LogSize             = [dbasize]($ls.'Log Size (MB)' * 1MB)
+                        LogSpaceUsedPercent = $ls.'Log Space Used (%)'
+                        LogSpaceUsed        = [dbasize]($ls.'Log Size (MB)' * ($ls.'Log Space Used (%)' / 100) * 1MB)
+                    }
                 }
             }
         }
