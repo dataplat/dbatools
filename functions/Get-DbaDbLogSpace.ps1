@@ -110,7 +110,7 @@ Function Get-DbaDbLogSpace {
                         SqlInstance         = $server.DomainInstanceName
                         Database            = $db.name
                         LogSize             = [dbasize]($logspace.total_log_size_in_bytes)
-                        LogSpaceUsedPercent = $logspace.used_log_space_in_percent.ToString("P")
+                        LogSpaceUsedPercent = $logspace.used_log_space_in_percent
                         LogSpaceUsed        = [dbasize]($logspace.used_log_space_in_bytes)
                     }
                 }
@@ -128,7 +128,7 @@ Function Get-DbaDbLogSpace {
                         SqlInstance         = $server.DomainInstanceName
                         Database            = $ls.'Database Name'
                         LogSize             = [dbasize]($ls.'Log Size (MB)' * 1MB)
-                        LogSpaceUsedPercent = $ls.'Log Space Used (%)'.ToString("P")
+                        LogSpaceUsedPercent = $ls.'Log Space Used (%)'
                         LogSpaceUsed        = [dbasize]($ls.'Log Size (MB)' * ($ls.'Log Space Used (%)' / 100) * 1MB)
                     }
                 }
