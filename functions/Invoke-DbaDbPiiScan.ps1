@@ -388,12 +388,10 @@ function Invoke-DbaDbPiiScan {
                         Write-Message -Level Verbose -Message "No patterns found to perform check on"
                     }
 
-                    $TableNumber++
+                    $tableNumber++
 
                 } # End for each table
-
             } # End for each database
-
         } # End for each instance
 
         # Return the results
