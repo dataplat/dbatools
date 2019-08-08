@@ -3815,7 +3815,7 @@
         "Tags":  "QueryStore",
         "Synopsis":  "Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.",
         "Alias":  "",
-        "Author":  "Enrico van de Laar (@evdlaar)",
+        "Author":  "Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @Tracy Boggiano)",
         "CommandName":  "Copy-DbaDbQueryStoreOption",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-QueryStoreConfig",
@@ -13240,6 +13240,72 @@
         "Syntax":  "Get-DbaDbLogShipError [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Action] \u003cString[]\u003e] [[-DateTimeFrom] \u003cDateTime\u003e] [[-DateTimeTo] \u003cDateTime\u003e] [-Primary] [-Secondary] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbLogSpace",
+        "Description":  "Returns transaction log size and space used for each database on the SQL Server instance(s).\n\nThis can be used to monitor how much of your allocated transaction log space is in use, and whether it is nearing the point where it will need to grow.",
+        "Tags":  [
+                     "Database",
+                     "LogFile"
+                 ],
+        "Synopsis":  "Gets information on the database transaction log usage for each instance(s) of SQL Server.",
+        "Alias":  "",
+        "Author":  "Jess Pomfret, JessPomfret.com",
+        "CommandName":  "Get-DbaDbLogSpace",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbLogSpace",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbLogSpace -SqlInstance Server1\nReturns the transaction log usage information for all databases on Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbLogSpace -SqlInstance Server1 -Database Database1, Database2\nReturns the transaction log usage information for both Database1 and Database 2 on Server1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbLogSpace -SqlInstance Server1 -ExcludeDatabase Database3\nReturns the transaction log usage information for all databases on Server1, except Database3\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbLogSpace -SqlInstance Server1 -ExcludeSystemDatabase\nReturns the transaction log usage information for all databases on Server1, except the system databases\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance cmsServer | Get-DbaDbLogSpace -Database Database1\nReturns the transaction log usage information for Database1 for a group of servers from SQL Server Central Management Server (CMS).",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "The database(s) to exclude - this list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeSystemDatabase",
+                           "Allows you to suppress output on system databases.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbLogSpace [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-ExcludeSystemDatabase] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbMail",
         "Description":  "Gets the database mail from SQL Server",
         "Tags":  [
@@ -14233,7 +14299,7 @@
         "Tags":  "QueryStore",
         "Synopsis":  "Get the Query Store configuration for Query Store enabled databases.",
         "Alias":  "",
-        "Author":  "Enrico van de Laar (@evdlaar) | Klaas Vandenberghe (@PowerDBAKlaas)",
+        "Author":  "Enrico van de Laar (@evdlaar) | Klaas Vandenberghe (@PowerDBAKlaas) | Tracy Boggiano (@TracyBoggiano)",
         "CommandName":  "Get-DbaDbQueryStoreOption",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaQueryStoreOptions",
@@ -27153,7 +27219,7 @@
                        ],
                        [
                            "SqlObject",
-                           "Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).",
+                           "Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).",
                            "",
                            true,
                            "false",
@@ -41108,7 +41174,7 @@
         "Tags":  "QueryStore",
         "Synopsis":  "Configure Query Store settings for a specific or multiple databases.",
         "Alias":  "",
-        "Author":  "Enrico van de Laar (@evdlaar)",
+        "Author":  "Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @TracyBoggiano )",
         "CommandName":  "Set-DbaDbQueryStoreOption",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaQueryStoreOptions",
@@ -41211,6 +41277,54 @@
                            "0"
                        ],
                        [
+                           "MaxPlansPerQuery",
+                           "Set the max plans per query captured and kept.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "WaitStatsCaptureMode",
+                           "Set wait stats capture on or off.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "CustomCapturePolicyExecutionCount",
+                           "Set the custom capture policy execution count. Only available in SQL Server 2019 and above.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "CustomCapturePolicyTotalCompileCPUTimeMS",
+                           "Set the custom capture policy total compile CPU time. Only available in SQL Server 2019 and above.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "CustomCapturePolicyTotalExecutionCPUTimeMS",
+                           "Set the custom capture policy total execution CPU time. Only available in SQL Server 2019 and above.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "CustomCapturePolicyStaleThresholdHours",
+                           "Set the custom capture policy stale threshold. Only available in SQL Server 2019 and above.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -41235,7 +41349,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaDbQueryStoreOption [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-AllDatabases] [[-State] \u003cString[]\u003e] [[-FlushInterval] \u003cInt64\u003e] [[-CollectionInterval] \u003cInt64\u003e] [[-MaxSize] \u003cInt64\u003e] [[-CaptureMode] \u003cString[]\u003e] [[-CleanupMode] \u003cString[]\u003e] [[-StaleQueryThreshold] \u003cInt64\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaDbQueryStoreOption [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-AllDatabases] [[-State] \u003cString[]\u003e] [[-FlushInterval] \u003cInt64\u003e] [[-CollectionInterval] \u003cInt64\u003e] [[-MaxSize] \u003cInt64\u003e] [[-CaptureMode] \u003cString[]\u003e] [[-CleanupMode] \u003cString[]\u003e] [[-StaleQueryThreshold] \u003cInt64\u003e] [[-MaxPlansPerQuery] \u003cInt64\u003e] [[-WaitStatsCaptureMode] \u003cString[]\u003e] [[-CustomCapturePolicyExecutionCount] \u003cInt64\u003e] [[-CustomCapturePolicyTotalCompileCPUTimeMS] \u003cInt64\u003e] [[-CustomCapturePolicyTotalExecutionCPUTimeMS] \u003cInt64\u003e] \r\n[[-CustomCapturePolicyStaleThresholdHours] \u003cInt64\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaDbRecoveryModel",

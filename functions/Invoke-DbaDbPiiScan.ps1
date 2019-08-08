@@ -219,6 +219,7 @@ function Invoke-DbaDbPiiScan {
 
             # Loop through the databases
             foreach ($dbName in $Database) {
+
                 $progressTask = "Scanning Database $dbName"
                 Write-Progress -Id $progressId -Activity $progressActivity -Status $progressTask
 
@@ -266,59 +267,91 @@ function Invoke-DbaDbPiiScan {
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
 
-                        if ($knownNames.Count -ge 1) {
-                            # Go through the first check to see if any column is found with a known type
-                            foreach ($knownName in $knownNames) {
-
-                                foreach ($pattern in $knownName.Pattern) {
-
-                                    if ($columnobject.Name -match $pattern ) {
-                                        # Check if the results not already contain a similar object
-                                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
-                                            # Add the results
-                                            $results += [pscustomobject]@{
-                                                ComputerName   = $db.Parent.ComputerName
-                                                InstanceName   = $db.Parent.ServiceName
-                                                SqlInstance    = $db.Parent.DomainInstanceName
-                                                Database       = $dbName
-                                                Schema         = $tableobject.Schema
-                                                Table          = $tableobject.Name
-                                                Column         = $columnobject.Name
-                                                "PII-Category" = $knownName.Category
-                                                "PII-Name"     = $knownName.Name
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
-                                $knownName = $null
+                        if ($columnobject.DataType -eq 'geography') {
+                            # Add the results
+                            $results += [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $dbName
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Location"
+                                "PII-Name"     = "Location"
+                                FoundWith      = "DataType"
+                            }
+                        } elseif ($columnobject.DataType -in 'geometry', 'hierarchyid') {
+                            # Add the results
+                            $results += [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $dbName
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Other"
+                                "PII-Name"     = "N/A"
+                                FoundWith      = "DataType"
                             }
                         } else {
-                            Write-Message -Level Verbose -Message "No known names found to perform check on"
-                        }
+                            if ($knownNames.Count -ge 1) {
+                                # Go through the first check to see if any column is found with a known type
+                                foreach ($knownName in $knownNames) {
 
+                                    foreach ($pattern in $knownName.Pattern) {
 
-                        if ($patterns.Count -ge 1) {
-                            # Check if the results not already contain a similar object
-                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                                # Setup the query
-                                $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                        if ($columnobject.Name -match $pattern ) {
+                                            # Check if the results not already contain a similar object
+                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
 
-                                # Get the data
-                                try {
-                                    $dataset = @()
-                                    $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query
-                                } catch {
-
-                                    Stop-Function -Message "Something went wrong retrieving the data from [$($tableobject.Schema)].[$($tableobject.Name)]`n$query" -Target $tableobject -Continue
+                                                # Add the results
+                                                $results += [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $dbName
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $knownName.Category
+                                                    "PII-Name"     = $knownName.Name
+                                                    FoundWith      = "KnownName"
+                                                }
+                                            }
+                                        }
+                                    }
+                                    $knownName = $null
                                 }
+                            } else {
+                                Write-Message -Level Verbose -Message "No known names found to perform check on"
+                            }
+                        } # End for each column
+                    }
 
-                                # Check if there is any data
-                                if ($dataset.Count -ge 1) {
+                    if ($patterns.Count -ge 1) {
+                        # Check if the results not already contain a similar object
+                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                            # Setup the query
+                            $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                            # Get the data
+                            $dataset = @()
+
+                            try {
+                                $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
+                            } catch {
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            }
+
+
+                            # Check if there is any data
+                            if ($dataset.Count -ge 1) {
+
+                                # Loop through the columns
+                                foreach ($columnobject in $columns) {
 
                                     # Loop through the patterns
                                     foreach ($patternobject in $patterns) {
@@ -340,33 +373,25 @@ function Invoke-DbaDbPiiScan {
                                                     Column         = $columnobject.Name
                                                     "PII-Category" = $patternobject.category
                                                     "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
                                                 }
-
                                             }
-
                                         }
-
                                         $patternobject = $null
-
                                     }
-
-                                } else {
-                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                                 }
-
+                            } else {
+                                Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                             }
-                        } else {
-                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
                         }
+                    } else {
+                        Write-Message -Level Verbose -Message "No patterns found to perform check on"
+                    }
 
-                    } # End for each column
-
-                    $TableNumber++
+                    $tableNumber++
 
                 } # End for each table
-
             } # End for each database
-
         } # End for each instance
 
         # Return the results
