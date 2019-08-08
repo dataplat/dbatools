@@ -6606,6 +6606,14 @@ function Copy-DbaDbQueryStoreOption {
             # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
             $SourceQSConfig = Get-DbaDbQueryStoreOption -SqlInstance $sourceServer -Database $SourceDatabase
 
+            $db = Get-DbaDatabase -SqlInstance $sourceServer -Database $SourceDatabase
+
+            if ($sourceServer.VersionMajor -eq 14) {
+                $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $db.Name)
+            } elseif ($sourceServer.VersionMajor -ge 15) {
+                $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $db.Name)
+            }
+
             if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
                 Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases." -Continue
             }
@@ -6658,22 +6666,56 @@ function Copy-DbaDbQueryStoreOption {
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     if ($PSCmdlet.ShouldProcess("$db", "Copying QueryStoreConfig")) {
                         try {
-
-                            $setDbaDbQueryStoreOptionParameters = @{
-
-                                SqlInstance         = $destinationServer;
-                                SqlCredential       = $DestinationSqlCredential;
-                                Database            = $db.name;
-                                State               = $SourceQSConfig.ActualState;
-                                FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds;
-                                CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
-                                MaxSize             = $SourceQSConfig.MaxStorageSizeInMB;
-                                CaptureMode         = $SourceQSConfig.QueryCaptureMode;
-                                CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
-                                StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
+                            if ($sourceServer.VersionMajor -eq 13) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance         = $destinationServer
+                                    SqlCredential       = $DestinationSqlCredential
+                                    Database            = $db.name
+                                    State               = $SourceQSConfig.ActualState
+                                    FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize             = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode         = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays
+                                }
+                            } elseif ($sourceServer.VersionMajor -eq 14) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance          = $destinationServer
+                                    SqlCredential        = $DestinationSqlCredential
+                                    Database             = $db.name
+                                    State                = $SourceQSConfig.ActualState
+                                    FlushInterval        = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval   = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize              = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode          = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode          = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold  = $SourceQSConfig.StaleQueryThresholdInDays
+                                    MaxPlansPerQuery     = $QueryStoreOptions.MaxPlansPerQuery
+                                    WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode
+                                }
+                            } elseif ($sourceServer.VersionMajor -ge 15) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance                                = $destinationServer
+                                    SqlCredential                              = $DestinationSqlCredential
+                                    Database                                   = $db.name
+                                    State                                      = $SourceQSConfig.ActualState
+                                    FlushInterval                              = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval                         = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize                                    = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode                                = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode                                = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold                        = $SourceQSConfig.StaleQueryThresholdInDays
+                                    MaxPlansPerQuery                           = $QueryStoreOptions.MaxPlansPerQuery
+                                    WaitStatsCaptureMode                       = $QueryStoreOptions.WaitStatsCaptureMode
+                                    CustomCapturePolicyExecutionCount          = $QueryStoreOptions.CustomCapturePolicyExecutionCount
+                                    CustomCapturePolicyTotalCompileCPUTimeMS   = $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
+                                    CustomCapturePolicyTotalExecutionCPUTimeMS = $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
+                                    CustomCapturePolicyStaleThresholdHours     = $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
+                                }
                             }
 
-                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
+                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters
                             $copyQueryStoreStatus.Status = "Successful"
                         } catch {
                             $copyQueryStoreStatus.Status = "Failed"
@@ -22726,6 +22768,81 @@ DROP TABLE #DatabaseID;"
 }
 
 #.ExternalHelp dbatools-Help.xml
+Function Get-DbaDbLogSpace {
+    
+    [CmdletBinding()]
+    param (
+        [parameter(ValueFromPipeline, Mandatory)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [switch]$ExcludeSystemDatabase,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+            }
+            $dbs = $server.Databases | Where-Object IsAccessible
+
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -in $Database
+            }
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
+
+            if ($ExcludeSystemDatabase) {
+                $dbs = $dbs | Where-Object IsSystemObject -eq $false
+            }
+
+            # 2012+ use new DMV
+            if ($server.versionMajor -ge 11) {
+                foreach ($db in $dbs) {
+                    try {
+                        $logspace = $server.query('select * from sys.dm_db_log_space_usage', $db.name)
+                    } catch {
+                        Stop-Function -Message "Unable to collect log space data on $instance." -ErrorRecord $_ -Target $db -Continue
+                    }
+                    [pscustomobject]@{
+                        ComputerName        = $server.ComputerName
+                        InstanceName        = $server.ServiceName
+                        SqlInstance         = $server.DomainInstanceName
+                        Database            = $db.name
+                        LogSize             = [dbasize]($logspace.total_log_size_in_bytes)
+                        LogSpaceUsedPercent = $logspace.used_log_space_in_percent
+                        LogSpaceUsed        = [dbasize]($logspace.used_log_space_in_bytes)
+                    }
+                }
+            } else {
+                try {
+                    $logspace = $server.Query("dbcc sqlperf(logspace)") | Where-Object { $dbs.name -contains $_.'Database Name' }
+                } catch {
+                    Stop-Function -Message "Unable to collect log space data on $instance." -ErrorRecord $_ -Target $db -Continue
+                }
+
+                foreach ($ls in $logspace) {
+                    [pscustomobject]@{
+                        ComputerName        = $server.ComputerName
+                        InstanceName        = $server.ServiceName
+                        SqlInstance         = $server.DomainInstanceName
+                        Database            = $ls.'Database Name'
+                        LogSize             = [dbasize]($ls.'Log Size (MB)' * 1MB)
+                        LogSpaceUsedPercent = $ls.'Log Space Used (%)'
+                        LogSpaceUsed        = [dbasize]($ls.'Log Size (MB)' * ($ls.'Log Space Used (%)' / 100) * 1MB)
+                    }
+                }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Get-DbaDbMail {
     
     [CmdletBinding()]
@@ -23688,13 +23805,32 @@ function Get-DbaDbQueryStoreOption {
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
-                $QSO = $db.QueryStoreOptions
+                $qso = $db.QueryStoreOptions
 
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty Database -value $db.Name
-                Select-DefaultView -InputObject $QSO -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
+                if ($server.VersionMajor -eq 14) {
+                    $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $db.Name)
+                } elseif ($server.VersionMajor -ge 15) {
+                    $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $db.Name)
+                }
+
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -value $db.Name
+
+                if ($server.VersionMajor -eq 13) {
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
+                } elseif ($server.VersionMajor -eq 14) {
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name MaxPlansPerQuery -value $QueryStoreOptions.MaxPlansPerQuery
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name WaitStatsCaptureMode -value $QueryStoreOptions.WaitStatsCaptureMode
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
+                } elseif ($server.VersionMajor -ge 15) {
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -value $QueryStoreOptions.CustomCapturePolicyExecutionCount
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
+                }
             }
         }
     }
@@ -43654,6 +43790,7 @@ function Invoke-DbaDbPiiScan {
 
             # Loop through the databases
             foreach ($dbName in $Database) {
+
                 $progressTask = "Scanning Database $dbName"
                 Write-Progress -Id $progressId -Activity $progressActivity -Status $progressTask
 
@@ -43701,59 +43838,91 @@ function Invoke-DbaDbPiiScan {
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
 
-                        if ($knownNames.Count -ge 1) {
-                            # Go through the first check to see if any column is found with a known type
-                            foreach ($knownName in $knownNames) {
-
-                                foreach ($pattern in $knownName.Pattern) {
-
-                                    if ($columnobject.Name -match $pattern ) {
-                                        # Check if the results not already contain a similar object
-                                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
-                                            # Add the results
-                                            $results += [pscustomobject]@{
-                                                ComputerName   = $db.Parent.ComputerName
-                                                InstanceName   = $db.Parent.ServiceName
-                                                SqlInstance    = $db.Parent.DomainInstanceName
-                                                Database       = $dbName
-                                                Schema         = $tableobject.Schema
-                                                Table          = $tableobject.Name
-                                                Column         = $columnobject.Name
-                                                "PII-Category" = $knownName.Category
-                                                "PII-Name"     = $knownName.Name
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
-                                $knownName = $null
+                        if ($columnobject.DataType -eq 'geography') {
+                            # Add the results
+                            $results += [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $dbName
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Location"
+                                "PII-Name"     = "Location"
+                                FoundWith      = "DataType"
+                            }
+                        } elseif ($columnobject.DataType -in 'geometry', 'hierarchyid') {
+                            # Add the results
+                            $results += [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $dbName
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Other"
+                                "PII-Name"     = "N/A"
+                                FoundWith      = "DataType"
                             }
                         } else {
-                            Write-Message -Level Verbose -Message "No known names found to perform check on"
-                        }
+                            if ($knownNames.Count -ge 1) {
+                                # Go through the first check to see if any column is found with a known type
+                                foreach ($knownName in $knownNames) {
 
+                                    foreach ($pattern in $knownName.Pattern) {
 
-                        if ($patterns.Count -ge 1) {
-                            # Check if the results not already contain a similar object
-                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                                # Setup the query
-                                $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                        if ($columnobject.Name -match $pattern ) {
+                                            # Check if the results not already contain a similar object
+                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
 
-                                # Get the data
-                                try {
-                                    $dataset = @()
-                                    $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query
-                                } catch {
-
-                                    Stop-Function -Message "Something went wrong retrieving the data from [$($tableobject.Schema)].[$($tableobject.Name)]`n$query" -Target $tableobject -Continue
+                                                # Add the results
+                                                $results += [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $dbName
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $knownName.Category
+                                                    "PII-Name"     = $knownName.Name
+                                                    FoundWith      = "KnownName"
+                                                }
+                                            }
+                                        }
+                                    }
+                                    $knownName = $null
                                 }
+                            } else {
+                                Write-Message -Level Verbose -Message "No known names found to perform check on"
+                            }
+                        } # End for each column
+                    }
 
-                                # Check if there is any data
-                                if ($dataset.Count -ge 1) {
+                    if ($patterns.Count -ge 1) {
+                        # Check if the results not already contain a similar object
+                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                            # Setup the query
+                            $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                            # Get the data
+                            $dataset = @()
+
+                            try {
+                                $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
+                            } catch {
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            }
+
+
+                            # Check if there is any data
+                            if ($dataset.Count -ge 1) {
+
+                                # Loop through the columns
+                                foreach ($columnobject in $columns) {
 
                                     # Loop through the patterns
                                     foreach ($patternobject in $patterns) {
@@ -43775,33 +43944,25 @@ function Invoke-DbaDbPiiScan {
                                                     Column         = $columnobject.Name
                                                     "PII-Category" = $patternobject.category
                                                     "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
                                                 }
-
                                             }
-
                                         }
-
                                         $patternobject = $null
-
                                     }
-
-                                } else {
-                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                                 }
-
+                            } else {
+                                Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                             }
-                        } else {
-                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
                         }
+                    } else {
+                        Write-Message -Level Verbose -Message "No patterns found to perform check on"
+                    }
 
-                    } # End for each column
-
-                    $TableNumber++
+                    $tableNumber++
 
                 } # End for each table
-
             } # End for each database
-
         } # End for each instance
 
         # Return the results
@@ -45070,6 +45231,7 @@ function Invoke-DbaQuery {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbatoolsFormatter {
@@ -61347,11 +61509,18 @@ function Set-DbaDbQueryStoreOption {
         [int64]$FlushInterval,
         [int64]$CollectionInterval,
         [int64]$MaxSize,
-        [ValidateSet('Auto', 'All')]
+        [ValidateSet('Auto', 'All', 'None', 'Custom')]
         [string[]]$CaptureMode,
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
+        [int64]$MaxPlansPerQuery,
+        [ValidateSet('On', 'Off')]
+        [string[]]$WaitStatsCaptureMode,
+        [int64]$CustomCapturePolicyExecutionCount,
+        [int64]$CustomCapturePolicyTotalCompileCPUTimeMS,
+        [int64]$CustomCapturePolicyTotalExecutionCPUTimeMS,
+        [int64]$CustomCapturePolicyStaleThresholdHours,
         [switch]$EnableException
     )
     begin {
@@ -61359,12 +61528,12 @@ function Set-DbaDbQueryStoreOption {
     }
 
     process {
-        if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
+        if (-not $Database -and -not $ExcludeDatabase -and -not $AllDatabases) {
             Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
             return
         }
 
-        if (!$State -and !$FlushInterval -and !$CollectionInterval -and !$MaxSize -and !$CaptureMode -and !$CleanupMode -and !$StaleQueryThreshold) {
+        if (-not $State -and -not $FlushInterval -and -not $CollectionInterval -and -not $MaxSize -and -not $CaptureMode -and -not $CleanupMode -and -not $StaleQueryThreshold -and -not $MaxPlansPerQuery -and -not $WaitStatsCaptureMode -and -not $CustomCapturePolicyExecutionCount -and -not $CustomCapturePolicyTotalCompileCPUTimeMS -and -not $CustomCapturePolicyTotalExecutionCPUTimeMS -and -not $CustomCapturePolicyStaleThresholdHours) {
             Stop-Function -Message "You must specify something to change."
             return
         }
@@ -61372,9 +61541,16 @@ function Set-DbaDbQueryStoreOption {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-
             } catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($CaptureMode -contains "Custom" -and $server.VersionMajor -lt 15) {
+                Stop-Function -Message "Custom capture mode can onlly be set in SQL Server 2019 and above" -Continue
+            }
+
+            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and $server.VersionMajor -lt 15) {
+                Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -61437,19 +61613,67 @@ function Set-DbaDbQueryStoreOption {
                     }
                 }
 
+                $query = ""
+
+                if ($server.VersionMajor -ge 14) {
+                    if ($MaxPlansPerQuery) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxPlansPerQuery to $($MaxPlansPerQuery)")) {
+                            $query += "ALTER DATABASE $db SET QUERY_STORE = ON (MAX_PLANS_PER_QUERY = $($MaxPlansPerQuery)); "
+                        }
+                    }
+
+                    if ($WaitStatsCaptureMode) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing WaitStatsCaptureMode to $($WaitStatsCaptureMode)")) {
+                            if ($WaitStatsCaptureMode -eq "ON" -or $WaitStatsCaptureMode -eq "OFF") {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (WAIT_STATS_CAPTURE_MODE = $($WaitStatsCaptureMode)); "
+                            }
+                        }
+                    }
+                }
+
+                if ($server.VersionMajor -ge 15) {
+                    if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
+                        if ($CustomCapturePolicyStaleThresholdHours) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON ( QUERY_CAPTURE_POLICY = ( STALE_CAPTURE_POLICY_THRESHOLD = $($CustomCapturePolicyStaleThresholdHours))); "
+                            }
+                        }
+
+                        if ($CustomCapturePolicyExecutionCount) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyExecutionCount to $($CustomCapturePolicyExecutionCount)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (EXECUTION_COUNT = $($CustomCapturePolicyExecutionCount))); "
+                            }
+                        }
+                        if ($CustomCapturePolicyTotalCompileCPUTimeMS) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyTotalCompileCPUTimeMS to $($CustomCapturePolicyTotalCompileCPUTimeMS)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (TOTAL_COMPILE_CPU_TIME_MS = $($CustomCapturePolicyTotalCompileCPUTimeMS))); "
+                            }
+                        }
+
+                        if ($CustomCapturePolicyTotalExecutionCPUTimeMS) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyTotalExecutionCPUTimeMS to $($CustomCapturePolicyTotalExecutionCPUTimeMS)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (TOTAL_EXECUTION_CPU_TIME_MS = $($CustomCapturePolicyTotalExecutionCPUTimeMS))); "
+                            }
+                        }
+                    }
+                }
+
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
                     try {
                         $db.QueryStoreOptions.Alter()
                         $db.Alter()
                         $db.Refresh()
+
+                        if ($query -ne "") {
+                            $db.Query($query, $db.Name)
+                        }
                     } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
                     }
                 }
 
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOption")) {
-                    # Display resulting changes
                     Get-DbaDbQueryStoreOption -SqlInstance $server -Database $db.name -Verbose:$false
                 }
             }
@@ -75567,7 +75791,7 @@ function Get-SqlInstanceUpdate {
                         Write-Message -Level Debug -Message "Found a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
                     }
                 } else {
-                    Write-Message -Message "$($currentVersion.Build) on computer [$($computer)] is already the latest available." -Level Verbose
+                    Write-Message -Message "$($currentVersion.Build) on computer [$($computer)] is already the latest available." -Level Warning
                     continue
                 }
             }
