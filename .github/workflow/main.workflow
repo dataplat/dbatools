@@ -1,3 +1,0 @@
-workflow {
-  #just a test
-}
