@@ -10,7 +10,7 @@ function Export-DbaDbRole {
         Reference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. SQL Server 2000 and above supported.
+        The target SQL Server instance or instances. SQL Server 2005 and above supported.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -288,52 +288,57 @@ function Export-DbaDbRole {
                 }
             }
             foreach ($dbRole in $databaseRoles) {
-                $server = $dbRole.Parent.Parent
+                try {
+                    $server = $dbRole.Parent.Parent
 
-                $outsql += $dbRole.Script($ScriptingOptionsObject)
+                    $outsql += $dbRole.Script($ScriptingOptionsObject)
 
-                $query = $roleSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
-                $rolePermissions = Invoke-DbaQuery -SqlInstance $server.Name -Database $dbRole.Database  -Query $query -EnableException
+                    $query = $roleSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
+                    $rolePermissions = Invoke-DbaQuery -SqlInstance $server.Name -Database $dbRole.Database  -Query $query -EnableException
 
-                foreach ($rolePermission in $rolePermissions) {
-                    $script = $rolePermission.GrantState + " " + $rolePermission.Permission
-                    if ($rolePermission.Type) {
-                        $script += " ON " + $rolePermission.Type
-                    }
-                    if ($rolePermission.RoleName) {
-                        $script += " TO [" + $rolePermission.RoleName + "]"
-                    }
-                    if ($rolePermission.GrantType) {
-                        $script += " WITH GRANT OPTION" + $commandTerminator
-                    } else {
-                        $script += $commandTerminator
-                    }
-                    $outsql += "$script"
-                }
-
-                if ($IncludeRoleMember) {
-                    $query = $userSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
-                    $roleUsers = Invoke-DbaQuery -SqlInstance $dbRole.SqlInstance -Database $dbRole.Database  -Query $query -EnableException
-
-                    foreach ($roleUser in $roleUsers) {
-                        $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
-                        $outsql += "$script"
-
-                        if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                            $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
+                    foreach ($rolePermission in $rolePermissions) {
+                        $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                        if ($rolePermission.Type) {
+                            $script += " ON " + $rolePermission.Type
+                        }
+                        if ($rolePermission.RoleName) {
+                            $script += " TO [" + $rolePermission.RoleName + "]"
+                        }
+                        if ($rolePermission.GrantType) {
+                            $script += " WITH GRANT OPTION" + $commandTerminator
                         } else {
+                            $script += $commandTerminator
+                        }
+                        $outsql += "$script"
+                    }
+
+                    if ($IncludeRoleMember) {
+                        $query = $userSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
+                        $roleUsers = Invoke-DbaQuery -SqlInstance $dbRole.SqlInstance -Database $dbRole.Database  -Query $query -EnableException
+
+                        foreach ($roleUser in $roleUsers) {
                             $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
+                            $outsql += "$script"
+
+                            if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
+                            } else {
+                                $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
+                            }
                         }
                     }
+                    $roleObject = [PSCustomObject]@{
+                        Name     = $dbRole.Name
+                        Instance = $dbRole.SqlInstance
+                        Database = $dbRole.Database
+                        Sql      = $outsql
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $dbRole" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
-                $roleObject = [PSCustomObject]@{
-                    Name     = $dbRole.Name
-                    Instance = $dbRole.SqlInstance
-                    Database = $dbRole.Database
-                    Sql      = $outsql
-                }
-                $roleCollection.Add($roleObject) | Out-Null
-                $outsql = @()
             }
         }
     }

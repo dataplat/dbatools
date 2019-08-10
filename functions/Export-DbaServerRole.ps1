@@ -259,41 +259,46 @@ function Export-DbaServerRole {
             }
 
             foreach ($role in $serverRoles) {
-                $outsql += $role.Script($ScriptingOptionsObject)
+                try {
+                    $outsql += $role.Script($ScriptingOptionsObject)
 
-                $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
-                $rolePermissions = Invoke-DbaQuery -SqlInstance $role.SqlInstance  -Query $query -EnableException
+                    $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
+                    $rolePermissions = Invoke-DbaQuery -SqlInstance $role.SqlInstance  -Query $query -EnableException
 
-                foreach ($rolePermission in $rolePermissions) {
-                    $script = $rolePermission.GrantState + " " + $rolePermission.Permission
-                    if ($rolePermission.OnClause) {
-                        $script += " " + $rolePermission.OnClause
-                    }
-                    if ($rolePermission.RoleName) {
-                        $script += " TO " + $rolePermission.RoleName
-                    }
-                    if ($rolePermission.GrantOption) {
-                        $script += " " + $rolePermission.GrantOption + $commandTerminator
-                    } else {
-                        $script += $commandTerminator
-                    }
-                    $outsql += "$script"
-                }
-
-                if ($IncludeRoleMember) {
-                    foreach ($roleUser in $role.Login) {
-                        $script = 'ALTER SERVER ROLE [' + $role.Role + "] ADD MEMBER [" + $roleUser + "]" + $commandTerminator
+                    foreach ($rolePermission in $rolePermissions) {
+                        $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                        if ($rolePermission.OnClause) {
+                            $script += " " + $rolePermission.OnClause
+                        }
+                        if ($rolePermission.RoleName) {
+                            $script += " TO " + $rolePermission.RoleName
+                        }
+                        if ($rolePermission.GrantOption) {
+                            $script += " " + $rolePermission.GrantOption + $commandTerminator
+                        } else {
+                            $script += $commandTerminator
+                        }
                         $outsql += "$script"
                     }
-                }
 
-                $roleObject = [PSCustomObject]@{
-                    Name     = $role.Name
-                    Instance = $role.SqlInstance
-                    Sql      = $outsql
+                    if ($IncludeRoleMember) {
+                        foreach ($roleUser in $role.Login) {
+                            $script = 'ALTER SERVER ROLE [' + $role.Role + "] ADD MEMBER [" + $roleUser + "]" + $commandTerminator
+                            $outsql += "$script"
+                        }
+                    }
+
+                    $roleObject = [PSCustomObject]@{
+                        Name     = $role.Name
+                        Instance = $role.SqlInstance
+                        Sql      = $outsql
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $Role" -Category ConnectionError -ErrorRecord $_ -Target $role.SqlInstance -Continue
                 }
-                $roleCollection.Add($roleObject) | Out-Null
-                $outsql = @()
             }
         }
     }
