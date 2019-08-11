@@ -112,8 +112,13 @@ function Test-DbaConnection {
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $ping = New-Object System.Net.NetworkInformation.Ping
             $timeout = 1000 #milliseconds
-            $reply = $ping.Send($instance.ComputerName, $timeout)
-            $pingable = $reply.Status -eq 'Success'
+
+            try {
+                $reply = $ping.Send($instance.ComputerName, $timeout)
+                $pingable = $reply.Status -eq 'Success'
+            } catch {
+                $pingable = $false
+            }
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
