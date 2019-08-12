@@ -433,7 +433,7 @@ function Export-DbaLogin {
                 }
 
                 if ($ExcludeDatabases -eq $false) {
-                    $dbs = $sourceLogin.EnumDatabaseMappings()
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
                         if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
