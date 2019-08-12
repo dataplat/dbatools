@@ -212,13 +212,45 @@ function New-DbaDbMaskingConfig {
                         $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
 
-                    # Get the masking type with the synonym
-                    $maskingType = $columnTypes | Where-Object {
-                        $columnobject.Name -in $_.Synonym
-                    }
 
-                    if ($maskingType) {
-                        # Make it easier to get the type name
+                    if ($columnobject.DataType -eq 'geography') {
+                        # Add the results
+                        $results += [pscustomobject]@{
+                            ComputerName   = $db.Parent.ComputerName
+                            InstanceName   = $db.Parent.ServiceName
+                            SqlInstance    = $db.Parent.DomainInstanceName
+                            Database       = $dbName
+                            Schema         = $tableobject.Schema
+                            Table          = $tableobject.Name
+                            Column         = $columnobject.Name
+                            "PII-Category" = "Location"
+                            "PII-Name"     = "Location"
+                            FoundWith      = "DataType"
+                        }
+                    } elseif ($columnobject.DataType -in 'geometry', 'hierarchyid') {
+                        # Add the results
+                        $results += [pscustomobject]@{
+                            ComputerName   = $db.Parent.ComputerName
+                            InstanceName   = $db.Parent.ServiceName
+                            SqlInstance    = $db.Parent.DomainInstanceName
+                            Database       = $dbName
+                            Schema         = $tableobject.Schema
+                            Table          = $tableobject.Name
+                            Column         = $columnobject.Name
+                            "PII-Category" = "Other"
+                            "PII-Name"     = "N/A"
+                            FoundWith      = "DataType"
+                        }
+                    } else {
+                        if ($knownNames.Count -ge 1) {
+
+                            # Get the masking type with the synonym
+                            $maskingType = $columnTypes | Where-Object {
+                                $columnobject.Name -in $_.Synonym
+                            }
+
+                            <#if ($maskingType) {
+                         # Make it easier to get the type name
                         $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
 
                         $type = $null
@@ -325,163 +357,164 @@ function New-DbaDbMaskingConfig {
                             Composite       = $null
                         }
 
-                    } else {
-                        $type = "Random"
+                    } #>
+                            else {
+                                $type = "Random"
 
-                        switch ($columnType) {
-                            {
-                                $_ -in "bit", "bool"
-                            } {
-                                $subType = "Bool"
-                                $MaxValue = $null
-                            }
-                            "bigint" {
-                                $subType = "Number"
-                                $MaxValue = 9223372036854775807
-                            }
-                            {
-                                $_ -in "char", "nchar", "nvarchar", "varchar"
-                            } {
-                                $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
-                            }
-                            "int" {
-                                $subType = "Number"
-                                $MaxValue = 2147483647
-                            }
-                            "date" {
-                                $type = "Date"
-                                $subType = "Past"
-                                $MaxValue = $null
-                            }
-                            "datetime" {
-                                $type = "Date"
-                                $subType = "Past"
-                                $MaxValue = $null
-                            }
-                            "datetime2" {
-                                $type = "Date"
-                                $subType = "Past"
-                                $MaxValue = $null
-                            }
-                            "decimal" {
-                                $subType = "Decimal"
-                                $MaxValue = $null
-                            }
-                            "float" {
-                                $subType = "Float"
-                                $MaxValue = $null
-                            }
-                            "money" {
-                                $type = "Commerce"
-                                $subType = "Price"
-                                $min = -922337203685477.5808
-                                $MaxValue = 922337203685477.5807
-                            }
-                            "smallint" {
-                                $subType = "Number"
-                                $MaxValue = 32767
-                            }
-                            "smalldatetime" {
-                                $subType = "Date"
-                                $MaxValue = $null
-                            }
-                            "text" {
-                                $subType = "String"
-                                $maxValue = 2147483647
-                            }
-                            "time" {
-                                $type = "Date"
-                                $subType = "Past"
-                                $MaxValue = $null
-                            }
-                            "tinyint" {
-                                $subType = "Number"
-                                $MaxValue = 255
-                            }
-                            "varbinary" {
-                                $subType = "Byte"
-                                $MaxValue = $columnLength
-                            }
-                            "userdefineddatatype" {
-                                if ($columnLength -eq 1) {
-                                    $subType = "Bool"
-                                    $MaxValue = $columnLength
-                                } else {
-                                    $subType = "String2"
-                                    $min = [int]($columnLength / 2)
-                                    $MaxValue = $columnLength
+                                switch ($columnType) {
+                                    {
+                                        $_ -in "bit", "bool"
+                                    } {
+                                        $subType = "Bool"
+                                        $MaxValue = $null
+                                    }
+                                    "bigint" {
+                                        $subType = "Number"
+                                        $MaxValue = 9223372036854775807
+                                    }
+                                    {
+                                        $_ -in "char", "nchar", "nvarchar", "varchar"
+                                    } {
+                                        $subType = "String2"
+                                        $min = [int]($columnLength / 2)
+                                        $MaxValue = $columnLength
+                                    }
+                                    "int" {
+                                        $subType = "Number"
+                                        $MaxValue = 2147483647
+                                    }
+                                    "date" {
+                                        $type = "Date"
+                                        $subType = "Past"
+                                        $MaxValue = $null
+                                    }
+                                    "datetime" {
+                                        $type = "Date"
+                                        $subType = "Past"
+                                        $MaxValue = $null
+                                    }
+                                    "datetime2" {
+                                        $type = "Date"
+                                        $subType = "Past"
+                                        $MaxValue = $null
+                                    }
+                                    "decimal" {
+                                        $subType = "Decimal"
+                                        $MaxValue = $null
+                                    }
+                                    "float" {
+                                        $subType = "Float"
+                                        $MaxValue = $null
+                                    }
+                                    "money" {
+                                        $type = "Commerce"
+                                        $subType = "Price"
+                                        $min = -922337203685477.5808
+                                        $MaxValue = 922337203685477.5807
+                                    }
+                                    "smallint" {
+                                        $subType = "Number"
+                                        $MaxValue = 32767
+                                    }
+                                    "smalldatetime" {
+                                        $subType = "Date"
+                                        $MaxValue = $null
+                                    }
+                                    "text" {
+                                        $subType = "String"
+                                        $maxValue = 2147483647
+                                    }
+                                    "time" {
+                                        $type = "Date"
+                                        $subType = "Past"
+                                        $MaxValue = $null
+                                    }
+                                    "tinyint" {
+                                        $subType = "Number"
+                                        $MaxValue = 255
+                                    }
+                                    "varbinary" {
+                                        $subType = "Byte"
+                                        $MaxValue = $columnLength
+                                    }
+                                    "userdefineddatatype" {
+                                        if ($columnLength -eq 1) {
+                                            $subType = "Bool"
+                                            $MaxValue = $columnLength
+                                        } else {
+                                            $subType = "String2"
+                                            $min = [int]($columnLength / 2)
+                                            $MaxValue = $columnLength
+                                        }
+                                    }
+                                    "uniqueidentifier" {
+                                        $subType = "Guid"
+                                    }
+                                    default {
+                                        $subType = "String2"
+                                        $min = [int]($columnLength / 2)
+                                        $MaxValue = $columnLength
+                                    }
+                                }
+
+                                $columns += [PSCustomObject]@{
+                                    Name            = $columnobject.Name
+                                    ColumnType      = $columnType
+                                    CharacterString = $null
+                                    MinValue        = $min
+                                    MaxValue        = $MaxValue
+                                    MaskingType     = $type
+                                    SubType         = $subType
+                                    Format          = $null
+                                    Deterministic   = $false
+                                    Nullable        = $columnobject.Nullable
+                                    Composite       = $null
                                 }
                             }
-                            "uniqueidentifier" {
-                                $subType = "Guid"
-                            }
-                            default {
-                                $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
-                            }
                         }
 
-                        $columns += [PSCustomObject]@{
-                            Name            = $columnobject.Name
-                            ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
-                            MaskingType     = $type
-                            SubType         = $subType
-                            Format          = $null
-                            Deterministic   = $false
-                            Nullable        = $columnobject.Nullable
-                            Composite       = $null
+
+                        # Check if something needs to be generated
+                        if ($columns) {
+                            $tables += [PSCustomObject]@{
+                                Name           = $tableobject.Name
+                                Schema         = $tableobject.Schema
+                                Columns        = $columns
+                                HasUniqueIndex = $hasUniqueIndex
+                            }
+                        } else {
+                            Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
                         }
+                    }
+
+                    # Check if something needs to be generated
+                    if ($tables) {
+                        $results += [PSCustomObject]@{
+                            Name   = $db.Name
+                            Type   = "DataMaskingConfiguration"
+                            Tables = $tables
+                        }
+                    } else {
+                        Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
                     }
                 }
 
+                # Write the data to the Path
+                if ($results) {
+                    try {
+                        $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                        $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
-                # Check if something needs to be generated
-                if ($columns) {
-                    $tables += [PSCustomObject]@{
-                        Name           = $tableobject.Name
-                        Schema         = $tableobject.Schema
-                        Columns        = $columns
-                        HasUniqueIndex = $hasUniqueIndex
+                        if (-not $script:isWindows) {
+                            $temppath = $temppath.Replace("\", "/")
+                        }
+                        Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
+                        Get-ChildItem -Path $temppath
+                    } catch {
+                        Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
                     }
                 } else {
-                    Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
+                    Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
                 }
-            }
-
-            # Check if something needs to be generated
-            if ($tables) {
-                $results += [PSCustomObject]@{
-                    Name   = $db.Name
-                    Type   = "DataMaskingConfiguration"
-                    Tables = $tables
-                }
-            } else {
-                Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
             }
         }
-
-        # Write the data to the Path
-        if ($results) {
-            try {
-                $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
-
-                if (-not $script:isWindows) {
-                    $temppath = $temppath.Replace("\", "/")
-                }
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
-            } catch {
-                Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
-            }
-        } else {
-            Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
-        }
-    }
-}
