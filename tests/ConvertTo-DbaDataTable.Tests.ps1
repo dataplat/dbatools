@@ -22,7 +22,7 @@ Describe "Testing data table output when using a complex object" {
         true     = $true
         false    = $false
         null     = [bool]$null
-        string   = "it's a boy!"
+        string   = "it's a boy."
         UInt64   = [System.UInt64]123456
     }
 
@@ -125,8 +125,8 @@ Describe "Testing data table output when using a complex object" {
         It 'Has a [string] data type on the column "string"' {
             $result.Columns | Where-Object -Property 'ColumnName' -eq 'string' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'string'
         }
-        It "Has the following string: it's a boy!" {
-            $result.string | Should Be "it's a boy!"
+        It "Has the following string: it's a boy." {
+            $result.string | Should Be "it's a boy."
         }
     }
 

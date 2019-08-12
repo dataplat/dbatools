@@ -204,13 +204,13 @@ function Publish-DbaDacPackage {
         }
 
         if (-not (Test-Path -Path $Path)) {
-            Stop-Function -Message "$Path not found!"
+            Stop-Function -Message "$Path not found."
             return
         }
 
         if ($PsCmdlet.ParameterSetName -eq 'Xml') {
             if (-not (Test-Path -Path $PublishXml)) {
-                Stop-Function -Message "$PublishXml not found!"
+                Stop-Function -Message "$PublishXml not found."
                 return
             }
         }

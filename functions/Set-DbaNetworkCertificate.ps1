@@ -210,7 +210,7 @@ function Set-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
