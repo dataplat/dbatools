@@ -8,7 +8,9 @@
             "^.*(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet).*$",
             "^.*(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto).*$",
             "^.*(voornaam|vnaam|achternaam|anaam|naam|volledigenaam|volnaam).*$"
-        ]
+        ],
+        "MaskingType": "Name",
+        "MaskingSubType": "FullName"
     },
     {
         "Name": "Date",
@@ -18,7 +20,9 @@
             "^.*(Geburtsdatum|Geburtsjahr).*$",
             "^.*(datedenaissance|date_de_naissance).*$",
             "^.*(geboortedatum).*$"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "DateOfBirth"
     },
     {
         "Name": "Gender",
@@ -29,14 +33,18 @@
             "^.*(sexe).*$",
             "^.*(sexo).*$",
             "^.*(geslacht).*$"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "Gender"
     },
     {
         "Name": "Resume",
         "Category": "Personal",
         "Pattern": [
             "^.*(resume).*$"
-        ]
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "String"
     },
     {
         "Name": "Nationality",
@@ -47,7 +55,9 @@
             "^.*(nationalité|nationalite).*$",
             "^.*(nacionalidad).*$",
             "^.*(nationaliteit).*$"
-        ]
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
     },
     {
         "Name": "Address",
@@ -57,7 +67,9 @@
             "^.*adresse.*$",
             "^.*direccion.*$",
             "^.*adres.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "StreetAddress"
     },
     {
         "Name": "City",
@@ -68,7 +80,9 @@
             "^.*ville.*$",
             "^.*ciudad.*$",
             "^.*stad.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "City"
     },
     {
         "Name": "State",
@@ -76,7 +90,9 @@
         "Pattern": [
             "^.*state.*$",
             "^.*provin.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "State"
     },
     {
         "Name": "County",
@@ -86,7 +102,9 @@
             "^.*bezirk.*$",
             "^.*comte.*$",
             "^.*condado.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "County"
     },
     {
         "Name": "Country",
@@ -96,35 +114,45 @@
             "^.*land.*$",
             "^.*pays.*$",
             "^.*pais.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "Country"
     },
     {
         "Name": "Location",
         "Category": "Location",
         "Pattern": [
             "^.*location.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "Latitude"
     },
     {
         "Name": "Phone",
         "Category": "Communication",
         "Pattern": [
             "^.*(phone|phonenumber).*$"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "Phone"
     },
     {
         "Name": "E-mail",
         "Category": "Communication",
         "Pattern": [
             "^.*(email|e-mail|mail).*$"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Email"
     },
     {
         "Name": "IPAddres",
         "Category": "System",
         "Pattern": [
             "^.*(ip|ipaddress|ipv4|ipv6).*$"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Ip"
     },
     {
         "Name": "Username",
@@ -135,7 +163,9 @@
             "^.*(nomutilisateur|utilisateur).*$",
             "^.*(nombredeusuario|usuario).*$",
             "^.*(gebruikersid|gebruiker|gebruikersnaam).*$"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Username"
     },
     {
         "Name": "Password",
@@ -144,7 +174,9 @@
             "^.*pass.*$",
             "^.*contrasena.*$",
             "^.*wachtwoord.*$"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Password"
     },
     {
         "Name": "Zipcode",
@@ -154,28 +186,45 @@
             "^.*postal.*$",
             "^.*postleitzahl.*$",
             "^.*postcode.*$"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "ZipCode"
     },
     {
         "Name": "Bank Account",
         "Category": "Financial",
         "Pattern": [
             "^.*(bank|bankaccount).*$"
-        ]
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "Account"
+    },
+    {
+        "Name": "Bic",
+        "Category": "Financial",
+        "Pattern": [
+            "^.*(bic|swift).*$"
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "Bic"
     },
     {
         "Name": "CreditCard",
         "Category": "Financial",
         "Pattern": [
             "^.*(credit|creditcard).*$"
-        ]
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
     },
     {
         "Name": "Other",
         "Category": "Financial",
         "Pattern": [
             "^.*(sales|special|shop|product).*$"
-        ]
+        ],
+        "MaskingType": "Commerce",
+        "MaskingSubType": "Categories"
     },
     {
         "Name": "Other",
@@ -183,6 +232,8 @@
         "Pattern": [
             "^.*(guid).*$",
             "^.*(receipt).*$"
-        ]
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "String"
     }
 ]
