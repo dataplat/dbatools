@@ -262,7 +262,7 @@ function Export-DbaServerRole {
 
                 try {
                     # Get user defined Server roles
-                    if ($server.VersionMajor -ge 11) {  
+                    if ($server.VersionMajor -ge 11) {
                         $outsql += $role.Script($ScriptingOptionsObject)
 
                         $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
@@ -291,7 +291,7 @@ function Export-DbaServerRole {
                             $outsql += "$script"
                         }
                     }
-                    if($outsql) {
+                    if ($outsql) {
                         $roleObject = [PSCustomObject]@{
                             Name     = $role.Name
                             Instance = $role.SqlInstance
