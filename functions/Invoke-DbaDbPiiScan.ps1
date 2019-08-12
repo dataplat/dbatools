@@ -267,7 +267,7 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
-                        if ($columnobject.DataType -eq "geography") {
+                        if ($columnobject.DataType -eq "geography" -and ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name }))) {
                             # Add the results
                             $results += [pscustomobject]@{
                                 ComputerName   = $db.Parent.ComputerName
@@ -332,8 +332,6 @@ function Invoke-DbaDbPiiScan {
 
                                 # Check if there is any data
                                 if ($dataset.Count -ge 1) {
-
-                                    Write-Message -Level Verbose -Message "Scanning column $($columnobject.Name)"
 
                                     # Loop through the patterns
                                     foreach ($patternobject in $patterns) {
