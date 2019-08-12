@@ -56,9 +56,6 @@ function Export-DbaDbRole {
     .PARAMETER Append
         If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.
 
-    .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use instance major version.
-
     .PARAMETER NoPrefix
         Do not include a Prefix
 
@@ -123,9 +120,9 @@ function Export-DbaDbRole {
         Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
     .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql
 
-        Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+        Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaDbRole
@@ -158,8 +155,6 @@ function Export-DbaDbRole {
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
         [switch]$NoClobber,
         [switch]$Append,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
-        [string]$DestinationVersion,
         [switch]$NoPrefix,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
@@ -185,7 +180,7 @@ function Export-DbaDbRole {
                         CASE dp.class
                             WHEN 0 THEN ''
                             WHEN 1 THEN --table or column subset on the table
-                                CASE WHEN dp.major_id < 0 THEN '[sys].[' + OBJECT_NAME(dp.major_id) + ']'
+                                CASE WHEN dp.major_id < 0 THEN COALESCE('[sys].[' + OBJECT_NAME(dp.major_id) + ']', '')
                                     ELSE '[' + (SELECT SCHEMA_NAME(schema_id) + '].[' + name FROM sys.objects WHERE object_id = dp.major_id) + ']'
                                 END + -- optionally concatenate column names
                                     CASE WHEN MAX(dp.minor_id) > 0 THEN ' (['
@@ -290,11 +285,14 @@ function Export-DbaDbRole {
             foreach ($dbRole in $databaseRoles) {
                 try {
                     $server = $dbRole.Parent.Parent
+                    if ($server.VersionMajor -lt 9) {
+                        Stop-Function -Message "SQL Server version 9 or higher required - $server not supported." -Continue
+                    }
 
                     $outsql += $dbRole.Script($ScriptingOptionsObject)
 
                     $query = $roleSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
-                    $rolePermissions = Invoke-DbaQuery -SqlInstance $server.Name -Database $dbRole.Database  -Query $query -EnableException
+                    $rolePermissions = $($dbRole.Parent).Query($query)
 
                     foreach ($rolePermission in $rolePermissions) {
                         $script = $rolePermission.GrantState + " " + $rolePermission.Permission
@@ -314,17 +312,15 @@ function Export-DbaDbRole {
 
                     if ($IncludeRoleMember) {
                         $query = $userSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
-                        $roleUsers = Invoke-DbaQuery -SqlInstance $dbRole.SqlInstance -Database $dbRole.Database  -Query $query -EnableException
+                        $roleUsers = $($dbRole.Parent).Query($query)
 
                         foreach ($roleUser in $roleUsers) {
-                            $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
-                            $outsql += "$script"
-
-                            if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                            if ($server.VersionMajor -lt 11) {
                                 $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
                             } else {
                                 $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
                             }
+                            $outsql += "$script"
                         }
                     }
                     $roleObject = [PSCustomObject]@{

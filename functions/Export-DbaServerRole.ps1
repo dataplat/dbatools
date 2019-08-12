@@ -54,9 +54,6 @@ function Export-DbaServerRole {
     .PARAMETER Append
         If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.
 
-    .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use instance major version.
-
     .PARAMETER NoPrefix
         Do not include a Prefix
 
@@ -145,8 +142,6 @@ function Export-DbaServerRole {
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
         [switch]$NoClobber,
         [switch]$Append,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
-        [string]$DestinationVersion,
         [switch]$NoPrefix,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
@@ -259,26 +254,35 @@ function Export-DbaServerRole {
             }
 
             foreach ($role in $serverRoles) {
+                $server = $role.Parent
+
+                if ($server.ServerType -eq 'SqlAzureDatabase') {
+                    Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+                }
+
                 try {
-                    $outsql += $role.Script($ScriptingOptionsObject)
+                    # Get user defined Server roles
+                    if ($server.VersionMajor -ge 11) {  
+                        $outsql += $role.Script($ScriptingOptionsObject)
 
-                    $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
-                    $rolePermissions = Invoke-DbaQuery -SqlInstance $role.SqlInstance  -Query $query -EnableException
+                        $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
+                        $rolePermissions = $server.Query($query)
 
-                    foreach ($rolePermission in $rolePermissions) {
-                        $script = $rolePermission.GrantState + " " + $rolePermission.Permission
-                        if ($rolePermission.OnClause) {
-                            $script += " " + $rolePermission.OnClause
+                        foreach ($rolePermission in $rolePermissions) {
+                            $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                            if ($rolePermission.OnClause) {
+                                $script += " " + $rolePermission.OnClause
+                            }
+                            if ($rolePermission.RoleName) {
+                                $script += " TO " + $rolePermission.RoleName
+                            }
+                            if ($rolePermission.GrantOption) {
+                                $script += " " + $rolePermission.GrantOption + $commandTerminator
+                            } else {
+                                $script += $commandTerminator
+                            }
+                            $outsql += "$script"
                         }
-                        if ($rolePermission.RoleName) {
-                            $script += " TO " + $rolePermission.RoleName
-                        }
-                        if ($rolePermission.GrantOption) {
-                            $script += " " + $rolePermission.GrantOption + $commandTerminator
-                        } else {
-                            $script += $commandTerminator
-                        }
-                        $outsql += "$script"
                     }
 
                     if ($IncludeRoleMember) {
@@ -287,11 +291,12 @@ function Export-DbaServerRole {
                             $outsql += "$script"
                         }
                     }
-
-                    $roleObject = [PSCustomObject]@{
-                        Name     = $role.Name
-                        Instance = $role.SqlInstance
-                        Sql      = $outsql
+                    if($outsql) {
+                        $roleObject = [PSCustomObject]@{
+                            Name     = $role.Name
+                            Instance = $role.SqlInstance
+                            Sql      = $outsql
+                        }
                     }
                     $roleCollection.Add($roleObject) | Out-Null
                     $outsql = @()
