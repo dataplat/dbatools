@@ -156,13 +156,6 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        <# # Get all the different column types
-        try {
-            $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
-        } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -ErrorRecord $_ -Continue
-        }
-         #>
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
             try {
@@ -176,7 +169,7 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
     }
 
     process {
@@ -541,6 +534,7 @@ function New-DbaDbMaskingConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
+
                 Set-Content -Path $temppath -Value ($maskingconfig | ConvertTo-Json -Depth 5)
                 Get-ChildItem -Path $temppath
             } catch {
