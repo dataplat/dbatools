@@ -35,7 +35,7 @@ function Export-DbaLogin {
 
    .PARAMETER DefaultDatabase
         If this switch is enabled, all logins will be scripted with specified default database,
-        that could help to successfuly import logins on server that is missing default database for login.
+        that could help to successfully import logins on server that is missing default database for login.
 
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
@@ -227,7 +227,7 @@ function Export-DbaLogin {
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
                 # if we get a list of databases passed (or even the default list of all the databases)
-                # we save outself a call to enumloginmappings if there is no map at all
+                # we save ourself a call to enumloginmappings if there is no map at all
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
