@@ -131,7 +131,7 @@ function Find-DbaDbDisabledIndex {
                                     }
                                 }
                             } else {
-                                Write-Message -Level Verbose -Message "No Disabled indexes found!"
+                                Write-Message -Level Verbose -Message "No Disabled indexes found"
                             }
                         }
                     } catch {

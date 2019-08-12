@@ -359,7 +359,7 @@ function Test-DbaLastBackup {
                 $success = $restoreresult = $dbccresult = "Skipped"
             }
             if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
-                Write-Message -Level Verbose -Message "Looking good!"
+                Write-Message -Level Verbose -Message "Looking good."
 
                 $fileexists = $true
                 $ogdbname = $dbname

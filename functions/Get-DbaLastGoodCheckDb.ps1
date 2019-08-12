@@ -144,7 +144,7 @@ function Get-DbaLastGoodCheckDb {
 
                 ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
                 if ($lastKnownGoodArray.count -ge 2) {
-                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest."
                 }
                 [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
