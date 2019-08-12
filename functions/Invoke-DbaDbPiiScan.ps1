@@ -267,7 +267,7 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
-                        if ($columnobject.DataType -eq "geography") {
+                        if ($columnobject.DataType.Name -eq "geography") {
                             if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
                                 # Add the results
                                 $results += [pscustomobject]@{
@@ -279,7 +279,7 @@ function Invoke-DbaDbPiiScan {
                                     Table          = $tableobject.Name
                                     Column         = $columnobject.Name
                                     "PII-Category" = "Location"
-                                    "PII-Name"     = "Location"
+                                    "PII-Name"     = "Geography"
                                     FoundWith      = "DataType"
                                 }
                             }
