@@ -144,7 +144,7 @@ function Find-DbaBackup {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
         } catch {
-            Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+            Stop-Function -Message "Failed to interpret retention time." -ErrorRecord $_
         }
 
         # Filter out unarchived files if -CheckArchiveBit parameter is used

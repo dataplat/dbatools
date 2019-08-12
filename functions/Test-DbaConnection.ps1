@@ -112,11 +112,16 @@ function Test-DbaConnection {
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $ping = New-Object System.Net.NetworkInformation.Ping
             $timeout = 1000 #milliseconds
-            $reply = $ping.Send($instance.ComputerName, $timeout)
-            $pingable = $reply.Status -eq 'Success'
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
+                $reply = $ping.Send($instance.ComputerName, $timeout)
+                $pingable = $reply.Status -eq 'Success'
+            } catch {
+                $pingable = $false
+            }
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance.InputObject -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
                 if (-not $instanceName) {
@@ -124,7 +129,7 @@ function Test-DbaConnection {
                 }
             } catch {
                 $connectSuccess = $false
-                $instanceName = $instance.InstanceName
+                $instanceName = $instance.InputObject
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -145,7 +150,7 @@ function Test-DbaConnection {
             # Auth Scheme
             $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.InputObject -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
