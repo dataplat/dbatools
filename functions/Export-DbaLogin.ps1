@@ -27,7 +27,7 @@ function Export-DbaLogin {
     .PARAMETER ExcludeJobs
         If this switch is enabled, Agent job ownership will not be exported.
 
-    .PARAMETER ExcludeDatabases
+    .PARAMETER ExcludeDatabase
         If this switch is enabled, mappings for databases will not be exported.
 
     .PARAMETER ExcludePassword
@@ -155,7 +155,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [object[]]$Database,
         [switch]$ExcludeJobs,
-        [switch]$ExcludeDatabases,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
         [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -222,7 +223,7 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($ExcludeDatabases -eq $false -or $Database) {
+            if ($ExcludeDatabase -eq $false -or $Database) {
                 # if we got a database or a list of databases passed
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
@@ -432,7 +433,7 @@ function Export-DbaLogin {
                     }
                 }
 
-                if ($ExcludeDatabases -eq $false) {
+                if ($ExcludeDatabase -eq $false) {
                     $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
