@@ -184,7 +184,6 @@ function New-DbaDbMaskingConfig {
             $databases += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-
         foreach ($db in $databases) {
             $server = $db.Parent
             $tables = @()
@@ -268,10 +267,11 @@ function New-DbaDbMaskingConfig {
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
-
-                    if (($InputObject | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                    $_
+                    if ($null -ne $_) {
                         Write-Message -Level Output -Message "Using pipeline for [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        $result = ($InputObject | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })
+                        $result = $_
+                        $result
                     } else {
                         if ($columnobject.DataType.Name -eq "geography") {
                             if ($null -eq ($InputObject | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
@@ -377,7 +377,6 @@ function New-DbaDbMaskingConfig {
                     }
 
                     if ($result) {
-                        $result
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
