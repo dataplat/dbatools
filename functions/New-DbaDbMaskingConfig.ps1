@@ -98,7 +98,7 @@ function New-DbaDbMaskingConfig {
         [switch]$ExcludeDefaultKnownNames,
         [switch]$ExcludeDefaultPatterns,
         [switch]$Force,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline = $true)]
         [object[]]$InputObject,
         [switch]$EnableException
     )
@@ -176,9 +176,7 @@ function New-DbaDbMaskingConfig {
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         if ($SqlInstance) {
             $databases += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
@@ -267,14 +265,14 @@ function New-DbaDbMaskingConfig {
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
-                    $_
-                    if ($null -ne $_) {
-                        Write-Message -Level Output -Message "Using pipeline for [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        $result = $_
-                        $result
-                    } else {
-                        if ($columnobject.DataType.Name -eq "geography") {
-                            if ($null -eq ($InputObject | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+
+                    ($object.Database -ne $db.Name -and $object.Schema -ne $tableobject.Schema -and $object.Table -ne $tableobject.Name -and $object.Column -ne $columnobject.Name)
+
+                    foreach ($object in $InputObject) {
+                        ($object.Database -ne $db.Name -and $object.Schema -ne $tableobject.Schema -and $object.Table -ne $tableobject.Name -and $object.Column -ne $columnobject.Name)
+                        if ($object.Database -ne $db.Name -and $object.Schema -ne $tableobject.Schema -and $object.Table -ne $tableobject.Name -and $object.Column -ne $columnobject.Name) {
+                            if ($columnobject.DataType.Name -eq "geography") {
+
                                 # Add the results
                                 $result = [pscustomobject]@{
                                     ComputerName   = $db.Parent.ComputerName
@@ -290,15 +288,65 @@ function New-DbaDbMaskingConfig {
                                     MaskingType    = "Random"
                                     MaskingSubType = "Decimal"
                                 }
-                            }
-                        } else {
-                            if ($knownNames.Count -ge 1) {
+
+                            } else {
+                                if ($knownNames.Count -ge 1) {
+                                    # Check if the results not already contain a similar object
+                                    if ($null -eq ($object | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                        # Go through the first check to see if any column is found with a known type
+                                        foreach ($knownName in $knownNames) {
+                                            foreach ($pattern in $knownName.Pattern) {
+                                                if ($columnobject.Name -match $pattern ) {
+                                                    # Add the results
+                                                    $result = [pscustomobject]@{
+                                                        ComputerName   = $db.Parent.ComputerName
+                                                        InstanceName   = $db.Parent.ServiceName
+                                                        SqlInstance    = $db.Parent.DomainInstanceName
+                                                        Database       = $db.Name
+                                                        Schema         = $tableobject.Schema
+                                                        Table          = $tableobject.Name
+                                                        Column         = $columnobject.Name
+                                                        "PII-Category" = $knownName.Category
+                                                        "PII-Name"     = $knownName.Name
+                                                        FoundWith      = "KnownName"
+                                                        MaskingType    = $knownName.MaskingType
+                                                        MaskingSubType = $knownName.MaskingSubType
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        $knownName = $null
+                                    }
+                                } else {
+                                    Write-Message -Level Verbose -Message "No known names found to perform check on"
+                                }
+                            } # End for each column
+
+
+                            if ($patterns.Count -ge 1) {
                                 # Check if the results not already contain a similar object
-                                if ($null -eq ($InputObject | Where-Object { $_.Database -eq $db.Name -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                                    # Go through the first check to see if any column is found with a known type
-                                    foreach ($knownName in $knownNames) {
-                                        foreach ($pattern in $knownName.Pattern) {
-                                            if ($columnobject.Name -match $pattern ) {
+                                if ($null -eq $result) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                                    # Get the data
+                                    $dataset = @()
+
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                    }
+
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
+
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
+
+                                            # If there is a result from the match
+                                            if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
                                                 # Add the results
                                                 $result = [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
@@ -308,71 +356,25 @@ function New-DbaDbMaskingConfig {
                                                     Schema         = $tableobject.Schema
                                                     Table          = $tableobject.Name
                                                     Column         = $columnobject.Name
-                                                    "PII-Category" = $knownName.Category
-                                                    "PII-Name"     = $knownName.Name
-                                                    FoundWith      = "KnownName"
-                                                    MaskingType    = $knownName.MaskingType
-                                                    MaskingSubType = $knownName.MaskingSubType
+                                                    "PII-Category" = $patternobject.Category
+                                                    "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
                                                 }
                                             }
+                                            $patternobject = $null
                                         }
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                                     }
-                                    $knownName = $null
                                 }
                             } else {
-                                Write-Message -Level Verbose -Message "No known names found to perform check on"
-                            }
-                        } # End for each column
-
-
-                        if ($patterns.Count -ge 1) {
-                            # Check if the results not already contain a similar object
-                            if ($null -eq $result) {
-                                # Setup the query
-                                $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-
-                                # Get the data
-                                $dataset = @()
-
-                                try {
-                                    $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
-                                } catch {
-                                    $errormessage = $_.Exception.Message.ToString()
-                                    Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                                }
-
-                                # Check if there is any data
-                                if ($dataset.Count -ge 1) {
-
-                                    # Loop through the patterns
-                                    foreach ($patternobject in $patterns) {
-
-                                        # If there is a result from the match
-                                        if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-                                            # Add the results
-                                            $result = [pscustomobject]@{
-                                                ComputerName   = $db.Parent.ComputerName
-                                                InstanceName   = $db.Parent.ServiceName
-                                                SqlInstance    = $db.Parent.DomainInstanceName
-                                                Database       = $db.Name
-                                                Schema         = $tableobject.Schema
-                                                Table          = $tableobject.Name
-                                                Column         = $columnobject.Name
-                                                "PII-Category" = $patternobject.Category
-                                                "PII-Name"     = $patternobject.Name
-                                                FoundWith      = "Pattern"
-                                                MaskingType    = $patternobject.MaskingType
-                                                MaskingSubType = $patternobject.MaskingSubType
-                                            }
-                                        }
-                                        $patternobject = $null
-                                    }
-                                } else {
-                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
-                                }
+                                Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
                         } else {
-                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
+                            $result = $object
+                            $result
                         }
                     }
 
