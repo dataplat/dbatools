@@ -32,6 +32,13 @@
         ]
     },
     {
+        "Name": "Resume",
+        "Category": "Personal",
+        "Pattern": [
+            "^.*(resume).*$"
+        ]
+    },
+    {
         "Name": "Nationality",
         "Category": "Personal",
         "Pattern": [
@@ -92,6 +99,20 @@
         ]
     },
     {
+        "Name": "Location",
+        "Category": "Location",
+        "Pattern": [
+            "^.*location.*$"
+        ]
+    },
+    {
+        "Name": "Phone",
+        "Category": "Communication",
+        "Pattern": [
+            "^.*(phone|phonenumber).*$"
+        ]
+    },
+    {
         "Name": "E-mail",
         "Category": "Communication",
         "Pattern": [
@@ -107,7 +128,7 @@
     },
     {
         "Name": "Username",
-        "Category": "Security",
+        "Category": "Credentials",
         "Pattern": [
             "^.*(userid|user|username).*$",
             "^.*(nutzerid|nutzer|nutzername).*$",
@@ -118,7 +139,7 @@
     },
     {
         "Name": "Password",
-        "Category": "Communication",
+        "Category": "Credentials",
         "Pattern": [
             "^.*pass.*$",
             "^.*contrasena.*$",
@@ -133,6 +154,35 @@
             "^.*postal.*$",
             "^.*postleitzahl.*$",
             "^.*postcode.*$"
+        ]
+    },
+    {
+        "Name": "Bank Account",
+        "Category": "Financial",
+        "Pattern": [
+            "^.*(bank|bankaccount).*$"
+        ]
+    },
+    {
+        "Name": "CreditCard",
+        "Category": "Financial",
+        "Pattern": [
+            "^.*(credit|creditcard).*$"
+        ]
+    },
+    {
+        "Name": "Other",
+        "Category": "Financial",
+        "Pattern": [
+            "^.*(sales|special|shop|product).*$"
+        ]
+    },
+    {
+        "Name": "Other",
+        "Category": "N/A",
+        "Pattern": [
+            "^.*(guid).*$",
+            "^.*(receipt).*$"
         ]
     }
 ]

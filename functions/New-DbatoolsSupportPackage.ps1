@@ -178,7 +178,7 @@ Ideally start a new console, perform the minimal steps required to reproduce the
 
             try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
             catch {
-                Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
+                Stop-Function -Message "Failed to export dump to file." -ErrorRecord $_ -Target $filePathXml
                 return
             }
 

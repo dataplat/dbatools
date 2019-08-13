@@ -100,7 +100,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential cred = TranslateNativeCred(handle);
             return cred;
@@ -109,7 +109,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential[] Credentials = new Credential[count];
             IntPtr pTemp = IntPtr.Zero;

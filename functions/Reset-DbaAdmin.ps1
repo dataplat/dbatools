@@ -510,6 +510,6 @@ function Reset-DbaAdmin {
         }
     }
     end {
-        Write-Message -Level Verbose -Message "Script complete!"
+        Write-Message -Level Verbose -Message "Script complete."
     }
 }

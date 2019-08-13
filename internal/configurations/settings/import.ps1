@@ -14,7 +14,7 @@ Set-DbatoolsConfig -Name 'Import.DoDotSource' -Value $false -Initialize -Validat
     } catch {
         Write-Message -Level Warning -Message "Failed to apply configuration 'Import.DoDotSource'" -ErrorRecord $_ -Target 'Import.DoDotSource'
     }
-} -Description "Causes the module to be imported using dotsourcing. Security policy may require it, also useful for debugging. This configuration setting persists across all PowerShell consoles for this user!"
+} -Description "Causes the module to be imported using dotsourcing. Security policy may require it, also useful for debugging. This configuration setting persists across all PowerShell consoles for this user."
 
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.StrictSecurityMode' -Value $false -Initialize -Validation bool -Handler {
@@ -32,7 +32,7 @@ Set-DbatoolsConfig -Name 'Import.StrictSecurityMode' -Value $false -Initialize -
     } catch {
         Write-Message -Level Warning -Message "Failed to apply configuration 'Import.StrictSecurityMode'" -ErrorRecord $_ -Target 'Import.StrictSecurityMode'
     }
-} -Description "Causes the module to import its components only from the module directory. This makes it harder to update the module, but may be required by security policy. This configuration setting persists across all PowerShell consoles for this user!"
+} -Description "Causes the module to import its components only from the module directory. This makes it harder to update the module, but may be required by security policy. This configuration setting persists across all PowerShell consoles for this user."
 
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.AlwaysBuildLibrary' -Value $false -Initialize -Validation bool -Handler {
@@ -50,7 +50,7 @@ Set-DbatoolsConfig -Name 'Import.AlwaysBuildLibrary' -Value $false -Initialize -
     } catch {
         Write-Message -Level Warning -Message "Failed to apply configuration 'Import.AlwaysBuildLibrary'" -ErrorRecord $_ -Target 'Import.AlwaysBuildLibrary'
     }
-} -Description "Causes the module to compile the library from source on every import. Of interest for developers only, as this imposes a significant increase in import time. This configuration setting persists across all PowerShell consoles for this user!"
+} -Description "Causes the module to compile the library from source on every import. Of interest for developers only, as this imposes a significant increase in import time. This configuration setting persists across all PowerShell consoles for this user."
 
 # Handle dotsourcing on import
 Set-DbatoolsConfig -Name 'Import.SerialImport' -Value $false -Initialize -Validation bool -Handler {

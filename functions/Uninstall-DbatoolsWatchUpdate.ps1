@@ -68,6 +68,6 @@ function Uninstall-DbatoolsWatchUpdate {
             Invoke-Command -ScriptBlock $script
         }
 
-        Write-Message -Level Output -Message "All done!"
+        Write-Message -Level Output -Message "All done."
     }
 }
