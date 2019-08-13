@@ -95,7 +95,7 @@ function Invoke-Command2 {
                     IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
                     IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
                 }
-                $sessionOption = New-PSSessionOption $psSessionOptionsSplat
+                $sessionOption = New-PSSessionOption @psSessionOptionsSplat
                 $psSessionSplat += @{ SessionOption = $sessionOption }
             }
             if ($Credential) {
