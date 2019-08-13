@@ -77,7 +77,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db
 
-            $results.Count | Should -Be 7
+            $results.Count | Should -Be 20
 
             $results."PII-Name" | Should -Contain "Creditcard Discover"
         }
