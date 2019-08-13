@@ -126,7 +126,7 @@ function Get-DbaForceNetworkEncryption {
                     [pscustomobject]$result
                 }
             } catch {
-                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }

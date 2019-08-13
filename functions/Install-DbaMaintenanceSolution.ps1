@@ -152,7 +152,7 @@ function Install-DbaMaintenanceSolution {
         }
 
         if ($ReplaceExisting -eq $true) {
-            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"

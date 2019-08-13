@@ -135,7 +135,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSize,
+        [int64]$StepSize,
         [int]$StatementTimeout = 0,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,

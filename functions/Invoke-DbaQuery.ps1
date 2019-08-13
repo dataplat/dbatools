@@ -167,7 +167,7 @@ function Invoke-DbaQuery {
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found" -Category ObjectNotFound
                             return
                         }
                         $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
@@ -175,7 +175,7 @@ function Invoke-DbaQuery {
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found." -Category ObjectNotFound
                             return
                         }
 
