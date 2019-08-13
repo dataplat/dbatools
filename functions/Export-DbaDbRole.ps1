@@ -11,6 +11,7 @@ function Export-DbaDbRole {
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. SQL Server 2005 and above supported.
+        Any databases in CompatibilityLevel 80 or lower will be skipped
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -285,8 +286,13 @@ function Export-DbaDbRole {
             foreach ($dbRole in $databaseRoles) {
                 try {
                     $server = $dbRole.Parent.Parent
+                    $db = $dbRole.Parent
                     if ($server.VersionMajor -lt 9) {
                         Stop-Function -Message "SQL Server version 9 or higher required - $server not supported." -Continue
+                    }
+                    $dbCompatibilityLevel = [int]($db.CompatibilityLevel.ToString().Replace('Version', ''))
+                    if ($dbCompatibilityLevel -lt 90) {
+                        Stop-Function -Message "$db has a compatibility level lower than Version90 and will be skipped." -Target $db -Continue
                     }
 
                     $outsql += $dbRole.Script($ScriptingOptionsObject)
