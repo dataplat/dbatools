@@ -281,6 +281,8 @@ function Invoke-DbaDbPiiScan {
                                     "PII-Category" = "Location"
                                     "PII-Name"     = "Geography"
                                     FoundWith      = "DataType"
+                                    MaskingType    = "Random"
+                                    MaskingSubType = "Decimal"
                                 }
                             }
                         } else {
@@ -303,6 +305,8 @@ function Invoke-DbaDbPiiScan {
                                                     "PII-Category" = $knownName.Category
                                                     "PII-Name"     = $knownName.Name
                                                     FoundWith      = "KnownName"
+                                                    MaskingType    = $knownName.MaskingType
+                                                    MaskingSubType = $knownName.MaskingSubType
                                                 }
                                             }
                                         }
@@ -351,6 +355,8 @@ function Invoke-DbaDbPiiScan {
                                                 "PII-Category" = $patternobject.category
                                                 "PII-Name"     = $patternobject.Name
                                                 FoundWith      = "Pattern"
+                                                MaskingType    = $patternobject.MaskingType
+                                                MaskingSubType = $patternobject.MaskingSubType
                                             }
                                         }
                                         $patternobject = $null
