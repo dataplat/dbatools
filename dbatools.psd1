@@ -489,6 +489,8 @@
         'Save-DbaKbUpdate',
         'Get-DbaKbUpdate',
         'Get-DbaDbLogSpace',
+        'Export-DbaDbRole',
+        'Export-DbaServerRole',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
