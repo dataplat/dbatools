@@ -172,12 +172,16 @@ function New-DbaDbMaskingConfig {
 
         $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
-        $results = @()
         $maskingconfig = @()
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
+
+        if ($InputObject) {
+            $searchArray = @()
+            $searchArray += $InputObject | Select-Object ComputerName, InstanceName, SqlInstance, Database, Schema, Table, Column
+        }
 
         if ($SqlInstance) {
             $databases += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
@@ -251,69 +255,81 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    $columnType = $min = $null
+                    $searchObject = [pscustomobject]@{
+                        ComputerName = $db.Parent.ComputerName
+                        InstanceName = $db.Parent.ServiceName
+                        SqlInstance  = $db.Parent.DomainInstanceName
+                        Database     = $db.Name
+                        Schema       = $tableobject.Schema
+                        Table        = $tableobject.Name
+                        Column       = $columnobject.Name
+                    }
 
-                    if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
-                        $columnLength = $columnobject.Datatype.NumericScale
+                    if ($searchArray -contains $searchObject) {
+                        $result = $InputObject | Where-Object { $_.Database -eq $searchObject.Name -and $_.Schema -eq $searchObject.Schema -and $_.Table -eq $searchObject.Name -and $_.Column -eq $searchObject.Name }
+                        "Value found in array"
                     } else {
-                        $columnLength = $columnobject.Datatype.MaximumLength
-                    }
+                        "Value NOT found in array"
+                        $columnType = $min = $null
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                        $min = 2
-                    }
+                        if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
+                            $columnLength = $columnobject.Datatype.NumericScale
+                        } else {
+                            $columnLength = $columnobject.Datatype.MaximumLength
+                        }
 
-                    if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
-                    }
+                        if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
+                            $min = 2
+                        }
 
-                    foreach ($object in $InputObject) {
-                        if ($object.Database -ne $db.Name -and $object.Schema -ne $tableobject.Schema -and $object.Table -ne $tableobject.Name -and $object.Column -ne $columnobject.Name) {
-                            if ($columnobject.DataType.Name -eq "geography") {
-                                # Add the results
-                                $result = [pscustomobject]@{
-                                    ComputerName   = $db.Parent.ComputerName
-                                    InstanceName   = $db.Parent.ServiceName
-                                    SqlInstance    = $db.Parent.DomainInstanceName
-                                    Database       = $db.Name
-                                    Schema         = $tableobject.Schema
-                                    Table          = $tableobject.Name
-                                    Column         = $columnobject.Name
-                                    "PII-Category" = "Location"
-                                    "PII-Name"     = "Geography"
-                                    FoundWith      = "DataType"
-                                    MaskingType    = "Random"
-                                    MaskingSubType = "Decimal"
-                                }
-                            } else {
-                                if ($knownNames.Count -ge 1) {
-                                    # Go through the first check to see if any column is found with a known type
-                                    foreach ($knownName in $knownNames) {
-                                        foreach ($pattern in $knownName.Pattern) {
-                                            if ($columnobject.Name -match $pattern ) {
-                                                # Add the results
-                                                $result = [pscustomobject]@{
-                                                    ComputerName   = $db.Parent.ComputerName
-                                                    InstanceName   = $db.Parent.ServiceName
-                                                    SqlInstance    = $db.Parent.DomainInstanceName
-                                                    Database       = $db.Name
-                                                    Schema         = $tableobject.Schema
-                                                    Table          = $tableobject.Name
-                                                    Column         = $columnobject.Name
-                                                    "PII-Category" = $knownName.Category
-                                                    "PII-Name"     = $knownName.Name
-                                                    FoundWith      = "KnownName"
-                                                    MaskingType    = $knownName.MaskingType
-                                                    MaskingSubType = $knownName.MaskingSubType
-                                                }
+                        if (-not $columnType) {
+                            $columnType = $columnobject.DataType.Name.ToLowerInvariant()
+                        }
+
+                        if ($columnobject.DataType.Name -eq "geography") {
+                            # Add the results
+                            $result = [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $db.Name
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Location"
+                                "PII-Name"     = "Geography"
+                                FoundWith      = "DataType"
+                                MaskingType    = "Random"
+                                MaskingSubType = "Decimal"
+                            }
+                        } else {
+                            if ($knownNames.Count -ge 1) {
+                                # Go through the first check to see if any column is found with a known type
+                                foreach ($knownName in $knownNames) {
+                                    foreach ($pattern in $knownName.Pattern) {
+                                        if ($columnobject.Name -match $pattern ) {
+                                            # Add the results
+                                            $result = [pscustomobject]@{
+                                                ComputerName   = $db.Parent.ComputerName
+                                                InstanceName   = $db.Parent.ServiceName
+                                                SqlInstance    = $db.Parent.DomainInstanceName
+                                                Database       = $db.Name
+                                                Schema         = $tableobject.Schema
+                                                Table          = $tableobject.Name
+                                                Column         = $columnobject.Name
+                                                "PII-Category" = $knownName.Category
+                                                "PII-Name"     = $knownName.Name
+                                                FoundWith      = "KnownName"
+                                                MaskingType    = $knownName.MaskingType
+                                                MaskingSubType = $knownName.MaskingSubType
                                             }
                                         }
                                     }
-                                    $knownName = $null
-                                } else {
-                                    Write-Message -Level Verbose -Message "No known names found to perform check on"
                                 }
-                            } # End for each column
+                                $knownName = $null
+                            } else {
+                                Write-Message -Level Verbose -Message "No known names found to perform check on"
+                            }
 
                             # Go through the second check to see if any column is found with a known type
                             if ($null -eq $result -and $patterns.Count -ge 1) {
@@ -362,10 +378,10 @@ function New-DbaDbMaskingConfig {
                             } else {
                                 Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
-                        } else {
-                            $result = $object
                         }
                     }
+
+                    $result
 
                     if ($result) {
                         $columns += [PSCustomObject]@{
@@ -496,7 +512,6 @@ function New-DbaDbMaskingConfig {
                     }
                 }
 
-                $columns.Count
                 # Check if something needs to be generated
                 if ($columns) {
                     $tables += [PSCustomObject]@{
@@ -521,13 +536,12 @@ function New-DbaDbMaskingConfig {
                 Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
             }
 
-
             # Write the data to the Path
             if ($maskingconfig) {
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
                     $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
-                    $temppath
+
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")
                     }
