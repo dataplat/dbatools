@@ -330,48 +330,50 @@ function New-DbaDbMaskingConfig {
                             }
 
                             # Go through the second check to see if any column is found with a known type
-                            if ($null -eq $result -and $patterns.Count -ge 1) {
-                                # Setup the query
-                                $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            if ($patterns.Count -ge 1) {
+                                if ($null -eq $result) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
-                                # Get the data
-                                $dataset = @()
+                                    # Get the data
+                                    $dataset = @()
 
-                                try {
-                                    $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
-                                } catch {
-                                    $errormessage = $_.Exception.Message.ToString()
-                                    Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                                }
-
-                                # Check if there is any data
-                                if ($dataset.Count -ge 1) {
-
-                                    # Loop through the patterns
-                                    foreach ($patternobject in $patterns) {
-
-                                        # If there is a result from the match
-                                        if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-                                            # Add the results
-                                            $result = [pscustomobject]@{
-                                                ComputerName   = $db.Parent.ComputerName
-                                                InstanceName   = $db.Parent.ServiceName
-                                                SqlInstance    = $db.Parent.DomainInstanceName
-                                                Database       = $db.Name
-                                                Schema         = $tableobject.Schema
-                                                Table          = $tableobject.Name
-                                                Column         = $columnobject.Name
-                                                "PII-Category" = $patternobject.Category
-                                                "PII-Name"     = $patternobject.Name
-                                                FoundWith      = "Pattern"
-                                                MaskingType    = $patternobject.MaskingType
-                                                MaskingSubType = $patternobject.MaskingSubType
-                                            }
-                                        }
-                                        $patternobject = $null
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                                     }
-                                } else {
-                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
+
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
+
+                                            # If there is a result from the match
+                                            if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+                                                # Add the results
+                                                $result = [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $db.Name
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $patternobject.Category
+                                                    "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
+                                                }
+                                            }
+                                            $patternobject = $null
+                                        }
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                    }
                                 }
                             } else {
                                 Write-Message -Level Verbose -Message "No patterns found to perform check on"
