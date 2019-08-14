@@ -44,6 +44,9 @@ function New-DbaDbMaskingConfig {
     .PARAMETER Force
         Forcefully execute commands when needed
 
+    .PARAMETER InputObject
+        Used for piping the values from Invoke-DbaDbPiiScan
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
