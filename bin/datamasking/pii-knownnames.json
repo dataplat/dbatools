@@ -224,7 +224,7 @@
             "(\\w*)(?i)(credit|creditcard)(\\w*)"
         ],
         "MaskingType": "Finance",
-        "MaskingSubType": "Creditcard"
+        "MaskingSubType": "CreditcardNumber"
     },
     {
         "Name": "Other",
