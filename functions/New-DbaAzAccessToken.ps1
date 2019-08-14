@@ -162,7 +162,10 @@ function New-DbaAzAccessToken {
                 public string ClientSecret { get; set; }
             }
 "@
-            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly,
+                [PowerShell].Assembly,
+                [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.GetReferencedAssemblies()[0])
+
         }
 
         switch ($Subtype) {
