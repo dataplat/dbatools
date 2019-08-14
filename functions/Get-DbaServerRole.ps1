@@ -65,6 +65,9 @@ function Get-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if ($server.ServerType -eq 'SqlAzureDatabase') {
+                Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+            }
             $serverroles = $server.Roles
 
             if ($ServerRole) {

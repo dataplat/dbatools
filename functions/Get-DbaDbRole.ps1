@@ -104,6 +104,9 @@ function Get-DbaDbRole {
         }
 
         foreach ($db in $InputObject) {
+            if ($db.IsAccessible -eq $false) {
+                continue
+            }
             $server = $db.Parent
             Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $server"
 
