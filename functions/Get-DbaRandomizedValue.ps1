@@ -486,7 +486,7 @@ function Get-DbaRandomizedValue {
                     } elseif ($randSubType -eq 'bytes') {
                         $faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
-                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                        $faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
                     } else {
                         $faker.Random.$RandomizerSubType()
                     }
