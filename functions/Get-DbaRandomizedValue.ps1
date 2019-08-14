@@ -232,14 +232,14 @@ function Get-DbaRandomizedValue {
                     $faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
-                    if ($Min -lt -2147483648) {
+                    if (-not $Min -or $Min -lt -2147483648) {
                         $Min = -2147483648
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 2147483647) {
+                    if (-not $Max -or $Max -gt 2147483647) {
                         $Max = 2147483647
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
                     $faker.System.Random.Int($Min, $Max)
@@ -253,14 +253,14 @@ function Get-DbaRandomizedValue {
                     }
                 }
                 'smallint' {
-                    if ($Min -lt -32768) {
+                    if (-not $Min -or $Min -lt -32768) {
                         $Min = 32768
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 32767) {
+                    if (-not $Max -or $Max -gt 32767) {
                         $Max = 32767
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
                     $faker.System.Random.Int($Min, $Max)
@@ -269,14 +269,14 @@ function Get-DbaRandomizedValue {
                     ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
-                    if ($Min -lt 0) {
+                    if (-not $Min -or $Min -lt 0) {
                         $Min = 0
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 255) {
+                    if (-not $Max -or $Max -gt 255) {
                         $Max = 255
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
                     $faker.System.Random.Int($Min, $Max)
