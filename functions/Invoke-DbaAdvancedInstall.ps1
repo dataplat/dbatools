@@ -198,6 +198,7 @@ function Invoke-DbaAdvancedInstall {
     $connectionParams = @{
         ComputerName = $ComputerName
         ErrorAction  = "Stop"
+        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
     if ($Credential) { $connectionParams.Credential = $Credential }
     # need to figure out where to store the config file
