@@ -2079,8 +2079,6 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
-                    $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     if (-not $SqlCredential) {
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
@@ -2094,11 +2092,16 @@ function Connect-DbaInstance {
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
                     }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
+                    # assign it twice, not sure why but hey it works better
+                    if ($accesstoken) {
+                        $serverconn.AccessToken = $accesstoken
+                    }
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
