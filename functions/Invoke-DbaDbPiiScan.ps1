@@ -294,7 +294,7 @@ function Invoke-DbaDbPiiScan {
                                         foreach ($pattern in $knownName.Pattern) {
                                             if ($columnobject.Name -match $pattern ) {
                                                 # Add the results
-                                                $results += [pscustomobject]@{
+                                                [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -344,7 +344,7 @@ function Invoke-DbaDbPiiScan {
                                         # If there is a result from the match
                                         if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
                                             # Add the results
-                                            $results += [pscustomobject]@{
+                                            [pscustomobject]@{
                                                 ComputerName   = $db.Parent.ComputerName
                                                 InstanceName   = $db.Parent.ServiceName
                                                 SqlInstance    = $db.Parent.DomainInstanceName
@@ -377,7 +377,7 @@ function Invoke-DbaDbPiiScan {
         } # End for each instance
 
         # Return the results
-        return $results
+        #return $results
 
     } # End process
 }
