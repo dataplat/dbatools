@@ -45,6 +45,8 @@
               </TableColumnHeader>
               <TableColumnHeader>
               </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
             </TableHeaders>
             <TableRowEntries>
               <TableRowEntry>
@@ -66,6 +68,9 @@
                   </TableColumnItem>
                   <TableColumnItem>
                     <PropertyName>IsClustered</PropertyName>
+                  </TableColumnItem>
+                  <TableColumnItem>
+                    <PropertyName>ConnectedAs</PropertyName>
                   </TableColumnItem>
                 </TableColumnItems>
               </TableRowEntry>
