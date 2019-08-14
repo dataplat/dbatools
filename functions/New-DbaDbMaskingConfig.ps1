@@ -267,9 +267,7 @@ function New-DbaDbMaskingConfig {
 
                     if ($searchArray -contains $searchObject) {
                         $result = $InputObject | Where-Object { $_.Database -eq $searchObject.Name -and $_.Schema -eq $searchObject.Schema -and $_.Table -eq $searchObject.Name -and $_.Column -eq $searchObject.Name }
-                        "Value found in array"
                     } else {
-                        "Value NOT found in array"
                         $columnType = $min = $null
 
                         if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
@@ -380,8 +378,6 @@ function New-DbaDbMaskingConfig {
                             }
                         }
                     }
-
-                    $result
 
                     if ($result) {
                         $columns += [PSCustomObject]@{
@@ -538,6 +534,7 @@ function New-DbaDbMaskingConfig {
 
             # Write the data to the Path
             if ($maskingconfig) {
+                Write-Message -Message "Writing masking config" -Level Verbose
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
                     $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
