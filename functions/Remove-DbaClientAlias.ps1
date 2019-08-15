@@ -87,7 +87,7 @@ function Remove-DbaClientAlias {
                             Remove-ItemProperty -Path $e -Name $a
 
                             [PSCustomObject]@{
-                                ComputerName = $computer
+                                ComputerName = $env:COMPUTERNAME
                                 Architecture = $architecture
                                 Alias        = $a
                                 Status       = "Removed"
