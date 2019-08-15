@@ -177,99 +177,99 @@ USE tempdb;
             AS SELECT DISTINCT
                 @@SERVERNAME        AS [Current Server],
                 @@SERVICENAME       AS [Current Instance],
-                '<QUOTETARGETDB>'             AS [Current DB],
+                '<QUOTETARGETDB>'   AS [Current DB],
                 SYSTEM_USER         AS [Current Login],
                 USER                AS [Current User],
 
                 CASE
-                    WHEN DP.class_desc = 'OBJECT_OR_COLUMN'             THEN CASE WHEN DP.minor_id > 0 THEN 'COLUMN' ELSE OB.type_desc END
-                    WHEN DP.class_desc IS NOT NULL                      THEN DP.class_desc
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN 'DATABASE'
-                    WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN 'OBJECT_OR_COLUMN'
-                    WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN 'SCHEMA'
-                    WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN 'DATABASE_PRINCIPAL'
-                    WHEN DP.class_desc IS NULL AND AY.name IS NOT NULL  THEN 'ASSEMBLY'
-                    WHEN DP.class_desc IS NULL AND TP.name IS NOT NULL  THEN 'TYPE'
-                    WHEN DP.class_desc IS NULL AND XS.name IS NOT NULL  THEN 'XML_SCHEMA_COLLECTION'
-                    WHEN DP.class_desc IS NULL AND MT.name IS NOT NULL  THEN 'MESSAGE_TYPE'
-                    WHEN DP.class_desc IS NULL AND VC.name IS NOT NULL  THEN 'SERVICE_CONTRACT'
-                    WHEN DP.class_desc IS NULL AND SV.name IS NOT NULL  THEN 'SERVICE'
-                    WHEN DP.class_desc IS NULL AND RS.name IS NOT NULL  THEN 'REMOTE_SERVICE_BINDING'
-                    WHEN DP.class_desc IS NULL AND RT.name IS NOT NULL  THEN 'ROUTE'
-                    WHEN DP.class_desc IS NULL AND FT.name IS NOT NULL  THEN 'FULLTEXT_CATALOG'
-                    WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'SYMMETRIC_KEY'
-                    WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'ASYMMETRIC_KEY'
-                    WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'CERTIFICATE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN CASE WHEN DP.minor_id > 0 THEN 'COLUMN' ELSE OB.type_desc END
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NOT NULL                      THEN DP.class_desc
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND DB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'DATABASE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'OBJECT_OR_COLUMN'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'SCHEMA'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND PR.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'DATABASE_PRINCIPAL'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AY.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'ASSEMBLY'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'TYPE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'XML_SCHEMA_COLLECTION'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND MT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'MESSAGE_TYPE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND VC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'SERVICE_CONTRACT'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SV.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'SERVICE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'REMOTE_SERVICE_BINDING'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'ROUTE'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND FT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'FULLTEXT_CATALOG'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'SYMMETRIC_KEY'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'ASYMMETRIC_KEY'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND CT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'CERTIFICATE'
                     ELSE NULL
                 END                 AS [Securable Type or Class],
                 CASE
-                    WHEN DP.class_desc = 'DATABASE'                     THEN PS.name
-                    WHEN DP.class_desc = 'OBJECT_OR_COLUMN'             THEN schema_name(OB.schema_id)
-                    WHEN DP.class_desc = 'SCHEMA'                       THEN P3.name
-                    WHEN DP.class_desc = 'DATABASE_PRINCIPAL'           THEN coalesce(PR.default_schema_name, PE.name)
-                    WHEN DP.class_desc = 'ASSEMBLY'                     THEN P4.name
-                    WHEN DP.class_desc = 'TYPE'                         THEN schema_name(TP.schema_id)
-                    WHEN DP.class_desc = 'XML_SCHEMA_COLLECTION'        THEN schema_name(XS.schema_id)
-                    WHEN DP.class_desc = 'MESSAGE_TYPE'                 THEN P5.name
-                    WHEN DP.class_desc = 'SERVICE_CONTRACT'             THEN P6.name
-                    WHEN DP.class_desc = 'SERVICE'                      THEN P7.name
-                    WHEN DP.class_desc = 'REMOTE_SERVICE_BINDING'       THEN P8.name
-                    WHEN DP.class_desc = 'ROUTE'                        THEN P9.name
-                    WHEN DP.class_desc = 'FULLTEXT_CATALOG'             THEN PA.name
-                    WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN PB.name
-                    WHEN DP.class_desc = 'ASYMMETRIC_KEY'               THEN PC.name
-                    WHEN DP.class_desc = 'CERTIFICATE'                  THEN PD.name
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN PS.name
-                    WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN schema_name(OB.schema_id)
-                    WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN P3.name
-                    WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN PR.default_schema_name
-                    WHEN DP.class_desc IS NULL AND AY.name IS NOT NULL  THEN P4.name
-                    WHEN DP.class_desc IS NULL AND TP.name IS NOT NULL  THEN schema_name(TP.schema_id)
-                    WHEN DP.class_desc IS NULL AND XS.name IS NOT NULL  THEN schema_name(XS.schema_id)
-                    WHEN DP.class_desc IS NULL AND MT.name IS NOT NULL  THEN P5.name
-                    WHEN DP.class_desc IS NULL AND VC.name IS NOT NULL  THEN P6.name
-                    WHEN DP.class_desc IS NULL AND SV.name IS NOT NULL  THEN P7.name
-                    WHEN DP.class_desc IS NULL AND RS.name IS NOT NULL  THEN P8.name
-                    WHEN DP.class_desc IS NULL AND RT.name IS NOT NULL  THEN P9.name
-                    WHEN DP.class_desc IS NULL AND FT.name IS NOT NULL  THEN PA.name
-                    WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN PB.name
-                    WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN PC.name
-                    WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN PD.name
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE'                     THEN PS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN schema_name(OB.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SCHEMA'                       THEN P3.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE_PRINCIPAL'           THEN coalesce(PR.default_schema_name, PE.name)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASSEMBLY'                     THEN P4.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'TYPE'                         THEN schema_name(TP.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'XML_SCHEMA_COLLECTION'        THEN schema_name(XS.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'MESSAGE_TYPE'                 THEN P5.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE_CONTRACT'             THEN P6.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE'                      THEN P7.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'REMOTE_SERVICE_BINDING'       THEN P8.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ROUTE'                        THEN P9.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'FULLTEXT_CATALOG'             THEN PA.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SYMMETRIC_KEY'                THEN PB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASYMMETRIC_KEY'               THEN PC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'CERTIFICATE'                  THEN PD.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND DB.name IS NOT NULL  THEN PS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name IS NOT NULL  THEN schema_name(OB.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SC.name IS NOT NULL  THEN P3.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND PR.name IS NOT NULL  THEN PR.default_schema_name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AY.name IS NOT NULL  THEN P4.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name IS NOT NULL  THEN schema_name(TP.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name IS NOT NULL  THEN schema_name(XS.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND MT.name IS NOT NULL  THEN P5.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND VC.name IS NOT NULL  THEN P6.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SV.name IS NOT NULL  THEN P7.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RS.name IS NOT NULL  THEN P8.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RT.name IS NOT NULL  THEN P9.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND FT.name IS NOT NULL  THEN PA.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SK.name IS NOT NULL  THEN PB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AK.name IS NOT NULL  THEN PC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND CT.name IS NOT NULL  THEN PD.name COLLATE DATABASE_DEFAULT
                     ELSE NULL
                 END                 AS [Schema/Owner],
                 CASE
-                    WHEN DP.class_desc = 'DATABASE'                     THEN DB.name
-                    WHEN DP.class_desc = 'OBJECT_OR_COLUMN'             THEN OB.name
-                    WHEN DP.class_desc = 'SCHEMA'                       THEN SC.name
-                    WHEN DP.class_desc = 'DATABASE_PRINCIPAL'           THEN PR.name
-                    WHEN DP.class_desc = 'ASSEMBLY'                     THEN AY.name
-                    WHEN DP.class_desc = 'TYPE'                         THEN TP.name
-                    WHEN DP.class_desc = 'XML_SCHEMA_COLLECTION'        THEN XS.name
-                    WHEN DP.class_desc = 'MESSAGE_TYPE'                 THEN cast(MT.name as sql_variant)
-                    WHEN DP.class_desc = 'SERVICE_CONTRACT'             THEN cast(VC.name as sql_variant)
-                    WHEN DP.class_desc = 'SERVICE'                      THEN cast(SV.name as sql_variant)
-                    WHEN DP.class_desc = 'REMOTE_SERVICE_BINDING'       THEN RS.name
-                    WHEN DP.class_desc = 'ROUTE'                        THEN RT.name
-                    WHEN DP.class_desc = 'FULLTEXT_CATALOG'             THEN FT.name
-                    WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN SK.name
-                    WHEN DP.class_desc = 'ASYMMETRIC_KEY'               THEN AK.name
-                    WHEN DP.class_desc = 'CERTIFICATE'                  THEN CT.name
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN DB.name
-                    WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN OB.name
-                    WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN SC.name
-                    WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN PR.name
-                    WHEN DP.class_desc IS NULL AND AY.name IS NOT NULL  THEN AY.name
-                    WHEN DP.class_desc IS NULL AND TP.name IS NOT NULL  THEN TP.name
-                    WHEN DP.class_desc IS NULL AND XS.name IS NOT NULL  THEN XS.name
-                    WHEN DP.class_desc IS NULL AND MT.name IS NOT NULL  THEN cast(MT.name as sql_variant)
-                    WHEN DP.class_desc IS NULL AND VC.name IS NOT NULL  THEN cast(VC.name as sql_variant)
-                    WHEN DP.class_desc IS NULL AND SV.name IS NOT NULL  THEN cast(SV.name as sql_variant)
-                    WHEN DP.class_desc IS NULL AND RS.name IS NOT NULL  THEN RS.name
-                    WHEN DP.class_desc IS NULL AND RT.name IS NOT NULL  THEN RT.name
-                    WHEN DP.class_desc IS NULL AND FT.name IS NOT NULL  THEN FT.name
-                    WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN SK.name
-                    WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN AK.name
-                    WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN CT.name
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE'                     THEN DB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN OB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SCHEMA'                       THEN SC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE_PRINCIPAL'           THEN PR.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASSEMBLY'                     THEN AY.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'TYPE'                         THEN TP.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'XML_SCHEMA_COLLECTION'        THEN XS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'MESSAGE_TYPE'                 THEN cast(MT.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE_CONTRACT'             THEN cast(VC.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE'                      THEN cast(SV.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'REMOTE_SERVICE_BINDING'       THEN RS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ROUTE'                        THEN RT.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'FULLTEXT_CATALOG'             THEN FT.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SYMMETRIC_KEY'                THEN SK.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASYMMETRIC_KEY'               THEN AK.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'CERTIFICATE'                  THEN CT.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND DB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN DB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN OB.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN SC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND PR.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN PR.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AY.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN AY.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN TP.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN XS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND MT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN cast(MT.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND VC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN cast(VC.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SV.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN cast(SV.name as sql_variant)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN RS.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN RT.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND FT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN FT.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN SK.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN AK.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND CT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN CT.name COLLATE DATABASE_DEFAULT
                     ELSE NULL
                 END                 AS [Securable],
                 CM.name             AS [Column],
@@ -280,38 +280,38 @@ USE tempdb;
                 P2.name             AS [Grantor],
                 P2.type_desc        AS [Grantor Type],
                 CASE
-                    WHEN DP.class_desc = 'DATABASE'                     THEN 'sys.databases'
-                    WHEN DP.class_desc = 'OBJECT_OR_COLUMN'             THEN 'sys.all_objects'
-                    WHEN DP.class_desc = 'SCHEMA'                       THEN 'sys.schemas'
-                    WHEN DP.class_desc = 'DATABASE_PRINCIPAL'           THEN 'sys.database_principals'
-                    WHEN DP.class_desc = 'ASSEMBLY'                     THEN 'sys.assemblies'
-                    WHEN DP.class_desc = 'TYPE'                         THEN 'sys.types'
-                    WHEN DP.class_desc = 'XML_SCHEMA_COLLECTION'        THEN 'sys.xml_schema_collections'
-                    WHEN DP.class_desc = 'MESSAGE_TYPE'                 THEN 'sys.service_message_types'
-                    WHEN DP.class_desc = 'SERVICE_CONTRACT'             THEN 'sys.database_principals'
-                    WHEN DP.class_desc = 'SERVICE'                      THEN 'sys.services'
-                    WHEN DP.class_desc = 'REMOTE_SERVICE_BINDING'       THEN 'sys.remote_service_bindings'
-                    WHEN DP.class_desc = 'ROUTE'                        THEN 'sys.routes'
-                    WHEN DP.class_desc = 'FULLTEXT_CATALOG'             THEN 'sys.database_principals'
-                    WHEN DP.class_desc = 'SYMMETRIC_KEY'                THEN 'sys.symmetric_keys'
-                    WHEN DP.class_desc = 'ASYMMETRIC_KEY'               THEN 'sys.asymmetric_keys'
-                    WHEN DP.class_desc = 'CERTIFICATE'                  THEN 'sys.certificates'
-                    WHEN DP.class_desc IS NULL AND DB.name IS NOT NULL  THEN 'sys.databases'
-                    WHEN DP.class_desc IS NULL AND OB.name IS NOT NULL  THEN 'sys.all_objects'
-                    WHEN DP.class_desc IS NULL AND SC.name IS NOT NULL  THEN 'sys.schemas'
-                    WHEN DP.class_desc IS NULL AND PR.name IS NOT NULL  THEN 'sys.database_principals'
-                    WHEN DP.class_desc IS NULL AND AY.name IS NOT NULL  THEN 'sys.assemblies'
-                    WHEN DP.class_desc IS NULL AND TP.name IS NOT NULL  THEN 'sys.types'
-                    WHEN DP.class_desc IS NULL AND XS.name IS NOT NULL  THEN 'sys.xml_schema_collections'
-                    WHEN DP.class_desc IS NULL AND MT.name IS NOT NULL  THEN 'sys.service_message_types'
-                    WHEN DP.class_desc IS NULL AND VC.name IS NOT NULL  THEN 'sys.database_principals'
-                    WHEN DP.class_desc IS NULL AND SV.name IS NOT NULL  THEN 'sys.services'
-                    WHEN DP.class_desc IS NULL AND RS.name IS NOT NULL  THEN 'sys.remote_service_bindings'
-                    WHEN DP.class_desc IS NULL AND RT.name IS NOT NULL  THEN 'sys.routes'
-                    WHEN DP.class_desc IS NULL AND FT.name IS NOT NULL  THEN 'sys.database_principals'
-                    WHEN DP.class_desc IS NULL AND SK.name IS NOT NULL  THEN 'sys.symmetric_keys'
-                    WHEN DP.class_desc IS NULL AND AK.name IS NOT NULL  THEN 'sys.asymmetric_keys'
-                    WHEN DP.class_desc IS NULL AND CT.name IS NOT NULL  THEN 'sys.certificates'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE'                     THEN 'sys.databases'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN 'sys.all_objects'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SCHEMA'                       THEN 'sys.schemas'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE_PRINCIPAL'           THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASSEMBLY'                     THEN 'sys.assemblies'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'TYPE'                         THEN 'sys.types'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'XML_SCHEMA_COLLECTION'        THEN 'sys.xml_schema_collections'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'MESSAGE_TYPE'                 THEN 'sys.service_message_types'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE_CONTRACT'             THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE'                      THEN 'sys.services'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'REMOTE_SERVICE_BINDING'       THEN 'sys.remote_service_bindings'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ROUTE'                        THEN 'sys.routes'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'FULLTEXT_CATALOG'             THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SYMMETRIC_KEY'                THEN 'sys.symmetric_keys'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASYMMETRIC_KEY'               THEN 'sys.asymmetric_keys'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'CERTIFICATE'                  THEN 'sys.certificates'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND DB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.databases'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.all_objects'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.schemas'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND PR.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AY.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.assemblies'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.types'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.xml_schema_collections'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND MT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.service_message_types'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND VC.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SV.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.services'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RS.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.remote_service_bindings'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND RT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.routes'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND FT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.database_principals'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.symmetric_keys'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AK.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.asymmetric_keys'
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND CT.name COLLATE DATABASE_DEFAULT IS NOT NULL  THEN 'sys.certificates'
                     ELSE '<QUOTETARGETDB>.sys.database_permissions'
                 END                 AS [Source View]
             FROM
