@@ -4109,6 +4109,7 @@ function Copy-DbaAgentServer {
         [PSCredential]$DestinationSqlCredential,
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
+        [switch]$ExcludeServerProperties,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -4178,25 +4179,32 @@ function Copy-DbaAgentServer {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
-                    $sql = $sourceAgent.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
-                    $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
-                    $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
-                    Write-Message -Level Debug -Message $sql
-                    $null = $destServer.Query($sql)
+            if ($ExcludeServerProperties) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping property copy")) {
+                    $copyAgentPropStatus.Status = "Skipped"
+                    $copyAgentPropStatus.Notes = $null
+                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+            } else {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
+                        $sql = $sourceAgent.Script() | Out-String
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
+                        $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
+                        Write-Message -Level Debug -Message $sql
+                        $null = $destServer.Query($sql)
 
-                    $copyAgentPropStatus.Status = "Successful"
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                } catch {
-                    $message = $_.Exception.InnerException.InnerException.InnerException.Message
-                    if (-not $message) { $message = $_.Exception.Message }
-                    $copyAgentPropStatus.Status = "Failed"
-                    $copyAgentPropStatus.Notes = $message
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message $message -Target $destinstance
+                        $copyAgentPropStatus.Status = "Successful"
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $message = $_.Exception.InnerException.InnerException.InnerException.Message
+                        if (-not $message) { $message = $_.Exception.Message }
+                        $copyAgentPropStatus.Status = "Failed"
+                        $copyAgentPropStatus.Notes = $message
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                 }
             }
         }
@@ -19585,9 +19593,8 @@ function Get-DbaClientAlias {
 
                 foreach ($basekey in $basekeys) {
 
+                    
                     if ((Test-Path $basekey) -eq $false) {
-                        
-                        Write-Warning "Base key ($basekey) does not exist. Quitting."
                         continue
                     }
 
@@ -48753,7 +48760,10 @@ function New-DbaAzAccessToken {
                 public string ClientSecret { get; set; }
             }
 "@
-            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly,
+                [PowerShell].Assembly,
+                [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.GetReferencedAssemblies()[0])
+
         }
 
         switch ($Subtype) {
@@ -48878,10 +48888,6 @@ function New-DbaClientAlias {
 
             foreach ($basekey in $basekeys) {
                 if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
-
-                if ((Test-Path $basekey) -eq $false) {
-                    throw "Base key ($basekey) does not exist. Quitting."
-                }
 
                 $client = "$basekey\Client"
 
@@ -64792,7 +64798,7 @@ function Start-DbaMigration {
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures')]
+        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures', 'AgentServerProperties')]
         [string[]]$Exclude,
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
@@ -64991,7 +64997,8 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'AgentServer') {
             Write-Message -Level Verbose -Message "Migrating job server"
-            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+            $ExcludeAgentServerProperties = $Exclude -contains 'AgentServerProperties'
+            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -ExcludeServerProperties:$ExcludeAgentServerProperties
         }
 
         if ($Exclude -notcontains 'StartupProcedures') {

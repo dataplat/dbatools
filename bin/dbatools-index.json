@@ -2912,6 +2912,14 @@
                            "False"
                        ],
                        [
+                           "ExcludeServerProperties",
+                           "Skips the migration of Agent Server Properties (job history log, service state restart preferences, error log location, etc)",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.",
                            "",
@@ -2944,7 +2952,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeServerProperties] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaBackupDevice",
@@ -43648,7 +43656,7 @@
                        ],
                        [
                            "Exclude",
-                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector\r\nStartupProcedures",
+                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector\r\nStartupProcedures\r\nAgentServerProperties",
                            "",
                            false,
                            "false",
