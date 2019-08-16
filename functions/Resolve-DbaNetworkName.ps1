@@ -39,7 +39,11 @@ function Resolve-DbaNetworkName {
         This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
 
     .PARAMETER Credential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Turbo
         Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,

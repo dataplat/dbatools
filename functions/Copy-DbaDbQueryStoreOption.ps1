@@ -10,7 +10,11 @@ function Copy-DbaDbQueryStoreOption {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2016 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SourceDatabase
         Specifies the database to copy the Query Store configuration from.
@@ -19,7 +23,11 @@ function Copy-DbaDbQueryStoreOption {
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2016 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationDatabase
         Specifies a list of databases that will receive a copy of the Query Store configuration of the SourceDatabase.
