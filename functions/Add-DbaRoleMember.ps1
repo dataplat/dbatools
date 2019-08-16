@@ -103,7 +103,7 @@ function Add-DbaRoleMember {
 
     begin {
         if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            Stop-Function -Message "You must pipe in a login, role, or specify a SqlInstance"
             return
         }
 
@@ -156,7 +156,7 @@ function Add-DbaRoleMember {
                         if ($PSCmdlet.ShouldProcess($instance, "Adding login $l to server-level role: $sr")) {
                             Write-Message -Level Verbose -Message "Adding login $l to server-level role: $sr on $instance"
                             try {
-                                $sr.AddMember($username)
+                                $sr.AddMember($l)
                             } catch {
                                 Stop-Function -Message "Failure adding $l on $instance" -ErrorRecord $_ -Target $sr
                             }
