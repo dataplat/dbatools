@@ -276,8 +276,6 @@ function New-DbaDbMaskingConfig {
                         $columnLength = $columnobject.Datatype.NumericScale
                     } else {
                         $columnLength = $columnobject.Datatype.MaximumLength
-
-                        "$($columnobject.Name): $($columnLength)"
                     }
 
                     $columnType = $columnobject.DataType.Name
