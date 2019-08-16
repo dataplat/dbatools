@@ -20,7 +20,11 @@ function Get-DbaCpuUsage {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to the SQL instance using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Allows you to login to the Windows Server using alternative credentials.

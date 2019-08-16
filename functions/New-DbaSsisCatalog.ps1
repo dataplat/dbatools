@@ -10,7 +10,11 @@ function New-DbaSsisCatalog {
         SQL Server you wish to run the function on.
 
     .PARAMETER SqlCredential
-        Credentials used to connect to the SQL Server
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SecurePassword
         Required password that will be used for the security key in SSISDB.

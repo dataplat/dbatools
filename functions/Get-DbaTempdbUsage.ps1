@@ -10,7 +10,11 @@ function Get-DbaTempdbUsage {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        If you want to use alternative credentials to connect to the server.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
