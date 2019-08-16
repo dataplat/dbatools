@@ -10,7 +10,11 @@ function Get-DbaServerRole {
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
         Server-Level role to filter results to that role only.
@@ -65,6 +69,9 @@ function Get-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if ($server.ServerType -eq 'SqlAzureDatabase') {
+                Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+            }
             $serverroles = $server.Roles
 
             if ($ServerRole) {

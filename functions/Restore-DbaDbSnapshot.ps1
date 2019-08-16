@@ -12,7 +12,11 @@ function Restore-DbaDbSnapshot {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots

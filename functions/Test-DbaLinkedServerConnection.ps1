@@ -10,7 +10,11 @@ function Test-DbaLinkedServerConnection {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

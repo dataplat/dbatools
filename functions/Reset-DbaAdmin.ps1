@@ -222,7 +222,12 @@ function Reset-DbaAdmin {
             # Setup remote session if server is not local
             if (-not $instance.IsLocalHost) {
                 try {
-                    $session = New-PSSession -ComputerName $hostname -ErrorAction Stop
+                    $connectionParams = @{
+                        ComputerName = $hostname
+                        ErrorAction  = "Stop"
+                        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+                    }
+                    $session = New-PSSession @connectionParams
                 } catch {
                     Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
                 }

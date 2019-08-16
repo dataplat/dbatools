@@ -2079,8 +2079,6 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
-                    $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     if (-not $SqlCredential) {
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
@@ -2094,11 +2092,16 @@ function Connect-DbaInstance {
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                     $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
                     }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
+                    # assign it twice, not sure why but hey it works better
+                    if ($accesstoken) {
+                        $serverconn.AccessToken = $accesstoken
+                    }
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
@@ -2106,6 +2109,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
                     
                     $server
@@ -2176,6 +2180,7 @@ function Connect-DbaInstance {
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                         Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                         Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                        Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -2419,6 +2424,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                 }
             }
 
@@ -4103,6 +4109,7 @@ function Copy-DbaAgentServer {
         [PSCredential]$DestinationSqlCredential,
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
+        [switch]$ExcludeServerProperties,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -4172,25 +4179,32 @@ function Copy-DbaAgentServer {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
-                    $sql = $sourceAgent.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
-                    $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
-                    $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
-                    Write-Message -Level Debug -Message $sql
-                    $null = $destServer.Query($sql)
+            if ($ExcludeServerProperties) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping property copy")) {
+                    $copyAgentPropStatus.Status = "Skipped"
+                    $copyAgentPropStatus.Notes = $null
+                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+            } else {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
+                        $sql = $sourceAgent.Script() | Out-String
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
+                        $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
+                        Write-Message -Level Debug -Message $sql
+                        $null = $destServer.Query($sql)
 
-                    $copyAgentPropStatus.Status = "Successful"
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                } catch {
-                    $message = $_.Exception.InnerException.InnerException.InnerException.Message
-                    if (-not $message) { $message = $_.Exception.Message }
-                    $copyAgentPropStatus.Status = "Failed"
-                    $copyAgentPropStatus.Notes = $message
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message $message -Target $destinstance
+                        $copyAgentPropStatus.Status = "Successful"
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $message = $_.Exception.InnerException.InnerException.InnerException.Message
+                        if (-not $message) { $message = $_.Exception.Message }
+                        $copyAgentPropStatus.Status = "Failed"
+                        $copyAgentPropStatus.Notes = $message
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                 }
             }
         }
@@ -10316,7 +10330,7 @@ function Disable-DbaForceNetworkEncryption {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -10874,7 +10888,7 @@ function Enable-DbaForceNetworkEncryption {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -11740,6 +11754,267 @@ function Export-DbaDacPackage {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Export-DbaDbRole {
+    
+    [CmdletBinding()]
+    param (
+        [parameter()]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [object[]]$Database,
+        [object[]]$Role,
+        [object[]]$ExcludeRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$IncludeRoleMember,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [switch]$Passthru,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
+        [switch]$NoClobber,
+        [switch]$Append,
+        [switch]$NoPrefix,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$EnableException
+    )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+        $outsql = @()
+        $outputFileArray = @()
+        $roleCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+
+        $roleSQL = "SELECT
+                        N'' as RoleName,
+                        CASE dp.state
+                            WHEN 'D' THEN 'DENY'
+                            WHEN 'G' THEN 'GRANT'
+                            WHEN 'R' THEN 'REVOKE'
+                            WHEN 'W' THEN 'GRANT'
+                        END as GrantState,
+                        dp.permission_name as Permission,
+                        CASE dp.class
+                            WHEN 0 THEN ''
+                            WHEN 1 THEN --table or column subset on the table
+                                CASE WHEN dp.major_id < 0 THEN COALESCE('[sys].[' + OBJECT_NAME(dp.major_id) + ']', '')
+                                    ELSE '[' + (SELECT SCHEMA_NAME(schema_id) + '].[' + name FROM sys.objects WHERE object_id = dp.major_id) + ']'
+                                END + -- optionally concatenate column names
+                                    CASE WHEN MAX(dp.minor_id) > 0 THEN ' (['
+                                        + REPLACE((SELECT name + '], [' FROM sys.columns
+                                                WHERE object_id = dp.major_id
+                                                AND column_id IN (SELECT minor_id FROM sys.database_permissions WHERE major_id = dp.major_id AND USER_NAME(grantee_principal_id) = N'')
+                                        FOR XML PATH('')) + '])', ', []', '')
+                                        ELSE ''
+                                    END
+                            WHEN 3 THEN 'SCHEMA::[' + SCHEMA_NAME(dp.major_id) + ']'
+                            WHEN 4 THEN '' + (SELECT RIGHT(type_desc, 4) + '::[' + name FROM sys.database_principals WHERE principal_id = dp.major_id) + ']'
+                            WHEN 5 THEN 'ASSEMBLY::[' + (SELECT name FROM sys.assemblies WHERE assembly_id = dp.major_id) + ']'
+                            WHEN 6 THEN 'TYPE::[' + (SELECT name FROM sys.types WHERE user_type_id = dp.major_id) + ']'
+                            WHEN 10 THEN 'XML SCHEMA COLLECTION::[' + (SELECT SCHEMA_NAME(schema_id) + '.' + name FROM sys.xml_schema_collections WHERE xml_collection_id = dp.major_id) + ']'
+                            WHEN 15 THEN 'MESSAGE TYPE::[' + (SELECT name FROM sys.service_message_types WHERE message_type_id = dp.major_id) + ']'
+                            WHEN 16 THEN 'CONTRACT::[' + (SELECT name FROM sys.service_contracts WHERE service_contract_id = dp.major_id) + ']'
+                            WHEN 17 THEN 'SERVICE::[' + (SELECT name FROM sys.services WHERE service_id = dp.major_id) + ']'
+                            WHEN 18 THEN 'REMOTE SERVICE BINDING::[' + (SELECT name FROM sys.remote_service_bindings WHERE remote_service_binding_id = dp.major_id) + ']'
+                            WHEN 19 THEN 'ROUTE::[' + (SELECT name FROM sys.routes WHERE route_id = dp.major_id) + ']'
+                            WHEN 23 THEN 'FULLTEXT CATALOG::[' + (SELECT name FROM sys.fulltext_catalogs WHERE fulltext_catalog_id = dp.major_id) + ']'
+                            WHEN 24 THEN 'SYMMETRIC KEY::[' + (SELECT name FROM sys.symmetric_keys WHERE symmetric_key_id = dp.major_id) + ']'
+                            WHEN 25 THEN 'CERTIFICATE::[' + (SELECT name FROM sys.certificates WHERE certificate_id = dp.major_id) + ']'
+                            WHEN 26 THEN 'ASYMMETRIC KEY::[' + (SELECT name FROM sys.asymmetric_keys WHERE asymmetric_key_id = dp.major_id) + ']'
+                        END COLLATE DATABASE_DEFAULT  as Type,
+                        CASE dp.state WHEN 'W' THEN ' WITH GRANT OPTION' ELSE '' END as GrantType
+                    FROM sys.database_permissions dp
+                    WHERE USER_NAME(dp.grantee_principal_id) = N''
+                    GROUP BY dp.state, dp.major_id, dp.permission_name, dp.class
+                    UNION ALL
+                    SELECT
+                        N'' as RoleName,
+                        'ALTER' as GrantState,
+                        'AUTHORIZATION' as permission_name,
+                        'SCHEMA::['+s.[name]+']' as Type,
+                        '' as GrantType
+                    from sys.schemas s
+                    join sys.sysusers u on s.principal_id = u.[uid]
+                    where u.[name] = N''"
+
+        $userSQL = "SELECT roles.name as RoleName, users.name as Member
+                    FROM sys.database_principals users
+                    INNER JOIN sys.database_role_members link
+                        ON link.member_principal_id = users.principal_id
+                    INNER JOIN sys.database_principals roles
+                        ON roles.principal_id = link.role_principal_id
+                    WHERE roles.name = N''"
+
+        if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
+            $ScriptingOptionsObject = New-DbaScriptingOption
+            $ScriptingOptionsObject.AllowSystemObjects = $false
+            $ScriptingOptionsObject.IncludeDatabaseRoleMemberships = $true
+            $ScriptingOptionsObject.ContinueScriptingOnError = $false
+            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+            $ScriptingOptionsObject.IncludeIfNotExists = $false
+        }
+
+        if ($ScriptingOptionsObject.NoCommandTerminator) {
+            $commandTerminator = ''
+        } else {
+            $commandTerminator = ';'
+        }
+        $outsql = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $databaseRoles = $input | Get-DbaDBRole -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
+                    Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
+                    $databaseRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or login."
+                    return
+                }
+            }
+            foreach ($dbRole in $databaseRoles) {
+                try {
+                    $server = $dbRole.Parent.Parent
+                    $db = $dbRole.Parent
+                    if ($server.VersionMajor -lt 9) {
+                        Stop-Function -Message "SQL Server version 9 or higher required - $server not supported." -Continue
+                    }
+                    $dbCompatibilityLevel = [int]($db.CompatibilityLevel.ToString().Replace('Version', ''))
+                    if ($dbCompatibilityLevel -lt 90) {
+                        Stop-Function -Message "$db has a compatibility level lower than Version90 and will be skipped." -Target $db -Continue
+                    }
+
+                    $outsql += $dbRole.Script($ScriptingOptionsObject)
+
+                    $query = $roleSQL.Replace('', "$($dbRole.Name)")
+                    $rolePermissions = $($dbRole.Parent).Query($query)
+
+                    foreach ($rolePermission in $rolePermissions) {
+                        $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                        if ($rolePermission.Type) {
+                            $script += " ON " + $rolePermission.Type
+                        }
+                        if ($rolePermission.RoleName) {
+                            $script += " TO [" + $rolePermission.RoleName + "]"
+                        }
+                        if ($rolePermission.GrantType) {
+                            $script += " WITH GRANT OPTION" + $commandTerminator
+                        } else {
+                            $script += $commandTerminator
+                        }
+                        $outsql += "$script"
+                    }
+
+                    if ($IncludeRoleMember) {
+                        $query = $userSQL.Replace('', "$($dbRole.Name)")
+                        $roleUsers = $($dbRole.Parent).Query($query)
+
+                        foreach ($roleUser in $roleUsers) {
+                            if ($server.VersionMajor -lt 11) {
+                                $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
+                            } else {
+                                $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
+                            }
+                            $outsql += "$script"
+                        }
+                    }
+                    $roleObject = [PSCustomObject]@{
+                        Name     = $dbRole.Name
+                        Instance = $dbRole.SqlInstance
+                        Database = $dbRole.Database
+                        Sql      = $outsql
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $dbRole" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                }
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
+        foreach ($dbRole in $roleCollection) {
+            $instanceName = $dbRole.Instance
+            $databaseName = $dbRole.Database
+
+            $outputFileName = $instanceName.Replace('\', '$') + '-' + $databaseName.Replace('\', '$')
+
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
+
+            if ($BatchSeparator) {
+                $sql = $dbRole.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $dbRole.SQL
+            }
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = "$prefix`r`n$sql"
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                if ($outputFileArray -notcontains $outputFileName) {
+                    Write-Message -Level Verbose -Message "New File $outputFileName "
+                    if ($null -ne $prefix) {
+                        $sql = "$prefix`r`n$sql"
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $outputFileArray += $outputFileName
+                    Get-ChildItem $scriptPath
+                } else {
+                    Write-Message -Level Verbose -Message "Adding to $outputFileName "
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append
+                }
+            } else {
+                $sql
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Export-DbaDbTableData {
     
     [CmdletBinding(SupportsShouldProcess)]
@@ -12515,7 +12790,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [object[]]$Database,
         [switch]$ExcludeJobs,
-        [switch]$ExcludeDatabases,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
         [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -12582,12 +12858,12 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($ExcludeDatabases -eq $false -or $Database) {
+            if ($ExcludeDatabase -eq $false -or $Database) {
                 # if we got a database or a list of databases passed
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
                 # if we get a list of databases passed (or even the default list of all the databases)
-                # we save outself a call to enumloginmappings if there is no map at all
+                # we save ourself a call to enumloginmappings if there is no map at all
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
@@ -12792,8 +13068,8 @@ function Export-DbaLogin {
                     }
                 }
 
-                if ($ExcludeDatabases -eq $false) {
-                    $dbs = $sourceLogin.EnumDatabaseMappings()
+                if ($ExcludeDatabase -eq $false) {
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
                         if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
@@ -13265,6 +13541,241 @@ function Export-DbaScript {
                     $message = $_.Exception
                 }
                 Stop-Function -Message "Failure on $($server.Name) | $message" -Target $server
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Export-DbaServerRole {
+    
+    [CmdletBinding()]
+    param (
+        [parameter()]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [string[]]$ServerRole,
+        [string[]]$ExcludeServerRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$IncludeRoleMember,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [switch]$Passthru,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
+        [switch]$NoClobber,
+        [switch]$Append,
+        [switch]$NoPrefix,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$EnableException
+    )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+        $outsql = @()
+        $outputFileArray = @()
+        $roleCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+
+        $roleSQL = "SELECT
+                    CASE SPerm.state
+                        WHEN 'D' THEN 'DENY'
+                        WHEN 'G' THEN 'GRANT'
+                        WHEN 'R' THEN 'REVOKE'
+                        WHEN 'W' THEN 'GRANT'
+                    END as GrantState,
+                    sPerm.permission_name as Permission,
+                    Case
+                        WHEN SPerm.class = 100 THEN ''
+                        WHEN SPerm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 105 THEN 'ON ENDPOINT::' + QuoteName(ep.name)
+                        WHEN SPerm.class = 108 THEN 'ON AVAILABILITY GROUP::' + QUOTENAME(ag.name)
+                        ELSE ''
+                    END as OnClause,
+                    QuoteName(SP.name) as RoleName,
+                    Case
+                        WHEN SPerm.state = 'W' THEN 'WITH GRANT OPTION AS ' + QUOTENAME(gsp.Name)
+                        ELSE ''
+                    END as GrantOption
+                FROM sys.server_permissions SPerm
+                INNER JOIN sys.server_principals SP
+                    ON SP.principal_id = SPerm.grantee_principal_id
+                INNER JOIN sys.server_principals gsp
+                    ON gsp.principal_id = SPerm.grantor_principal_id
+                LEFT JOIN sys.endpoints ep
+                    ON ep.endpoint_id = SPerm.major_id
+                    AND SPerm.class = 105
+                LEFT JOIN sys.server_principals sp2
+                    ON sp2.principal_id = SPerm.major_id
+                    AND SPerm.class = 101
+                LEFT JOIN
+                (
+                    Select
+                        ar.replica_metadata_id,
+                        ag.name
+                    from sys.availability_groups ag
+                    INNER JOIN sys.availability_replicas ar
+                        ON ag.group_id = ar.group_id
+                ) ag
+                    ON ag.replica_metadata_id = SPerm.major_id
+                    AND SPerm.class = 108
+                where sp.type='R'
+                and sp.name=N''"
+
+        if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
+            $ScriptingOptionsObject = New-DbaScriptingOption
+            $ScriptingOptionsObject.AllowSystemObjects = $false
+            $ScriptingOptionsObject.ContinueScriptingOnError = $false
+            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+            $ScriptingOptionsObject.IncludeIfNotExists = $true
+            $ScriptingOptionsObject.ScriptOwner = $true
+        }
+
+        if ($ScriptingOptionsObject.NoCommandTerminator) {
+            $commandTerminator = ''
+        } else {
+            $commandTerminator = ';'
+        }
+        $outsql = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a ServerRole or server or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential  -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.ServerRole' {
+                    Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
+                    $serverRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or serverrole."
+                    return
+                }
+            }
+
+            foreach ($role in $serverRoles) {
+                $server = $role.Parent
+
+                if ($server.ServerType -eq 'SqlAzureDatabase') {
+                    Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+                }
+
+                try {
+                    # Get user defined Server roles
+                    if ($server.VersionMajor -ge 11) {
+                        $outsql += $role.Script($ScriptingOptionsObject)
+
+                        $query = $roleSQL.Replace('', "$($role.Name)")
+                        $rolePermissions = $server.Query($query)
+
+                        foreach ($rolePermission in $rolePermissions) {
+                            $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                            if ($rolePermission.OnClause) {
+                                $script += " " + $rolePermission.OnClause
+                            }
+                            if ($rolePermission.RoleName) {
+                                $script += " TO " + $rolePermission.RoleName
+                            }
+                            if ($rolePermission.GrantOption) {
+                                $script += " " + $rolePermission.GrantOption + $commandTerminator
+                            } else {
+                                $script += $commandTerminator
+                            }
+                            $outsql += "$script"
+                        }
+                    }
+
+                    if ($IncludeRoleMember) {
+                        foreach ($roleUser in $role.Login) {
+                            $script = 'ALTER SERVER ROLE [' + $role.Role + "] ADD MEMBER [" + $roleUser + "]" + $commandTerminator
+                            $outsql += "$script"
+                        }
+                    }
+                    if ($outsql) {
+                        $roleObject = [PSCustomObject]@{
+                            Name     = $role.Name
+                            Instance = $role.SqlInstance
+                            Sql      = $outsql
+                        }
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $Role" -Category ConnectionError -ErrorRecord $_ -Target $role.SqlInstance -Continue
+                }
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
+        foreach ($role in $roleCollection) {
+            $instanceName = $role.Instance
+
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
+
+            if ($BatchSeparator) {
+                $sql = $role.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $role.SQL
+            }
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = "$prefix`r`n$sql"
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                $outputFileName = $instanceName.Replace('\', '$')
+                if ($outputFileArray -notcontains $outputFileName) {
+                    Write-Message -Level Verbose -Message "New File $outputFileName "
+                    if ($null -ne $prefix) {
+                        $sql = "$prefix`r`n$sql"
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $outputFileArray += $outputFileName
+                    Get-ChildItem $scriptPath
+                } else {
+                    Write-Message -Level Verbose -Message "Adding to $outputFileName "
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append
+                }
+            } else {
+                $sql
             }
         }
     }
@@ -14090,7 +14601,7 @@ function Find-DbaBackup {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
         } catch {
-            Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+            Stop-Function -Message "Failed to interpret retention time." -ErrorRecord $_
         }
 
         # Filter out unarchived files if -CheckArchiveBit parameter is used
@@ -14400,7 +14911,7 @@ function Find-DbaDbDisabledIndex {
                                     }
                                 }
                             } else {
-                                Write-Message -Level Verbose -Message "No Disabled indexes found!"
+                                Write-Message -Level Verbose -Message "No Disabled indexes found"
                             }
                         }
                     } catch {
@@ -18721,11 +19232,11 @@ function Get-DbaBuildReference {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
-                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Check your module integrity!"
+                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Please check your module integrity or reinstall dbatools."
             }
 
             if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
-                throw "Build reference file not found, check module health!"
+                throw "Build reference file not found, please check module health."
             }
 
             # If no writable copy exists, create one and return the module original
@@ -19082,9 +19593,8 @@ function Get-DbaClientAlias {
 
                 foreach ($basekey in $basekeys) {
 
+                    
                     if ((Test-Path $basekey) -eq $false) {
-                        
-                        Write-Warning "Base key ($basekey) does not exist. Quitting."
                         continue
                     }
 
@@ -19277,7 +19787,7 @@ function Get-DbaCmObject {
             # Ensure using the right credentials
             try { $cred = $connection.GetCredential($Credential) }
             catch {
-                $message = "Bad credentials! "
+                $message = "Bad credentials. "
                 if ($Credential) { $message += "The credentials for $($Credential.UserName) are known to not work. " }
                 else { $message += "The windows credentials are known to not work. " }
                 if ($connection.EnableCredentialFailover -or $connection.OverrideExplicitCredential) { $message += "The connection is configured to use credentials that are known to be good, but none have been registered yet. " }
@@ -19358,10 +19868,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19382,10 +19892,10 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Please check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
-                                15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                15 { Stop-Function -Message "[$computer] Invalid query string. Please check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 15 = Invalid Query
                                 #region 16 = Method not available
                                 16 { Stop-Function -Message "[$computer] The specified method on $ClassName is not available." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19400,7 +19910,7 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
                                 #region 0 = Non-CIM Issue not covered by the framework
@@ -19470,10 +19980,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19494,7 +20004,7 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
                                 15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19512,7 +20022,7 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
                                 #region 0 = Non-CIM Issue not covered by the framework
@@ -24028,6 +24538,9 @@ function Get-DbaDbRole {
         }
 
         foreach ($db in $InputObject) {
+            if ($db.IsAccessible -eq $false) {
+                continue
+            }
             $server = $db.Parent
             Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $server"
 
@@ -26028,7 +26541,7 @@ function Get-DbaForceNetworkEncryption {
                     [pscustomobject]$result
                 }
             } catch {
-                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
@@ -27829,7 +28342,7 @@ function Get-DbaLastGoodCheckDb {
 
                 ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
                 if ($lastKnownGoodArray.count -ge 2) {
-                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest."
                 }
                 [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
@@ -32411,6 +32924,9 @@ function Get-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if ($server.ServerType -eq 'SqlAzureDatabase') {
+                Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+            }
             $serverroles = $server.Roles
 
             if ($ServerRole) {
@@ -38334,7 +38850,7 @@ function Install-DbaMaintenanceSolution {
         }
 
         if ($ReplaceExisting -eq $true) {
-            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
@@ -39106,6 +39622,7 @@ function Invoke-DbaAdvancedInstall {
     $connectionParams = @{
         ComputerName = $ComputerName
         ErrorAction  = "Stop"
+        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
     if ($Credential) { $connectionParams.Credential = $Credential }
     # need to figure out where to store the config file
@@ -43820,6 +44337,7 @@ function Invoke-DbaDbPiiScan {
 
                 # Loop through the tables
                 foreach ($tableobject in $tables) {
+                    Write-Message -Level Verbose -Message "Scanning table [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                     $progressTask = "Scanning columns and data"
                     Write-Progress -Id $progressId -Activity $progressActivity -Status (& $progressStatusBlock) -CurrentOperation $progressTask -PercentComplete ($tableNumber / $($tables.Count) * 100)
@@ -43837,46 +44355,30 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
-
-                        if ($columnobject.DataType -eq 'geography') {
-                            # Add the results
-                            $results += [pscustomobject]@{
-                                ComputerName   = $db.Parent.ComputerName
-                                InstanceName   = $db.Parent.ServiceName
-                                SqlInstance    = $db.Parent.DomainInstanceName
-                                Database       = $dbName
-                                Schema         = $tableobject.Schema
-                                Table          = $tableobject.Name
-                                Column         = $columnobject.Name
-                                "PII-Category" = "Location"
-                                "PII-Name"     = "Location"
-                                FoundWith      = "DataType"
-                            }
-                        } elseif ($columnobject.DataType -in 'geometry', 'hierarchyid') {
-                            # Add the results
-                            $results += [pscustomobject]@{
-                                ComputerName   = $db.Parent.ComputerName
-                                InstanceName   = $db.Parent.ServiceName
-                                SqlInstance    = $db.Parent.DomainInstanceName
-                                Database       = $dbName
-                                Schema         = $tableobject.Schema
-                                Table          = $tableobject.Name
-                                Column         = $columnobject.Name
-                                "PII-Category" = "Other"
-                                "PII-Name"     = "N/A"
-                                FoundWith      = "DataType"
+                        if ($columnobject.DataType.Name -eq "geography") {
+                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                # Add the results
+                                $results += [pscustomobject]@{
+                                    ComputerName   = $db.Parent.ComputerName
+                                    InstanceName   = $db.Parent.ServiceName
+                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                    Database       = $dbName
+                                    Schema         = $tableobject.Schema
+                                    Table          = $tableobject.Name
+                                    Column         = $columnobject.Name
+                                    "PII-Category" = "Location"
+                                    "PII-Name"     = "Geography"
+                                    FoundWith      = "DataType"
+                                }
                             }
                         } else {
                             if ($knownNames.Count -ge 1) {
-                                # Go through the first check to see if any column is found with a known type
-                                foreach ($knownName in $knownNames) {
-
-                                    foreach ($pattern in $knownName.Pattern) {
-
-                                        if ($columnobject.Name -match $pattern ) {
-                                            # Check if the results not already contain a similar object
-                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
+                                # Check if the results not already contain a similar object
+                                if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                    # Go through the first check to see if any column is found with a known type
+                                    foreach ($knownName in $knownNames) {
+                                        foreach ($pattern in $knownName.Pattern) {
+                                            if ($columnobject.Name -match $pattern ) {
                                                 # Add the results
                                                 $results += [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
@@ -43899,64 +44401,55 @@ function Invoke-DbaDbPiiScan {
                                 Write-Message -Level Verbose -Message "No known names found to perform check on"
                             }
                         } # End for each column
-                    }
-
-                    if ($patterns.Count -ge 1) {
-                        # Check if the results not already contain a similar object
-                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                            # Setup the query
-                            $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-
-                            # Get the data
-                            $dataset = @()
-
-                            try {
-                                $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
-                            } catch {
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                            }
 
 
-                            # Check if there is any data
-                            if ($dataset.Count -ge 1) {
+                        if ($patterns.Count -ge 1) {
+                            # Check if the results not already contain a similar object
+                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                # Setup the query
+                                $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
-                                # Loop through the columns
-                                foreach ($columnobject in $columns) {
+                                # Get the data
+                                $dataset = @()
+
+                                try {
+                                    $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
+                                } catch {
+                                    $errormessage = $_.Exception.Message.ToString()
+                                    Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                }
+
+                                # Check if there is any data
+                                if ($dataset.Count -ge 1) {
 
                                     # Loop through the patterns
                                     foreach ($patternobject in $patterns) {
 
                                         # If there is a result from the match
                                         if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-
-                                            # Check if the results not already contain a similar object
-                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
-                                                # Add the results
-                                                $results += [pscustomobject]@{
-                                                    ComputerName   = $db.Parent.ComputerName
-                                                    InstanceName   = $db.Parent.ServiceName
-                                                    SqlInstance    = $db.Parent.DomainInstanceName
-                                                    Database       = $dbName
-                                                    Schema         = $tableobject.Schema
-                                                    Table          = $tableobject.Name
-                                                    Column         = $columnobject.Name
-                                                    "PII-Category" = $patternobject.category
-                                                    "PII-Name"     = $patternobject.Name
-                                                    FoundWith      = "Pattern"
-                                                }
+                                            # Add the results
+                                            $results += [pscustomobject]@{
+                                                ComputerName   = $db.Parent.ComputerName
+                                                InstanceName   = $db.Parent.ServiceName
+                                                SqlInstance    = $db.Parent.DomainInstanceName
+                                                Database       = $dbName
+                                                Schema         = $tableobject.Schema
+                                                Table          = $tableobject.Name
+                                                Column         = $columnobject.Name
+                                                "PII-Category" = $patternobject.category
+                                                "PII-Name"     = $patternobject.Name
+                                                FoundWith      = "Pattern"
                                             }
                                         }
                                         $patternobject = $null
                                     }
+                                } else {
+                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                                 }
-                            } else {
-                                Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                             }
+                        } else {
+                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
                         }
-                    } else {
-                        Write-Message -Level Verbose -Message "No patterns found to perform check on"
                     }
 
                     $tableNumber++
@@ -43988,7 +44481,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSize,
+        [int64]$StepSize,
         [int]$StatementTimeout = 0,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
@@ -45057,7 +45550,7 @@ function Invoke-DbaQuery {
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found" -Category ObjectNotFound
                             return
                         }
                         $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
@@ -45065,7 +45558,7 @@ function Invoke-DbaQuery {
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found." -Category ObjectNotFound
                             return
                         }
 
@@ -48267,7 +48760,10 @@ function New-DbaAzAccessToken {
                 public string ClientSecret { get; set; }
             }
 "@
-            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly,
+                [PowerShell].Assembly,
+                [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.GetReferencedAssemblies()[0])
+
         }
 
         switch ($Subtype) {
@@ -48393,10 +48889,6 @@ function New-DbaClientAlias {
             foreach ($basekey in $basekeys) {
                 if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
 
-                if ((Test-Path $basekey) -eq $false) {
-                    throw "Base key ($basekey) does not exist. Quitting."
-                }
-
                 $client = "$basekey\Client"
 
                 if ((Test-Path $client) -eq $false) {
@@ -48510,7 +49002,7 @@ function New-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }
         }
@@ -52045,7 +52537,7 @@ Ideally start a new console, perform the minimal steps required to reproduce the
 
             try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
             catch {
-                Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
+                Stop-Function -Message "Failed to export dump to file." -ErrorRecord $_ -Target $filePathXml
                 return
             }
 
@@ -52495,13 +52987,13 @@ function Publish-DbaDacPackage {
         }
 
         if (-not (Test-Path -Path $Path)) {
-            Stop-Function -Message "$Path not found!"
+            Stop-Function -Message "$Path not found."
             return
         }
 
         if ($PsCmdlet.ParameterSetName -eq 'Xml') {
             if (-not (Test-Path -Path $PublishXml)) {
-                Stop-Function -Message "$PublishXml not found!"
+                Stop-Function -Message "$PublishXml not found."
                 return
             }
         }
@@ -54975,7 +55467,7 @@ function Remove-DbaDbOrphanUser {
                                                         }
                                                     }
                                                 } else {
-                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
+                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema."
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
@@ -55011,7 +55503,7 @@ function Remove-DbaDbOrphanUser {
                                         if ($Force) {
                                             if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
                                                 $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
+                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used."
                                             }
                                         } else {
                                             Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
@@ -55614,7 +56106,7 @@ function Remove-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -57454,7 +57946,12 @@ function Reset-DbaAdmin {
             # Setup remote session if server is not local
             if (-not $instance.IsLocalHost) {
                 try {
-                    $session = New-PSSession -ComputerName $hostname -ErrorAction Stop
+                    $connectionParams = @{
+                        ComputerName = $hostname
+                        ErrorAction  = "Stop"
+                        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+                    }
+                    $session = New-PSSession @connectionParams
                 } catch {
                     Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
                 }
@@ -57742,7 +58239,7 @@ function Reset-DbaAdmin {
         }
     }
     end {
-        Write-Message -Level Verbose -Message "Script complete!"
+        Write-Message -Level Verbose -Message "Script complete."
     }
 }
 
@@ -60938,7 +61435,7 @@ function Set-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }
         }
@@ -62880,7 +63377,7 @@ function Set-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -64301,7 +64798,7 @@ function Start-DbaMigration {
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures')]
+        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures', 'AgentServerProperties')]
         [string[]]$Exclude,
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
@@ -64500,7 +64997,8 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'AgentServer') {
             Write-Message -Level Verbose -Message "Migrating job server"
-            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+            $ExcludeAgentServerProperties = $Exclude -contains 'AgentServerProperties'
+            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -ExcludeServerProperties:$ExcludeAgentServerProperties
         }
 
         if ($Exclude -notcontains 'StartupProcedures') {
@@ -66446,11 +66944,16 @@ function Test-DbaConnection {
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $ping = New-Object System.Net.NetworkInformation.Ping
             $timeout = 1000 #milliseconds
-            $reply = $ping.Send($instance.ComputerName, $timeout)
-            $pingable = $reply.Status -eq 'Success'
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
+                $reply = $ping.Send($instance.ComputerName, $timeout)
+                $pingable = $reply.Status -eq 'Success'
+            } catch {
+                $pingable = $false
+            }
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance.InputObject -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
                 if (-not $instanceName) {
@@ -66458,7 +66961,7 @@ function Test-DbaConnection {
                 }
             } catch {
                 $connectSuccess = $false
-                $instanceName = $instance.InstanceName
+                $instanceName = $instance.InputObject
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -66479,7 +66982,7 @@ function Test-DbaConnection {
             # Auth Scheme
             $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.InputObject -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
@@ -68865,7 +69368,7 @@ function Test-DbaLastBackup {
                 $success = $restoreresult = $dbccresult = "Skipped"
             }
             if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
-                Write-Message -Level Verbose -Message "Looking good!"
+                Write-Message -Level Verbose -Message "Looking good."
 
                 $fileexists = $true
                 $ogdbname = $dbname
@@ -70811,7 +71314,7 @@ function Uninstall-DbatoolsWatchUpdate {
             Invoke-Command -ScriptBlock $script
         }
 
-        Write-Message -Level Output -Message "All done!"
+        Write-Message -Level Output -Message "All done."
     }
 }
 
@@ -73114,7 +73617,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential cred = TranslateNativeCred(handle);
             return cred;
@@ -73123,7 +73626,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential[] Credentials = new Credential[count];
             IntPtr pTemp = IntPtr.Zero;
@@ -76146,10 +76649,15 @@ function Invoke-Command2 {
                 Authentication = $Authentication
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
+                UseSSL         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             if (Test-Windows -NoWarn) {
-                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                $psSessionSplat += @{ SessionOption = $timeout }
+                $psSessionOptionsSplat = @{
+                    IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                    IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                }
+                $sessionOption = New-PSSessionOption @psSessionOptionsSplat
+                $psSessionSplat += @{ SessionOption = $sessionOption }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }
@@ -76193,6 +76701,7 @@ function Invoke-Command2 {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-CommandWithFallback {
@@ -80158,7 +80667,7 @@ function Invoke-Parallel {
                                 NewVarName = ('__using_{0}' -f $Var.SubExpression.VariablePath.UserPath)
                             }
                         } catch {
-                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable!"
+                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable."
                         }
                     }
                     $ParamsToAdd += $UsingVariableData | Select-Object -ExpandProperty NewName -Unique
@@ -80862,7 +81371,7 @@ function New-DbaMessageLevelModifier {
     )
 
     if (Test-Bound -ParameterName IncludeFunctionName, ExcludeFunctionName, IncludeModuleName, ExcludeModuleName, IncludeTags, ExcludeTags -Not) {
-        Stop-Function -Message "Must specify at least one condition in order to apply message level modifier!" -EnableException $EnableException -Category InvalidArgument
+        Stop-Function -Message "Must specify at least one condition in order to apply message level modifier." -EnableException $EnableException -Category InvalidArgument
         return
     }
 
@@ -81043,14 +81552,14 @@ function Remove-DbaMessageLevelModifier {
             if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLowerInvariant())) {
                 [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLowerInvariant())
             } else {
-                Stop-Function -Message "No message level modifier of name $item found!" -EnableException $EnableException -Category InvalidArgument -Continue
+                Stop-Function -Message "No message level modifier of name $item found." -EnableException $EnableException -Category InvalidArgument -Continue
             }
         }
         foreach ($item in $Modifier) {
             if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.Name)) {
                 [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.Name)
             } else {
-                Stop-Function -Message "No message level modifier of name $($item.Name) found!" -EnableException $EnableException -Category InvalidArgument -Continue
+                Stop-Function -Message "No message level modifier of name $($item.Name) found." -EnableException $EnableException -Category InvalidArgument -Continue
             }
         }
     }
@@ -81229,7 +81738,7 @@ function Start-DbaRunspace {
                     Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
             }
         }
 
@@ -81274,7 +81783,7 @@ function Stop-DbaRunspace {
                     Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
             }
         }
 
@@ -81513,7 +82022,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($parentPath | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($parentPath.Provider.Name -ne $Provider))
@@ -81533,7 +82042,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($resolvedPaths | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($resolvedPaths.Provider.Name -ne $Provider))

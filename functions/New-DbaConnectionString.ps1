@@ -18,7 +18,11 @@ function New-DbaConnectionString {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER AccessToken
         Basically tells the connection string to ignore authentication. Does not include the AccessToken in the resulting connecstring.

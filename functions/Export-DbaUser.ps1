@@ -10,11 +10,11 @@ function Export-DbaUser {
         The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using alternative credentials
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        Windows Authentication will be used if SqlCredential is not specified
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all InputObject will be processed.
