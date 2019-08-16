@@ -15,7 +15,11 @@ function New-DbaDacProfile {
         The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database name you are targeting

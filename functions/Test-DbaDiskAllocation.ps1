@@ -16,7 +16,11 @@ function Test-DbaDiskAllocation {
         If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
