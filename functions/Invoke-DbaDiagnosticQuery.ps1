@@ -16,7 +16,11 @@ function Invoke-DbaDiagnosticQuery {
         The target SQL Server instance or instances. Can be either a string or SMO server
 
     .PARAMETER SqlCredential
-        Allows alternative Windows or SQL login credentials to be used
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Alternate path for the diagnostic scripts

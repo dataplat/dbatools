@@ -77,7 +77,11 @@ function Expand-DbaDbLogFile {
         This can be useful when you know that you have enough space to grow your TLog but you don't have PowerShell Remoting enabled to validate it.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude. Options for this list are auto-populated from the server.

@@ -2912,6 +2912,14 @@
                            "False"
                        ],
                        [
+                           "ExcludeServerProperties",
+                           "Skips the migration of Agent Server Properties (job history log, service state restart preferences, error log location, etc)",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.",
                            "",
@@ -2944,7 +2952,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaAgentServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaAgentServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeServerProperties] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaBackupDevice",
@@ -6702,6 +6710,168 @@
         "Syntax":  "Export-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-FilePath \u003cString\u003e] [-DacOption \u003cObject\u003e] [-Type \u003cString\u003e] [-Table \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nExport-DbaDacPackage -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllUserDatabases] [-Path \u003cString\u003e] [-FilePath \u003cString\u003e] [-ExtendedParameters \u003cString\u003e] [-ExtendedProperties \u003cString\u003e] [-Type \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Export-DbaDbRole",
+        "Description":  "Exports databsase roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.\n\nThis command is based off of John Eisbrener\u0027s post \"Fully Script out a MSSQL Database Role\"\nReference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/",
+        "Tags":  [
+                     "Export",
+                     "Role"
+                 ],
+        "Synopsis":  "Exports database roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Export-DbaDbRole",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaDbRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sql2005 -Path C:\\temp\nExports the Database Roles for all  for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaDbRole\nExports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaDbRole\nExports login realcajun from sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole\nExports all roles from all databases on sqlserver2008, exludes all roles marked as as FixedRole",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. SQL Server 2005 and above supported.\r\nAny databases in CompatibilityLevel 80 or lower will be skipped",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase and Get-DbaLogin.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "ScriptingOptionsObject",
+                           "An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Role",
+                           "The Role(s) to process. If unspecified, all Roles will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeRole",
+                           "The Role(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeFixedRole",
+                           "Excludes all members of fixed roles.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "IncludeRoleMember",
+                           "Include scripting of role members in script",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.\r\nWill default to Path.DbatoolsExport Configuration entry",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FilePath",
+                           "Specifies the full file path of the output file. If left blank then filename based on Instance name, Database name and date is created.\r\nIf more than one database or instance is input then this parameter should normally be blank.",
+                           "OutFile,FileName",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console only",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally \"GO\"",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Formatting.BatchSeparator\u0027)"
+                       ],
+                       [
+                           "NoClobber",
+                           "If this switch is enabled, a file already existing at the path specified by Path will not be overwritten. This takes precedence over Append switch",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoPrefix",
+                           "Do not include a Prefix",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Export-DbaDbRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [[-Database] \u003cObject[]\u003e] [[-Role] \u003cObject[]\u003e] [[-ExcludeRole] \u003cObject[]\u003e] [-ExcludeFixedRole] [-IncludeRoleMember] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-Passthru] [[-BatchSeparator] \u003cString\u003e] [-NoClobber] [-Append] [-NoPrefix] [[-Encoding] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Export-DbaDbTableData",
         "Description":  "Exports data from tables",
         "Tags":  [
@@ -7287,9 +7457,9 @@
                            "False"
                        ],
                        [
-                           "ExcludeDatabases",
+                           "ExcludeDatabase",
                            "If this switch is enabled, mappings for databases will not be exported.",
-                           "",
+                           "ExcludeDatabases",
                            false,
                            "false",
                            "False"
@@ -7304,7 +7474,7 @@
                        ],
                        [
                            "DefaultDatabase",
-                           "If this switch is enabled, all logins will be scripted with specified default database,\r\nthat could help to successfuly import logins on server that is missing default database for login.",
+                           "If this switch is enabled, all logins will be scripted with specified default database,\r\nthat could help to successfully import logins on server that is missing default database for login.",
                            "",
                            false,
                            "false",
@@ -7407,7 +7577,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabases] [-ExcludePassword] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabase] [-ExcludePassword] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
@@ -7782,6 +7952,160 @@
                        ]
                    ],
         "Syntax":  "Export-DbaScript [-InputObject] \u003cObject[]\u003e [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-Passthru] [-NoClobber] [-Append] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Export-DbaServerRole",
+        "Description":  "Exports Server roles to a T-SQL file. Export includes Role creation, object permissions and Role Members\n\nApplies mostly to SQL Server 2012 or Higher when user defined Server roles were added but can be used on earlier versions to get role members.\nThis command is an extension of John Eisbrener\u0027s post \"Fully Script out a MSSQL Database Role\"\nReference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/",
+        "Tags":  [
+                     "Export",
+                     "Role"
+                 ],
+        "Synopsis":  "Exports server roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.",
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "CommandName":  "Export-DbaServerRole",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaServerRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaServerRole -SqlInstance sql2005\nExports the Server Roles for SQL Server \"sql2005\" and writes them to the path defined in the ConfigValue \u0027Path.DbatoolsExport\u0027 using a a default name pattern of ServerName-YYYYMMDDhhmmss-serverrole. \r\nUses BatchSeparator defined by Config \u0027Formatting.BatchSeparator\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaServerRole -SqlInstance sql2005 -Path C:\\temp\nExports the Server Roles for SQL Server \"sql2005\" and writes them to the path \"C:\\temp\" using a a default name pattern of ServerName-YYYYMMDDhhmmss-serverrole. Uses BatchSeparator defined by Config \r\n\u0027Formatting.BatchSeparator\u0027\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaServerRole -SqlInstance sqlserver2014a -FilePath C:\\temp\\ServerRoles.sql\nExports the Server Roles for SQL Server sqlserver2014a to the file  C:\\temp\\ServerRoles.sql. Overwrites file if exists\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaServerRole -SqlInstance sqlserver2014a -ServerRole SchemaReader -Passthru\nExports ONLY ServerRole SchemaReader FROM sqlserver2014a and writes script to console\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaServerRole -SqlInstance sqlserver2008 -ExcludeFixedRole -ExcludeServerRole Public -IncludeRoleMember -FilePath C:\\temp\\ServerRoles.sql -Append -BatchSeparator \u0027\u0027\nExports server roles from sqlserver2008, exludes all roles marked as as FixedRole and Public role. Includes RoleMembers and writes to file C:\\temp\\ServerRoles.sql, appending to file if it exits. Does \r\nnot include a BatchSeparator\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sqlserver2012, sqlserver2014  | Export-DbaServerRole\nExports server roles from sqlserver2012, sqlserver2014 and writes them to the path defined in the ConfigValue \u0027Path.DbatoolsExport\u0027 using a a default name pattern of \r\nServerName-YYYYMMDDhhmmss-serverrole\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sqlserver2016 -ExcludeFixedRole -ExcludeServerRole Public | Export-DbaServerRole -IncludeRoleMember\nExports server roles from sqlserver2016, exludes all roles marked as as FixedRole and Public role. Includes RoleMembers",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. SQL Server 2000 and above supported.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaServerRole",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "ScriptingOptionsObject",
+                           "An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "Server-Level role(s) to filter results to that role only.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeServerRole",
+                           "Server-Level role(s) to exclude from results.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeFixedRole",
+                           "Filter the fixed server-level roles. As only SQL Server 2012 or higher supports creation of server-level roles will eliminate all output for earlier versions.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "IncludeRoleMember",
+                           "Include scripting of role members in script",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.\r\nWill default to Path.DbatoolsExport Configuration entry",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FilePath",
+                           "Specifies the full file path of the output file. If left blank then filename based on Instance name, Database name and date is created.\r\nIf more than one database or instance is input then this parameter should normally be blank.",
+                           "OutFile,FileName",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Passthru",
+                           "Output script to console only",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally \"GO\"",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Formatting.BatchSeparator\u0027)"
+                       ],
+                       [
+                           "NoClobber",
+                           "If this switch is enabled, a file already existing at the path specified by Path will not be overwritten. This takes precedence over Append switch",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Append",
+                           "If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "NoPrefix",
+                           "Do not include a Prefix",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Export-DbaServerRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [[-ServerRole] \u003cString[]\u003e] [[-ExcludeServerRole] \u003cString[]\u003e] [-ExcludeFixedRole] [-IncludeRoleMember] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-Passthru] [[-BatchSeparator] \u003cString\u003e] [-NoClobber] [-Append] [-NoPrefix] [[-Encoding] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaSpConfigure",
@@ -26704,7 +27028,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbShrink [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-AllUserDatabases] [[-PercentFreeSpace] \u003cInt32\u003e] [[-ShrinkMethod] \u003cString\u003e] [[-FileType] \u003cString\u003e] [[-StepSize] \u003cInt32\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-ExcludeIndexStats] [-ExcludeUpdateUsage] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbShrink [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-AllUserDatabases] [[-PercentFreeSpace] \u003cInt32\u003e] [[-ShrinkMethod] \u003cString\u003e] [[-FileType] \u003cString\u003e] [[-StepSize] \u003cInt64\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-ExcludeIndexStats] [-ExcludeUpdateUsage] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbUpgrade",
@@ -43332,7 +43656,7 @@
                        ],
                        [
                            "Exclude",
-                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector\r\nStartupProcedures",
+                           "Exclude one or more objects to migrate\nDatabases\r\nLogins\r\nAgentServer\r\nCredentials\r\nLinkedServers\r\nSpConfigure\r\nCentralManagementServer\r\nDatabaseMail\r\nSysDbUserObjects\r\nSystemTriggers\r\nBackupDevices\r\nAudits\r\nEndpoints\r\nExtendedEvents\r\nPolicyManagement\r\nResourceGovernor\r\nServerAuditSpecifications\r\nCustomErrors\r\nDataCollector\r\nStartupProcedures\r\nAgentServerProperties",
                            "",
                            false,
                            "false",

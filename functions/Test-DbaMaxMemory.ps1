@@ -12,7 +12,11 @@ function Test-DbaMaxMemory {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Windows or Sql Login Credential with permission to log into the SQL instance
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the server running the SQL instance

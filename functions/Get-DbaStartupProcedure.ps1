@@ -11,13 +11,11 @@ function Get-DbaStartupProcedure {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-        To connect to SQL Server as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER StartupProcedure
         Use this filter to check if specific procedure(s) are set as startup procedures.
