@@ -135,8 +135,8 @@ function New-DbaClientAlias {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
-        }
 
-        Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+            Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+        }
     }
 }
