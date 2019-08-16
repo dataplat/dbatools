@@ -129,9 +129,9 @@ function Invoke-DbaDbDataMasking {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
@@ -510,7 +510,7 @@ function Invoke-DbaDbDataMasking {
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
 
                         $stringbuilder = [System.Text.StringBuilder]''
@@ -573,7 +573,8 @@ function Invoke-DbaDbDataMasking {
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                $updatequery
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
@@ -591,7 +592,7 @@ function Invoke-DbaDbDataMasking {
                                 Status       = "Masked"
                             }
                         } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
 
