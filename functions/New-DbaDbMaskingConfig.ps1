@@ -41,6 +41,9 @@ function New-DbaDbMaskingConfig {
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
+    .PARAMETER CharacterString
+        The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -95,6 +98,7 @@ function New-DbaDbMaskingConfig {
         [parameter(Mandatory)]
         [string]$Path,
         [string]$Locale = 'en',
+        [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [int]$SampleCount = 100,
         [string]$KnownNamesFile,
         [string]$PatternsFile,
@@ -225,7 +229,7 @@ function New-DbaDbMaskingConfig {
                 }
 
                 foreach ($columnobject in $columncollection) {
-                    $result = $null
+                    $result = $minValue = $maxValue = $null
 
                     # Skip incompatible columns
                     if ($columnobject.Identity) {
@@ -268,23 +272,103 @@ function New-DbaDbMaskingConfig {
                         Column       = $columnobject.Name
                     }
 
+                    if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
+                        $columnLength = $columnobject.Datatype.NumericScale
+                    } else {
+                        $columnLength = $columnobject.Datatype.MaximumLength
+
+                        "$($columnobject.Name): $($columnLength)"
+                    }
+
+                    $columnType = $columnobject.DataType.Name
+
+                    switch ($columnType) {
+                        "bigint" {
+                            $minValue = 1
+                            $maxValue = 9223372036854775807
+                        }
+                        {
+                            $_ -in "char", "nchar", "nvarchar", "varchar"
+                        } {
+                            if ($columnLength -eq -1) {
+                                if ($_ -in "char", "varchar") {
+                                    $minValue = 1
+                                    $maxValue = 8000
+                                } elseif ($_ -in "nchar", "nvarchar") {
+                                    $minValue = 1
+                                    $maxValue = 4000
+                                }
+                            } else {
+                                $minValue = [int]($columnLength / 2)
+                                $maxValue = $columnLength
+                            }
+                        }
+                        "date" {
+                            $maxValue = $null
+                        }
+                        "datetime" {
+                            $maxValue = $null
+                        }
+                        "datetime2" {
+                            $maxValue = $null
+                        }
+                        "decimal" {
+                            $min = 1.1
+                            $maxValue = $null
+                        }
+                        "float" {
+                            $minValue = 1.1
+                            $maxValue = $null
+                        }
+                        "int" {
+                            $minValue = 1
+                            $maxValue = 2147483647
+                        }
+                        "money" {
+                            $minValue = 1.0
+                            $maxValue = 922337203685477.5807
+                        }
+                        "smallint" {
+                            $minValue = 1
+                            $maxValue = 32767
+                        }
+                        "smalldatetime" {
+                            $maxValue = $null
+                        }
+                        "text" {
+                            $minValue = 10
+                            $maxValue = 2147483647
+                        }
+                        "time" {
+                            $maxValue = $null
+                        }
+                        "tinyint" {
+                            $minValue = 1
+                            $maxValue = 255
+                        }
+                        "varbinary" {
+                            $maxValue = $columnLength
+                        }
+                        "userdefineddatatype" {
+                            if ($columnLength -eq 1) {
+                                $maxValue = $columnLength
+                            } else {
+                                $min = [int]($columnLength / 2)
+                                $maxValue = $columnLength
+                            }
+                        }
+                        default {
+                            $min = [int]($columnLength / 2)
+                            $maxValue = $columnLength
+                        }
+                    }
+
                     if ($searchArray -contains $searchObject) {
                         $result = $InputObject | Where-Object { $_.Database -eq $searchObject.Name -and $_.Schema -eq $searchObject.Schema -and $_.Table -eq $searchObject.Name -and $_.Column -eq $searchObject.Name }
                     } else {
-                        $columnType = $min = $null
-
-                        if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
-                            $columnLength = $columnobject.Datatype.NumericScale
-                        } else {
-                            $columnLength = $columnobject.Datatype.MaximumLength
-                        }
 
                         if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
                             $min = 2
-                        }
-
-                        if (-not $columnType) {
-                            $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                         }
 
                         if ($columnobject.DataType.Name -eq "geography") {
@@ -388,9 +472,9 @@ function New-DbaDbMaskingConfig {
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
+                            CharacterString = $( if ($result.MaskingType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
                             MaskingType     = $result.MaskingType
                             SubType         = $result.MaskingSubType
                             Format          = $null
@@ -406,85 +490,64 @@ function New-DbaDbMaskingConfig {
                                 $_ -in "bit", "bool"
                             } {
                                 $subType = "Bool"
-                                $MaxValue = $null
                             }
                             "bigint" {
                                 $subType = "Number"
-                                $MaxValue = 9223372036854775807
                             }
                             {
                                 $_ -in "char", "nchar", "nvarchar", "varchar"
                             } {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
-                            }
-                            "int" {
-                                $subType = "Number"
-                                $MaxValue = 2147483647
                             }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime2" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "decimal" {
                                 $subType = "Decimal"
-                                $MaxValue = $null
                             }
                             "float" {
                                 $subType = "Float"
-                                $MaxValue = $null
+                            }
+                            "int" {
+                                $subType = "Number"
                             }
                             "money" {
                                 $type = "Commerce"
                                 $subType = "Price"
-                                $min = -922337203685477.5808
-                                $MaxValue = 922337203685477.5807
                             }
                             "smallint" {
                                 $subType = "Number"
-                                $MaxValue = 32767
                             }
                             "smalldatetime" {
                                 $subType = "Date"
-                                $MaxValue = $null
                             }
                             "text" {
                                 $subType = "String"
-                                $maxValue = 2147483647
                             }
                             "time" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "tinyint" {
                                 $subType = "Number"
-                                $MaxValue = 255
                             }
                             "varbinary" {
                                 $subType = "Byte"
-                                $MaxValue = $columnLength
                             }
                             "userdefineddatatype" {
                                 if ($columnLength -eq 1) {
                                     $subType = "Bool"
-                                    $MaxValue = $columnLength
                                 } else {
                                     $subType = "String2"
-                                    $min = [int]($columnLength / 2)
-                                    $MaxValue = $columnLength
                                 }
                             }
                             "uniqueidentifier" {
@@ -492,17 +555,15 @@ function New-DbaDbMaskingConfig {
                             }
                             default {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
                             }
                         }
 
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
+                            CharacterString = $( if ($subType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
                             MaskingType     = $type
                             SubType         = $subType
                             Format          = $null
