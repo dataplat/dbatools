@@ -32,16 +32,16 @@ function Invoke-DbaDbPiiScan {
     .PARAMETER SampleCount
         Amount of rows to sample to make an assessment. The default is 100
 
-    .PARAMETER KnownNamesFile
+    .PARAMETER KnownNameFilePath
         Points to a file containing the custom known names
 
-    .PARAMETER PatternsFile
+    .PARAMETER PatternFilePath
         Points to a file containing the custom patterns
 
-    .PARAMETER ExcludeDefaultKnownNames
+    .PARAMETER ExcludeDefaultKnownName
         Excludes the default known names
 
-    .PARAMETER ExcludeDefaultPatterns
+    .PARAMETER ExcludeDefaultPattern
         Excludes the default patterns
 
     .PARAMETER ExcludeTable
@@ -96,12 +96,12 @@ function Invoke-DbaDbPiiScan {
         Scan database db2 but only apply data patterns used for the United States
 
     .EXAMPLE
-        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\pii\patterns.json
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternFilePath  c:\pii\patterns.json
 
         Scans db1 on instance sql1 with additional custom patterns
 
     .EXAMPLE
-        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternsFile c:\pii\patterns.json -ExcludeDefaultPatterns
+        Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1 -PatternFilePath  c:\pii\patterns.json -ExcludeDefaultPattern
 
         Scans db1 on instance sql1 with additional custom patterns, excluding the default patterns
     #>
@@ -117,10 +117,10 @@ function Invoke-DbaDbPiiScan {
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
         [int]$SampleCount = 100,
-        [string]$KnownNamesFile,
-        [string]$PatternsFile,
-        [switch]$ExcludeDefaultKnownNames,
-        [switch]$ExcludeDefaultPatterns,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$EnableException
     )
 
@@ -130,7 +130,7 @@ function Invoke-DbaDbPiiScan {
         $patterns = @()
 
         # Get the known names
-        if (-not $ExcludeDefaultKnownNames) {
+        if (-not $ExcludeDefaultKnownName) {
             try {
                 $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
                 $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -141,7 +141,7 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get the patterns
-        if (-not $ExcludeDefaultPatterns) {
+        if (-not $ExcludeDefaultPattern) {
             try {
                 $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
                 $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -152,29 +152,29 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get custom known names and patterns
-        if ($KnownNamesFile) {
-            if (Test-Path -Path $KnownNamesFile) {
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
                 try {
-                    $knownNames += Get-Content -Path $KnownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNamesFile
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNamesFile
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
             }
         }
 
-        if ($PatternsFile) {
-            if (Test-Path -Path $PatternsFile) {
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
                 try {
-                    $patterns += Get-Content -Path $PatternsFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternsFile
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternsFile
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
             }
         }
 

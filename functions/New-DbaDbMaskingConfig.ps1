@@ -44,6 +44,21 @@ function New-DbaDbMaskingConfig {
     .PARAMETER CharacterString
         The characters to use in string data. 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' by default
 
+    .PARAMETER SampleCount
+        Amount of rows to sample to make an assessment. The default is 100
+
+    .PARAMETER KnownNameFilePath
+        Points to a file containing the custom known names
+
+    .PARAMETER PatternFilePath
+        Points to a file containing the custom patterns
+
+    .PARAMETER ExcludeDefaultKnownName
+        Excludes the default known names
+
+    .PARAMETER ExcludeDefaultPattern
+        Excludes the default patterns
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -100,10 +115,10 @@ function New-DbaDbMaskingConfig {
         [string]$Locale = 'en',
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [int]$SampleCount = 100,
-        [string]$KnownNamesFile,
-        [string]$PatternsFile,
-        [switch]$ExcludeDefaultKnownNames,
-        [switch]$ExcludeDefaultPatterns,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$Force,
         [parameter(ValueFromPipeline = $true)]
         [object[]]$InputObject,
@@ -116,7 +131,7 @@ function New-DbaDbMaskingConfig {
         $patterns = @()
 
         # Get the known names
-        if (-not $ExcludeDefaultKnownNames) {
+        if (-not $ExcludeDefaultKnownName) {
             try {
                 $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
                 $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -127,7 +142,7 @@ function New-DbaDbMaskingConfig {
         }
 
         # Get the patterns
-        if (-not $ExcludeDefaultPatterns) {
+        if (-not $ExcludeDefaultPattern) {
             try {
                 $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
                 $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -138,29 +153,29 @@ function New-DbaDbMaskingConfig {
         }
 
         # Get custom known names and patterns
-        if ($KnownNamesFile) {
-            if (Test-Path -Path $KnownNamesFile) {
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
                 try {
-                    $knownNames += Get-Content -Path $KnownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNamesFile
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNamesFile
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
             }
         }
 
-        if ($PatternsFile) {
-            if (Test-Path -Path $PatternsFile) {
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
                 try {
-                    $patterns += Get-Content -Path $PatternsFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternsFile
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternsFile
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
             }
         }
 
