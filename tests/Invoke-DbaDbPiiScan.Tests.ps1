@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Country', 'CountryCode', 'ExcludeTable', 'ExcludeColumn', 'SampleCount', 'KnownNamesFile', 'PatternsFile', 'ExcludeDefaultKnownNames', 'ExcludeDefaultPatterns', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Country', 'CountryCode', 'ExcludeTable', 'ExcludeColumn', 'SampleCount', 'KnownNameFilePath', 'PatternFilePath', 'ExcludeDefaultKnownName', 'ExcludeDefaultPattern', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -77,7 +77,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db
 
-            $results.Count | Should -Be 27
+            $results.Count | Should -Be 54
 
             $results."PII-Name" | Should -Contain "Creditcard Discover"
         }
