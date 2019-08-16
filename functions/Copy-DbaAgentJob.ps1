@@ -248,6 +248,8 @@ function Copy-DbaAgentJob {
                             $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
                         }
 
+                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), [Regex]::Escape("@server=N'$($destServer.DomainInstanceName)'")
+
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
 
