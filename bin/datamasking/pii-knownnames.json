@@ -164,6 +164,15 @@
         "MaskingSubType": "Email"
     },
     {
+        "Name": "Website",
+        "Category": "Communication",
+        "Pattern": [
+            "(\\w*)(?i)(website|url|link)(\\w*)"
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Url"
+    },
+    {
         "Name": "IPAddres",
         "Category": "System",
         "Pattern": [
@@ -216,6 +225,15 @@
         ],
         "MaskingType": "Finance",
         "MaskingSubType": "Account"
+    },
+    {
+        "Name": "CreditCard",
+        "Category": "Financial",
+        "Pattern": [
+            "(\\w*)(?i)(cvv|creditcardcvv)(\\w*)"
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditcardCvv"
     },
     {
         "Name": "CreditCard",
