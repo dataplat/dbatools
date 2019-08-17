@@ -94,7 +94,7 @@ function New-DbaServerRole {
 
                         $newServerRole.Create()
 
-                        Get-DbaServerRole -SqlInstance $instance -ServerRole $role -EnableException
+                        Get-DbaServerRole -SqlInstance $server -ServerRole $role -EnableException
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
