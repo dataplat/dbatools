@@ -102,6 +102,7 @@ function Add-DbaServerRoleMember {
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipeline)]
         [string[]]$ServerRole,
         [string[]]$Login,
         [string[]]$Role,
@@ -111,13 +112,8 @@ function Add-DbaServerRoleMember {
     )
 
     begin {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a login, role, or specify a SqlInstance"
-            return
-        }
-
-        if ((Test-Bound -Not -ParameterName ServerRole) -and ($inputType -ne 'Microsoft.SqlServer.Management.Smo.ServerRole')) {
-            Stop-Function -Message "You must pipe in a ServerRole or specify a ServerRole."
+        if ( (Test-Bound SqlInstance -Not) -and (Test-Bound ServerRole -Not) -and (Test-Bound Login -Not) ) {
+            Stop-Function -Message "You must pipe in a ServerRole, Login, or specify a SqlInstance"
             return
         }
 
@@ -130,14 +126,19 @@ function Add-DbaServerRoleMember {
 
         foreach ($input in $InputObject) {
             $inputType = $input.GetType().FullName
+
+            if ((Test-Bound ServerRole -Not ) -and ($inputType -ne 'Microsoft.SqlServer.Management.Smo.ServerRole')) {
+                Stop-Function -Message "You must pipe in a ServerRole or specify a ServerRole."
+                return
+            }
+
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
                     try {
                         $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
                     } catch {
-                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input
-                        continue
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
                     }
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
@@ -145,8 +146,15 @@ function Add-DbaServerRoleMember {
                     try {
                         $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
                     } catch {
-                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input
-                        continue
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                'Microsoft.SqlServer.Management.Smo.ServerRole' {
+                    Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
+                    try {
+                        $serverRoles = $inputObject
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
                     }
                 }
                 default {
