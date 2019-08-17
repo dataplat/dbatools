@@ -10,7 +10,11 @@ function Add-DbaRoleMember {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -82,11 +86,16 @@ function Add-DbaRoleMember {
         Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
 
     .EXAMPLE
-        PS C:\ Add-DbaRoleMember -SqlInstance myazuresql.database.windows.net -ServerRole dbmanager -Login
+        PS C:\ Add-DbaRoleMember -SqlInstance myazuresql.database.windows.net -ServerRole dbmanager -Login myaccount@mysubscription.onmicrosoft.com
+
+        Adds myaccount AAD account to the Azure SQL server-level role dbmanager. This login must already exists on the Azure SQL server.
+
     .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
         PS C:\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins
         PS C:\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaRoleMember -Login $logins
+
+        Adds all the logins found in C:\logins.txt to the newly created server-level role mycustomrole on server1.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
