@@ -1,10 +1,10 @@
-function Add-DbaRoleMember {
+function Add-DbaServerRoleMember {
     <#
     .SYNOPSIS
         Adds a Database User to a database role for each instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Add-DbaRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.
+        The Add-DbaServerRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -51,49 +51,49 @@ function Add-DbaRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaRoleMember
+        https://dbatools.io/Add-DbaServerRoleMember
 
     .EXAMPLE
-        PS C:\> Add-DbaRoleMember -SqlInstance server1 -Role dbcreator -Login login1
+        PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -Role dbcreator -Login login1
 
         Adds login1 to the server-level role dbcreator on the instance server1
 
     .EXAMPLE
-        PS C:\> Add-DbaRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1
+        PS C:\> Add-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1
 
         Adds login1 in custom, server-level role customrole on the instance server1 and sql2016
 
     .EXAMPLE
-        PS C:\> Add-DbaRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator
+        PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator
 
         Adds custom, server-level role customrole to dbcreator server-level fixed role.
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
-        PS C:\> $servers | Add-DbaRoleMember -ServerRole sysadmin -Login login1
+        PS C:\> $servers | Add-DbaServerRoleMember -ServerRole sysadmin -Login login1
 
         Adds login1 to the sysadmin server-level role in every server in C:\servers.txt
 
     .EXAMPLE
-        PS C:\> Add-DbaRoleMember -SqlInstance localhost -ServerRole "bulkadmin","dbcreator" -Login login1
+        PS C:\> Add-DbaServerRoleMember -SqlInstance localhost -ServerRole "bulkadmin","dbcreator" -Login login1
 
         Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
 
     .EXAMPLE
         PS C:\> $roles = Get-DbaServerRole -SqlInstance localhost -ServerRole "bulkadmin","dbcreator"
-        PS C:\> $roles | Add-DbaRoleMember -Login login1
+        PS C:\> $roles | Add-DbaServerRoleMember -Login login1
 
         Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
 
     .EXAMPLE
-        PS C:\ Add-DbaRoleMember -SqlInstance myazuresql.database.windows.net -ServerRole dbmanager -Login myaccount@mysubscription.onmicrosoft.com
+        PS C:\ Add-DbaServerRoleMember -SqlInstance myazuresql.database.windows.net -ServerRole dbmanager -Login myaccount@mysubscription.onmicrosoft.com
 
         Adds myaccount AAD account to the Azure SQL server-level role dbmanager. This login must already exists on the Azure SQL server.
 
     .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
         PS C:\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins
-        PS C:\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaRoleMember -Login $logins
+        PS C:\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaServerRoleMember -Login $logins
 
         Adds all the logins found in C:\logins.txt to the newly created server-level role mycustomrole on server1.
     #>
