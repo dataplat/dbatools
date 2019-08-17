@@ -75,16 +75,16 @@ function Get-DbaServerRole {
             $serverroles = $server.Roles
 
             if ($ServerRole) {
-                $serverroles = $serverroles | Where-Object Name -In $ServerRole
+                $serverRoles = $serverRoles | Where-Object Name -In $ServerRole
             }
             if ($ExcludeServerRole) {
-                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
+                $serverRoles = $serverRoles | Where-Object Name -NotIn $ExcludeServerRole
             }
             if ($ExcludeFixedRole) {
-                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
+                $serverRoles = $serverRoles | Where-Object IsFixedRole -eq $false
             }
 
-            foreach ($role in $serverroles) {
+            foreach ($role in $serverRoles) {
                 $members = $role.EnumMemberNames()
 
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members

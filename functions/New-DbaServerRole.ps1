@@ -76,7 +76,7 @@ function New-DbaServerRole {
 
             $serverRoles = $server.Roles
 
-            foreach ($role in $ServerRoles) {
+            foreach ($role in $ServerRole) {
                 if ($serverRoles | Where-Object Name -eq $role) {
                     Stop-Function -Message "The server-level role $role already exists on instance $server." -Target $instance -Continue
                 }
