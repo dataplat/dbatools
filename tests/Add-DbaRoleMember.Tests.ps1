@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality" {
         It 'Adds Login to Role' {
-            Add-DbaRoleMember -SqlInstance $script:instance2 -ServerRole $fixedServerRoles[0] -Login $login1 -confirm:$false
+            Add-DbaServerRoleMember -SqlInstance $script:instance2 -ServerRole $fixedServerRoles[0] -Login $login1 -confirm:$false
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
 
             $roleAfter.Role | Should Be $fixedServerRoles[0]
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It 'Adds Login to Multiple Roles' {
             $serverRoles = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
-            Add-DbaRoleMember -SqlInstance $script:instance2 -ServerRole $serverRoles -Login $login1 -confirm:$false
+            Add-DbaServerRoleMember -SqlInstance $script:instance2 -ServerRole $serverRoles -Login $login1 -confirm:$false
 
             $roleDBAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
             $roleDBAfter.Count | Should Be $serverRoles.Count
@@ -49,7 +49,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Adds Customer Server-Level Role Membership' {
-            Add-DbaRoleMember -SqlInstance $script:instance2 -ServerRole $customServerRole -Role $fixedServerRoles[-1] -confirm:$false
+            Add-DbaServerRoleMember -SqlInstance $script:instance2 -ServerRole $customServerRole -Role $fixedServerRoles[-1] -confirm:$false
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]
 
             $roleAfter.Role | Should Be $fixedServerRoles[-1]
@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It 'Adds Login to Roles via piped input from Get-DbaServerRole' {
             $roleInput = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
-            $roleInput | Add-DbaRoleMember -ServerRole $fixedServerRoles -Login $login2 -confirm:$false
+            $roleInput | Add-DbaServerRoleMember -ServerRole $fixedServerRoles -Login $login2 -confirm:$false
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -ServerRole $fixedServerRoles
             $roleDB.Login -contains $login2 | Should Be $false
