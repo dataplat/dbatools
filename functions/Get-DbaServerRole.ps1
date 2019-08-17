@@ -91,8 +91,9 @@ function Get-DbaServerRole {
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ServerRole -Value $role.Name
 
-                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'IsFixedRole', 'DateCreated', 'DateModified'
+                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'Owner', 'IsFixedRole', 'DateCreated', 'DateModified'
                 Select-DefaultView -InputObject $role -Property $default
             }
         }
