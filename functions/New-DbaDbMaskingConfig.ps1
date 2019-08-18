@@ -409,7 +409,7 @@ function New-DbaDbMaskingConfig {
                                 # Go through the first check to see if any column is found with a known type
                                 foreach ($knownName in $knownNames) {
                                     foreach ($pattern in $knownName.Pattern) {
-                                        if ($columnobject.Name -match $pattern ) {
+                                        if ($null -eq $result -and $columnobject.Name -match $pattern ) {
                                             # Add the results
                                             $result = [pscustomobject]@{
                                                 ComputerName   = $db.Parent.ComputerName
@@ -456,7 +456,7 @@ function New-DbaDbMaskingConfig {
                                         foreach ($patternobject in $patterns) {
 
                                             # If there is a result from the match
-                                            if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+                                            if ($null -eq $result -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
                                                 # Add the results
                                                 $result = [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
