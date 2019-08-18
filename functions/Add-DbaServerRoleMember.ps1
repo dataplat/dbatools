@@ -191,7 +191,7 @@ function Add-DbaServerRoleMember {
                         Write-Message -Level Warning -Message "$r server-level role was not found on $instance"
                         continue
                     }
-                    if ($PSCmdlet.ShouldProcess($instance,"Adding role $r to server-level role: $sr")) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Adding role $r to server-level role: $sr")) {
                         Write-Message -Level Verbose -Message "Adding role $r to server-level role: $sr on $instance"
                         try {
                             $sr.AddMembershipToRole($r)
