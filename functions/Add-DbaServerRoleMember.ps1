@@ -86,17 +86,6 @@ function Add-DbaServerRoleMember {
         Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
 
     .EXAMPLE
-        PS C:\ $azCred = Get-Credential -UserName myadmin@myemailgmail.onmicrosoft.com
-        PS C:\ $server = Connect-DbaInstance -SqlInstance myazuresql.database.windows.net -SqlCredential $azCred -Database master
-        PS C:\ Add-DbaServerRoleMember -SqlInstance $server -ServerRole dbmanager -Login dbatoolstest1@myemailgmail.onmicrosoft.com
-
-        An account created under Azure Active Directory for the tenant myemailgmail.onmicrosoft.com with the principal name myaccount.
-        Connect to the Azure SQL Server myazuresql.database.windows.net, ensuring connection is to the master database.
-        The $azCred is using the Azure SQL assigned Administrator account, but can also just be an account with admin privileges
-
-        Adds the Azure Active Directory account dbatoolstest1 to the Azure SQL role dbmanager.
-
-    .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
         PS C:\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins
         PS C:\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaServerRoleMember -Login $logins
