@@ -928,6 +928,117 @@ function Add-DbaRegServerGroup {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Add-DbaServerRoleMember {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param (
+        [parameter(ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipeline)]
+        [string[]]$ServerRole,
+        [string[]]$Login,
+        [string[]]$Role,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [switch]$EnableException
+    )
+
+    begin {
+        if ( (Test-Bound SqlInstance -Not) -and (Test-Bound ServerRole -Not) -and (Test-Bound Login -Not) ) {
+            Stop-Function -Message "You must pipe in a ServerRole, Login, or specify a SqlInstance"
+            return
+        }
+
+        if (Test-Bound SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+
+            if ((Test-Bound ServerRole -Not ) -and ($inputType -ne 'Microsoft.SqlServer.Management.Smo.ServerRole')) {
+                Stop-Function -Message "You must pipe in a ServerRole or specify a ServerRole."
+                return
+            }
+
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    try {
+                        $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    try {
+                        $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                'Microsoft.SqlServer.Management.Smo.ServerRole' {
+                    Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
+                    try {
+                        $serverRoles = $inputObject
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or role."
+                    continue
+                }
+            }
+
+            foreach ($sr in $serverRoles) {
+                $instance = $sr.Parent
+                foreach ($l in $Login) {
+                    if ( $sr.EnumMemberNames().Contains($l.Name) ) {
+                        Write-Message -Level Warning -Message "Login $l is already a member in server-level role: $sr"
+                        continue
+                    } else {
+                        if ($PSCmdlet.ShouldProcess($instance, "Adding login $l to server-level role: $sr")) {
+                            Write-Message -Level Verbose -Message "Adding login $l to server-level role: $sr on $instance"
+                            try {
+                                $sr.AddMember($l)
+                            } catch {
+                                Stop-Function -Message "Failure adding $l on $instance" -ErrorRecord $_ -Target $sr
+                            }
+                        }
+                    }
+                }
+                foreach ($r in $Role) {
+                    try {
+                        $isServerRole = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $r -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input
+                        continue
+                    }
+                    if (-not $isServerRole) {
+                        Write-Message -Level Warning -Message "$r server-level role was not found on $instance"
+                        continue
+                    }
+                    if ($PSCmdlet.ShouldProcess($instance, "Adding role $r to server-level role: $sr")) {
+                        Write-Message -Level Verbose -Message "Adding role $r to server-level role: $sr on $instance"
+                        try {
+                            $sr.AddMembershipToRole($r)
+                        } catch {
+                            Stop-Function -Message "Failure adding $r on $instance" -ErrorRecord $_ -Target $sr
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Backup-DbaDatabase {
     
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
@@ -3397,6 +3508,8 @@ function Copy-DbaAgentJob {
                             $saLogin = Get-SqlSaLogin -SqlInstance $destServer
                             $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
                         }
+
+                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), [Regex]::Escape("@server=N'$($destServer.DomainInstanceName)'")
 
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
@@ -19574,70 +19687,67 @@ function Get-DbaClientAlias {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
+    begin {
+        $scriptblock = {
+            function Get-ItemPropertyValue {
+                param (
+                    [parameter()]
+                    [String]$Path,
+                    [parameter()]
+                    [String]$Name
+                )
+                (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            }
 
-    process {
-        foreach ($computer in $ComputerName) {
-            $scriptblock = {
+            $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 
-                function Get-ItemPropertyValue {
-                    param (
-                        [parameter()]
-                        [String]$Path,
-                        [parameter()]
-                        [String]$Name
-                    )
-                    (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            foreach ($basekey in $basekeys) {
+
+                
+                if ((Test-Path $basekey) -eq $false) {
+                    continue
                 }
 
-                $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
+                $client = "$basekey\Client"
 
-                foreach ($basekey in $basekeys) {
+                if ((Test-Path $client) -eq $false) {
+                    continue
+                }
 
-                    
-                    if ((Test-Path $basekey) -eq $false) {
-                        continue
-                    }
+                $connect = "$client\ConnectTo"
 
-                    $client = "$basekey\Client"
+                if ((Test-Path $connect) -eq $false) {
+                    continue
+                }
 
-                    if ((Test-Path $client) -eq $false) {
-                        continue
-                    }
+                if ($basekey -like "*WOW64*") {
+                    $architecture = "32-bit"
+                } else {
+                    $architecture = "64-bit"
+                }
 
-                    $connect = "$client\ConnectTo"
-
-                    if ((Test-Path $connect) -eq $false) {
-                        continue
-                    }
-
-                    if ($basekey -like "*WOW64*") {
-                        $architecture = "32-bit"
-                    } else {
-                        $architecture = "64-bit"
-                    }
-
-                    # "Get SQL Server alias for $ComputerName for $architecture"
-                    $all = Get-Item -Path $connect
-                    foreach ($entry in $all.Property) {
-                        $value = Get-ItemPropertyValue -Path $connect -Name $entry
-                        $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
-                        if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
-
-                        [pscustomobject]@{
-                            ComputerName   = $env:COMPUTERNAME
-                            NetworkLibrary = $protocol
-                            ServerName     = $clean
-                            AliasName      = $entry
-                            AliasString    = $value
-                            Architecture   = $architecture
-                        }
+                # "Get SQL Server alias for $ComputerName for $architecture"
+                $all = Get-Item -Path $connect
+                foreach ($entry in $all.Property) {
+                    $value = Get-ItemPropertyValue -Path $connect -Name $entry
+                    $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
+                    if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
+                    [pscustomobject]@{
+                        ComputerName   = $env:COMPUTERNAME
+                        NetworkLibrary = $protocol
+                        ServerName     = $clean
+                        AliasName      = $entry
+                        AliasString    = $value
+                        Architecture   = $architecture
                     }
                 }
             }
-
+        }
+    }
+    process {
+        foreach ($computer in $ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
-                    Select-DefaultView -Property ComputerName, Architecture, NetworkLibrary, ServerName, AliasName
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
@@ -31732,8 +31842,6 @@ function Get-DbaRandomizedValue {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
-
-            
         }
 
         if (-not $Min) {
@@ -31757,19 +31865,19 @@ function Get-DbaRandomizedValue {
 
             switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
-                    if ($Min -lt -9223372036854775808) {
+                    if (-not $Min -or $Min -lt -9223372036854775808) {
                         $Min = -9223372036854775808
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 9223372036854775807) {
+                    if (-not $Max -or $Max -gt 9223372036854775807) {
                         $Max = 9223372036854775807
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
                 }
 
                 { $psitem -in 'bit', 'bool' } {
-                    if ($faker.System.Random.Bool()) {
+                    if ($script:faker.Random.Bool()) {
                         1
                     } else {
                         0
@@ -31777,84 +31885,84 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd")
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
-                    $faker.Finance.Amount($Min, $Max, $Precision)
+                    $script:faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
-                    if ($Min -lt -2147483648) {
+                    if (-not $Min -or $Min -lt -2147483648) {
                         $Min = -2147483648
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 2147483647) {
+                    if (-not $Max -or $Max -gt 2147483647 -or $Max -lt $Min) {
                         $Max = 2147483647
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
 
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 }
                 'smallint' {
-                    if ($Min -lt -32768) {
+                    if (-not $Min -or $Min -lt -32768) {
                         $Min = 32768
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 32767) {
+                    if (-not $Max -or $Max -gt 32767 -or $Max -lt $Min) {
                         $Max = 32767
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 'time' {
-                    ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
+                    ($script:faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
-                    if ($Min -lt 0) {
+                    if (-not $Min -or $Min -lt 0) {
                         $Min = 0
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 255) {
+                    if (-not $Max -or $Max -gt 255 -or $Max -lt $Min) {
                         $Max = 255
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 { $psitem -in 'uniqueidentifier', 'guid' } {
-                    $faker.System.Random.Guid().Guid
+                    $script:faker.System.Random.Guid().Guid
                 }
                 'userdefineddatatype' {
                     if ($Max -eq 1) {
-                        if ($faker.System.Random.Bool()) {
+                        if ($script:faker.System.Random.Bool()) {
                             1
                         } else {
                             0
@@ -31864,7 +31972,7 @@ function Get-DbaRandomizedValue {
                     }
                 }
                 { $psitem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
-                    $faker.Random.String2($Min, $Max, $CharacterString)
+                    $script:faker.Random.String2($Min, $Max, $CharacterString)
                 }
 
             }
@@ -31877,35 +31985,35 @@ function Get-DbaRandomizedValue {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
-                        $faker.Address.Latitude($Min, $Max)
+                        $script:faker.Address.Latitude($Min, $Max)
                     } elseif ($randSubType -eq 'zipcode') {
                         if ($Format) {
-                            $faker.Address.ZipCode("$($Format)")
+                            $script:faker.Address.ZipCode("$($Format)")
                         } else {
-                            $faker.Address.ZipCode()
+                            $script:faker.Address.ZipCode()
                         }
                     } else {
-                        $faker.Address.$RandomizerSubType()
+                        $script:faker.Address.$RandomizerSubType()
                     }
 
                 }
                 'commerce' {
                     if ($randSubType -eq 'categories') {
-                        $faker.Commerce.Categories($Max)
+                        $script:faker.Commerce.Categories($Max)
                     } elseif ($randSubType -eq 'departments') {
-                        $faker.Commerce.Department($Max)
+                        $script:faker.Commerce.Department($Max)
                     } elseif ($randSubType -eq 'price') {
-                        $faker.Commerce.Price($min, $Max, $Precision, $Symbol)
+                        $script:faker.Commerce.Price($min, $Max, $Precision, $Symbol)
                     } else {
-                        $faker.Commerce.$RandomizerSubType()
+                        $script:faker.Commerce.$RandomizerSubType()
                     }
 
                 }
                 'company' {
-                    $faker.Company.$RandomizerSubType()
+                    $script:faker.Company.$RandomizerSubType()
                 }
                 'database' {
-                    $faker.Database.$RandomizerSubType()
+                    $script:faker.Database.$RandomizerSubType()
                 }
                 'date' {
                     if ($randSubType -eq 'between') {
@@ -31921,7 +32029,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -31931,9 +32039,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -31943,13 +32051,13 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
 
                     } elseif ($randSubType -eq 'recent') {
-                        $faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -31960,34 +32068,34 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } else {
-                        $faker.Date.$RandomizerSubType()
+                        $script:faker.Date.$RandomizerSubType()
                     }
                 }
                 'finance' {
                     if ($randSubType -eq 'account') {
-                        $faker.Finance.Account($Max)
+                        $script:faker.Finance.Account($Max)
                     } elseif ($randSubType -eq 'amount') {
-                        $faker.Finance.Amount($Min, $Max, $Precision)
+                        $script:faker.Finance.Amount($Min, $Max, $Precision)
                     } else {
-                        $faker.Finance.$RandomizerSubType()
+                        $script:faker.Finance.$RandomizerSubType()
                     }
                 }
                 'hacker' {
-                    $faker.Hacker.$RandomizerSubType()
+                    $script:faker.Hacker.$RandomizerSubType()
                 }
                 'image' {
-                    $faker.Image.$RandomizerSubType()
+                    $script:faker.Image.$RandomizerSubType()
                 }
                 'internet' {
                     if ($randSubType -eq 'password') {
-                        $faker.Internet.Password($Max)
+                        $script:faker.Internet.Password($Max)
                     } else {
-                        $faker.Internet.$RandomizerSubType()
+                        $script:faker.Internet.$RandomizerSubType()
                     }
                 }
                 'lorem' {
@@ -31997,7 +32105,7 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraph($Min)
+                        $script:faker.Lorem.Paragraph($Min)
 
                     } elseif ($randSubType -eq 'paragraphs') {
                         if ($Min -lt 1) {
@@ -32005,19 +32113,19 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraphs($Min)
+                        $script:faker.Lorem.Paragraphs($Min)
 
                     } elseif ($randSubType -eq 'letter') {
-                        $faker.Lorem.Letter($Max)
+                        $script:faker.Lorem.Letter($Max)
                     } elseif ($randSubType -eq 'lines') {
-                        $faker.Lorem.Lines($Max)
+                        $script:faker.Lorem.Lines($Max)
                     } elseif ($randSubType -eq 'sentence') {
                         if ($Min -lt 1) {
                             $Min = 1
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentence($Min, $Max)
+                        $script:faker.Lorem.Sentence($Min, $Max)
 
                     } elseif ($randSubType -eq 'sentences') {
                         if ($Min -lt 1) {
@@ -32025,49 +32133,49 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentences($Min, $Max)
+                        $script:faker.Lorem.Sentences($Min, $Max)
 
                     } elseif ($randSubType -eq 'slug') {
-                        $faker.Lorem.Slug($Max)
+                        $script:faker.Lorem.Slug($Max)
                     } elseif ($randSubType -eq 'words') {
-                        $faker.Lorem.Words($Max)
+                        $script:faker.Lorem.Words($Max)
                     } else {
-                        $faker.Lorem.$RandomizerSubType()
+                        $script:faker.Lorem.$RandomizerSubType()
                     }
                 }
                 'name' {
-                    $faker.Name.$RandomizerSubType()
+                    $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $faker.Person.$RandomizerSubType
+                    $script:faker.Person.$RandomizerSubType
                 }
                 'phone' {
                     if ($Format) {
-                        $faker.Phone.PhoneNumber($Format)
+                        $script:faker.Phone.PhoneNumber($Format)
                     } else {
-                        $faker.Phone.PhoneNumber()
+                        $script:faker.Phone.PhoneNumber()
                     }
                 }
                 'random' {
                     if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
-                        $faker.Random.$RandomizerSubType($Min, $Max)
+                        $script:faker.Random.$RandomizerSubType($Min, $Max)
                     } elseif ($randSubType -eq 'bytes') {
-                        $faker.Random.Bytes($Max)
+                        $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
-                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                        $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
                     } else {
-                        $faker.Random.$RandomizerSubType()
+                        $script:faker.Random.$RandomizerSubType()
                     }
                 }
                 'rant' {
                     if ($randSubType -eq 'reviews') {
-                        $faker.Rant.Review($faker.Commerce.Product())
+                        $script:faker.Rant.Review($script:faker.Commerce.Product())
                     } elseif ($randSubType -eq 'reviews') {
-                        $faker.Rant.Reviews($faker.Commerce.Product(), $Max)
+                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max)
                     }
                 }
                 'system' {
-                    $faker.System.$RandomizerSubType()
+                    $script:faker.System.$RandomizerSubType()
                 }
             }
         }
@@ -32930,24 +33038,26 @@ function Get-DbaServerRole {
             $serverroles = $server.Roles
 
             if ($ServerRole) {
-                $serverroles = $serverroles | Where-Object Name -In $ServerRole
+                $serverRoles = $serverRoles | Where-Object Name -In $ServerRole
             }
             if ($ExcludeServerRole) {
-                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
+                $serverRoles = $serverRoles | Where-Object Name -NotIn $ExcludeServerRole
             }
             if ($ExcludeFixedRole) {
-                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
+                $serverRoles = $serverRoles | Where-Object IsFixedRole -eq $false
             }
 
-            foreach ($role in $serverroles) {
+            foreach ($role in $serverRoles) {
                 $members = $role.EnumMemberNames()
 
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Role -Value $role.Name
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ServerRole -Value $role.Name
 
-                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'IsFixedRole', 'DateCreated', 'DateModified'
+                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Login', 'Owner', 'IsFixedRole', 'DateCreated', 'DateModified'
                 Select-DefaultView -InputObject $role -Property $default
             }
         }
@@ -41306,9 +41416,9 @@ function Invoke-DbaDbDataMasking {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
@@ -41687,7 +41797,7 @@ function Invoke-DbaDbDataMasking {
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
 
                         $stringbuilder = [System.Text.StringBuilder]''
@@ -41750,7 +41860,8 @@ function Invoke-DbaDbDataMasking {
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                $updatequery
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
@@ -41768,7 +41879,7 @@ function Invoke-DbaDbDataMasking {
                                 Status       = "Masked"
                             }
                         } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
 
@@ -42341,7 +42452,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Add the results to the custom object
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
+                            ComputerName = $instance.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.Name
@@ -42351,20 +42462,12 @@ function Invoke-DbaDbDecryptObject {
                             FullName     = "$($object.Schema).$($object.Name)"
                             Script       = $result
                         }
-
-                    } # end if secret
-
-                } # end for each object
-
-            } # end for each database
-
-        } # end for each instance
-
-    } # process
-
+                    }
+                }
+            }
+        }
+    }
     end {
-        if (Test-FunctionInterrupt) { return }
-
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
 }
@@ -44205,10 +44308,10 @@ function Invoke-DbaDbPiiScan {
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
         [int]$SampleCount = 100,
-        [string]$KnownNamesFile,
-        [string]$PatternsFile,
-        [switch]$ExcludeDefaultKnownNames,
-        [switch]$ExcludeDefaultPatterns,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$EnableException
     )
 
@@ -44218,7 +44321,7 @@ function Invoke-DbaDbPiiScan {
         $patterns = @()
 
         # Get the known names
-        if (-not $ExcludeDefaultKnownNames) {
+        if (-not $ExcludeDefaultKnownName) {
             try {
                 $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
                 $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -44229,7 +44332,7 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get the patterns
-        if (-not $ExcludeDefaultPatterns) {
+        if (-not $ExcludeDefaultPattern) {
             try {
                 $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
                 $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -44240,29 +44343,29 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get custom known names and patterns
-        if ($KnownNamesFile) {
-            if (Test-Path -Path $KnownNamesFile) {
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
                 try {
-                    $knownNames += Get-Content -Path $KnownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNamesFile
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNamesFile
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
             }
         }
 
-        if ($PatternsFile) {
-            if (Test-Path -Path $PatternsFile) {
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
                 try {
-                    $patterns += Get-Content -Path $PatternsFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternsFile
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternsFile
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
             }
         }
 
@@ -44289,8 +44392,6 @@ function Invoke-DbaDbPiiScan {
         if (Test-FunctionInterrupt) {
             return
         }
-
-        $results = @()
 
         # Loop through the instances
         foreach ($instance in $SqlInstance) {
@@ -44355,10 +44456,12 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
+                        $candidateFound = $false
+
                         if ($columnobject.DataType.Name -eq "geography") {
                             if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
                                 # Add the results
-                                $results += [pscustomobject]@{
+                                [pscustomobject]@{
                                     ComputerName   = $db.Parent.ComputerName
                                     InstanceName   = $db.Parent.ServiceName
                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -44369,18 +44472,24 @@ function Invoke-DbaDbPiiScan {
                                     "PII-Category" = "Location"
                                     "PII-Name"     = "Geography"
                                     FoundWith      = "DataType"
+                                    MaskingType    = "Random"
+                                    MaskingSubType = "Decimal"
                                 }
+
+                                $candidateFound = $true
+
                             }
                         } else {
                             if ($knownNames.Count -ge 1) {
                                 # Check if the results not already contain a similar object
-                                if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                if (-not $candidateFound) {
                                     # Go through the first check to see if any column is found with a known type
                                     foreach ($knownName in $knownNames) {
                                         foreach ($pattern in $knownName.Pattern) {
-                                            if ($columnobject.Name -match $pattern ) {
+                                            if (-not $candidateFound -and $columnobject.Name -match $pattern) {
                                                 # Add the results
-                                                $results += [pscustomobject]@{
+                                                [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -44391,64 +44500,74 @@ function Invoke-DbaDbPiiScan {
                                                     "PII-Category" = $knownName.Category
                                                     "PII-Name"     = $knownName.Name
                                                     FoundWith      = "KnownName"
+                                                    MaskingType    = $knownName.MaskingType
+                                                    MaskingSubType = $knownName.MaskingSubType
                                                 }
+
+                                                $candidateFound = $true
                                             }
                                         }
                                     }
+
                                     $knownName = $null
                                 }
                             } else {
                                 Write-Message -Level Verbose -Message "No known names found to perform check on"
                             }
-                        } # End for each column
 
+                            if ($patterns.Count -ge 1) {
+                                # Check if the results not already contain a similar object
+                                #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                if (-not $candidateFound) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
-                        if ($patterns.Count -ge 1) {
-                            # Check if the results not already contain a similar object
-                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                                # Setup the query
-                                $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    # Get the data
+                                    $dataset = @()
 
-                                # Get the data
-                                $dataset = @()
-
-                                try {
-                                    $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
-                                } catch {
-                                    $errormessage = $_.Exception.Message.ToString()
-                                    Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                                }
-
-                                # Check if there is any data
-                                if ($dataset.Count -ge 1) {
-
-                                    # Loop through the patterns
-                                    foreach ($patternobject in $patterns) {
-
-                                        # If there is a result from the match
-                                        if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-                                            # Add the results
-                                            $results += [pscustomobject]@{
-                                                ComputerName   = $db.Parent.ComputerName
-                                                InstanceName   = $db.Parent.ServiceName
-                                                SqlInstance    = $db.Parent.DomainInstanceName
-                                                Database       = $dbName
-                                                Schema         = $tableobject.Schema
-                                                Table          = $tableobject.Name
-                                                Column         = $columnobject.Name
-                                                "PII-Category" = $patternobject.category
-                                                "PII-Name"     = $patternobject.Name
-                                                FoundWith      = "Pattern"
-                                            }
-                                        }
-                                        $patternobject = $null
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
                                     }
-                                } else {
-                                    Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
+
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
+
+                                            # If there is a result from the match
+                                            if (-not $candidateFound -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+                                                # Add the results
+                                                [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $dbName
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $patternobject.category
+                                                    "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
+                                                }
+
+                                                $candidateFound = $true
+                                            }
+
+                                            $patternobject = $null
+                                        }
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                    }
                                 }
+                            } else {
+                                Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
-                        } else {
-                            Write-Message -Level Verbose -Message "No patterns found to perform check on"
                         }
                     }
 
@@ -44457,12 +44576,9 @@ function Invoke-DbaDbPiiScan {
                 } # End for each table
             } # End for each database
         } # End for each instance
-
-        # Return the results
-        return $results
-
     } # End process
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaDbShrink {
@@ -48929,9 +49045,9 @@ function New-DbaClientAlias {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
-        }
 
-        Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+            Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+        }
     }
 }
 
@@ -50534,7 +50650,6 @@ function New-DbaDbMaskingConfig {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -50543,17 +50658,72 @@ function New-DbaDbMaskingConfig {
         [parameter(Mandatory)]
         [string]$Path,
         [string]$Locale = 'en',
+        [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+        [int]$SampleCount = 100,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$Force,
+        [parameter(ValueFromPipeline = $true)]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     begin {
 
-        # Get all the different column types
-        try {
-            $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
-        } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -ErrorRecord $_ -Continue
+        # Initialize the arrays
+        $knownNames = @()
+        $patterns = @()
+
+        # Get the known names
+        if (-not $ExcludeDefaultKnownName) {
+            try {
+                $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
+                return
+            }
         }
+
+        # Get the patterns
+        if (-not $ExcludeDefaultPattern) {
+            try {
+                $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
+                return
+            }
+        }
+
+        # Get custom known names and patterns
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
+                try {
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
+            }
+        }
+
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
+                try {
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
+            }
+        }
+
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
             try {
@@ -50567,20 +50737,24 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+
+        $maskingconfig = @()
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
+        if (Test-FunctionInterrupt) { return }
+
+        if ($InputObject) {
+            $searchArray = @()
+            $searchArray += $InputObject | Select-Object ComputerName, InstanceName, SqlInstance, Database, Schema, Table, Column
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $databases += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-        $results = @()
-        foreach ($db in $InputObject) {
+        foreach ($db in $databases) {
             $server = $db.Parent
             $tables = @()
 
@@ -50615,6 +50789,8 @@ function New-DbaDbMaskingConfig {
                 }
 
                 foreach ($columnobject in $columncollection) {
+                    $result = $minValue = $maxValue = $null
+
                     # Skip incompatible columns
                     if ($columnobject.Identity) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
@@ -50646,7 +50822,15 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    $maskingType = $columnType = $min = $null
+                    $searchObject = [pscustomobject]@{
+                        ComputerName = $db.Parent.ComputerName
+                        InstanceName = $db.Parent.ServiceName
+                        SqlInstance  = $db.Parent.DomainInstanceName
+                        Database     = $db.Name
+                        Schema       = $tableobject.Schema
+                        Table        = $tableobject.Name
+                        Column       = $columnobject.Name
+                    }
 
                     if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
                         $columnLength = $columnobject.Datatype.NumericScale
@@ -50654,127 +50838,208 @@ function New-DbaDbMaskingConfig {
                         $columnLength = $columnobject.Datatype.MaximumLength
                     }
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                        $min = 2
-                    }
+                    $columnType = $columnobject.DataType.Name
 
-                    if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
-                    }
-
-                    # Get the masking type with the synonym
-                    $maskingType = $columnTypes | Where-Object {
-                        $columnobject.Name -in $_.Synonym
-                    }
-
-                    if ($maskingType) {
-                        # Make it easier to get the type name
-                        $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
-
-                        $type = $null
-                        $subtype = $null
-
-                        switch ($maskingType.ToLowerInvariant()) {
-                            "address" {
-                                $type = "Address"
-                                $subtype = "StreetAddress"
-                            }
-                            "bic" {
-                                $type = "Finance"
-                                $subtype = "Bic"
-                            }
-                            "city" {
-                                $type = "Address"
-                                $subtype = "City"
-                            }
-                            "company" {
-                                $type = "Company"
-                                $subtype = "CompanyName"
-                            }
-                            "country" {
-                                $type = "Address"
-                                $subtype = "Country"
-                            }
-                            "countrycode" {
-                                $type = "Address"
-                                $subtype = "CountryCode"
-                            }
-                            "creditcard" {
-                                $type = "Finance"
-                                $subtype = "CreditcardNumber"
-                            }
-                            "creditcardcvv" {
-                                $type = "Finance"
-                                $subtype = "CreditCardCvv"
-                            }
-                            "email" {
-                                $type = "Internet"
-                                $subtype = "Email"
-                            }
-                            "ethereum" {
-                                $type = "Finance"
-                                $subtype = "EthereumAddress"
-                            }
-                            "firstname" {
-                                $type = "Name"
-                                $subtype = "Firstname"
-                            }
-                            "fullname" {
-                                $type = "Name"
-                                $subtype = "FullName"
-                            }
-                            "iban" {
-                                $type = "Finance"
-                                $subtype = "Iban"
-                            }
-                            "lastname" {
-                                $type = "Name"
-                                $subtype = "Lastname"
-                            }
-                            "latitude" {
-                                $type = "Address"
-                                $subtype = "Latitude"
-                            }
-                            "longitude" {
-                                $type = "Address"
-                                $subtype = "Longitude"
-                            }
-                            "phone" {
-                                $type = "Phone"
-                                $subtype = "PhoneNumber"
-                            }
-                            "state" {
-                                $type = "Address"
-                                $subtype = "State"
-                            }
-                            "stateabbr" {
-                                $type = "Address"
-                                $subtype = "StateAbbr"
-                            }
-                            "username" {
-                                $type = "Internet"
-                                $subtype = "UserName"
-                            }
-                            "zipcode" {
-                                $type = "Address"
-                                $subtype = "Zipcode"
+                    switch ($columnType) {
+                        "bigint" {
+                            $minValue = 1
+                            $maxValue = 9223372036854775807
+                        }
+                        {
+                            $_ -in "char", "nchar", "nvarchar", "varchar"
+                        } {
+                            if ($columnLength -eq -1) {
+                                if ($_ -in "char", "varchar") {
+                                    $minValue = 1
+                                    $maxValue = 8000
+                                } elseif ($_ -in "nchar", "nvarchar") {
+                                    $minValue = 1
+                                    $maxValue = 4000
+                                }
+                            } else {
+                                $minValue = [int]($columnLength / 2)
+                                $maxValue = $columnLength
                             }
                         }
+                        "date" {
+                            $maxValue = $null
+                        }
+                        "datetime" {
+                            $maxValue = $null
+                        }
+                        "datetime2" {
+                            $maxValue = $null
+                        }
+                        "decimal" {
+                            $min = 1.1
+                            $maxValue = $null
+                        }
+                        "float" {
+                            $minValue = 1.1
+                            $maxValue = $null
+                        }
+                        "int" {
+                            $minValue = 1
+                            $maxValue = 2147483647
+                        }
+                        "money" {
+                            $minValue = 1.0
+                            $maxValue = 922337203685477.5807
+                        }
+                        "smallint" {
+                            $minValue = 1
+                            $maxValue = 32767
+                        }
+                        "smalldatetime" {
+                            $maxValue = $null
+                        }
+                        "text" {
+                            $minValue = 10
+                            $maxValue = 2147483647
+                        }
+                        "time" {
+                            $maxValue = $null
+                        }
+                        "tinyint" {
+                            $minValue = 1
+                            $maxValue = 255
+                        }
+                        "varbinary" {
+                            $maxValue = $columnLength
+                        }
+                        "userdefineddatatype" {
+                            if ($columnLength -eq 1) {
+                                $maxValue = $columnLength
+                            } else {
+                                $min = [int]($columnLength / 2)
+                                $maxValue = $columnLength
+                            }
+                        }
+                        default {
+                            $min = [int]($columnLength / 2)
+                            $maxValue = $columnLength
+                        }
+                    }
 
+                    if ($searchArray -contains $searchObject) {
+                        $result = $InputObject | Where-Object { $_.Database -eq $searchObject.Name -and $_.Schema -eq $searchObject.Schema -and $_.Table -eq $searchObject.Name -and $_.Column -eq $searchObject.Name }
+                    } else {
+
+                        if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
+                            $min = 2
+                        }
+
+                        if ($columnobject.DataType.Name -eq "geography") {
+                            # Add the results
+                            $result = [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $db.Name
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Location"
+                                "PII-Name"     = "Geography"
+                                FoundWith      = "DataType"
+                                MaskingType    = "Random"
+                                MaskingSubType = "Decimal"
+                            }
+                        } else {
+                            if ($knownNames.Count -ge 1) {
+                                # Go through the first check to see if any column is found with a known type
+                                foreach ($knownName in $knownNames) {
+                                    foreach ($pattern in $knownName.Pattern) {
+                                        if ($null -eq $result -and $columnobject.Name -match $pattern ) {
+                                            # Add the results
+                                            $result = [pscustomobject]@{
+                                                ComputerName   = $db.Parent.ComputerName
+                                                InstanceName   = $db.Parent.ServiceName
+                                                SqlInstance    = $db.Parent.DomainInstanceName
+                                                Database       = $db.Name
+                                                Schema         = $tableobject.Schema
+                                                Table          = $tableobject.Name
+                                                Column         = $columnobject.Name
+                                                "PII-Category" = $knownName.Category
+                                                "PII-Name"     = $knownName.Name
+                                                FoundWith      = "KnownName"
+                                                MaskingType    = $knownName.MaskingType
+                                                MaskingSubType = $knownName.MaskingSubType
+                                            }
+                                        }
+                                    }
+                                }
+                                $knownName = $null
+                            } else {
+                                Write-Message -Level Verbose -Message "No known names found to perform check on"
+                            }
+
+                            # Go through the second check to see if any column is found with a known type
+                            if ($patterns.Count -ge 1) {
+                                if ($null -eq $result) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                                    # Get the data
+                                    $dataset = @()
+
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                    }
+
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
+
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
+
+                                            # If there is a result from the match
+                                            if ($null -eq $result -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+                                                # Add the results
+                                                $result = [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $db.Name
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $patternobject.Category
+                                                    "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
+                                                }
+                                            }
+                                            $patternobject = $null
+                                        }
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                    }
+                                }
+                            } else {
+                                Write-Message -Level Verbose -Message "No patterns found to perform check on"
+                            }
+                        }
+                    }
+
+                    if ($result) {
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
-                            MaskingType     = $type
-                            SubType         = $subtype
+                            CharacterString = $( if ($result.MaskingType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
+                            MaskingType     = $result.MaskingType
+                            SubType         = $result.MaskingSubType
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             Composite       = $null
                         }
-
                     } else {
                         $type = "Random"
 
@@ -50783,85 +51048,64 @@ function New-DbaDbMaskingConfig {
                                 $_ -in "bit", "bool"
                             } {
                                 $subType = "Bool"
-                                $MaxValue = $null
                             }
                             "bigint" {
                                 $subType = "Number"
-                                $MaxValue = 9223372036854775807
                             }
                             {
                                 $_ -in "char", "nchar", "nvarchar", "varchar"
                             } {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
-                            }
-                            "int" {
-                                $subType = "Number"
-                                $MaxValue = 2147483647
                             }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime2" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "decimal" {
                                 $subType = "Decimal"
-                                $MaxValue = $null
                             }
                             "float" {
                                 $subType = "Float"
-                                $MaxValue = $null
+                            }
+                            "int" {
+                                $subType = "Number"
                             }
                             "money" {
                                 $type = "Commerce"
                                 $subType = "Price"
-                                $min = -922337203685477.5808
-                                $MaxValue = 922337203685477.5807
                             }
                             "smallint" {
                                 $subType = "Number"
-                                $MaxValue = 32767
                             }
                             "smalldatetime" {
                                 $subType = "Date"
-                                $MaxValue = $null
                             }
                             "text" {
                                 $subType = "String"
-                                $maxValue = 2147483647
                             }
                             "time" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "tinyint" {
                                 $subType = "Number"
-                                $MaxValue = 255
                             }
                             "varbinary" {
                                 $subType = "Byte"
-                                $MaxValue = $columnLength
                             }
                             "userdefineddatatype" {
                                 if ($columnLength -eq 1) {
                                     $subType = "Bool"
-                                    $MaxValue = $columnLength
                                 } else {
                                     $subType = "String2"
-                                    $min = [int]($columnLength / 2)
-                                    $MaxValue = $columnLength
                                 }
                             }
                             "uniqueidentifier" {
@@ -50869,17 +51113,15 @@ function New-DbaDbMaskingConfig {
                             }
                             default {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
                             }
                         }
 
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
+                            CharacterString = $( if ($subType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
                             MaskingType     = $type
                             SubType         = $subType
                             Format          = $null
@@ -50889,7 +51131,6 @@ function New-DbaDbMaskingConfig {
                         }
                     }
                 }
-
 
                 # Check if something needs to be generated
                 if ($columns) {
@@ -50906,7 +51147,7 @@ function New-DbaDbMaskingConfig {
 
             # Check if something needs to be generated
             if ($tables) {
-                $results += [PSCustomObject]@{
+                $maskingconfig += [PSCustomObject]@{
                     Name   = $db.Name
                     Type   = "DataMaskingConfiguration"
                     Tables = $tables
@@ -50914,24 +51155,26 @@ function New-DbaDbMaskingConfig {
             } else {
                 Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
             }
-        }
 
-        # Write the data to the Path
-        if ($results) {
-            try {
-                $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
+            # Write the data to the Path
+            if ($maskingconfig) {
+                Write-Message -Message "Writing masking config" -Level Verbose
+                try {
+                    $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                    $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
-                if (-not $script:isWindows) {
-                    $temppath = $temppath.Replace("\", "/")
+                    if (-not $script:isWindows) {
+                        $temppath = $temppath.Replace("\", "/")
+                    }
+
+                    Set-Content -Path $temppath -Value ($maskingconfig | ConvertTo-Json -Depth 5)
+                    Get-ChildItem -Path $temppath
+                } catch {
+                    Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
                 }
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
-            } catch {
-                Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
+            } else {
+                Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
             }
-        } else {
-            Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
         }
     }
 }
@@ -52251,7 +52494,7 @@ function New-DbaServerRole {
     )
     process {
         if (-not $ServerRole) {
-            Stop-Function -Message "You must specify a new server-role name. Use -ServerRole parameter."
+            Stop-Function -Message "You must specify a new server-level role name. Use -ServerRole parameter."
             return
         }
 
@@ -52262,16 +52505,15 @@ function New-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $serverroles = $server.Roles
+            $serverRoles = $server.Roles
 
             foreach ($role in $ServerRole) {
-                if ($serverroles | Where-Object Name -eq $role) {
-                    Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
+                if ($serverRoles | Where-Object Name -eq $role) {
+                    Stop-Function -Message "The server-level role $role already exists on instance $server." -Target $instance -Continue
                 }
 
-                Write-Message -Level Verbose -Message "Add roles to Instance $server"
-
-                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
+                if ($Pscmdlet.ShouldProcess("Creating new server-level role $role on $server")) {
+                    Write-Message -Level Verbose -Message "Creating new server-level role $role on $server"
                     try {
                         $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
                         $newServerRole.Name = $role
@@ -52283,11 +52525,7 @@ function New-DbaServerRole {
 
                         $newServerRole.Create()
 
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $newServerRole -Property ComputerName, InstanceName, SqlInstance, Name, Owner
+                        Get-DbaServerRole -SqlInstance $server -ServerRole $role -EnableException
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
@@ -54389,7 +54627,7 @@ function Remove-DbaClientAlias {
                 $fullKey = "$basekey\Client\ConnectTo"
                 if ((Test-Path $fullKey) -eq $false) {
                     
-                    Write-Warning "Registry key ($fullKey) does not exist. Quitting."
+                    Write-Warning "Registry key ($fullKey) does not exist on $env:COMPUTERNAME"
                     continue
                 }
 
@@ -54404,10 +54642,9 @@ function Remove-DbaClientAlias {
                     $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
                     foreach ($a in $Alias) {
                         if ($entry.Property -contains $a) {
-                            Remove-ItemProperty -Path $e -Name $a
-
+                            $null = Remove-ItemProperty -Path $e -Name $a
                             [PSCustomObject]@{
-                                ComputerName = $computer
+                                ComputerName = $env:COMPUTERNAME
                                 Architecture = $architecture
                                 Alias        = $a
                                 Status       = "Removed"
@@ -67825,7 +68062,7 @@ function Test-DbaDbDataMaskingConfig {
             return
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $randomizerTypes = Get-DbaRandomizedType
 
