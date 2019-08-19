@@ -137,8 +137,6 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     $ScriptAnalyzerErrors = @()
     $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
     $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
-    # check errors associated with PSGallery:
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings PSGallery
 
     Context "Errors" {
         if ($ScriptAnalyzerErrors.Count -gt 0) {
