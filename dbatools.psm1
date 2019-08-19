@@ -736,7 +736,8 @@ $script:xplat = @(
     'Get-DbaKbUpdate',
     'Get-DbaDbLogSpace',
     'Export-DbaDbRole',
-    'Export-DbaServerRole'
+    'Export-DbaServerRole',
+    'Add-DbaServerRoleMember'
 )
 
 $script:noncoresmo = @(
