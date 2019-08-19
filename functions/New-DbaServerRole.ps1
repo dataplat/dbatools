@@ -47,9 +47,9 @@ function New-DbaServerRole {
         https://dbatools.io/New-DbaServerRole
 
     .EXAMPLE
-        PS C:\> New-DbaServerRole -SqlInstance sql2017a -Database db1 -Role 'dbExecuter'
+        PS C:\> New-DbaServerRole -SqlInstance sql2017a -Role 'dbExecuter' -Owner sa
 
-        Will create a new role named dbExecuter within db1 on sql2017a instance.
+        Will create a new role named dbExecuter and grant ownership to the login sa on sql2017a instance.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
@@ -63,7 +63,7 @@ function New-DbaServerRole {
     )
     process {
         if (-not $ServerRole) {
-            Stop-Function -Message "You must specify a new server-role name. Use -ServerRole parameter."
+            Stop-Function -Message "You must specify a new server-level role name. Use -ServerRole parameter."
             return
         }
 
@@ -74,16 +74,15 @@ function New-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $serverroles = $server.Roles
+            $serverRoles = $server.Roles
 
             foreach ($role in $ServerRole) {
-                if ($serverroles | Where-Object Name -eq $role) {
-                    Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
+                if ($serverRoles | Where-Object Name -eq $role) {
+                    Stop-Function -Message "The server-level role $role already exists on instance $server." -Target $instance -Continue
                 }
 
-                Write-Message -Level Verbose -Message "Add roles to Instance $server"
-
-                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
+                if ($Pscmdlet.ShouldProcess("Creating new server-level role $role on $server")) {
+                    Write-Message -Level Verbose -Message "Creating new server-level role $role on $server"
                     try {
                         $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
                         $newServerRole.Name = $role
@@ -95,11 +94,7 @@ function New-DbaServerRole {
 
                         $newServerRole.Create()
 
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $newServerRole -Property ComputerName, InstanceName, SqlInstance, Name, Owner
+                        Get-DbaServerRole -SqlInstance $server -ServerRole $role -EnableException
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }

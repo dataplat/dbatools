@@ -491,6 +491,7 @@
         'Get-DbaDbLogSpace',
         'Export-DbaDbRole',
         'Export-DbaServerRole',
+        'Add-DbaServerRoleMember',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
