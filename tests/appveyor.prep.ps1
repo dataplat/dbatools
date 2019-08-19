@@ -9,14 +9,14 @@ choco install codecov | Out-Null
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\1.17.1')) {
-    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.17.1 | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\1.18.1')) {
+    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.1 | Out-Null
 }
 
 #Get Pester (to run tests) - choco isn't working onall scenarios, weird
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.8.1')) {
+    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.8.1 | Out-Null
 }
 
 #Setup DbatoolsConfig Path.DbatoolsExport path
