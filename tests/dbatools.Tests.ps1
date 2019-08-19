@@ -15,7 +15,7 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
         Context "Testing $Alias Alias" {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
-                Get-Alias $Alias| Should Not BeNullOrEmpty
+                Get-Alias $Alias | Should Not BeNullOrEmpty
             }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
@@ -135,8 +135,11 @@ Describe "$ModuleName style" -Tag 'Compliance' {
 
 Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     $ScriptAnalyzerErrors = @()
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Severity Error
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Severity Error
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
+    # check errors associated with PSGallery:
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings PSGallery
+
     Context "Errors" {
         if ($ScriptAnalyzerErrors.Count -gt 0) {
             foreach ($err in $ScriptAnalyzerErrors) {
@@ -157,7 +160,7 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
             }
             If (Test-Path "tests\$($f.basename).tests.ps1") {
                 It "$($f.basename) has validate parameters unit test" {
-                    "tests\$($f.basename).tests.ps1" | should FileContentMatch 'Context "Validate parameters"'
+                    "tests\$($f.basename).tests.ps1" | Should FileContentMatch 'Context "Validate parameters"'
                 }
             }
         }
@@ -195,7 +198,7 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         $FunctionName = $Ast.EndBlock.Statements.Name
         $BaseName = $item.BaseName
         if ($FunctionName -cne $BaseName) {
-            write-host "aaa $functionname bbb $basename"
+            Write-Host "aaa $functionname bbb $basename"
             $FunctionNameMatchesErrors += [pscustomobject]@{
                 FunctionName = $FunctionName
                 BaseName     = $BaseName
