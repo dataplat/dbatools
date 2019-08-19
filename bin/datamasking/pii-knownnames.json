@@ -3,12 +3,49 @@
         "Name": "Name",
         "Category": "Personal",
         "Pattern": [
-            "(\\w*)(?i)(firstname|fname|lastname|lname|fullname|fname|maidenname|first_name|second_name|third_name|last_name|maiden_name|nickname|name_suffix)(\\w*)",
-            "(\\w*)(?i)(vorname|vname|nachname|nname|vollstandigername|vollname)(\\w*)",
-            "(\\w*)(?i)(prenom|pnom|nomdefamille|nomfamille|nomcomplet|ncomplet)(\\w*)",
-            "(\\w*)(?i)(nombredepila|npila|apellido|nombre|nombrecompleto|ncompleto)(\\w*)",
-            "(\\w*)(?i)(voornaam|vnaam|achternaam|anaam|naam|volledigenaam|volnaam)(\\w*)"
-        ]
+            "(\\w*)(?i)(firstname|fname|first_name)(\\w*)",
+            "(\\w*)(?i)(vorname|vname|vor_name)(\\w*)",
+            "(\\w*)(?i)(prenom|pnom)(\\w*)",
+            "(\\w*)(?i)(nombredepila|npila|apellido)(\\w*)",
+            "(\\w*)(?i)(voornaam|vnaam)(\\w*)"
+        ],
+        "MaskingType": "Name",
+        "MaskingSubType": "FirstName"
+    },
+    {
+        "Name": "Name",
+        "Category": "Personal",
+        "Pattern": [
+            "(\\w*)(?i)(lastname|lname|maidenname|second_name|third_name|last_name|maiden_name|nickname|name_suffix)(\\w*)",
+            "(\\w*)(?i)(nachname|nname)(\\w*)",
+            "(\\w*)(?i)(nomdefamille|nomfamille)(\\w*)",
+            "(\\w*)(?i)(nombredepila|npila|apellido)(\\w*)",
+            "(\\w*)(?i)(achternaam|anaam)(\\w*)"
+        ],
+        "MaskingType": "Name",
+        "MaskingSubType": "LastName"
+    },
+    {
+        "Name": "Name",
+        "Category": "Personal",
+        "Pattern": [
+            "(\\w*)(?i)(fullname|fname)(\\w*)",
+            "(\\w*)(?i)(vollstandigername|vollname)(\\w*)",
+            "(\\w*)(?i)(nomcomplet|ncomplet)(\\w*)",
+            "(\\w*)(?i)(nombrecompleto|ncompleto)(\\w*)",
+            "(\\w*)(?i)(volledigenaam|volnaam)(\\w*)"
+        ],
+        "MaskingType": "Name",
+        "MaskingSubType": "FullName"
+    },
+    {
+        "Name": "Date",
+        "Category": "Personal",
+        "Pattern": [
+            "(\\w*)(?i)(company|companyname)(\\w*)"
+        ],
+        "MaskingType": "Company",
+        "MaskingSubType": "CompanyName"
     },
     {
         "Name": "Date",
@@ -18,7 +55,9 @@
             "(\\w*)(?i)(Geburtsdatum|Geburtsjahr)(\\w*)",
             "(\\w*)(?i)(datedenaissance|date_de_naissance)(\\w*)",
             "(\\w*)(?i)(geboortedatum)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Date",
+        "MaskingSubType": "Past"
     },
     {
         "Name": "Gender",
@@ -29,14 +68,18 @@
             "(\\w*)(?i)(sexe)(\\w*)",
             "(\\w*)(?i)(sexo)(\\w*)",
             "(\\w*)(?i)(geslacht)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "Gender"
     },
     {
         "Name": "Resume",
         "Category": "Personal",
         "Pattern": [
             "(\\w*)(?i)(resume)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Lorem",
+        "MaskingSubType": "Letter"
     },
     {
         "Name": "Nationality",
@@ -47,7 +90,9 @@
             "(\\w*)(?i)(nationalité|nationalite)(\\w*)",
             "(\\w*)(?i)(nacionalidad)(\\w*)",
             "(\\w*)(?i)(nationaliteit)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
     },
     {
         "Name": "Address",
@@ -57,7 +102,9 @@
             "(\\w*)(?i)adresse(\\w*)",
             "(\\w*)(?i)direccion(\\w*)",
             "(\\w*)(?i)adres(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "StreetAddress"
     },
     {
         "Name": "City",
@@ -68,7 +115,9 @@
             "(\\w*)(?i)ville(\\w*)",
             "(\\w*)(?i)ciudad(\\w*)",
             "(\\w*)(?i)stad(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "City"
     },
     {
         "Name": "State",
@@ -76,7 +125,9 @@
         "Pattern": [
             "(\\w*)(?i)state(\\w*)",
             "(\\w*)(?i)provin(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "State"
     },
     {
         "Name": "County",
@@ -86,7 +137,9 @@
             "(\\w*)(?i)bezirk(\\w*)",
             "(\\w*)(?i)comte(\\w*)",
             "(\\w*)(?i)condado(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "County"
     },
     {
         "Name": "Country",
@@ -96,53 +149,76 @@
             "(\\w*)(?i)land(\\w*)",
             "(\\w*)(?i)pays(\\w*)",
             "(\\w*)(?i)pais(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "Country"
     },
     {
         "Name": "Location",
         "Category": "Location",
         "Pattern": [
             "(\\w*)(?i)location(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "Latitude"
     },
     {
         "Name": "Phone",
         "Category": "Communication",
         "Pattern": [
             "(\\w*)(?i)(phone|phonenumber)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "Phone"
     },
     {
         "Name": "Fax",
         "Category": "Communication",
         "Pattern": [
             "(\\w*)(?i)(fax|faxnumber)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Person",
+        "MaskingSubType": "Phone"
     },
     {
         "Name": "E-mail",
         "Category": "Communication",
         "Pattern": [
             "(\\w*)(?i)(email|e-mail|mail)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Email"
+    },
+    {
+        "Name": "Website",
+        "Category": "Communication",
+        "Pattern": [
+            "(\\w*)(?i)(website|url|link)(\\w*)"
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Url"
     },
     {
         "Name": "IPAddres",
         "Category": "System",
         "Pattern": [
             "(\\w*)(?i)(ip|ipaddress|ipv4|ipv6)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Ip"
     },
     {
         "Name": "Username",
         "Category": "Credentials",
         "Pattern": [
-            "(\\w*)(?i)(userid|user|username)(\\w*)",
+            "(\\w*)(?i)(userid|user|username|login)(\\w*)",
             "(\\w*)(?i)(nutzerid|nutzer|nutzername)(\\w*)",
             "(\\w*)(?i)(nomutilisateur|utilisateur)(\\w*)",
             "(\\w*)(?i)(nombredeusuario|usuario)(\\w*)",
             "(\\w*)(?i)(gebruikersid|gebruiker|gebruikersnaam)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Username"
     },
     {
         "Name": "Password",
@@ -151,38 +227,57 @@
             "(\\w*)(?i)pass(\\w*)",
             "(\\w*)(?i)contrasena(\\w*)",
             "(\\w*)(?i)wachtwoord(\\w*)"
-        ]
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Password"
     },
     {
         "Name": "Zipcode",
         "Category": "Location",
         "Pattern": [
-            "(\\w*)(?i)zip(\\w*)",
+            "(\\w*)(?i)(postalcode|zip)(\\w*)",
             "(\\w*)(?i)postal(\\w*)",
             "(\\w*)(?i)postleitzahl(\\w*)",
             "(\\w*)(?i)postcode(\\w*)"
-        ]
+        ],
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
     },
     {
         "Name": "Bank Account",
         "Category": "Financial",
         "Pattern": [
             "(\\w*)(?i)(bank|bankaccount)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "Account"
+    },
+    {
+        "Name": "CreditCard",
+        "Category": "Financial",
+        "Pattern": [
+            "(\\w*)(?i)(cvv|creditcardcvv)(\\w*)"
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditcardCvv"
     },
     {
         "Name": "CreditCard",
         "Category": "Financial",
         "Pattern": [
             "(\\w*)(?i)(credit|creditcard)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditcardNumber"
     },
     {
         "Name": "Other",
         "Category": "Financial",
         "Pattern": [
             "(\\w*)(?i)(sales|special|shop|product)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Commerce",
+        "MaskingSubType": "Category"
     },
     {
         "Name": "Other",
@@ -190,6 +285,8 @@
         "Pattern": [
             "(\\w*)(?i)(guid)(\\w*)",
             "(\\w*)(?i)(receipt)(\\w*)"
-        ]
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "String"
     }
 ]
