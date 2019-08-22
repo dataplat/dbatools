@@ -188,7 +188,7 @@ function Backup-DbaDbCertificate {
                         $cert.export($exportPathCert)
                     }
 
-                    [pscustomobject]@{
+                    $exportObject = [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
@@ -201,7 +201,8 @@ function Backup-DbaDbCertificate {
                         exportPathCert = $exportPathCert
                         exportPathKey  = $exportPathKey
                         Status         = "Success"
-                    } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
+                    }
+                    Select-DefaultView -InputObject $exportObject -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                 } catch {
 
                     if ($_.Exception.InnerException) {
@@ -210,7 +211,7 @@ function Backup-DbaDbCertificate {
                     } else {
                         $exception = $_.Exception
                     }
-                    [pscustomobject]@{
+                    $exportObject = [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
@@ -223,7 +224,8 @@ function Backup-DbaDbCertificate {
                         exportPathCert = $exportPathCert
                         exportPathKey  = $exportPathKey
                         Status         = "Failure: $exception"
-                    } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
+                    }
+                    Select-DefaultView -InputObject $exportObject -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                     Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
                 }
             }
