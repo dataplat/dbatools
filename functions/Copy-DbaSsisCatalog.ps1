@@ -150,13 +150,11 @@ function Copy-DbaSsisCatalog {
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
                 $cmd.CommandText = "SSISDB.Catalog.get_project"
-                $cmd.Parameters.Add("@folder_name", $Folder) | out-null;
-                $cmd.Parameters.Add("@project_name", $Project) | out-null;
+                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
+                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
-                    $destFolder = $destinationFolders | Where-Object {
-                        $_.Name -eq $Folder
-                    }
+                    $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                     $deployedProject = $destFolder.DeployProject($Project, $results)
                     if ($deployedProject.Status -ne "Success") {
                         Stop-Function -Message "An error occurred deploying project $Project." -Target $Project -Continue
@@ -181,9 +179,7 @@ function Copy-DbaSsisCatalog {
             )
             if ($Pscmdlet.ShouldProcess($folder, "Creating new Catalog Folder")) {
                 if ($Force) {
-                    $remove = $destinationFolders | Where-Object {
-                        $_.Name -eq $Folder
-                    }
+                    $remove = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                     $envs = $remove.Environments.Name
                     foreach ($e in $envs) {
                         $remove.Environments[$e].Drop()
@@ -211,17 +207,13 @@ function Copy-DbaSsisCatalog {
                 [Switch]$Force
             )
             if ($Pscmdlet.ShouldProcess($folder, "Creating new Environment Folder")) {
-                $envDestFolder = $destinationFolders | Where-Object {
-                    $_.Name -eq $Folder
-                }
+                $envDestFolder = $destinationFolders | Where-Object Name -eq $Folder
                 if ($force) {
                     $envDestFolder.Environments[$Environment].Drop()
                     $envDestFolder.Alter()
                     $envDestFolder.Refresh()
                 }
-                $srcEnv = ($sourceFolders | Where-Object {
-                        $_.Name -eq $Folder
-                    }).Environments[$Environment]
+                $srcEnv = ($sourceFolders | Where-Object Name -eq $Folder).Environments[$Environment]
                 $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
                 foreach ($var in $srcEnv.Variables) {
                     if ($var.Value.ToString() -eq "") {
@@ -277,9 +269,8 @@ function Copy-DbaSsisCatalog {
             return
         }
 
-        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object {
-            $_.Name -eq "SSISDB"
-        }
+        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object Name -eq "SSISDB"
+
         if (!$sourceCatalog) {
             Stop-Function -Message "The source SSISDB catalog on $Source does not exist."
             return
@@ -309,9 +300,7 @@ function Copy-DbaSsisCatalog {
                 Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
             }
 
-            $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
-                $_.Name -eq "SSISDB"
-            }
+            $destinationCatalog = $destinationSSIS.Catalogs | Where-Object Name -eq "SSISDB"
             $destinationFolders = $destinationCatalog.Folders
 
             if (!$destinationCatalog) {
@@ -368,9 +357,7 @@ function Copy-DbaSsisCatalog {
                     }
 
                     $destinationSSIS.Refresh()
-                    $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
-                        $_.Name -eq "SSISDB"
-                    }
+                    $destinationCatalog = $destinationSSIS.Catalogs | Where-Object Name -eq "SSISDB"
                     $destinationFolders = $destinationCatalog.Folders
                 } else {
                     throw "The destination SSISDB catalog does not exist."
@@ -378,9 +365,7 @@ function Copy-DbaSsisCatalog {
             }
             if ($folder) {
                 if ($sourceFolders.Name -contains $folder) {
-                    $srcFolder = $sourceFolders | Where-Object {
-                        $_.Name -eq $folder
-                    }
+                    $srcFolder = $sourceFolders | Where-Object Name -eq $folder
                     if ($destinationFolders.Name -contains $folder) {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
@@ -446,17 +431,13 @@ function Copy-DbaSsisCatalog {
             }
 
             if ($folder) {
-                $sourceFolders = $sourceFolders | Where-Object {
-                    $_.Name -eq $folder
-                }
+                $sourceFolders = $sourceFolders | Where-Object Name -eq $folder
                 if (!$sourceFolders) {
                     throw "The source folder $folder does not exist in the source Integration Services catalog."
                 }
             }
             if ($project) {
-                $folderDeploy = $sourceFolders | Where-Object {
-                    $_.Projects.Name -eq $project
-                }
+                $folderDeploy = $sourceFolders | Where-Object { $_.Projects.Name -eq $project }
                 if (!$folderDeploy) {
                     throw "The project $project cannot be found in the source Integration Services catalog."
                 } else {
@@ -485,9 +466,7 @@ function Copy-DbaSsisCatalog {
             }
 
             if ($environment) {
-                $folderDeploy = $sourceFolders | Where-Object {
-                    $_.Environments.Name -eq $environment
-                }
+                $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
                 if (!$folderDeploy) {
                     throw "The environment $environment cannot be found in the source Integration Services catalog."
                 } else {
