@@ -102,15 +102,17 @@ function Copy-DbaEndpoint {
         }
         $serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             $destEndpoints = $destServer.Endpoints
 
@@ -140,7 +142,7 @@ function Copy-DbaEndpoint {
                         Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server endpoint $endpointName and recreating.")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping server endpoint $endpointName and recreating.")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName."
                                 $destServer.Endpoints[$endpointName].Drop()
@@ -154,7 +156,7 @@ function Copy-DbaEndpoint {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server endpoint $endpointName.")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating server endpoint $endpointName.")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying server endpoint $endpointName."
                         $destServer.Query($currentEndpoint.Script()) | Out-Null
