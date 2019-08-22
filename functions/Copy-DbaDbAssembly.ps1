@@ -117,15 +117,17 @@ function Copy-DbaDbAssembly {
             }
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             $destAssemblies = @()
@@ -174,8 +176,8 @@ function Copy-DbaDbAssembly {
                 }
 
                 if ($currentAssembly.AssemblySecurityLevel -eq "External" -and -not $destDb.Trustworthy) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Setting $dbName to External")) {
-                        Write-Message -Level Verbose -Message "Setting $dbName Security Level to External on $destinstance."
+                    if ($Pscmdlet.ShouldProcess($destInstance, "Setting $dbName to External")) {
+                        Write-Message -Level Verbose -Message "Setting $dbName Security Level to External on $destInstance."
                         $sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
                         try {
                             Write-Message -Level Debug -Message $sql
@@ -198,7 +200,7 @@ function Copy-DbaDbAssembly {
                         Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping assembly $assemblyName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
                                 Write-Message -Level Verbose -Message "This won't work if there are dependencies."
@@ -217,7 +219,7 @@ function Copy-DbaDbAssembly {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating assembly $assemblyName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating assembly $assemblyName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
                         $sql = $currentAssembly.Script()
