@@ -104,15 +104,17 @@ function Copy-DbaAgentProxy {
         if ($ExcludeProxyAccount) {
             $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             $destProxyAccounts = $destServer.JobServer.ProxyAccounts
@@ -152,9 +154,9 @@ function Copy-DbaAgentProxy {
 
                 if ($null -eq $credentialtest) {
                     $copyAgentProxyAccountStatus.Status = "Skipped"
-                    $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destinstance"
+                    $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destInstance"
                     $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance"
+                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destInstance"
                     continue
                 }
 
@@ -168,7 +170,7 @@ function Copy-DbaAgentProxy {
                         $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate." -Continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping server proxy account $proxyName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server proxy account $proxyName"
                                 $destServer.JobServer.ProxyAccounts[$proxyName].Drop()
@@ -182,7 +184,7 @@ function Copy-DbaAgentProxy {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server proxy account $proxyName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating server proxy account $proxyName")) {
                     $copyAgentProxyAccountStatus.Name = $proxyName
                     $copyAgentProxyAccountStatus.Type = "ProxyAccount"
 
