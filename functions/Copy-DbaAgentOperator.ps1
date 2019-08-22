@@ -102,15 +102,17 @@ function Copy-DbaAgentOperator {
         }
         $serverOperator = $sourceServer.JobServer.Operators
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             $destOperator = $destServer.JobServer.Operators
@@ -134,7 +136,7 @@ function Copy-DbaAgentOperator {
 
                 if ($destOperator.Name -contains $sOperator.Name) {
                     if ($force -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
                             $copyOperatorStatus.Status = "Skipped"
                             $copyOperatorStatus.Notes = "Already exists on destination"
                             $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -147,7 +149,7 @@ function Copy-DbaAgentOperator {
                             continue
                         }
 
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator $operatorName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping operator $operatorName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
                                 $destServer.JobServer.Operators[$operatorName].Drop()
@@ -161,7 +163,7 @@ function Copy-DbaAgentOperator {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating Operator $operatorName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating Operator $operatorName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying Operator $operatorName"
                         $sql = $sOperator.Script() | Out-String
