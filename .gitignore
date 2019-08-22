@@ -32,3 +32,6 @@ _NCrunch_*
 *.crunch.xml
 *.ncrunchsolution*
 nCrunchTemp_*
+dockerfile
+.dockerignore
+docker-compose.debug.yml
