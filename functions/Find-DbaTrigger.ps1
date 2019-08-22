@@ -122,7 +122,7 @@ function Find-DbaTrigger {
                         $triggerText = $trigger.TextBody.split("`n`r")
                         $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                        [PSCustomObject]@{
+                        $outObject = [PSCustomObject]@{
                             ComputerName     = $server.ComputerName
                             SqlInstance      = $server.ServiceName
                             TriggerLevel     = "Server"
@@ -135,7 +135,8 @@ function Find-DbaTrigger {
                             TriggerTextFound = $trTextFound -join "`n"
                             Trigger          = $trigger
                             TriggerFullText  = $trigger.TextBody
-                        } | Select-DefaultView -ExcludeProperty Trigger, TriggerFullText
+                        }
+                        Select-DefaultView -InputObject $outObject -ExcludeProperty Trigger, TriggerFullText
                     }
                 }
                 Write-Message -Level Verbose -Message "Evaluated $triggercount triggers in $server"
@@ -185,7 +186,7 @@ function Find-DbaTrigger {
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                                    [PSCustomObject]@{
+                                    $outObject = [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
@@ -198,7 +199,8 @@ function Find-DbaTrigger {
                                         TriggerTextFound = $trTextFound -join "`n"
                                         Trigger          = $tr
                                         TriggerFullText  = $tr.TextBody
-                                    } | Select-DefaultView -ExcludeProperty Trigger, TriggerFullText
+                                    }
+                                    Select-DefaultView -InputObject $outObject -ExcludeProperty Trigger, TriggerFullText
                                 }
                             }
                         }
@@ -219,16 +221,16 @@ function Find-DbaTrigger {
                                 Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern in object $triggerParentSchema.$triggerParent at database $db"
                                 if ($row.TextBody -match $Pattern) {
 
-                                    $tr = ($db.Tables | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                    $tr = ($db.Tables | Where-Object { $_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema }).Triggers | Where-Object name -eq $row.name
                                     if ($null -eq $tr) {
                                         Write-Message -Level Verbose -Message "Could not find table named $($row.Name). Will try to find on Views."
-                                        $tr = ($db.Views | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                        $tr = ($db.Views | Where-Object { $_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema }).Triggers | Where-Object name -eq $row.name
                                     }
 
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                                    [PSCustomObject]@{
+                                    $outObject = [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
@@ -241,7 +243,8 @@ function Find-DbaTrigger {
                                         TriggerTextFound = $trTextFound -join "`n"
                                         Trigger          = $tr
                                         TriggerFullText  = $tr.TextBody
-                                    } | Select-DefaultView -ExcludeProperty Trigger, TriggerFullText
+                                    }
+                                    Select-DefaultView -InputObject $outObject -ExcludeProperty Trigger, TriggerFullText
                                 }
                             }
                         }
@@ -262,7 +265,7 @@ function Find-DbaTrigger {
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                                    [PSCustomObject]@{
+                                    $outObject = [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
@@ -275,15 +278,16 @@ function Find-DbaTrigger {
                                         TriggerTextFound = $trTextFound -join "`n"
                                         Trigger          = $tr
                                         TriggerFullText  = $tr.TextBody
-                                    } | Select-DefaultView -ExcludeProperty Trigger, TriggerFullText
+                                    }
+                                    Select-DefaultView -InputObject $outObject -ExcludeProperty Trigger, TriggerFullText
                                 }
                             }
                         }
 
                         if ($TriggerLevel -in @('All', 'Object')) {
                             #Get Object Level triggers (DML)
-                            $triggers = $db.Tables | ForEach-Object {$_.Triggers}
-                            $triggers += $db.Views | ForEach-Object {$_.Triggers}
+                            $triggers = $db.Tables | ForEach-Object { $_.Triggers }
+                            $triggers += $db.Views | ForEach-Object { $_.Triggers }
 
                             $triggercount = 0
 
@@ -297,7 +301,7 @@ function Find-DbaTrigger {
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                                    [PSCustomObject]@{
+                                    $outObject = [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
@@ -310,7 +314,8 @@ function Find-DbaTrigger {
                                         TriggerTextFound = $trTextFound -join "`n"
                                         Trigger          = $tr
                                         TriggerFullText  = $tr.TextBody
-                                    } | Select-DefaultView -ExcludeProperty Trigger, TriggerFullText
+                                    }
+                                    Select-DefaultView -InputObject $outObject -ExcludeProperty Trigger, TriggerFullText
                                 }
                             }
                         }

@@ -145,7 +145,7 @@ function Find-DbaStoredProcedure {
                         $StoredProcedureText = $row.TextBody.split("`n")
                         $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                        [PSCustomObject]@{
+                        $outObject = [PSCustomObject]@{
                             ComputerName             = $server.ComputerName
                             SqlInstance              = $server.ServiceName
                             Database                 = $db.Name
@@ -158,7 +158,8 @@ function Find-DbaStoredProcedure {
                             StoredProcedureTextFound = $spTextFound -join "`n"
                             StoredProcedure          = $sp
                             StoredProcedureFullText  = $StoredProcedureText
-                        } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
+                        }
+                        Select-DefaultView -InputObject $outObject -ExcludeProperty StoredProcedure, StoredProcedureFullText
                     }
                 }
 
