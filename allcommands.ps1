@@ -13959,6 +13959,93 @@ function Export-DbaSpConfigure {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Export-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'FullName')]
+    Param (
+        [Parameter(ParameterSetName = "FullName", Mandatory = $true)]
+        [string]
+        $FullName,
+
+        [Parameter(ParameterSetName = "Module", Mandatory = $true)]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = "Module", Position = 1)]
+        [string]
+        $Name = "*",
+
+        [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $Config,
+
+        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
+        [string]
+        $ModuleName,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [int]
+        $ModuleVersion = 1,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "FileUserShared",
+
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'Config')]
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'FullName')]
+        [Parameter(Position = 2, Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $OutPath,
+
+        [switch]
+        $SkipUnchanged,
+
+        [switch]$EnableException
+    )
+
+    begin {
+        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
+
+        $items = @()
+
+        if (($Scope -band 15) -and ($ModuleName)) {
+            Stop-Function -Message "Cannot export modulecache to registry! Please pick a file scope for your export destination" -EnableException $EnableException -Category InvalidArgument -Tag 'fail', 'scope', 'registry'
+            return
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $ModuleName) {
+            foreach ($item in $Config) { $items += $item }
+            if ($FullName) { $items = Get-DbatoolsConfig -FullName $FullName }
+            if ($Module) { $items = Get-DbatoolsConfig -Module $Module -Name $Name }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $ModuleName) {
+            try { Write-DbatoolsConfigFile -Config ($items | Where-Object { -not $SkipUnchanged -or -not $_.Unchanged } ) -Path $OutPath -Replace }
+            catch {
+                Stop-Function -Message "Failed to export to file" -EnableException $EnableException -ErrorRecord $_ -Tag 'fail', 'export'
+                return
+            }
+        } else {
+            if ($Scope -band 16) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true) -Path (Join-Path $script:path_FileUserLocal "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+            if ($Scope -band 32) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileUserShared "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+            if ($Scope -band 64) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileSystem "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Export-DbaUser {
     
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -34493,6 +34580,60 @@ function Get-DbatoolsChangeLog {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Get-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = "FullName")]
+    param (
+        [Parameter(ParameterSetName = "FullName", Position = 0)]
+        [string]$FullName = "*",
+        [Parameter(ParameterSetName = "Module", Position = 1)]
+        [string]$Name = "*",
+        [Parameter(ParameterSetName = "Module", Position = 0)]
+        [string]$Module = "*",
+        [switch]$Force
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        "Module" {
+            $Name = $Name.ToLowerInvariant()
+            $Module = $Module.ToLowerInvariant()
+
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+        }
+
+        "FullName" {
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbatoolsConfigValue {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
+    [CmdletBinding()]
+    param (
+        [Alias('Name')]
+        [Parameter(Mandatory)]
+        [string]$FullName,
+        [object]$Fallback,
+        [switch]$NotNull
+    )
+
+    $FullName = $FullName.ToLowerInvariant()
+
+    $temp = $null
+    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
+    if ($temp -eq $null) { $temp = $Fallback }
+
+    if ($NotNull -and ($temp -eq $null)) {
+        Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
+    } else {
+        return $temp
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Get-DbatoolsLog {
     
     [CmdletBinding()]
@@ -38154,6 +38295,110 @@ function Import-DbaSpConfigure {
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Message -Level Output -Message "SQL Server configuration options migration finished."
         }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Import-DbatoolsConfig {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
+    [CmdletBinding(DefaultParameterSetName = "Path")]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Path")]
+        [string[]]
+        $Path,
+
+        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
+        [string]
+        $ModuleName,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [int]
+        $ModuleVersion = 1,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "FileUserLocal, FileUserShared, FileSystem",
+
+        [Parameter(ParameterSetName = "Path")]
+        [string[]]
+        $IncludeFilter,
+
+        [Parameter(ParameterSetName = "Path")]
+        [string[]]
+        $ExcludeFilter,
+
+        [Parameter(ParameterSetName = "Path")]
+        [switch]
+        $Peek,
+
+        [switch]$EnableException
+    )
+
+    begin {
+        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
+    }
+    process {
+        #region Explicit Path
+        foreach ($item in $Path) {
+            try {
+                if ($item -like "http*") { $data = Read-DbatoolsConfigFile -Weblink $item -ErrorAction Stop }
+                else {
+                    $pathItem = $null
+                    try { $pathItem = Resolve-DbaPath -Path $item -SingleItem -Provider FileSystem }
+                    catch { }
+                    if ($pathItem) { $data = Read-DbatoolsConfigFile -Path $pathItem -ErrorAction Stop }
+                    else { $data = Read-DbatoolsConfigFile -RawJson $item -ErrorAction Stop }
+                }
+            } catch { Stop-Function -Message "Failed to import $item" -EnableException $EnableException -Tag 'fail', 'import' -ErrorRecord $_ -Continue -Target $item }
+
+            :element foreach ($element in $data) {
+                #region Exclude Filter
+                foreach ($exclusion in $ExcludeFilter) {
+                    if ($element.FullName -like $exclusion) {
+                        continue element
+                    }
+                }
+                #endregion Exclude Filter
+
+                #region Include Filter
+                if ($IncludeFilter) {
+                    $isIncluded = $false
+                    foreach ($inclusion in $IncludeFilter) {
+                        if ($element.FullName -like $inclusion) {
+                            $isIncluded = $true
+                            break
+                        }
+                    }
+
+                    if (-not $isIncluded) { continue }
+                }
+                #endregion Include Filter
+
+                if ($Peek) { $element }
+                else {
+                    try {
+                        if (-not $element.KeepPersisted) { Set-DbatoolsConfig -FullName $element.FullName -Value $element.Value -EnableException }
+                        else { Set-DbatoolsConfig -FullName $element.FullName -PersistedValue $element.Value -PersistedType $element.Type }
+                    } catch {
+                        Stop-Function -Message "Failed to set '$($element.FullName)'" -ErrorRecord $_ -EnableException $EnableException -Tag 'fail', 'import' -Continue -Target $item
+                    }
+                }
+            }
+        }
+        #endregion Explicit Path
+
+        if ($ModuleName) {
+            $data = Read-DbatoolsConfigPersisted -Module $ModuleName -Scope $Scope -ModuleVersion $ModuleVersion
+
+            foreach ($value in $data.Values) {
+                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException}
+                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
+            }
+        }
+    }
+    end {
+
     }
 }
 
@@ -51994,7 +52239,7 @@ function New-DbaDirectory {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
         }
 
-        $sql = "EXEC master.dbo.xp_create_subdir'$path'"
+        $sql = "EXEC master.dbo.xp_create_subdir '$path'"
         Write-Message -Level Debug -Message $sql
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
@@ -52013,6 +52258,7 @@ function New-DbaDirectory {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function New-DbaEndpoint {
@@ -53985,6 +54231,188 @@ function Read-DbaXEFile {
             }
             $enum.Dispose()
         }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Register-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $Config,
+
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = "Name", Position = 1)]
+        [string]
+        $Name = "*",
+
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "UserDefault",
+
+        [switch]$EnableException
+    )
+
+    begin {
+        if ($script:NoRegistry -and ($Scope -band 14)) {
+            Stop-Function -Message "Cannot register configurations on non-windows machines to registry. Please specify a file-based scope" -Tag 'NotSupported' -Category NotImplemented
+            return
+        }
+
+        # Linux and MAC default to local user store file
+        if ($script:NoRegistry -and ($Scope -eq "UserDefault")) {
+            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileUserLocal
+        }
+        # Linux and MAC get redirection for SystemDefault to FileSystem
+        if ($script:NoRegistry -and ($Scope -eq "SystemDefault")) {
+            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileSystem
+        }
+
+        $parSet = $PSCmdlet.ParameterSetName
+
+        function Write-Config {
+            [CmdletBinding()]
+            Param (
+                [Sqlcollaborative.Dbatools.Configuration.Config]
+                $Config,
+
+                [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+                $Scope,
+
+                [bool]
+                $EnableException,
+
+                [string]
+                $FunctionName = (Get-PSCallStack)[0].Command
+            )
+
+            if (-not $Config -or ($Config.RegistryData -eq "<type not supported>")) {
+                Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Tag "config", "fail" -Target $Config -FunctionName $FunctionName
+                return
+            }
+
+            try {
+                Write-Message -Level Verbose -Message "Registering $($Config.FullName) for $Scope" -Tag "Config" -Target $Config -FunctionName $FunctionName
+                #region User Default
+                if (1 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryUserDefault -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryUserDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion User Default
+
+                #region User Mandatory
+                if (2 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryUserEnforced -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryUserEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion User Mandatory
+
+                #region System Default
+                if (4 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryMachineDefault -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryMachineDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion System Default
+
+                #region System Mandatory
+                if (8 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryMachineEnforced -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryMachineEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion System Mandatory
+            } catch {
+                Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Tag "config", "fail" -Target $Config -ErrorRecord $_ -FunctionName $FunctionName
+                return
+            }
+        }
+
+        function Ensure-RegistryPath {
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "")]
+            [CmdletBinding()]
+            Param (
+                [string]
+                $Path
+            )
+
+            if (-not (Test-Path $Path)) {
+                $null = New-Item $Path -Force
+            }
+        }
+
+        # For file based persistence
+        $configurationItems = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        #region Registry Based
+        if ($Scope -band 15) {
+            switch ($parSet) {
+                "Default" {
+                    foreach ($item in $Config) {
+                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
+                    }
+
+                    foreach ($item in $FullName) {
+                        if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
+                            Write-Config -Config ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
+                        }
+                    }
+                }
+                "Name" {
+                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
+                    }
+                }
+            }
+        }
+        #endregion Registry Based
+
+        #region File Based
+        else {
+            switch ($parSet) {
+                "Default" {
+                    foreach ($item in $Config) {
+                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
+                    }
+
+                    foreach ($item in $FullName) {
+                        if (($configurationItems.FullName -notcontains $item) -and ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
+                            $configurationItems += [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
+                        }
+                    }
+                }
+                "Name" {
+                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
+                    }
+                }
+            }
+        }
+        #endregion File Based
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        #region Finish File Based Persistence
+        if ($Scope -band 16) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserLocal "psf_config.json")
+        }
+        if ($Scope -band 32) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserShared "psf_config.json")
+        }
+        if ($Scope -band 64) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileSystem "psf_config.json")
+        }
+        #endregion Finish File Based Persistence
     }
 }
 
@@ -58477,6 +58905,65 @@ function Reset-DbaAdmin {
     }
     end {
         Write-Message -Level Verbose -Message "Script complete."
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Reset-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
+    param (
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $ConfigurationItem,
+
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = 'Module')]
+        [string]
+        $Name = "*",
+
+        [switch]$EnableException
+    )
+
+    process {
+        #region By configuration Item
+        foreach ($item in $ConfigurationItem) {
+            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                try { $item.ResetValue() }
+                catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+            }
+        }
+        #endregion By configuration Item
+
+        #region By FullName
+        foreach ($nameItem in $FullName) {
+            # The configuration items themselves can be cast to string, so they need to be filtered out,
+            # otherwise on bind they would execute for this code-path as well.
+            if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+
+            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                    try { $item.ResetValue() }
+                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+                }
+            }
+        }
+        #endregion By FullName
+        if ($Module) {
+            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                    try { $item.ResetValue() }
+                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+                }
+            }
+        }
     }
 }
 
@@ -71556,6 +72043,156 @@ function Uninstall-DbatoolsWatchUpdate {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Unregister-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    param (
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $ConfigurationItem,
+
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = 'Module')]
+        [string]
+        $Name = "*",
+
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "UserDefault"
+    )
+
+    begin {
+        if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*") -and ($Scope -band 15)) {
+            Stop-Function -Message "Cannot unregister configurations from registry on non-windows machines." -Tag 'NotSupported' -Category ResourceUnavailable
+            return
+        }
+
+        #region Initialize Collection
+        $registryProperties = @()
+        if ($Scope -band 1) {
+            if (Test-Path $script:path_RegistryUserDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserDefault }
+        }
+        if ($Scope -band 2) {
+            if (Test-Path $script:path_RegistryUserEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserEnforced }
+        }
+        if ($Scope -band 4) {
+            if (Test-Path $script:path_RegistryMachineDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineDefault }
+        }
+        if ($Scope -band 8) {
+            if (Test-Path $script:path_RegistryMachineEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineEnforced }
+        }
+        $pathProperties = @()
+        if ($Scope -band 16) {
+            $fileUserLocalSettings = @()
+            if (Test-Path (Join-Path $script:path_FileUserLocal "psf_config.json")) { $fileUserLocalSettings = Get-Content (Join-Path $script:path_FileUserLocal "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileUserLocalSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileUserLocal "psf_config.json")
+                    Properties = $fileUserLocalSettings
+                    Changed    = $false
+                }
+            }
+        }
+        if ($Scope -band 32) {
+            $fileUserSharedSettings = @()
+            if (Test-Path (Join-Path $script:path_FileUserShared "psf_config.json")) { $fileUserSharedSettings = Get-Content (Join-Path $script:path_FileUserShared "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileUserSharedSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileUserShared "psf_config.json")
+                    Properties = $fileUserSharedSettings
+                    Changed    = $false
+                }
+            }
+        }
+        if ($Scope -band 64) {
+            $fileSystemSettings = @()
+            if (Test-Path (Join-Path $script:path_FileSystem "psf_config.json")) { $fileSystemSettings = Get-Content (Join-Path $script:path_FileSystem "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileSystemSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileSystem "psf_config.json")
+                    Properties = $fileSystemSettings
+                    Changed    = $false
+                }
+            }
+        }
+        #endregion Initialize Collection
+
+        $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        # Silently skip since no action necessary
+        if (-not ($pathProperties -or $registryProperties)) { return }
+
+        foreach ($item in $ConfigurationItem) {
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item.FullName })) {
+                Remove-ItemProperty -Path $hive.PSPath -Name $item.FullName
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item.FullName })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item.FullName
+                $fileConfig.Changed = $true
+            }
+        }
+
+        foreach ($item in $FullName) {
+            # Ignore string-casted configurations
+            if ($item -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item })) {
+                Remove-ItemProperty -Path $hive.PSPath -Name $item
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item
+                $fileConfig.Changed = $true
+            }
+        }
+
+        if ($Module) {
+            $compoundName = "{0}.{1}" -f $Module, $Name
+
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -like $compoundName })) {
+                foreach ($propName in $hive.PSObject.Properties.Name) {
+                    if ($propName -in $common) { continue }
+
+                    if ($propName -like $compoundName) {
+                        Remove-ItemProperty -Path $hive.PSPath -Name $propName
+                    }
+                }
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -like $compoundName })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NotLike $compoundName
+                $fileConfig.Changed = $true
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($fileConfig in $pathProperties) {
+            if (-not $fileConfig.Changed) { continue }
+
+            if ($fileConfig.Properties) {
+                $fileConfig.Properties | ConvertTo-Json | Set-Content -Path $fileConfig.Path -Encoding UTF8
+            } else {
+                Remove-Item $fileConfig.Path
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Update-DbaInstance {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
@@ -72054,7 +72691,7 @@ function Watch-DbaDbLogin {
         
         if ($SqlCms) {
             try {
-                $servers = Get-DbaRegServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
+                $servers = Get-DbaRegServer -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
                 return
@@ -72741,642 +73378,6 @@ function Write-DbaDbTableData {
         if ($bulkCopy) {
             $bulkCopy.Close()
             $bulkCopy.Dispose()
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Export-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'FullName')]
-    Param (
-        [Parameter(ParameterSetName = "FullName", Mandatory = $true)]
-        [string]
-        $FullName,
-
-        [Parameter(ParameterSetName = "Module", Mandatory = $true)]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = "Module", Position = 1)]
-        [string]
-        $Name = "*",
-
-        [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $Config,
-
-        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
-        [string]
-        $ModuleName,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [int]
-        $ModuleVersion = 1,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "FileUserShared",
-
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'Config')]
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'FullName')]
-        [Parameter(Position = 2, Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $OutPath,
-
-        [switch]
-        $SkipUnchanged,
-
-        [switch]$EnableException
-    )
-
-    begin {
-        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
-
-        $items = @()
-
-        if (($Scope -band 15) -and ($ModuleName)) {
-            Stop-Function -Message "Cannot export modulecache to registry! Please pick a file scope for your export destination" -EnableException $EnableException -Category InvalidArgument -Tag 'fail', 'scope', 'registry'
-            return
-        }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        if (-not $ModuleName) {
-            foreach ($item in $Config) { $items += $item }
-            if ($FullName) { $items = Get-DbatoolsConfig -FullName $FullName }
-            if ($Module) { $items = Get-DbatoolsConfig -Module $Module -Name $Name }
-        }
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        if (-not $ModuleName) {
-            try { Write-DbatoolsConfigFile -Config ($items | Where-Object { -not $SkipUnchanged -or -not $_.Unchanged } ) -Path $OutPath -Replace }
-            catch {
-                Stop-Function -Message "Failed to export to file" -EnableException $EnableException -ErrorRecord $_ -Tag 'fail', 'export'
-                return
-            }
-        } else {
-            if ($Scope -band 16) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true) -Path (Join-Path $script:path_FileUserLocal "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-            if ($Scope -band 32) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileUserShared "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-            if ($Scope -band 64) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileSystem "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = "FullName")]
-    param (
-        [Parameter(ParameterSetName = "FullName", Position = 0)]
-        [string]$FullName = "*",
-        [Parameter(ParameterSetName = "Module", Position = 1)]
-        [string]$Name = "*",
-        [Parameter(ParameterSetName = "Module", Position = 0)]
-        [string]$Module = "*",
-        [switch]$Force
-    )
-
-    switch ($PSCmdlet.ParameterSetName) {
-        "Module" {
-            $Name = $Name.ToLowerInvariant()
-            $Module = $Module.ToLowerInvariant()
-
-            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
-        }
-
-        "FullName" {
-            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbatoolsConfigValue {
-    
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
-    [CmdletBinding()]
-    param (
-        [Alias('Name')]
-        [Parameter(Mandatory)]
-        [string]$FullName,
-        [object]$Fallback,
-        [switch]$NotNull
-    )
-
-    $FullName = $FullName.ToLowerInvariant()
-
-    $temp = $null
-    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
-    if ($temp -eq $null) { $temp = $Fallback }
-
-    if ($NotNull -and ($temp -eq $null)) {
-        Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
-    } else {
-        return $temp
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Import-DbatoolsConfig {
-    
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
-    [CmdletBinding(DefaultParameterSetName = "Path")]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Path")]
-        [string[]]
-        $Path,
-
-        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
-        [string]
-        $ModuleName,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [int]
-        $ModuleVersion = 1,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "FileUserLocal, FileUserShared, FileSystem",
-
-        [Parameter(ParameterSetName = "Path")]
-        [string[]]
-        $IncludeFilter,
-
-        [Parameter(ParameterSetName = "Path")]
-        [string[]]
-        $ExcludeFilter,
-
-        [Parameter(ParameterSetName = "Path")]
-        [switch]
-        $Peek,
-
-        [switch]$EnableException
-    )
-
-    begin {
-        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
-    }
-    process {
-        #region Explicit Path
-        foreach ($item in $Path) {
-            try {
-                if ($item -like "http*") { $data = Read-DbatoolsConfigFile -Weblink $item -ErrorAction Stop }
-                else {
-                    $pathItem = $null
-                    try { $pathItem = Resolve-DbaPath -Path $item -SingleItem -Provider FileSystem }
-                    catch { }
-                    if ($pathItem) { $data = Read-DbatoolsConfigFile -Path $pathItem -ErrorAction Stop }
-                    else { $data = Read-DbatoolsConfigFile -RawJson $item -ErrorAction Stop }
-                }
-            } catch { Stop-Function -Message "Failed to import $item" -EnableException $EnableException -Tag 'fail', 'import' -ErrorRecord $_ -Continue -Target $item }
-
-            :element foreach ($element in $data) {
-                #region Exclude Filter
-                foreach ($exclusion in $ExcludeFilter) {
-                    if ($element.FullName -like $exclusion) {
-                        continue element
-                    }
-                }
-                #endregion Exclude Filter
-
-                #region Include Filter
-                if ($IncludeFilter) {
-                    $isIncluded = $false
-                    foreach ($inclusion in $IncludeFilter) {
-                        if ($element.FullName -like $inclusion) {
-                            $isIncluded = $true
-                            break
-                        }
-                    }
-
-                    if (-not $isIncluded) { continue }
-                }
-                #endregion Include Filter
-
-                if ($Peek) { $element }
-                else {
-                    try {
-                        if (-not $element.KeepPersisted) { Set-DbatoolsConfig -FullName $element.FullName -Value $element.Value -EnableException }
-                        else { Set-DbatoolsConfig -FullName $element.FullName -PersistedValue $element.Value -PersistedType $element.Type }
-                    } catch {
-                        Stop-Function -Message "Failed to set '$($element.FullName)'" -ErrorRecord $_ -EnableException $EnableException -Tag 'fail', 'import' -Continue -Target $item
-                    }
-                }
-            }
-        }
-        #endregion Explicit Path
-
-        if ($ModuleName) {
-            $data = Read-DbatoolsConfigPersisted -Module $ModuleName -Scope $Scope -ModuleVersion $ModuleVersion
-
-            foreach ($value in $data.Values) {
-                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException}
-                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
-            }
-        }
-    }
-    end {
-
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Register-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $Config,
-
-        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = "Name", Position = 1)]
-        [string]
-        $Name = "*",
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "UserDefault",
-
-        [switch]$EnableException
-    )
-
-    begin {
-        if ($script:NoRegistry -and ($Scope -band 14)) {
-            Stop-Function -Message "Cannot register configurations on non-windows machines to registry. Please specify a file-based scope" -Tag 'NotSupported' -Category NotImplemented
-            return
-        }
-
-        # Linux and MAC default to local user store file
-        if ($script:NoRegistry -and ($Scope -eq "UserDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileUserLocal
-        }
-        # Linux and MAC get redirection for SystemDefault to FileSystem
-        if ($script:NoRegistry -and ($Scope -eq "SystemDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileSystem
-        }
-
-        $parSet = $PSCmdlet.ParameterSetName
-
-        function Write-Config {
-            [CmdletBinding()]
-            Param (
-                [Sqlcollaborative.Dbatools.Configuration.Config]
-                $Config,
-
-                [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-                $Scope,
-
-                [bool]
-                $EnableException,
-
-                [string]
-                $FunctionName = (Get-PSCallStack)[0].Command
-            )
-
-            if (-not $Config -or ($Config.RegistryData -eq "<type not supported>")) {
-                Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Tag "config", "fail" -Target $Config -FunctionName $FunctionName
-                return
-            }
-
-            try {
-                Write-Message -Level Verbose -Message "Registering $($Config.FullName) for $Scope" -Tag "Config" -Target $Config -FunctionName $FunctionName
-                #region User Default
-                if (1 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryUserDefault -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryUserDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion User Default
-
-                #region User Mandatory
-                if (2 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryUserEnforced -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryUserEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion User Mandatory
-
-                #region System Default
-                if (4 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryMachineDefault -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryMachineDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion System Default
-
-                #region System Mandatory
-                if (8 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryMachineEnforced -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryMachineEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion System Mandatory
-            } catch {
-                Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Tag "config", "fail" -Target $Config -ErrorRecord $_ -FunctionName $FunctionName
-                return
-            }
-        }
-
-        function Ensure-RegistryPath {
-            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "")]
-            [CmdletBinding()]
-            Param (
-                [string]
-                $Path
-            )
-
-            if (-not (Test-Path $Path)) {
-                $null = New-Item $Path -Force
-            }
-        }
-
-        # For file based persistence
-        $configurationItems = @()
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        #region Registry Based
-        if ($Scope -band 15) {
-            switch ($parSet) {
-                "Default" {
-                    foreach ($item in $Config) {
-                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
-                    }
-
-                    foreach ($item in $FullName) {
-                        if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
-                            Write-Config -Config ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
-                        }
-                    }
-                }
-                "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
-                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
-                    }
-                }
-            }
-        }
-        #endregion Registry Based
-
-        #region File Based
-        else {
-            switch ($parSet) {
-                "Default" {
-                    foreach ($item in $Config) {
-                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
-                    }
-
-                    foreach ($item in $FullName) {
-                        if (($configurationItems.FullName -notcontains $item) -and ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
-                            $configurationItems += [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
-                        }
-                    }
-                }
-                "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
-                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
-                    }
-                }
-            }
-        }
-        #endregion File Based
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        #region Finish File Based Persistence
-        if ($Scope -band 16) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserLocal "psf_config.json")
-        }
-        if ($Scope -band 32) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserShared "psf_config.json")
-        }
-        if ($Scope -band 64) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileSystem "psf_config.json")
-        }
-        #endregion Finish File Based Persistence
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Reset-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
-    param (
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $ConfigurationItem,
-
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = 'Module')]
-        [string]
-        $Name = "*",
-
-        [switch]$EnableException
-    )
-
-    process {
-        #region By configuration Item
-        foreach ($item in $ConfigurationItem) {
-            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                try { $item.ResetValue() }
-                catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-            }
-        }
-        #endregion By configuration Item
-
-        #region By FullName
-        foreach ($nameItem in $FullName) {
-            # The configuration items themselves can be cast to string, so they need to be filtered out,
-            # otherwise on bind they would execute for this code-path as well.
-            if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
-
-            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                    try { $item.ResetValue() }
-                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-                }
-            }
-        }
-        #endregion By FullName
-        if ($Module) {
-            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name)) {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                    try { $item.ResetValue() }
-                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-                }
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Unregister-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
-    param (
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $ConfigurationItem,
-
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = 'Module')]
-        [string]
-        $Name = "*",
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "UserDefault"
-    )
-
-    begin {
-        if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*") -and ($Scope -band 15)) {
-            Stop-Function -Message "Cannot unregister configurations from registry on non-windows machines." -Tag 'NotSupported' -Category ResourceUnavailable
-            return
-        }
-
-        #region Initialize Collection
-        $registryProperties = @()
-        if ($Scope -band 1) {
-            if (Test-Path $script:path_RegistryUserDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserDefault }
-        }
-        if ($Scope -band 2) {
-            if (Test-Path $script:path_RegistryUserEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserEnforced }
-        }
-        if ($Scope -band 4) {
-            if (Test-Path $script:path_RegistryMachineDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineDefault }
-        }
-        if ($Scope -band 8) {
-            if (Test-Path $script:path_RegistryMachineEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineEnforced }
-        }
-        $pathProperties = @()
-        if ($Scope -band 16) {
-            $fileUserLocalSettings = @()
-            if (Test-Path (Join-Path $script:path_FileUserLocal "psf_config.json")) { $fileUserLocalSettings = Get-Content (Join-Path $script:path_FileUserLocal "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileUserLocalSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileUserLocal "psf_config.json")
-                    Properties = $fileUserLocalSettings
-                    Changed    = $false
-                }
-            }
-        }
-        if ($Scope -band 32) {
-            $fileUserSharedSettings = @()
-            if (Test-Path (Join-Path $script:path_FileUserShared "psf_config.json")) { $fileUserSharedSettings = Get-Content (Join-Path $script:path_FileUserShared "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileUserSharedSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileUserShared "psf_config.json")
-                    Properties = $fileUserSharedSettings
-                    Changed    = $false
-                }
-            }
-        }
-        if ($Scope -band 64) {
-            $fileSystemSettings = @()
-            if (Test-Path (Join-Path $script:path_FileSystem "psf_config.json")) { $fileSystemSettings = Get-Content (Join-Path $script:path_FileSystem "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileSystemSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileSystem "psf_config.json")
-                    Properties = $fileSystemSettings
-                    Changed    = $false
-                }
-            }
-        }
-        #endregion Initialize Collection
-
-        $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-        # Silently skip since no action necessary
-        if (-not ($pathProperties -or $registryProperties)) { return }
-
-        foreach ($item in $ConfigurationItem) {
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item.FullName })) {
-                Remove-ItemProperty -Path $hive.PSPath -Name $item.FullName
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item.FullName })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item.FullName
-                $fileConfig.Changed = $true
-            }
-        }
-
-        foreach ($item in $FullName) {
-            # Ignore string-casted configurations
-            if ($item -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
-
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item })) {
-                Remove-ItemProperty -Path $hive.PSPath -Name $item
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item
-                $fileConfig.Changed = $true
-            }
-        }
-
-        if ($Module) {
-            $compoundName = "{0}.{1}" -f $Module, $Name
-
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -like $compoundName })) {
-                foreach ($propName in $hive.PSObject.Properties.Name) {
-                    if ($propName -in $common) { continue }
-
-                    if ($propName -like $compoundName) {
-                        Remove-ItemProperty -Path $hive.PSPath -Name $propName
-                    }
-                }
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -like $compoundName })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NotLike $compoundName
-                $fileConfig.Changed = $true
-            }
-        }
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        foreach ($fileConfig in $pathProperties) {
-            if (-not $fileConfig.Changed) { continue }
-
-            if ($fileConfig.Properties) {
-                $fileConfig.Properties | ConvertTo-Json | Set-Content -Path $fileConfig.Path -Encoding UTF8
-            } else {
-                Remove-Item $fileConfig.Path
-            }
         }
     }
 }
