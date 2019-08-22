@@ -355,14 +355,10 @@ function Find-DbaInstance {
                     #region Gather list of found instance indicators
                     $instanceNames = @()
                     if ($Services) {
-                        $Services | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
-                            $instanceNames += $_
-                        }
+                        $Services | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object { $instanceNames += $_ }
                     }
                     if ($browseResult) {
-                        $browseResult | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
-                            $instanceNames += $_
-                        }
+                        $browseResult | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object { $instanceNames += $_ }
                     }
 
                     $portsDetected = @()
@@ -433,9 +429,7 @@ function Find-DbaInstance {
                             if ($object.BrowseReply.TCPPort) {
                                 $object.Port = $object.BrowseReply.TCPPort
 
-                                $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
-                                    $object.TcpConnected = $_.IsOpen
-                                }
+                                $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object { $object.TcpConnected = $_.IsOpen }
                             }
                         }
                         if ($object.Services) {
@@ -481,9 +475,7 @@ function Find-DbaInstance {
                             $object.Confidence = 'Medium'
                         }
 
-                        $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
-                            $object.TcpConnected = $_.IsOpen
-                        }
+                        $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object { $object.TcpConnected = $_.IsOpen }
                         $object.Timestamp = Get-Date
 
                         if ($masterList.SqlInstance -contains $object.SqlInstance) {
@@ -723,17 +715,18 @@ function Find-DbaInstance {
                         #endregion Connect to browser service and receive response
 
                         #region Parse Output
-                        $Response | Select-String "(ServerName;(\w+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
+                        $output = $Response | Select-String "(ServerName;(\w+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches
+                        foreach ($o in $output) {
                             $obj = New-Object Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply -Property @{
                                 MachineName  = $computer.ComputerName
-                                ComputerName = $_.Groups[2].Value
-                                SqlInstance  = "$($_.Groups[2].Value)\$($_.Groups[3].Value)"
-                                InstanceName = $_.Groups[3].Value
-                                Version      = $_.Groups[5].Value
-                                IsClustered  = "Yes" -eq $_.Groups[4].Value
+                                ComputerName = $o.Groups[2].Value
+                                SqlInstance  = "$($o.Groups[2].Value)\$($o.Groups[3].Value)"
+                                InstanceName = $o.Groups[3].Value
+                                Version      = $o.Groups[5].Value
+                                IsClustered  = "Yes" -eq $o.Groups[4].Value
                             }
-                            if ($_.Groups[7].Success) {
-                                $obj.TCPPort = $_.Groups[7].Value
+                            if ($o.Groups[7].Success) {
+                                $obj.TCPPort = $o.Groups[7].Value
                             }
                             $obj
                         }
@@ -866,8 +859,8 @@ function Find-DbaInstance {
             }
             if ($IPAddress) {
                 $ipaddr = [Net.IPAddress]::Parse($IPAddress)
-                $networkaddr = new-object net.ipaddress ($maskaddr.address -band $ipaddr.address)
-                $broadcastaddr = new-object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
+                $networkaddr = New-Object net.ipaddress ($maskaddr.address -band $ipaddr.address)
+                $broadcastaddr = New-Object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
                 $startaddr = IP-toINT64 -ip $networkaddr.ipaddresstostring
                 $endaddr = IP-toINT64 -ip $broadcastaddr.ipaddresstostring
             } else {
