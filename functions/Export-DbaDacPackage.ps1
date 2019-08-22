@@ -196,7 +196,7 @@ function Export-DbaDacPackage {
             }
 
             foreach ($db in $dbs) {
-                $resultstime = [diagnostics.stopwatch]::StartNew()
+                $resultsTime = [diagnostics.stopwatch]::StartNew()
                 $dbname = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
@@ -258,15 +258,15 @@ function Export-DbaDacPackage {
                     $sqlPackageArgs = "/action:$action /tf:""$FilePath"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
 
                     try {
-                        $startprocess = New-Object System.Diagnostics.ProcessStartInfo
-                        $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
-                        $startprocess.Arguments = $sqlPackageArgs
-                        $startprocess.RedirectStandardError = $true
-                        $startprocess.RedirectStandardOutput = $true
-                        $startprocess.UseShellExecute = $false
-                        $startprocess.CreateNoWindow = $true
+                        $startProcess = New-Object System.Diagnostics.ProcessStartInfo
+                        $startProcess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
+                        $startProcess.Arguments = $sqlPackageArgs
+                        $startProcess.RedirectStandardError = $true
+                        $startProcess.RedirectStandardOutput = $true
+                        $startProcess.UseShellExecute = $false
+                        $startProcess.CreateNoWindow = $true
                         $process = New-Object System.Diagnostics.Process
-                        $process.StartInfo = $startprocess
+                        $process.StartInfo = $startProcess
                         $process.Start() | Out-Null
                         $stdout = $process.StandardOutput.ReadToEnd()
                         $stderr = $process.StandardError.ReadToEnd()
@@ -281,15 +281,16 @@ function Export-DbaDacPackage {
                         Stop-Function -Message "Standard output - $stderr" -Continue
                     }
                 }
-                [pscustomobject]@{
+                $outObject = [pscustomobject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Database     = $dbname
                     Path         = $FilePath
-                    Elapsed      = [prettytimespan]($resultstime.Elapsed)
+                    Elapsed      = [prettytimespan]($resultsTime.Elapsed)
                     Result       = $finalResult
-                } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+                }
+                Select-DefaultView -InputObject $outObject -ExcludeProperty ComputerName, InstanceName
             }
         }
     }
