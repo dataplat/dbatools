@@ -102,20 +102,22 @@ function Copy-DbaAgentAlert {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             $destAlerts = $destServer.JobServer.Alerts
 
             if ($IncludeDefaults -eq $true) {
-                if ($PSCmdlet.ShouldProcess($destinstance, "Creating Alert Defaults")) {
+                if ($PSCmdlet.ShouldProcess($destInstance, "Creating Alert Defaults")) {
                     $copyAgentAlertStatus = [pscustomobject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -128,7 +130,7 @@ function Copy-DbaAgentAlert {
                     try {
                         Write-Message -Message "Creating Alert Defaults" -Level Verbose
                         $sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destInstance'"
 
                         Write-Message -Message $sql -Level Debug
                         $null = $destServer.Query($sql)
@@ -166,7 +168,7 @@ function Copy-DbaAgentAlert {
                         $missingOperators = ($alertOperators | Where-Object OperatorName -NotIn $destServerOperators.Name).OperatorName
                         if ($missingOperators.Count -gt 0 -or $missingOperators.Length -gt 0) {
                             $operatorList = $missingOperators -join ','
-                            if ($PSCmdlet.ShouldProcess($destinstance, "Missing operator(s) at destination.")) {
+                            if ($PSCmdlet.ShouldProcess($destInstance, "Missing operator(s) at destination.")) {
                                 $copyAgentAlertStatus.Status = "Skipped"
                                 $copyAgentAlertStatus.Notes = "Operator(s) [$operatorList] do not exist on destination"
                                 $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -179,7 +181,7 @@ function Copy-DbaAgentAlert {
 
                 if ($destAlerts.name -contains $serverAlert.name) {
                     if ($force -eq $false) {
-                        if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
+                        if ($PSCmdlet.ShouldProcess($destInstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
                             $copyAgentAlertStatus.Status = "Skipped"
                             $copyAgentAlertStatus.Notes = "Already exists on destination"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -188,7 +190,7 @@ function Copy-DbaAgentAlert {
                         continue
                     }
 
-                    if ($PSCmdlet.ShouldProcess($destinstance, "Dropping alert $alertName and recreating")) {
+                    if ($PSCmdlet.ShouldProcess($destInstance, "Dropping alert $alertName and recreating")) {
                         try {
                             Write-Message -Message "Dropping Alert $alertName on $destServer." -Level Verbose
 
@@ -205,7 +207,7 @@ function Copy-DbaAgentAlert {
                 }
 
                 if ($destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.MessageID -eq $serverAlert.MessageID -and $_.DatabaseName -eq $serverAlert.DatabaseName -and $_.EventDescriptionKeyword -eq $serverAlert.EventDescriptionKeyword }) {
-                    if ($PSCmdlet.ShouldProcess($destinstance, "Checking for conflicts")) {
+                    if ($PSCmdlet.ShouldProcess($destInstance, "Checking for conflicts")) {
                         $conflictMessage = "Alert [$alertName] has already been defined to use"
                         if ($serverAlert.Severity -gt 0) { $conflictMessage += " severity $($serverAlert.Severity)" }
                         if ($serverAlert.MessageID -gt 0) { $conflictMessage += " error number $($serverAlert.MessageID)" }
@@ -222,14 +224,14 @@ function Copy-DbaAgentAlert {
                 }
                 if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
                     Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
-                    if ($PSCmdlet.ShouldProcess($destinstance, "Checking for conflicts")) {
+                    if ($PSCmdlet.ShouldProcess($destInstance, "Checking for conflicts")) {
                         $copyAgentAlertStatus.Status = "Skipped"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($destinstance, "Creating Alert $alertName")) {
+                if ($PSCmdlet.ShouldProcess($destInstance, "Creating Alert $alertName")) {
                     try {
                         Write-Message -Message "Copying Alert $alertName" -Level Verbose
                         $sql = $serverAlert.Script() | Out-String
@@ -265,7 +267,7 @@ function Copy-DbaAgentAlert {
                         Status            = $null
                         DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    if ($PSCmdlet.ShouldProcess($destinstance, "Adding $alertName to $jobName")) {
+                    if ($PSCmdlet.ShouldProcess($destInstance, "Adding $alertName to $jobName")) {
                         try {
                             <# THERE needs to be validation within this block to see if the $jobName actually exists on the source server. #>
                             Write-Message -Message "Adding $alertName to $jobName" -Level Verbose
@@ -287,7 +289,7 @@ function Copy-DbaAgentAlert {
                     }
                 }
 
-                if ($PSCmdlet.ShouldProcess($destinstance, "Moving Notifications $alertName")) {
+                if ($PSCmdlet.ShouldProcess($destInstance, "Moving Notifications $alertName")) {
                     try {
                         $copyAgentAlertStatus = [pscustomobject]@{
                             SourceServer      = $sourceServer.Name
