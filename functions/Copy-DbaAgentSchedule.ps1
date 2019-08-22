@@ -75,9 +75,9 @@ function Copy-DbaAgentSchedule {
         Shows what would happen if the command were executed using force.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaAgentSchedule -Destination sqlcluster
+        PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 | Out-GridView -PassThru | Copy-DbaAgentSchedule -Destination sqlcluster
 
-        Gets a list of schedule, outputs to a gridview which can be selected from, then copies to SqlInstance
+        Gets a list of schedule, outputs to a grid view which can be selected from, then copies to SqlInstance
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -106,7 +106,9 @@ function Copy-DbaAgentSchedule {
                 $InputObject = Get-DbaAgentSchedule -SqlInstance $sourceServer -Schedule $Schedule -Id $Id
             }
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -116,18 +118,18 @@ function Copy-DbaAgentSchedule {
             return
         }
 
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             $destSchedules = Get-DbaAgentSchedule -SqlInstance $destServer -Schedule $Schedule
 
-            foreach ($currentschedule in $InputObject) {
-                $scheduleName = $currentschedule.Name
-                $sourceServer = $currentschedule.Parent.Parent
+            foreach ($currentSchedule in $InputObject) {
+                $scheduleName = $currentSchedule.Name
+                $sourceServer = $currentSchedule.Parent.Parent
                 $copySharedScheduleStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -140,7 +142,7 @@ function Copy-DbaAgentSchedule {
 
                 if ($destSchedules.Name -contains $scheduleName) {
                     if ($Force -ne $true) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
                             $copySharedScheduleStatus.Status = "Skipped"
                             $copySharedScheduleStatus.Notes = "Already exists on destination"
                             $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -148,7 +150,7 @@ function Copy-DbaAgentSchedule {
                             continue
                         }
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
                             if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                                 $copySharedScheduleStatus.Status = "Skipped"
                                 $copySharedScheduleStatus.Notes = "Schedule has associated jobs"
@@ -157,7 +159,7 @@ function Copy-DbaAgentSchedule {
                                 continue
                             }
                         } else {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
+                            if ($Pscmdlet.ShouldProcess($destInstance, "Dropping schedule $scheduleName and recreating")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
                                     $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
@@ -171,10 +173,10 @@ function Copy-DbaAgentSchedule {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating schedule $scheduleName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating schedule $scheduleName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
-                        $sql = $currentschedule.Script() | Out-String
+                        $sql = $currentSchedule.Script() | Out-String
 
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
