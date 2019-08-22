@@ -345,18 +345,14 @@ function Export-DbaLogin {
                             }
 
                             if ($hashedPass.GetType().Name -ne "String") {
-                                $passString = "0x"; $hashedPass | ForEach-Object {
-                                    $passString += ("{0:X}" -f $_).PadLeft(2, "0")
-                                }
+                                $passString = "0x"; $hashedPass | ForEach-Object { $passString += ("{0:X}" -f $_).PadLeft(2, "0") }
                                 $hashedPass = $passString
                             }
                         } else {
                             $hashedPass = '#######'
                         }
 
-                        $sid = "0x"; $sourceLogin.sid | ForEach-Object {
-                            $sid += ("{0:X}" -f $_).PadLeft(2, "0")
-                        }
+                        $sid = "0x"; $sourceLogin.sid | ForEach-Object { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
                         $outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkPolicy, CHECK_EXPIRATION = $checkExpiration, DEFAULT_LANGUAGE = [$language]"
                     }
                     # Attempt to script out Windows User
