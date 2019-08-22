@@ -224,7 +224,9 @@ function Rename-DbaDatabase {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         $CurrentDate = Get-Date -Format 'yyyyMMdd'
 

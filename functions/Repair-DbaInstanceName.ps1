@@ -77,7 +77,9 @@ function Repair-DbaInstanceName {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
 
     process {

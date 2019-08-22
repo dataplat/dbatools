@@ -77,7 +77,9 @@ function Copy-DbaSysDbUserObject {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         function get-sqltypename ($type) {
             switch ($type) {

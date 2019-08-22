@@ -163,7 +163,9 @@ function Invoke-DbaDbMirroring {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackup')

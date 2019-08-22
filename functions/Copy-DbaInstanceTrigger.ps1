@@ -102,15 +102,17 @@ function Copy-DbaInstanceTrigger {
         }
         $serverTriggers = $sourceServer.Triggers
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
                 Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
@@ -144,7 +146,7 @@ function Copy-DbaInstanceTrigger {
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server trigger $triggerName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping server trigger $triggerName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
                                 $destServer.Triggers[$triggerName].Drop()
@@ -159,7 +161,7 @@ function Copy-DbaInstanceTrigger {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server trigger $triggerName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating server trigger $triggerName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
                         $sql = $trigger.Script() | Out-String

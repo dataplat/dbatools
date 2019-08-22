@@ -115,7 +115,9 @@ function Copy-DbaXESession {
             $storeSessions = $storeSessions | Where-Object Name -NotIn $ExcludeXeSession
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }

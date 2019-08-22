@@ -96,7 +96,9 @@ function Remove-DbaDbUser {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         function Remove-DbUser {
             [CmdletBinding(SupportsShouldProcess)]

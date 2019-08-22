@@ -150,9 +150,11 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
-        $allcombos = @()
+        $allCombos = @()
     }
     process {
         if (-not $AvailabilityGroup -and -not $Secondary -and -not $InputObject) {
@@ -200,7 +202,7 @@ function Sync-DbaAvailabilityGroup {
         # In the event that someone pipes in an availability group, this will keep the syncer from running a bunch of times
         $dupe = $false
 
-        foreach ($ag in $allcombos) {
+        foreach ($ag in $allCombos) {
             if ($ag.PrimaryServer.Name -eq $thiscombo.PrimaryServer.Name -and
                 $ag.SecondaryServer.Name.ToString() -eq $thiscombo.SecondaryServer.Name.ToString()) {
                 $dupe = $true
@@ -208,7 +210,7 @@ function Sync-DbaAvailabilityGroup {
         }
 
         if ($dupe -eq $false) {
-            $allcombos += $thiscombo
+            $allCombos += $thiscombo
         }
     }
 
@@ -216,7 +218,7 @@ function Sync-DbaAvailabilityGroup {
         if (Test-FunctionInterrupt) { return }
 
         # now that all combinations have been figured out, begin sync without duplicating work
-        foreach ($ag in $allcombos) {
+        foreach ($ag in $allCombos) {
             $server = $ag.PrimaryServer
             $secondaries = $ag.SecondaryServer
 

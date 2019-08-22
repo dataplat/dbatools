@@ -106,19 +106,21 @@ function Copy-DbaInstanceAuditSpecification {
 
         $AuditSpecifications = $sourceServer.ServerAuditSpecifications
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destinstance. Quitting."
+                Stop-Function -Message "Not a sysadmin on $destInstance. Quitting."
                 return
             }
 
@@ -146,10 +148,10 @@ function Copy-DbaInstanceAuditSpecification {
 
                 $destServer.Audits.Refresh()
                 if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName.")) {
+                    if ($Pscmdlet.ShouldProcess($destInstance, "Audit $($auditSpec.AuditName) does not exist on $destInstance. Skipping $auditSpecName.")) {
                         $copyAuditSpecStatus.Status = "Skipped"
-                        $copyAuditSpecStatus.Notes = "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
-                        Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
+                        $copyAuditSpecStatus.Notes = "Audit $($auditSpec.AuditName) does not exist on $destInstance. Skipping $auditSpecName."
+                        Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $destInstance. Skipping $auditSpecName."
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
@@ -164,7 +166,7 @@ function Copy-DbaInstanceAuditSpecification {
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server audit $auditSpecName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping server audit $auditSpecName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server audit $auditSpecName"
                                 $destServer.ServerAuditSpecifications[$auditSpecName].Drop()
@@ -178,7 +180,7 @@ function Copy-DbaInstanceAuditSpecification {
                         }
                     }
                 }
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server audit $auditSpecName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating server audit $auditSpecName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying server audit $auditSpecName"
                         $sql = $auditSpec.Script() | Out-String
