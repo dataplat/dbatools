@@ -115,7 +115,9 @@ function Copy-DbaCredential {
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         function Copy-Credential {
             <#
@@ -159,7 +161,7 @@ function Copy-DbaCredential {
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance.Name, "Dropping $identity")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
                         }
@@ -169,11 +171,11 @@ function Copy-DbaCredential {
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
                     $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
-                    $sqlcredentialName = $credentialName.Replace("'", "''")
+                    $sqlCredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     $password = $currentCred.Password.Replace("'", "''")
-                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
-                        $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
+                    if ($Pscmdlet.ShouldProcess($destInstance.Name, "Copying $identity")) {
+                        $destServer.Query("CREATE CREDENTIAL [$sqlCredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                     }
@@ -215,11 +217,11 @@ function Copy-DbaCredential {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
 
