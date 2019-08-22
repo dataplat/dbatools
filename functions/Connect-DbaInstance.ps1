@@ -365,16 +365,16 @@ function Connect-DbaInstance {
             $EnableException = $true
         }
 
-        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
-            $_.Fullname -like "Microsoft.SqlServer.SMO,*"
-        }
+        $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like "Microsoft.SqlServer.SMO,*" }
 
         if ($loadedSmoVersion) {
-            $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
-                if ($_.Location -match "__") {
-                    ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
+            $loadedSmoVersion =
+            # $loadedSmoVersion | ForEach-Object { if ($_.Location -match "__") { ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0] } else { ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion) } }
+            foreach ($loadedSmoV in $loadedSmoVersion) {
+                if ($loadedSmoV.Location -match "__") {
+                    ((Split-Path (Split-Path $loadedSmoV.Location) -Leaf) -split "__")[0]
                 } else {
-                    ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
+                    ((Get-ChildItem -Path $loadedSmoV.Location).VersionInfo.ProductVersion)
                 }
             }
         }
@@ -600,7 +600,6 @@ function Connect-DbaInstance {
                     continue
                 }
             }
-
             if ($isconnectionstring) {
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
