@@ -1,4 +1,4 @@
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
@@ -27,7 +27,7 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
-    $counter = [pscustomobject] @{ Value = 0 }
+    $counter = [PSCustomObject] @{ Value = 0 }
     $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
     $rtn = @()
     foreach ($g in $groups) {
@@ -46,28 +46,28 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
     $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\internal\functions"-Filter '*.ps*1'
     Context "formatting" {
-        $maxConcurrentJobs = $env:NUMBER_OF_PROCESSORS
-        $whatever = Split-ArrayInParts -array $AllFunctionFiles -parts $maxConcurrentJobs
-        $jobs = @()
-        foreach ($piece in $whatever) {
-            $jobs += Start-Job -ScriptBlock {
-                foreach ($p in $Args) {
-                    $content = Get-Content -Path $p.FullName -Raw -Encoding UTF8
-                    $result = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS
-                    if ($result -ne $content) {
-                        $p
-                    }
-                }
-            } -ArgumentList $piece
-        }
-        $null = $jobs | Wait-Job #-Timeout 120
-        $results = $jobs | Receive-Job
+        # $maxConcurrentJobs = $env:NUMBER_OF_PROCESSORS
+        # $whatever = Split-ArrayInParts -array $AllFunctionFiles -parts $maxConcurrentJobs
+        # $jobs = @()
+        # foreach ($piece in $whatever) {
+        #     $jobs += Start-Job -ScriptBlock {
+        #         foreach ($p in $Args) {
+        #             $content = Get-Content -Path $p.FullName -Raw -Encoding UTF8
+        #             $result = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS
+        #             if ($result -ne $content) {
+        #                 $p
+        #             }
+        #         }
+        #     } -ArgumentList $piece
+        # }
+        # $null = $jobs | Wait-Job #-Timeout 120
+        # $results = $jobs | Receive-Job
 
-        foreach ($f in $results) {
-            It "$f is adopting OTSB formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
-                1 | Should -Be 0
-            }
-        }
+        # foreach ($f in $results) {
+        #     It "$f is adopting OTSB formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
+        #         1 | Should -Be 0
+        #     }
+        # }
     }
 
     Context "BOM" {
@@ -133,16 +133,35 @@ Describe "$ModuleName style" -Tag 'Compliance' {
 }
 
 
-Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
+Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance','ScriptAnalyzer' {
     $ScriptAnalyzerErrors = @()
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1 -Severity Error
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings $ModulePath\bin\PSScriptAnalyzerRules.psd1 -Severity Error
+
+    $scriptAnalyzerWarnings = @()
+    $scriptAnalyzerWarnings += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Settings "$ModulePath\bin\PSScriptAnalyzerRules.psd1" -Severity Warning
+    $scriptAnalyzerWarnings += Invoke-ScriptAnalyzer -Path "$ModulePath\internal\functions" -Settings "$ModulePath\bin\PSScriptAnalyzerRules.psd1" -Severity Warning
 
     Context "Errors" {
         if ($ScriptAnalyzerErrors.Count -gt 0) {
             foreach ($err in $ScriptAnalyzerErrors) {
                 It "$($err.scriptName) has Error(s) : $($err.RuleName)" {
                     $err.Message | Should -Be $null
+                }
+            }
+        }
+    }
+    Context "OTSB" {
+        # Unique list of commands found:
+        $commands = $scriptAnalyzerWarnings | Select-Object ScriptName -Unique
+        $rules = $scriptAnalyzerWarnings | Select-Object RuleName -Unique
+        foreach ($rule in $rules) {
+            $ruleName = $rule.RuleName
+            foreach ($command in $commands) {
+                $scriptName = $command.ScriptName
+                $lines = ($scriptWarning | Where-Object {$_.ScriptName -eq $scriptName -and $_.RuleName -eq $ruleName}).Line -join ","
+                It "$scriptName is adopting OTSB formatting style. $ruleName violation found on the following lines in the file: $lines" {
+                    1 | Should -Be 0
                 }
             }
         }
@@ -175,14 +194,14 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         $FunctionName = $Ast.EndBlock.Statements.Name
         $BaseName = $item.BaseName
         if ($FunctionName -cne $BaseName) {
-            $FunctionNameMatchesErrors += [pscustomobject]@{
+            $FunctionNameMatchesErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 BaseName     = $BaseName
                 Message      = "$FunctionName is not equal to $BaseName"
             }
         }
         If ($FunctionName -NotMatch "-Dba") {
-            $FunctionNameDbaErrors += [pscustomobject]@{
+            $FunctionNameDbaErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 Message      = "$FunctionName does not contain -Dba"
             }
@@ -196,8 +215,8 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         $FunctionName = $Ast.EndBlock.Statements.Name
         $BaseName = $item.BaseName
         if ($FunctionName -cne $BaseName) {
-            Write-Host "aaa $functionname bbb $basename"
-            $FunctionNameMatchesErrors += [pscustomobject]@{
+            Write-Host "aaa $functionName bbb $basename"
+            $FunctionNameMatchesErrors += [PSCustomObject]@{
                 FunctionName = $FunctionName
                 BaseName     = $BaseName
                 Message      = "$FunctionName is not equal to $BaseName"
