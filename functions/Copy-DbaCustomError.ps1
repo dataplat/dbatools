@@ -67,7 +67,7 @@ function Copy-DbaCustomError {
         Copies all server custom errors from sqlserver2014a to sqlcluster using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
     .EXAMPLE
-        PS C:\> Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -CustomError 60000 -Force
+        PS C:\> Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $sourceCred -Destination sqlcluster -DestinationSqlCredential $destCred -CustomError 60000 -Force
 
         Copies only the custom error with ID number 60000 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
@@ -108,15 +108,17 @@ function Copy-DbaCustomError {
         $orderedCustomErrors = @($sourceServer.UserDefinedMessages | Where-Object Language -eq "us_english")
         $orderedCustomErrors += $sourceServer.UserDefinedMessages | Where-Object Language -ne "us_english"
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             # US has to go first
             $destCustomErrors = $destServer.UserDefinedMessages
@@ -148,7 +150,7 @@ function Copy-DbaCustomError {
                         Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
                         continue
                     } else {
-                        If ($Pscmdlet.ShouldProcess($destinstance, "Dropping custom error $customErrorId $language and recreating")) {
+                        If ($Pscmdlet.ShouldProcess($destInstance, "Dropping custom error $customErrorId $language and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
                                 $destServer.UserDefinedMessages[$customErrorId, $language].Drop()
@@ -162,7 +164,7 @@ function Copy-DbaCustomError {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating custom error $customErrorId $language")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Creating custom error $customErrorId $language")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
                         $sql = $currentCustomError.Script() | Out-String
