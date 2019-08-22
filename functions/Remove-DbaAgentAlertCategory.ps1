@@ -72,7 +72,9 @@ function Remove-DbaAgentAlertCategory {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
 

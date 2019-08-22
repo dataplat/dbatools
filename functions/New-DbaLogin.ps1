@@ -168,7 +168,9 @@ function New-DbaLogin {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         if ($Sid) {
             if ($Sid.GetType().Name -ne 'Byte[]') {

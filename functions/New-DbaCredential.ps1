@@ -99,7 +99,9 @@ function New-DbaCredential {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         $mappedClass = switch ($MappedClassType) {
             "CryptographicProvider" { 1 }
