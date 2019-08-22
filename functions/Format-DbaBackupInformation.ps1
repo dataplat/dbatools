@@ -150,7 +150,7 @@ function Format-DbaBackupInformation {
             }
             if ("OriginalFileList" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalFileList' -Type NoteProperty -Value ''
-                $History | ForEach-Object {$_.OriginalFileList = $_.FileList}
+                $History | ForEach-Object { $_.OriginalFileList = $_.FileList }
             }
             if ("OriginalFullName" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalFullName' -Type NoteProperty -Value $History.FullName
@@ -159,11 +159,10 @@ function Format-DbaBackupInformation {
                 $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
             }
             switch ($History.Type) {
-                'Full' {$History.Type = 'Database'}
-                'Differential' {$History.Type = 'Database Differential'}
-                'Log' {$History.Type = 'Transaction Log'}
+                'Full' { $History.Type = 'Database' }
+                'Differential' { $History.Type = 'Database Differential' }
+                'Log' { $History.Type = 'Transaction Log' }
             }
-
 
             if ($ReplaceDatabaseNameType -eq 'single' -and $ReplaceDatabaseName -ne '' ) {
                 $History.Database = $ReplaceDatabaseName
@@ -176,29 +175,30 @@ function Format-DbaBackupInformation {
             }
             $History.Database = $DatabaseNamePrefix + $History.Database
 
-            $History.FileList | ForEach-Object {
+            $History.FileList
+            foreach ($file in $History.FileList) {
                 if ($null -ne $FileMapping ) {
-                    if ($null -ne $FileMapping[$_.LogicalName]) {
-                        $_.PhysicalName = $FileMapping[$_.LogicalName]
+                    if ($null -ne $FileMapping[$file.LogicalName]) {
+                        $file.PhysicalName = $FileMapping[$_.LogicalName]
                     }
                 } else {
                     if ($ReplaceDbNameInFile -eq $true) {
-                        $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                        $file.PhysicalName = $file.PhysicalName -Replace $History.OriginalDatabase, $History.Database
                     }
                     Write-Message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
-                    $Pname = [System.Io.FileInfo]$_.PhysicalName
+                    $Pname = [System.Io.FileInfo]$file.PhysicalName
                     $RestoreDir = $Pname.DirectoryName
-                    if ($_.Type -eq 'D' -or $_.FileType -eq 'D') {
+                    if ($file.Type -eq 'D' -or $file.FileType -eq 'D') {
                         if ('' -ne $DataFileDirectory) {
                             $RestoreDir = $DataFileDirectory
                         }
-                    } elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L') {
+                    } elseif ($file.Type -eq 'L' -or $file.FileType -eq 'L') {
                         if ('' -ne $LogFileDirectory) {
                             $RestoreDir = $LogFileDirectory
                         } elseif ('' -ne $DataFileDirectory) {
                             $RestoreDir = $DataFileDirectory
                         }
-                    } elseif ($_.Type -eq 'S' -or $_.FileType -eq 'S') {
+                    } elseif ($file.Type -eq 'S' -or $file.FileType -eq 'S') {
                         if ('' -ne $DestinationFileStreamDirectory) {
                             $RestoreDir = $DestinationFileStreamDirectory
                         } elseif ('' -ne $DataFileDirectory) {
@@ -206,8 +206,8 @@ function Format-DbaBackupInformation {
                         }
                     }
 
-                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $Pname.extension
-                    Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
+                    $file.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $Pname.extension
+                    Write-Message -Message "PhysicalName = $($file.PhysicalName) " -Level Verbose
                 }
             }
             if ('' -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
