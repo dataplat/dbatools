@@ -25,7 +25,7 @@ function Export-DbaCredential {
         The path to the directory that will contain the exported sql file.
 
     .PARAMETER FilePath
-       The specific path to a file which will contain the output.
+        The specific path to a file which will contain the output.
 
     .PARAMETER Identity
         The credentials to export. If unspecified, all credentials will be exported.
@@ -76,7 +76,7 @@ function Export-DbaCredential {
     begin {
         $null = Test-ExportDirectory -Path $Path
         $serverArray = @()
-        $credentialArray = @{}
+        $credentialArray = @{ }
         $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {
