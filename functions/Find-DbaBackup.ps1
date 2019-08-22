@@ -116,10 +116,10 @@ function Find-DbaBackup {
 
             switch ($Units) {
                 #Variable marked as unused by PSScriptAnalyzer
-                'h' {<# $UnitString = 'Hours';#> [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value)  }
-                'd' {<# $UnitString = 'Days';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value)   }
-                'w' {<# $UnitString = 'Weeks';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
-                'm' {<# $UnitString = 'Months';#> [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
+                'h' { [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value) }
+                'd' { [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value) }
+                'w' { [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
+                'm' { [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
             }
             $ReturnDatetime
         }
@@ -163,8 +163,7 @@ function Find-DbaBackup {
         # Enumeration may take a while. Without resorting to "esoteric" file listing facilities
         # and given we need to fetch at least the LastWriteTime, let's just use "streaming" processing
         # here to avoid issues like described in #970
-        Get-ChildItem $Path -Filter "*.$BackupFileExtension" -File -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors |
-            Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter
+        Get-ChildItem $Path -Filter "*.$BackupFileExtension" -File -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors | Where-Object LastWriteTime -lt $RetentionDate | DbaArchiveBitFilter
         if ($EnumErrors) {
             Write-Message "Errors encountered enumerating files." -Level Warning -ErrorRecord $EnumErrors
         }
