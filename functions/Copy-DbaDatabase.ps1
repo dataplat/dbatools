@@ -6,7 +6,7 @@ function Copy-DbaDatabase {
     .DESCRIPTION
         This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.
 
-        By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+        By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. File streams and file groups are also migrated. Safety is emphasized.
 
         If you are experiencing issues with Copy-DbaDatabase, please use Backup-DbaDatabase | Restore-DbaDatabase instead.
 
@@ -87,7 +87,7 @@ function Copy-DbaDatabase {
         To reuse Destination folder structure, use the  -WithReplace switch.
 
     .PARAMETER IncludeSupportDbs
-        If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A log file named $SOURCE-$destinstance-$date-Sqls.csv will be written to the current directory.
+        If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A log file named $SOURCE-$destInstance-$date-Sqls.csv will be written to the current directory.
 
         Use of this switch requires -BackupRestore or -DetachAttach as well.
 
@@ -135,7 +135,7 @@ function Copy-DbaDatabase {
     .PARAMETER Force
         If this switch is enabled, existing databases on Destination with matching names from Source will be dropped.
         If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
-        If using -SetSourceReadonly, this will instantly roll back any open transactions that may be stopping the process.
+        If using -SetSourceReadOnly, this will instantly roll back any open transactions that may be stopping the process.
 
     .NOTES
         Tags: Migration, Backup, Restore
@@ -269,7 +269,9 @@ function Copy-DbaDatabase {
             return
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         function Join-Path {
             <#
@@ -300,27 +302,27 @@ function Copy-DbaDatabase {
             param (
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
-                [string]$servername,
+                [string]$serverName,
                 [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
-                [string]$filepath
+                [string]$filePath
 
             )
 
-            if ($script:sameserver -or (-not $script:isWindows)) {
-                return $filepath
+            if ($script:sameServer -or (-not $script:isWindows)) {
+                return $filePath
             }
-            if (-not $filepath) {
+            if (-not $filePath) {
                 return
             }
-            if ($filepath.StartsWith("\\")) {
-                return $filepath
+            if ($filePath.StartsWith("\\")) {
+                return $filePath
             }
 
-            $servername = $servername.Split("\")[0]
+            $serverName = $serverName.Split("\")[0]
 
-            if ($filepath -and $filepath -ne [System.DbNull]::Value) {
-                $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
+            if ($filePath -and $filePath -ne [System.DbNull]::Value) {
+                $newpath = Join-Path "\\$serverName\" $filePath.replace(':', '$')
                 return $newpath
             } else {
                 return
@@ -330,14 +332,14 @@ function Copy-DbaDatabase {
         function Get-SqlFileStructure {
             $dbcollection = @{
             };
-            $databaseProgressbar = 0
+            $databaseProgressBar = 0
 
             foreach ($db in $databaseList) {
-                Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
+                Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressBar / $dbCount * 100) -Status "Processing $databaseProgressBar of $dbCount."
                 $dbName = $db.Name
                 Write-Message -Level Verbose -Message $dbName
 
-                $databaseProgressbar++
+                $databaseProgressBar++
                 $dbStatus = $db.status.toString()
                 if ($dbStatus.StartsWith("Normal") -eq $false) {
                     continue
@@ -348,10 +350,10 @@ function Copy-DbaDatabase {
 
                 $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
 
-                $datarows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
+                $dataRows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
 
                 # Data Files
-                foreach ($file in $datarows) {
+                foreach ($file in $dataRows) {
                     # Destination File Structure
                     $d = @{
                     }
@@ -435,10 +437,10 @@ function Copy-DbaDatabase {
                 }
 
                 $where = "Filetype = 'LOG'"
-                $datarows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
+                $dataRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
 
                 # Log Files
-                foreach ($file in $datarows) {
+                foreach ($file in $dataRows) {
                     $d = @{
                     }
                     if ($ReuseSourceFolderStructure) {
@@ -491,13 +493,13 @@ function Copy-DbaDatabase {
                 [string]$dbName
             )
 
-            $currentdb = $server.databases[$dbName]
-            if ($currentdb.IsMirroringEnabled) {
+            $currentDb = $server.databases[$dbName]
+            if ($currentDb.IsMirroringEnabled) {
                 try {
                     Write-Message -Level Verbose -Message "Breaking mirror for $dbName"
-                    $currentdb.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
-                    $currentdb.Alter()
-                    $currentdb.Refresh()
+                    $currentDb.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+                    $currentDb.Alter()
+                    $currentDb.Refresh()
                     Write-Message -Level Verbose -Message "Could not break mirror for $dbName. Skipping."
                 } catch {
                     Stop-Function -Message "Issue breaking mirror." -Target $dbName -ErrorRecord $_
@@ -505,11 +507,11 @@ function Copy-DbaDatabase {
                 }
             }
 
-            if ($currentdb.AvailabilityGroupName) {
-                $agName = $currentdb.AvailabilityGroupName
+            if ($currentDb.AvailabilityGroupName) {
+                $agName = $currentDb.AvailabilityGroupName
                 Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName."
                 try {
-                    $server.AvailabilityGroups[$currentdb.AvailabilityGroupName].AvailabilityDatabases[$dbName].Drop()
+                    $server.AvailabilityGroups[$currentDb.AvailabilityGroupName].AvailabilityDatabases[$dbName].Drop()
                     Write-Message -Level Verbose -Message "Successfully removed $dbName from  detach from $agName on $($server.Name)."
                 } catch {
                     Stop-Function -Message "Could not remove $dbName from $agName on $($server.Name)." -Target $dbName -ErrorRecord $_
@@ -519,7 +521,7 @@ function Copy-DbaDatabase {
 
             Write-Message -Level Verbose -Message "Attempting detach from $dbName from $source."
 
-            ####### Using Sql to detach does not modify the $currentdb collection #######
+            ####### Using Sql to detach does not modify the $currentDb collection #######
 
             $server.KillAllProcesses($dbName)
 
@@ -555,9 +557,7 @@ function Copy-DbaDatabase {
 
             if ($null -eq $server.Logins.Item($dbOwner)) {
                 try {
-                    $dbOwner = ($destServer.logins | Where-Object {
-                            $_.id -eq 1
-                        }).Name
+                    $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
                 } catch {
                     $dbOwner = "sa"
                 }
@@ -599,13 +599,11 @@ function Copy-DbaDatabase {
                             $null = New-Item -ItemType Directory -Path $remotefilename -Force
                             Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename
 
-                            $directories = (Get-ChildItem -recurse $from | Where-Object {
-                                    $_.PsIsContainer
-                                }).FullName
+                            $directories = (Get-ChildItem -recurse $from | Where-Object { $_.PsIsContainer }).FullName
                             foreach ($directory in $directories) {
-                                $newdirectory = $directory.replace($from, $remotefilename)
-                                $null = New-Item -ItemType Directory -Path $newdirectory -Force
-                                Start-BitsTransfer -Source "$directory\*.*" -Destination $newdirectory
+                                $newDirectory = $directory.replace($from, $remotefilename)
+                                $null = New-Item -ItemType Directory -Path $newDirectory -Force
+                                Start-BitsTransfer -Source "$directory\*.*" -Destination $newDirectory
                             }
                         } else {
                             Write-Message -Level Verbose -Message "Copying $from for $dbName."
@@ -649,23 +647,21 @@ function Copy-DbaDatabase {
                 [string]$dbName
             )
             if ($Pscmdlet.ShouldProcess($dbname, "Starting detaching and re-attaching from $sourceServer to $destServer")) {
-                $destfilestructure = New-Object System.Collections.Specialized.StringCollection
+                $destFileStructure = New-Object System.Collections.Specialized.StringCollection
                 $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
                 $dbOwner = $sourceServer.databases[$dbName].owner
                 $destDbName = $fileStructure.databases[$dbName].destinationDbName
 
                 if ($null -eq $dbOwner) {
                     try {
-                        $dbOwner = ($destServer.logins | Where-Object {
-                                $_.id -eq 1
-                            }).Name
+                        $dbOwner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
                     } catch {
                         $dbOwner = "sa"
                     }
                 }
 
                 foreach ($file in $fileStructure.databases[$dbName].destination.values) {
-                    $null = $destfilestructure.add($file.physical)
+                    $null = $destFileStructure.add($file.physical)
                 }
                 foreach ($file in $fileStructure.databases[$dbName].source.values) {
                     $null = $sourceFileStructure.add($file.physical)
@@ -680,7 +676,7 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Could not copy files."
                         return "Could not copy files."
                     }
-                    $attachresult = Mount-SqlDatabase $destServer $destDbName $destfilestructure $dbOwner
+                    $attachresult = Mount-SqlDatabase $destServer $destDbName $destFileStructure $dbOwner
 
                     if ($attachresult -eq $true) {
                         # add to added dbs because ATTACH was successful
@@ -780,9 +776,9 @@ function Copy-DbaDatabase {
             }
 
             if ($sourceServer.ComputerName -eq $destServer.ComputerName) {
-                $script:sameserver = $true
+                $script:sameServer = $true
             } else {
-                $script:sameserver = $false
+                $script:sameServer = $false
             }
             if ($SharedPath -like 'https*') {
                 if ($AzureCredential -eq '') {
@@ -794,7 +790,7 @@ function Copy-DbaDatabase {
                     Stop-Function -Message "Azure storage path passed in, but no matching credential found" -Category InvalidArgument -Target $destServer -Continue
                 }
             }
-            if ($script:sameserver -and $DetachAttach) {
+            if ($script:sameServer -and $DetachAttach) {
                 if (-not (Test-ElevationRequirement -ComputerName $sourceServer)) {
                     return
                 }
@@ -931,11 +927,11 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Building database list."
             $databaseList = New-Object System.Collections.ArrayList
             $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
-            foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
-                $dbName = $currentdb.Name
-                $dbOwner = $currentdb.Owner
+            foreach ($currentDb in ($sourceServer.Databases | Where-Object IsAccessible)) {
+                $dbName = $currentDb.Name
+                $dbOwner = $currentDb.Owner
 
-                if ($currentdb.Id -le 4) {
+                if ($currentDb.Id -le 4) {
                     continue
                 }
                 if ($Database -and $Database -notcontains $dbName) {
@@ -949,7 +945,7 @@ function Copy-DbaDatabase {
                         continue
                     }
                 }
-                $null = $databaseList.Add($currentdb)
+                $null = $databaseList.Add($currentDb)
             }
 
             Write-Message -Level Verbose -Message "Performing count."
@@ -986,9 +982,9 @@ function Copy-DbaDatabase {
             $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
 
             if ($AllDatabases -or $ExcludeDatabase -or $IncludeSupportDbs -or $Database) {
-                foreach ($currentdb in $databaseList) {
-                    $dbName = $currentdb.Name
-                    $dbOwner = $currentdb.Owner
+                foreach ($currentDb in $databaseList) {
+                    $dbName = $currentDb.Name
+                    $dbOwner = $currentDb.Owner
                     $destinationDbName = $dbName
                     if ((Test-Bound "NewName")) {
                         Write-Message -Level Verbose -Message "NewName specified, copying $dbname as $NewName"
@@ -1038,7 +1034,7 @@ function Copy-DbaDatabase {
                     }
 
                     Write-Message -Level Verbose -Message "Checking for accessibility."
-                    if ($currentdb.IsAccessible -eq $false) {
+                    if ($currentDb.IsAccessible -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
                             Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
 
@@ -1079,13 +1075,13 @@ function Copy-DbaDatabase {
                     }
 
                     Write-Message -Level Verbose -Message "Checking Availability Group status."
-                    if ($currentdb.AvailabilityGroupName -and !$force -and $DetachAttach) {
-                        $agName = $currentdb.AvailabilityGroupName
+                    if ($currentDb.AvailabilityGroupName -and !$force -and $DetachAttach) {
+                        $agName = $currentDb.AvailabilityGroupName
                         Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
                         continue
                     }
 
-                    $dbStatus = $currentdb.Status.ToString()
+                    $dbStatus = $currentDb.Status.ToString()
 
                     if ($dbStatus.StartsWith("Normal") -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is not in a Normal state. Skipping.")) {
@@ -1098,7 +1094,7 @@ function Copy-DbaDatabase {
                         continue
                     }
 
-                    if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
+                    if ($currentDb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is part of replication. Skipping.")) {
                             Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
 
@@ -1109,7 +1105,7 @@ function Copy-DbaDatabase {
                         continue
                     }
 
-                    if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
+                    if ($currentDb.IsMirroringEnabled -and !$force -and $DetachAttach) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method.")) {
                             Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 
