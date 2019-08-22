@@ -100,18 +100,20 @@ function Copy-DbaBackupDevice {
         $serverBackupDevices = $sourceServer.BackupDevices
         $sourceNetBios = $Source.ComputerName
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             $destBackupDevices = $destServer.BackupDevices
-            $destNetBios = $destinstance.ComputerName
+            $destNetBios = $destInstance.ComputerName
 
             foreach ($currentBackupDevice in $serverBackupDevices) {
                 $deviceName = $currentBackupDevice.Name
@@ -139,7 +141,7 @@ function Copy-DbaBackupDevice {
                         Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping backup device $deviceName")) {
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Dropping backup device $deviceName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping backup device $deviceName"
                                 $destServer.BackupDevices[$deviceName].Drop()
@@ -153,11 +155,11 @@ function Copy-DbaBackupDevice {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Generating SQL code for $deviceName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Generating SQL code for $deviceName")) {
                     Write-Message -Level Verbose -Message "Scripting out SQL for $deviceName"
                     try {
                         $sql = $currentBackupDevice.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destInstance'"
                     } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -172,7 +174,7 @@ function Copy-DbaBackupDevice {
 
                 $path = Split-Path $sourceServer.BackupDevices[$deviceName].PhysicalLocation
                 $destPath = Join-AdminUnc $destNetBios $path
-                $sourcepath = Join-AdminUnc $sourceNetBios $sourceServer.BackupDevices[$deviceName].PhysicalLocation
+                $sourcePath = Join-AdminUnc $sourceNetBios $sourceServer.BackupDevices[$deviceName].PhysicalLocation
 
                 Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
 
@@ -180,8 +182,8 @@ function Copy-DbaBackupDevice {
                     $backupDirectory = $destServer.BackupDirectory
                     $destPath = Join-AdminUnc $destNetBios $backupDirectory
 
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Updating create code to use new path")) {
-                        Write-Message -Level Verbose -Message "$path doesn't exist on $destinstance"
+                    if ($Pscmdlet.ShouldProcess($destInstance, "Updating create code to use new path")) {
+                        Write-Message -Level Verbose -Message "$path doesn't exist on $destInstance"
                         Write-Message -Level Verbose -Message "Using default backup directory $backupDirectory"
 
                         try {
@@ -196,9 +198,9 @@ function Copy-DbaBackupDevice {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Copying $sourcepath to $destPath using BITSTransfer")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Copying $sourcePath to $destPath using BITSTransfer")) {
                     try {
-                        Start-BitsTransfer -Source $sourcepath -Destination $destPath -ErrorAction Stop
+                        Start-BitsTransfer -Source $sourcePath -Destination $destPath -ErrorAction Stop
                         Write-Message -Level Verbose -Message "Backup device $deviceName successfully copied"
                     } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
@@ -208,8 +210,8 @@ function Copy-DbaBackupDevice {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Adding backup device $deviceName")) {
-                    Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destinstance"
+                if ($Pscmdlet.ShouldProcess($destInstance, "Adding backup device $deviceName")) {
+                    Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destInstance"
                     try {
                         $destServer.Query($sql)
                         $destServer.BackupDevices.Refresh()
