@@ -138,6 +138,7 @@ function Expand-DbaDbLogFile {
         Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', '')] #Until PSSA addresses PSScriptAnalyzer/issue 1319
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
         [parameter(Position = 1, Mandatory)]
@@ -241,8 +242,6 @@ function Expand-DbaDbLogFile {
                     } else {
                         $logfile = $server.Databases[$db].LogFiles[0]
                     }
-
-                    $numLogfiles = $server.Databases[$db].LogFiles.Count
 
                     Write-Message -Level Verbose -Message "$step - Use log file: $logfile."
                     $currentSize = $logfile.Size
@@ -382,7 +381,7 @@ function Expand-DbaDbLogFile {
                                             $backup.BackupSetName = $db + " Backup"
                                             $backup.Database = $db
                                             $backup.MediaDescription = "Disk"
-                                            $dt = get-date -format yyyyMMddHHmmssms
+                                            $dt = Get-Date -format yyyyMMddHHmmssms
                                             $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                             if ($DefaultCompression -eq $true) {
                                                 $backup.CompressionOption = 1
@@ -479,20 +478,21 @@ function Expand-DbaDbLogFile {
                 #Get the number of VLFs
                 $currentVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
-                [pscustomobject]@{
+                $outObject = [pscustomobject]@{
                     ComputerName    = $server.ComputerName
                     InstanceName    = $server.ServiceName
                     SqlInstance     = $server.DomainInstanceName
                     Database        = $db
                     ID              = $logfile.ID
                     Name            = $logfile.Name
-                    LogFileCount    = $numLogfiles
+                    LogFileCount    = $numLogiles
                     InitialSize     = [dbasize]($currentSizeMB * 1024 * 1024)
                     CurrentSize     = [dbasize]($TargetLogSize * 1024 * 1024)
                     InitialVLFCount = $initialVLFCount.Total
                     CurrentVLFCount = $currentVLFCount.Total
-                } | Select-DefaultView -ExcludeProperty LogFileCount
-            } #foreach database
+                }
+                Select-DefaultView -InputObject $outObject -ExcludeProperty LogFileCount
+            }
         } catch {
             Stop-Function -Message "Logfile $logfile on database $db not processed. Error: $($_.Exception.Message). Line Number:  $($_InvocationInfo.ScriptLineNumber)" -Continue
         }
