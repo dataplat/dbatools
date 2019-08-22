@@ -138,12 +138,12 @@ function Find-DbaView {
 
                         Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
                         if ($row.TextBody -match $Pattern) {
-                            $vw = $db.Views | Where-Object {$_.Schema -eq $viewSchema -and $_.Name -eq $view}
+                            $vw = $db.Views | Where-Object { $_.Schema -eq $viewSchema -and $_.Name -eq $view }
 
                             $viewText = $vw.TextBody.split("`n`r")
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                            [PSCustomObject]@{
+                            $outObject = [PSCustomObject]@{
                                 ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
@@ -156,7 +156,8 @@ function Find-DbaView {
                                 ViewTextFound  = $vwTextFound -join "`n"
                                 View           = $vw
                                 ViewFullText   = $vw.TextBody
-                            } | Select-DefaultView -ExcludeProperty View, ViewFullText
+                            }
+                            Select-DefaultView -InputObject $outObject -ExcludeProperty View, ViewFullText
                         }
                     }
                 } else {
@@ -174,7 +175,7 @@ function Find-DbaView {
                             $viewText = $vw.TextBody.split("`n`r")
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                            [PSCustomObject]@{
+                            $outObject = [PSCustomObject]@{
                                 ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
@@ -187,7 +188,8 @@ function Find-DbaView {
                                 ViewTextFound  = $vwTextFound -join "`n"
                                 View           = $vw
                                 ViewFullText   = $vw.TextBody
-                            } | Select-DefaultView -ExcludeProperty View, ViewFullText
+                            }
+                            Select-DefaultView -InputObject $outObject -ExcludeProperty View, ViewFullText
                         }
                     }
                 }
