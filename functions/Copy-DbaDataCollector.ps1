@@ -118,19 +118,21 @@ function Copy-DbaDataCollector {
         $configDb = $sourceStore.ScriptAlter().GetScript() | Out-String
         $configDb = $configDb -replace [Regex]::Escape("'$source'"), "'$destReplace'"
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
 
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             if ($NoServerReconfig -eq $false) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time.")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time.")) {
                     Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
                     $NoServerReconfig = $true
 
@@ -152,7 +154,7 @@ function Copy-DbaDataCollector {
             $destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
 
             if (!$NoServerReconfig) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to modify Data Collector configuration")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Attempting to modify Data Collector configuration")) {
                     try {
                         $sql = "Unknown at this time"
                         $destServer.Query($sql)
@@ -194,8 +196,8 @@ function Copy-DbaDataCollector {
 
                 if ($null -ne $destStore.CollectionSets[$collectionName]) {
                     if ($force -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
-                            Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Collection Set '$collectionName' was skipped because it already exists on $destInstance. Use -Force to drop and recreate")) {
+                            Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destInstance. Use -Force to drop and recreate"
 
                             $copyCollectionSetStatus.Status = "Skipped"
                             $copyCollectionSetStatus.Notes = "Already exists on destination"
@@ -203,8 +205,8 @@ function Copy-DbaDataCollector {
                         }
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $collectionName")) {
-                            Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destinstance"
+                        if ($Pscmdlet.ShouldProcess($destInstance, "Attempting to drop $collectionName")) {
+                            Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destInstance"
                             Write-Message -Level Verbose -Message "Force specified. Dropping $collectionName."
 
                             try {
@@ -219,10 +221,10 @@ function Copy-DbaDataCollector {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Migrating collection set $collectionName")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Migrating collection set $collectionName")) {
                     try {
                         $sql = $set.ScriptCreate().GetScript() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destInstance'"
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
                         $destServer.Query($sql)
