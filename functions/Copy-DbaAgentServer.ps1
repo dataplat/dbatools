@@ -105,19 +105,21 @@ function Copy-DbaAgentServer {
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        foreach ($destInstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
-            # All of these support whatif inside of them
-            Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            # All of these support WhatIf inside of them
+            Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
 
             $destServer.Refresh()
             $destServer.JobServer.Refresh()
@@ -125,32 +127,32 @@ function Copy-DbaAgentServer {
             $destServer.JobServer.OperatorCategories.Refresh()
             $destServer.JobServer.AlertCategories.Refresh()
 
-            Copy-DbaAgentOperator -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentOperator -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             $destServer.Refresh()
             $destServer.JobServer.Refresh()
             $destServer.JobServer.Operators.Refresh()
 
             # extra reconnect to force refresh
-            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            $destServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
 
-            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
+            Copy-DbaAgentAlert -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
 
-            Copy-DbaAgentProxy -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentProxy -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
 
-            Copy-DbaAgentSchedule -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentSchedule -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             $destServer.JobServer.SharedSchedules.Refresh()
 
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
-            Copy-DbaAgentJob -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+            Copy-DbaAgentJob -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 
             # To do
             <#
-            Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
-            Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
-            Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
+            Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destInstance -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             #>
 
             <# Here are the properties which must be migrated separately #>
@@ -165,17 +167,17 @@ function Copy-DbaAgentServer {
             }
 
             if ($ExcludeServerProperties) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping property copy")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Skipping property copy")) {
                     $copyAgentPropStatus.Status = "Skipped"
                     $copyAgentPropStatus.Notes = $null
                     $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             } else {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
+                if ($Pscmdlet.ShouldProcess($destInstance, "Copying Agent Properties")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
                         $sql = $sourceAgent.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destInstance'"
                         $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
                         $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
                         Write-Message -Level Debug -Message $sql
