@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Test Import dbatools
       shell: pwsh
-      run: Import-Module dbatools.psd1 -ErrorAction Stop
+      run: Import-Module ./dbatools.psd1 -ErrorAction Stop
     - uses: actions/upload-artifact@master
       with:
         name: dbatools
