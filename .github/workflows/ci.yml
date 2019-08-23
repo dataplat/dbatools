@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-    name: Test the import
+    name: Module imports on all platforms
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -13,6 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Module imports on all platforms
+    - name: Perform the import
       shell: pwsh
       run: Import-Module ./dbatools.psd1 -ErrorAction Stop; (Get-DbaManagementObject).LoadTemplate -ne $null
