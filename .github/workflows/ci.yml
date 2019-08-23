@@ -3,10 +3,6 @@ name: CI
 on: [push]
 
 jobs:
-  lint:
-    name: Import-Module
-    runs-on: ubuntu-latest
-
   build:
     name: Test the import
     runs-on: ${{ matrix.os }}
