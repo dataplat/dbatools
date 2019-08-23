@@ -16,3 +16,4 @@ jobs:
     - name: Test Import dbatools
       shell: pwsh
       run: Import-Module ./dbatools.psd1 -ErrorAction Stop
+      run: Get-DbaManagementObject
