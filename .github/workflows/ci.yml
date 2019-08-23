@@ -1,0 +1,29 @@
+name: CI
+
+on: [push]
+
+jobs:
+  lint:
+    name: Import-Module
+    runs-on: ubuntu-latest
+
+  build:
+    name: Test the import
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Pester
+      shell: pwsh
+      run: Install-Module Pester -Force
+    - name: Test Import Pester
+      shell: pwsh
+      run: Invoke-Pester tests/dbatools.Tests.ps1 -EnableExit
+    - uses: actions/upload-artifact@master
+      with:
+        name: test-module
+        path: .
