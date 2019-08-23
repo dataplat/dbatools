@@ -13,13 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Install Pester
+    - name: Test Import dbatools
       shell: pwsh
-      run: Install-Module Pester -Force
-    - name: Test Import Pester
-      shell: pwsh
-      run: Invoke-Pester tests/dbatools.Tests.ps1 -EnableExit
+      run: Import-Module dbatools.psd1 -ErrorAction Stop
     - uses: actions/upload-artifact@master
       with:
-        name: test-module
+        name: dbatools
         path: .
