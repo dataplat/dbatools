@@ -16,7 +16,3 @@ jobs:
     - name: Test Import dbatools
       shell: pwsh
       run: Import-Module ./dbatools.psd1 -ErrorAction Stop
-    - uses: actions/upload-artifact@master
-      with:
-        name: dbatools
-        path: .
