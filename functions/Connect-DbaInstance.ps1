@@ -482,7 +482,7 @@ function Connect-DbaInstance {
                     try {
                         $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     } catch {
-                        Write-Message -Level Warning "Connection to $instance not supported. Please upgrade your .NET version or use MFA instead."
+                        Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
                         continue
                     }
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
