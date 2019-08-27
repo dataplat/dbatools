@@ -146,7 +146,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
