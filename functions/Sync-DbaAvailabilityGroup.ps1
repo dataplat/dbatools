@@ -166,7 +166,7 @@ function Sync-DbaAvailabilityGroup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
             }
         }
@@ -186,7 +186,7 @@ function Sync-DbaAvailabilityGroup {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                    Stop-Function -Message "Error occurred while establishing connection to $computer" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
             }
@@ -197,7 +197,7 @@ function Sync-DbaAvailabilityGroup {
             SecondaryServer = $secondaries
         }
 
-        # In the event that someone pipes in an availability group, this will keep the syncer from running a bunch of times
+        # In the event that someone pipes in an availability group, this will keep the sync from running a bunch of times
         $dupe = $false
 
         foreach ($ag in $allcombos) {

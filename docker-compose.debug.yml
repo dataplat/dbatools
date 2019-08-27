@@ -1,0 +1,10 @@
+version: '2.1'
+
+services:
+  dbatools:
+    image: dbatools
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - :
