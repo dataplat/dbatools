@@ -93,8 +93,8 @@ function Install-DbaWhoIsActive {
         $zipfile = "$temp\spwhoisactive.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
-            $baseUrl = "http://whoisactive.com/downloads"
-            $latest = ((Invoke-TlsWebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
+            $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
+            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | where-object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -146,7 +146,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
