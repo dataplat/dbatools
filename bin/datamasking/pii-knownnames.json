@@ -97,6 +97,16 @@
         "MaskingSubType": "Letter"
     },
     {
+        "Name": "E-mail",
+        "Category": "Communication",
+        "Pattern": [
+            "(\\w*)(?i)(email|e-mail|mail)(\\w*)",
+            "^(?:(?!invalid).)*email(?!\\w*ID)"
+        ],
+        "MaskingType": "Internet",
+        "MaskingSubType": "Email"
+    },
+    {
         "Name": "Nationality",
         "Category": "Personal",
         "Pattern": [
@@ -200,16 +210,6 @@
         ],
         "MaskingType": "Person",
         "MaskingSubType": "Phone"
-    },
-    {
-        "Name": "E-mail",
-        "Category": "Communication",
-        "Pattern": [
-            "(\\w*)(?i)(email|e-mail|mail)(\\w*)",
-            "^(?:(?!invalid).)*email(?!\\w*ID)"
-        ],
-        "MaskingType": "Internet",
-        "MaskingSubType": "Email"
     },
     {
         "Name": "Website",
