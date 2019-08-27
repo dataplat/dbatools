@@ -83,12 +83,23 @@ function Get-DbaDbCompatibility {
             $ServerVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
 
+            $dbVersionInt =
+            switch ($db.CompatibilityLevel) {
+                "Version100" { 10 } # SQL Server 2008
+                "Version110" { 11 } # SQL Server 2012
+                "Version120" { 12 } # SQL Server 2014
+                "Version130" { 13 } # SQL Server 2016
+                "Version140" { 14 } # SQL Server 2017
+                "Version150" { 15 } # SQL Server 2019
+                default { 9 } # SQL Server 2005
+            }
+
             [PSCustomObject]@{
                 ComputerName  = $server.ComputerName
                 InstanceName  = $server.ServiceName
                 SqlInstance   = $server.DomainInstanceName
                 Database      = $db.Name
-                Compatibility = $db.CompatibilityLevel
+                Compatibility = $dbVersionInt
             }
         }
     }
