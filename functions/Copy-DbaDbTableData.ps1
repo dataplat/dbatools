@@ -152,6 +152,22 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SqlInstance = 'server1'
+        >> Destination = 'server1'
+        >> Database = 'AdventureWorks2017'
+        >> DestinationDatabase = 'AdventureWorks2017'
+        >> Table = '[Person].[EmailPromotion]'
+        >> BatchSize = 10000
+        >> Query = "SELECT * FROM [Person].[Person] where EmailPromotion = 1"
+        >> }
+        >>
+        PS C:\> Copy-DbaDbTableData @params
+
+        Copies data returned from the query on server1 into the AdventureWorks2017 on server1.
+        Copy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
@@ -345,7 +361,7 @@ function Copy-DbaDbTableData {
                     $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
                 }
 
-                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
+                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name -and (Test-Bound -ParameterName Query -Not)) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                     return
                 }
@@ -353,6 +369,9 @@ function Copy-DbaDbTableData {
 
                 if (Test-Bound -ParameterName Query -Not) {
                     $Query = "SELECT * FROM $fqtnfrom"
+                    $sourceLabel = $fqtnfrom
+                } else {
+                    $sourceLabel = "Query"
                 }
                 try {
                     if ($Truncate -eq $true) {
@@ -360,7 +379,7 @@ function Copy-DbaDbTableData {
                             $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                         }
                     }
-                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $fqtnfrom")) {
+                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
