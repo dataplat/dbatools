@@ -373,10 +373,11 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbname
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
+                $totalSize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
 
-                if ($MaxSize -and $MaxSize -lt $totalsize) {
-                    $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
+                if ($MaxSize -and $MaxSize -lt $totalSize) {
+                    $mb = $db.SizeMb
+                    $success = "The backup size for $dbname ($totalSize MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {
                     $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
@@ -424,9 +425,7 @@ function Test-DbaLastBackup {
                         # shouldprocess is taken care of in Start-DbccCheck
                         if ($ogdbname -eq "master") {
                             $dbccresult =
-                            "DBCC CHECKDB skipped for restored master ($dbname) database. `
-                             The master database cannot be copied off of a server and have a successful DBCC CHECKDB. `
-                             See https://www.itprotoday.com/my-master-database-really-corrupt for more information."
+                            "DBCC CHECKDB skipped for restored master ($dbname) database. `nThe master database cannot be copied off of a server and have a successful DBCC CHECKDB. `nSee https://www.itprotoday.com/my-master-database-really-corrupt for more information."
                         } else {
                             if ($success -eq "Success") {
                                 Write-Message -Level Verbose -Message "Starting DBCC."
@@ -477,7 +476,7 @@ function Test-DbaLastBackup {
                 if ($CopyFile) {
                     Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
                     try {
-                        $removearray | Remove-item -ErrorAction Stop
+                        $removearray | Remove-Item -ErrorAction Stop
                     } catch {
                         Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                     }
