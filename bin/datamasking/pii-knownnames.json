@@ -19,7 +19,7 @@
         "Pattern": [
             "(\\w*)(?i)(middlename|mname|middle_name)(\\w*)",
             "(?>(mid(dle)?)_?(na?me?)\\|m_?name)(?!\\w*ID)",
-            "(\\w*)(?i)(mittelname|mname|mittel_name)(\\w*)",
+            "(\\w*)(?i)(mittelname|mname|mittel_name)(\\w*)"
         ],
         "MaskingType": "Name",
         "MaskingSubType": "FirstName"
