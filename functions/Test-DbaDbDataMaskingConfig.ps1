@@ -145,7 +145,7 @@ function Test-DbaDbDataMaskingConfig {
                 # Test date types
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
-                    if ($column.MaskingType -ne 'Date' -and $column.SubType -ne 'DateOfBirth') {
+                    if ($column.MaskingType -ne 'Date' -and ($column.SubType -ne 'DateOfBirth' -and $null -ne $column.Subtype)) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
