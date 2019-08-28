@@ -198,8 +198,8 @@
             "(\\w*)(?i)(phone|phonenumber)(\\w*)",
             "(?>((tele?)?phone)\\|(co?nta?ct\\|tel)_?(num(ber)?\\|nbr\\|no))(?!\\w*(ID\\|type))"
         ],
-        "MaskingType": "Person",
-        "MaskingSubType": "Phone"
+        "MaskingType": "Phone",
+        "MaskingSubType": "PhoneNumber"
     },
     {
         "Name": "Fax",
@@ -208,8 +208,8 @@
             "(\\w*)(?i)(fax|faxnumber)(\\w*)",
             "(?>fax_?(num(ber)?\\|nbr\\|no)?)(?!\\w*(ID\\|type))"
         ],
-        "MaskingType": "Person",
-        "MaskingSubType": "Phone"
+        "MaskingType": "Phone",
+        "MaskingSubType": "PhoneNumber"
     },
     {
         "Name": "Website",
