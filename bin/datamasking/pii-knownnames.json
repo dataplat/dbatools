@@ -168,8 +168,8 @@
         "Pattern": [
             "(\\w*)(?i)(phone|phonenumber)(\\w*)"
         ],
-        "MaskingType": "Person",
-        "MaskingSubType": "Phone"
+        "MaskingType": "Phone",
+        "MaskingSubType": "PhoneNumber"
     },
     {
         "Name": "Fax",
@@ -177,8 +177,8 @@
         "Pattern": [
             "(\\w*)(?i)(fax|faxnumber)(\\w*)"
         ],
-        "MaskingType": "Person",
-        "MaskingSubType": "Phone"
+        "MaskingType": "Phone",
+        "MaskingSubType": "PhoneNumber"
     },
     {
         "Name": "E-mail",
