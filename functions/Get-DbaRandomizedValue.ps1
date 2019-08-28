@@ -462,7 +462,15 @@ function Get-DbaRandomizedValue {
                     $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $script:faker.Person.$RandomizerSubType
+                    if ($randSubType -eq "phone") {
+                        if ($Format) {
+                            $script:faker.Phone.PhoneNumber($Format)
+                        } else {
+                            $script:faker.Phone.PhoneNumber()
+                        }
+                    } else {
+                        $script:faker.Person.$RandomizerSubType
+                    }
                 }
                 'phone' {
                     if ($Format) {
