@@ -7056,7 +7056,7 @@ function Copy-DbaDbTableData {
                     $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
                 }
 
-                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
+                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name -and (Test-Bound -ParameterName Query -Not)) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                     return
                 }
@@ -7064,6 +7064,9 @@ function Copy-DbaDbTableData {
 
                 if (Test-Bound -ParameterName Query -Not) {
                     $Query = "SELECT * FROM $fqtnfrom"
+                    $sourceLabel = $fqtnfrom
+                } else {
+                    $sourceLabel = "Query"
                 }
                 try {
                     if ($Truncate -eq $true) {
@@ -7071,7 +7074,7 @@ function Copy-DbaDbTableData {
                             $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                         }
                     }
-                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $fqtnfrom")) {
+                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
