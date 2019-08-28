@@ -369,6 +369,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
+                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
+                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
