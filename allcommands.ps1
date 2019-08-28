@@ -14941,7 +14941,7 @@ function Find-DbaCommand {
                     $helpcoll.Add($x)
                 }
                 # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
-                $dest = "$moduleDirectory\bin\dbatools-index.json"
+                $dest = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
                 $helpcoll | ConvertTo-Json -Depth 4 | Out-File $dest -Encoding UTF8
             }
         }
@@ -14950,7 +14950,7 @@ function Find-DbaCommand {
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")
-        $idxFile = "$moduleDirectory\bin\dbatools-index.json"
+        $idxFile = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
         if (!(Test-Path $idxFile) -or $Rebuild) {
             Write-Message -Level Verbose -Message "Rebuilding index into $idxFile"
             $swRebuild = [system.diagnostics.stopwatch]::StartNew()
@@ -32242,7 +32242,15 @@ function Get-DbaRandomizedValue {
                     $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $script:faker.Person.$RandomizerSubType
+                    if ($randSubType -eq "phone") {
+                        if ($Format) {
+                            $script:faker.Phone.PhoneNumber($Format)
+                        } else {
+                            $script:faker.Phone.PhoneNumber()
+                        }
+                    } else {
+                        $script:faker.Person.$RandomizerSubType
+                    }
                 }
                 'phone' {
                     if ($Format) {
@@ -41905,6 +41913,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
+                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
+                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
@@ -42043,7 +42053,6 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
@@ -68628,7 +68637,7 @@ function Test-DbaDbDataMaskingConfig {
                 # Test date types
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
-                    if ($column.MaskingType -ne 'Date') {
+                    if ($column.MaskingType -ne 'Date' -and ($column.SubType -ne 'DateOfBirth' -and $null -ne $column.Subtype)) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
