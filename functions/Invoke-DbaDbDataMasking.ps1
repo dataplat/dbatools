@@ -419,7 +419,9 @@ function Invoke-DbaDbDataMasking {
                                         if ($column.SubType.ToLowerInvariant() -eq 'shuffle') {
                                             if ($columnobject.ColumnType -like '*int') {
                                                 [int]$newValue = ((($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join '')
-                                            } else {
+                                            }
+
+                                            if ($columnobject.ColumnType -like '*char*') {
                                                 $newValue = (($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join ''
                                             }
                                         } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
