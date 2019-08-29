@@ -416,7 +416,13 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($column.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            if ($columnobject.ColumnType -like '*int') {
+                                                [int]$newValue = ((($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join '')
+                                            } else {
+                                                $newValue = (($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join ''
+                                            }
+                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
