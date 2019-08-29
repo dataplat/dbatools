@@ -427,7 +427,6 @@ function Invoke-DbaDbDataMasking {
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
 
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
