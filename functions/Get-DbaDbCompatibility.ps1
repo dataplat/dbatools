@@ -83,7 +83,7 @@ function Get-DbaDbCompatibility {
             $ServerVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
 
-            $dbVersionInt =
+            $dbLevelInt =
             switch ($db.CompatibilityLevel) {
                 "Version100" { 10 } # SQL Server 2008
                 "Version110" { 11 } # SQL Server 2012
@@ -99,7 +99,8 @@ function Get-DbaDbCompatibility {
                 InstanceName  = $server.ServiceName
                 SqlInstance   = $server.DomainInstanceName
                 Database      = $db.Name
-                Compatibility = $dbVersionInt
+                Compatibility = $db.CompatibilityLevel
+                Level         = $dbLevelInt
             }
         }
     }
