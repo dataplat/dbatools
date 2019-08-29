@@ -1,10 +1,10 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -13,26 +13,54 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $db110 = "dbatoolsci11_$(Get-Random)"
+        $db140 = "dbatoolsci13_$(Get-Random)"
+
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server.Query("CREATE DATABASE $db110")
+        $server.Query("CREATE DATABASE $db140")
+        $server.Query("ALTER DATABASE $db110 SET COMPATIBILITY_LEVEL = 110;")
+    }
+    AfterAll {
+        $server.Query("DROP DATABASE $db110")
+        $server.Query("DROP DATABASE $db140")
+    }
     Context "Gets compatibility for multiple databases" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
+        $results = Get-DbaDbCompatibility -SqlInstance $script:instance3
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
-        Foreach ($row in $results) {
-            It "Should return Compatiblity level of Version100 for $($row.database)" {
-                $row.Compatibility | Should Be "Version100"
-            }
+        $result110 = $results | Where-Object Database -eq $db110
+
+        It "Should return Compatibility of Version110 for $db110" {
+            $result110.Compatibility | Should -Be "Version110"
+        }
+        It "Should return Level of 11 for $db110" {
+            $result110.Level | Should -Be 11
+        }
+
+        $result140 = $results | Where-Object Database -eq $db140
+
+        It "Should return Compatibility of Version140 for $db140" {
+            $result140.Compatibility | Should -Be "Version140"
+        }
+        It "Should return Level of 14 for $db140" {
+            $result140.Level | Should -Be 14
         }
     }
     Context "Gets compatibility for one database" {
         $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -database master
 
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
-        It "Should return Compatiblity level of Version100 for $($results.database)" {
-            $results.Compatibility | Should Be "Version100"
+        It "Should return Compatibility level of Version140 for $($results.Database)" {
+            $results.Compatibility | Should -Be "Version140"
+        }
+        It "Should return Level of 14 for $($results.Database)" {
+            $results.Level | Should -Be 14
         }
     }
 }
