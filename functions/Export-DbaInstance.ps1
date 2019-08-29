@@ -167,14 +167,14 @@ function Export-DbaInstance {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $stepCounter = $filecounter = 0
+            $stepCounter = $fileCounter = 0
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow"
+            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
 
             if (-not (Test-Path $Path)) {
                 try {
@@ -418,7 +418,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
-                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -Append:$Append
+                $null = Export-DbaSysDbUserObject -SqlInstance $server -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-userobjectsinsysdbs.sql"
                 if (-not (Test-Path "$Path\$fileCounter-userobjectsinsysdbs.sql")) {
                     $fileCounter--
@@ -440,10 +440,10 @@ function Export-DbaInstance {
         }
     }
     end {
-        $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+        $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server export complete."
         Write-Message -Level Verbose -Message "Export started: $started"
         Write-Message -Level Verbose -Message "Export completed: $(Get-Date)"
-        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
+        Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
     }
 }
