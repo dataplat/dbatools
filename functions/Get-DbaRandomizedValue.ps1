@@ -100,6 +100,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
     )
@@ -156,6 +157,10 @@ function Get-DbaRandomizedValue {
         if ($RandomizerSubType) {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
+            }
+
+            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
             }
         }
 
@@ -486,6 +491,8 @@ function Get-DbaRandomizedValue {
                         $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
+                    } elseif ($randSubType -eq 'shuffle') {
+                        $script:faker.Random.Shuffle($Value)
                     } else {
                         $script:faker.Random.$RandomizerSubType()
                     }
