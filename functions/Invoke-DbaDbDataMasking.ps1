@@ -416,14 +416,11 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if ($column.SubType.ToLowerInvariant() -eq 'shuffle') {
-                                            if ($columnobject.ColumnType -like '*int') {
-                                                [int]$newValue = ((($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join '')
-                                            }
+                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "SHuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
 
-                                            if ($columnobject.ColumnType -like '*char*') {
-                                                $newValue = (($row.$item).Tostring() -split '' | Sort-Object { Get-Random }) -join ''
-                                            }
+                                            $newValue = ($newValue -join '')
+
                                         } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
@@ -516,6 +513,7 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
+                            $stringbuilder.ToString()
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
