@@ -513,7 +513,6 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-                            $stringbuilder.ToString()
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
@@ -583,7 +582,6 @@ function Invoke-DbaDbDataMasking {
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                $updatequery
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
