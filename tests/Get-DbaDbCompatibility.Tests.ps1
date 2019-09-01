@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets compatibility for one database" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -database master
+        $results = Get-DbaDbCompatibility -SqlInstance $script:instance3 -database master
 
         It "Gets results" {
             $results | Should -Not -Be $null
