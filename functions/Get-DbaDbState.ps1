@@ -114,7 +114,7 @@ FROM sys.databases
             }
             foreach ($db in $dbs) {
                 $db_status = $dbStatesHash[$db.Name]
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     SqlInstance  = $server.Name
                     InstanceName = $server.ServiceName
                     ComputerName = $server.ComputerName
@@ -123,7 +123,8 @@ FROM sys.databases
                     Status       = $db_status.Status
                     Access       = $db_status.Access
                     Database     = $server.Databases[$db.Name]
-                } | Select-DefaultView -ExcludeProperty Database
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Database
             }
         }
     }

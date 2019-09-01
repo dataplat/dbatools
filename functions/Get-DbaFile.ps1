@@ -120,16 +120,16 @@ function Get-DbaFile {
             $query_files_sql = "-- SEE all with full paths
                     WITH dirs AS (
                         SELECT
-                           Id,subdirectory,depth,isfile,ParentDirectory,flag
-                           , CAST (null AS NVARCHAR(MAX)) AS container
-                           , CAST([subdirectory] AS NVARCHAR(MAX)) AS dpath
-                           FROM #DirectoryTree
-                           WHERE ParentDirectory IS NULL
+                            Id,subdirectory,depth,isfile,ParentDirectory,flag
+                            , CAST (null AS NVARCHAR(MAX)) AS container
+                            , CAST([subdirectory] AS NVARCHAR(MAX)) AS dpath
+                            FROM #DirectoryTree
+                            WHERE ParentDirectory IS NULL
                         UNION ALL
                         SELECT
-                           d.Id,d.subdirectory,d.depth,d.isfile,d.ParentDirectory,d.flag
-                           , dpath as container
-                           , dpath +'\'+d.[subdirectory]
+                            d.Id,d.subdirectory,d.depth,d.isfile,d.ParentDirectory,d.flag
+                            , dpath as container
+                            , dpath +'\'+d.[subdirectory]
                         FROM #DirectoryTree AS d
                         INNER JOIN dirs ON  d.ParentDirectory = dirs.id
                         WHERE dpath NOT LIKE '%RECYCLE.BIN%'
@@ -186,25 +186,27 @@ function Get-DbaFile {
                 foreach ($row in $datatable) {
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
-                            [pscustomobject]@{
+                            $outputResult = [pscustomobject]@{
                                 ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
                                 SqlInstance    = $server.DomainInstanceName
                                 Filename       = $row.fullpath
                                 RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
-                            } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
+                            }
+                            Select-DefaultView -InputObject $outputResult -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                         }
                     }
                 }
             } else {
                 foreach ($row in $datatable) {
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $row.fullpath
                         RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
+                    }
+                    Select-DefaultView -InputObject $outputResult -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                 }
             }
         }

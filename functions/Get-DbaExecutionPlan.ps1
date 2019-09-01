@@ -172,7 +172,7 @@ function Get-DbaExecutionPlan {
                         $planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
                         $planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             ComputerName                      = $server.ComputerName
                             InstanceName                      = $server.ServiceName
                             SqlInstance                       = $server.DomainInstanceName
@@ -206,7 +206,8 @@ function Get-DbaExecutionPlan {
                             BatchQueryPlanRaw                 = [xml]$row.BatchQueryPlan
                             SingleStatementPlanRaw            = [xml]$row.SingleStatementPlan
                             PlanWarnings                      = $planWarnings
-                        } | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
                     }
                 }
             } catch {

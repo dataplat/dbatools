@@ -84,10 +84,7 @@ function Get-DbaFilestream {
             Write-Message -Level Verbose -Message "Attempting to connect to $computer"
             try {
                 $ognamespace = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace root\Microsoft\SQLServer -Query "SELECT NAME FROM __NAMESPACE WHERE NAME LIKE 'ComputerManagement%'"
-                $namespace = $ognamespace | Where-Object {
-                    (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
-                } |
-                    Sort-Object Name -Descending | Select-Object -First 1
+                $namespace = $ognamespace | Where-Object { (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
 
                 if (-not $namespace) {
                     $namespace = $ognamespace
@@ -127,7 +124,7 @@ function Get-DbaFilestream {
             $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
             $servicelevel = [int]$serviceFS.AccessLevel
 
-            [PsCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 ComputerName        = $server.ComputerName
                 InstanceName        = $server.ServiceName
                 SqlInstance         = $server.DomainInstanceName
@@ -138,7 +135,8 @@ function Get-DbaFilestream {
                 ServiceAccessLevel  = $serviceFS.AccessLevel
                 Credential          = $Credential
                 SqlCredential       = $SqlCredential
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName
+            }
+            Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName
         }
     }
 }

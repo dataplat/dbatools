@@ -203,7 +203,7 @@ function Get-DbaKbUpdate {
                             $properties = $properties | Where-Object { $PSItem -notin "LastModified", "Description", "Size", "Classification", "SupportedProducts", "MSRCNumber", "MSRCSeverity", "RebootBehavior", "RequestsUserInput", "ExclusiveInstall", "NetworkRequired", "UninstallNotes", "UninstallSteps", "SupersededBy", "Supersedes" }
                         }
 
-                        [pscustomobject]@{
+                        $outputResult = [PSCustomObject]@{
                             Title             = $title
                             NameLevel         = $build.NameLevel
                             SPLevel           = $build.SPLevel
@@ -231,7 +231,8 @@ function Get-DbaKbUpdate {
                             Supersedes        = $supersedes
                             SupersededBy      = $supersededby
                             Link              = $link.matches.value
-                        } | Select-DefaultView -Property $properties
+                        }
+                        Select-DefaultView -InputObject $outputResult -Property $properties
                     }
                 }
             } catch {

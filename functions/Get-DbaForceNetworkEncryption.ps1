@@ -9,7 +9,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-       The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -62,9 +62,7 @@ function Get-DbaForceNetworkEncryption {
             }
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock {
-                    $wmi.Services
-                } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
@@ -81,12 +79,8 @@ function Get-DbaForceNetworkEncryption {
             $serviceaccount = $sqlwmi.ServiceAccount
 
             if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object {
-                    $_ -match 'REGROOT'
-                }
-                $vsname = $sqlwmi.AdvancedProperties | Where-Object {
-                    $_ -match 'VSNAME'
-                }
+                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]

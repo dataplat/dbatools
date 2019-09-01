@@ -104,14 +104,14 @@ function Get-DbaDbUser {
                     $users = $users | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
-                $users | ForEach-Object {
+                foreach ($user in $users) {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+                    Add-Member -Force -InputObject $user -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $user -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $user -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, Name, Login, LoginType, AuthenticationType, State, HasDbAccess, DefaultSchema
+                    Select-DefaultView -InputObject $user -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, Name, Login, LoginType, AuthenticationType, State, HasDbAccess, DefaultSchema
                 }
             }
         }

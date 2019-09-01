@@ -59,14 +59,14 @@ function Get-DbaIoLatency {
         Connects using sqladmin credential and returns IO subsystem latency statistics from sql2008
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
         $sql = "SELECT
             [vfs].[database_id],
             DB_NAME ([vfs].[database_id]) AS [DatabaseName],
@@ -138,7 +138,7 @@ function Get-DbaIoLatency {
             Write-Message -Level Verbose -Message "Connected to $instance"
 
             foreach ($row in $server.Query($sql)) {
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName         = $server.ComputerName
                     InstanceName         = $server.ServiceName
                     SqlInstance          = $server.DomainInstanceName
@@ -148,7 +148,7 @@ function Get-DbaIoLatency {
                     PhysicalName         = $row.physical_name
                     NumberOfReads        = $row.num_of_reads
                     IoStallRead          = $row.io_stall_read_ms
-                    NumberOfwrites       = $row.num_of_writes
+                    NumberOfWrites       = $row.num_of_writes
                     IoStallWrite         = $row.io_stall_write_ms
                     IoStall              = $row.io_stall
                     NumberOfBytesRead    = $row.num_of_bytes_read
@@ -162,7 +162,8 @@ function Get-DbaIoLatency {
                     AvgBPerRead          = $row.AvgBPerRead
                     AvgBPerWrite         = $row.AvgBPerWrite
                     AvgBPerTransfer      = $row.AvgBPerTransfer
-                } | Select-DefaultView -ExcludeProperty $excludeColumns
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty $excludeColumns
             }
         }
     }

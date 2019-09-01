@@ -137,7 +137,7 @@ function Get-DbaEstimatedCompletionTime {
 
             Write-Message -Level Debug -Message $sql
             foreach ($row in ($server.Query($sql))) {
-                [pscustomobject]@{
+                $outputResult = [pscustomobject]@{
                     ComputerName            = $server.ComputerName
                     InstanceName            = $server.ServiceName
                     SqlInstance             = $server.DomainInstanceName
@@ -150,7 +150,8 @@ function Get-DbaEstimatedCompletionTime {
                     EstimatedTimeToGo       = $row.EstimatedTimeToGo
                     EstimatedCompletionTime = $row.EstimatedCompletionTime
                     Text                    = $row.Text
-                } | Select-DefaultView -ExcludeProperty Text
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Text
             }
         }
     }

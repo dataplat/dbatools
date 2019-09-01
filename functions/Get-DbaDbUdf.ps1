@@ -94,24 +94,24 @@ function Get-DbaDbUdf {
 
             foreach ($db in $databases) {
 
-                $UserDefinedFunctions = $db.UserDefinedFunctions
+                $userDefinedFunctions = $db.UserDefinedFunctions
 
-                if (!$UserDefinedFunctions) {
+                if (!$userDefinedFunctions) {
                     Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
                 if (Test-Bound -ParameterName ExcludeSystemUdf) {
-                    $UserDefinedFunctions = $UserDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
-                $UserDefinedFunctions | ForEach-Object {
+                foreach ($udf in $userDefinedFunctions) {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+                    Add-Member -Force -InputObject $udf -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $udf -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $udf -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $udf -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
+                    Select-DefaultView -InputObject $udf -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
                 }
             }
         }
