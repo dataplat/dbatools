@@ -128,6 +128,7 @@ function Get-DbaBackupInformation {
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', '')] #Until PSSA addresses PSScriptAnalyzer/issue 1319
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
@@ -160,9 +161,7 @@ function Get-DbaBackupInformation {
             )
 
             $StringBuilder = New-Object System.Text.StringBuilder
-            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object {
-                [Void]$StringBuilder.Append($_.ToString("x2"))
-            }
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString)) | ForEach-Object { [Void]$StringBuilder.Append($_.ToString("x2")) }
             return $StringBuilder.ToString()
         }
         Write-Message -Level InternalComment -Message "Starting"
@@ -194,7 +193,7 @@ function Get-DbaBackupInformation {
         if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
             foreach ($f in $Path) {
                 if (Test-Path -Path $f) {
-                    $groupResults += Import-CliXml -Path $f
+                    $groupResults += Import-Clixml -Path $f
                     foreach ($group in  $groupResults) {
                         $group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
                         $group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
@@ -270,7 +269,7 @@ function Get-DbaBackupInformation {
 
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
-                $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
             }
 
             if ($Files.Count -gt 0) {
@@ -322,11 +321,11 @@ function Get-DbaBackupInformation {
             }
         }
         if (Test-Bound 'SourceInstance') {
-            $groupResults = $groupResults | Where-Object {$_.InstanceName -in $SourceInstance}
+            $groupResults = $groupResults | Where-Object { $_.InstanceName -in $SourceInstance }
         }
 
         if (Test-Bound 'DatabaseName') {
-            $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
+            $groupResults = $groupResults | Where-Object { $_.Database -in $DatabaseName }
         }
         if ($true -eq $Anonymise) {
             foreach ($group in $groupResults) {
@@ -337,13 +336,11 @@ function Get-DbaBackupInformation {
                 $group.UserName = Get-HashString -InString $group.UserName
                 $group.Path = Get-HashString -InString  $group.Path
                 $group.FullName = Get-HashString -InString $group.FullName
-                $group.FileList = ($group.FileList | Select-Object Type,
-                    @{Name = "LogicalName"; Expression = {Get-HashString -InString $_."LogicalName"}},
-                    @{Name = "PhysicalName"; Expression = {Get-HashString -InString $_."PhysicalName"}})
+                $group.FileList = ($group.FileList | Select-Object Type, @{Name = "LogicalName"; Expression = { Get-HashString -InString $_."LogicalName" } }, @{ Name = "PhysicalName"; Expression = { Get-HashString -InString $_."PhysicalName" } })
             }
         }
         if ((Test-Bound -parameterName ExportPath) -and $null -ne $ExportPath) {
-            $groupResults | Export-CliXml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
+            $groupResults | Export-Clixml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
             if ($true -ne $PassThru) {
                 return
             }

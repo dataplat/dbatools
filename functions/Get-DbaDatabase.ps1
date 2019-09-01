@@ -267,12 +267,7 @@ function Get-DbaDatabase {
                 }
             }
             $backed_info = Invoke-QueryRawDatabases
-            $backed_info = $backed_info | Where-Object {
-                ($_.name -in $Database -or !$Database) -and
-                ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                ($_.Owner -in $Owner -or !$Owner) -and
-                ($_.state -ne 6 -or !$OnlyAccessible)
-            }
+            $backed_info = $backed_info | Where-Object { ($_.name -in $Database -or !$Database) -and ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and  ($_.state -ne 6 -or !$OnlyAccessible) }
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
@@ -282,18 +277,7 @@ function Get-DbaDatabase {
                     $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
                 }
             }
-            $inputobject = $inputObject |
-                Where-Object {
-                ($_.Name -in $Database -or !$Database) -and
-                ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                ($_.Owner -in $Owner -or !$Owner) -and
-                $_.ReadOnly -in $Readonly -and
-                $_.IsAccessible -in $AccessibleFilter -and
-                $_.IsSystemObject -in $DBType -and
-                ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
-                $_.EncryptionEnabled -in $Encrypt
-            }
+            $inputobject = $inputObject | Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.ReadOnly -in $Readonly -and $_.IsAccessible -in $AccessibleFilter -and $_.IsSystemObject -in $DBType -and ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and $_.EncryptionEnabled -in $Encrypt }
             if ($NoFullBackup -or $NoFullBackupSince) {
                 $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
@@ -309,11 +293,9 @@ function Get-DbaDatabase {
                 $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastLog )
                 if ($null -ne $NoLogBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
-                    $inputobject = $inputobject |
-                        Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                    $inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 } else {
-                    $inputobject = $inputObject |
-                        Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                    $inputobject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 }
             }
 

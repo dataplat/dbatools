@@ -121,7 +121,7 @@ function Get-DbaAgentJobOutputFile {
             foreach ($j in $Jobs) {
                 foreach ($Step in $j.JobSteps) {
                     if ($Step.OutputFileName) {
-                        [pscustomobject]@{
+                        $outputResults = [pscustomobject]@{
                             ComputerName         = $server.ComputerName
                             InstanceName         = $server.ServiceName
                             SqlInstance          = $server.DomainInstanceName
@@ -130,7 +130,8 @@ function Get-DbaAgentJobOutputFile {
                             OutputFileName       = $Step.OutputFileName
                             RemoteOutputFileName = Join-AdminUNC $Server.ComputerName $Step.OutputFileName
                             StepId               = $Step.Id
-                        } | Select-DefaultView -ExcludeProperty StepId
+                        }
+                        Select-DefaultView -InputObject $outputResults -ExcludeProperty StepId
                     } else {
                         Write-Message -Level Verbose -Message "$step for $j has no output file"
                     }

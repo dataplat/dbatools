@@ -413,7 +413,7 @@ function Get-DbaBuildReference {
         foreach ($buildstr in $Build) {
             $Detected = Resolve-DbaBuild -Build $buildstr -Data $IdxRef -EnableException $EnableException
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 SqlInstance    = $null
                 Build          = $buildstr
                 NameLevel      = $Detected.Name
@@ -424,13 +424,14 @@ function Get-DbaBuildReference {
                 SupportedUntil = $Detected.SupportedUntil
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
-            } | Select-DefaultView -ExcludeProperty SqlInstance
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty SqlInstance
         }
 
         foreach ($kbItem in $Kb) {
             $Detected = Resolve-DbaBuild -Kb $kbItem -Data $IdxRef -EnableException $EnableException
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 SqlInstance    = $null
                 Build          = $Detected.Build
                 NameLevel      = $Detected.Name
@@ -441,13 +442,14 @@ function Get-DbaBuildReference {
                 SupportedUntil = $Detected.SupportedUntil
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
-            } | Select-DefaultView -ExcludeProperty SqlInstance
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty SqlInstance
         }
 
         if ($MajorVersion) {
             $Detected = Resolve-DbaBuild -MajorVersion $MajorVersion -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate -Data $IdxRef -EnableException $EnableException
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 SqlInstance    = $null
                 Build          = $Detected.Build
                 NameLevel      = $Detected.Name
@@ -458,7 +460,8 @@ function Get-DbaBuildReference {
                 SupportedUntil = $Detected.SupportedUntil
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
-            } | Select-DefaultView -ExcludeProperty SqlInstance
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty SqlInstance
         }
     }
 }

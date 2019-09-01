@@ -174,14 +174,15 @@ function Get-DbaDbccSessionBuffer {
                             $null = $hexStringBuilder.Append($str.Substring(11, 48))
                             $null = $asciiStringBuilder.Append($str.Substring(61, 16))
                         }
-                        [PSCustomObject]@{
+                        $outputResult = [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             SessionId    = $session_id
                             Buffer       = $asciiStringBuilder.ToString().Replace('.', '').TrimEnd()
                             HexBuffer    = $hexStringBuilder.ToString().Replace(' ', '')
-                        } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, SessionId, Buffer
+                        }
+                        Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, SessionId, Buffer
                     }
                 }
             } else {
@@ -217,14 +218,15 @@ function Get-DbaDbccSessionBuffer {
                             $null = $hexStringBuilder.Append($str.Substring(11, 48))
                             $null = $asciiStringBuilder.Append($str.Substring(61, 16))
                         }
-                        [PSCustomObject]@{
+                        $outputResult = [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             SessionId    = $session.session_id
                             Buffer       = $asciiStringBuilder.ToString().Replace('.', '').TrimEnd()
                             HexBuffer    = $hexStringBuilder.ToString().Replace(' ', '')
-                        } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, SessionId, Buffer
+                        }
+                        Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, SessionId, Buffer
                     }
                 }
             }

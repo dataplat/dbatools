@@ -115,9 +115,7 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object {
-                    $_.JobSteps.DatabaseName -in $Database
-                }
+                $jobs = $jobs | Where-Object { $_.JobSteps.DatabaseName -in $Database }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
