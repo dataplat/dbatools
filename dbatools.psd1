@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.33'
+    ModuleVersion          = '1.0.38'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -491,6 +491,7 @@
         'Get-DbaDbLogSpace',
         'Export-DbaDbRole',
         'Export-DbaServerRole',
+        'Add-DbaServerRoleMember',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -668,7 +669,8 @@
         'Attach-DbaDatabase',
         'Detach-DbaDatabase',
         'Start-SqlMigration',
-        'Write-DbaDataTable'
+        'Write-DbaDataTable',
+        'Get-DbaDbModule'
     )
 
     # List of all modules packaged with this module

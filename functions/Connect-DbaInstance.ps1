@@ -479,7 +479,12 @@ function Connect-DbaInstance {
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
-                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    try {
+                        $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    } catch {
+                        Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
+                        continue
+                    }
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
                     # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {

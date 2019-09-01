@@ -184,7 +184,7 @@ function Find-DbaCommand {
                     $helpcoll.Add($x)
                 }
                 # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
-                $dest = "$moduleDirectory\bin\dbatools-index.json"
+                $dest = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
                 $helpcoll | ConvertTo-Json -Depth 4 | Out-File $dest -Encoding UTF8
             }
         }
@@ -193,7 +193,7 @@ function Find-DbaCommand {
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")
-        $idxFile = "$moduleDirectory\bin\dbatools-index.json"
+        $idxFile = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
         if (!(Test-Path $idxFile) -or $Rebuild) {
             Write-Message -Level Verbose -Message "Rebuilding index into $idxFile"
             $swRebuild = [system.diagnostics.stopwatch]::StartNew()
