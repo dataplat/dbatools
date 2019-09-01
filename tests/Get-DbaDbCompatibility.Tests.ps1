@@ -56,11 +56,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should -Not -Be $null
         }
-        It "Should return Compatibility level of Version140 for $($results.Database)" {
-            $results.Compatibility | Should -Be "Version140"
-        }
-        It "Should return Level of 14 for $($results.Database)" {
-            $results.Level | Should -Be 14
-        }
     }
 }
