@@ -38,6 +38,10 @@ function Get-DbaRandomizedValue {
     .PARAMETER Symbol
         Use a symbol in front of the value i.e. $100,12
 
+    .PARAMETER Value
+        This is the value that needs to be used for several possible transformations.
+        One example is the subtype "Shuffling" where the value will be shuffled.
+
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
