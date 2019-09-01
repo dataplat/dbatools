@@ -69,7 +69,7 @@ function Get-DbaDbPartitionFunction {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -89,21 +89,21 @@ function Get-DbaDbPartitionFunction {
                     continue
                 }
 
-                $partitionfunctions = $db.partitionfunctions
+                $partitionFunctions = $db.PartitionFunctions
 
-                if (!$partitionfunctions) {
+                if (!$partitionFunctions) {
                     Write-Message -Message "No Partition Functions exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
 
-                $partitionfunctions | ForEach-Object {
+                foreach ($partition in $partitionFunctions) {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, Name, NumberOfPartitions
+                    Select-DefaultView -InputObject $partition -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, Name, NumberOfPartitions
                 }
             }
         }

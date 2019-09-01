@@ -89,26 +89,23 @@ function Get-DbaDbPartitionScheme {
                     continue
                 }
 
-                $PartitionSchemes = $db.PartitionSchemes
+                $partitionSchemes = $db.PartitionSchemes
 
-                if (!$PartitionSchemes) {
+                if (!$partitionSchemes) {
                     Write-Message -Message "No Partition Schemes exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
 
-                $PartitionSchemes | ForEach-Object {
+                foreach ($partition in $partitionSchemes) {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $partition -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Name, PartitionFunction
+                    Select-DefaultView -InputObject $partition -Property ComputerName, InstanceName, SqlInstance, Database, Name, PartitionFunction
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabasePartitionScheme
     }
 }

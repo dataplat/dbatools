@@ -204,11 +204,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                         $disks = @($server.Query($query2, $db.Name))
                         $MbFreeColName = $disks[0].psobject.Properties.Name
                         # get the free MB value for the drive in question
-                        $free = $disks | Where-Object {
-                            $_.drive -eq $result.PhysicalName.Substring(0, 1)
-                        } | Select-Object $MbFreeColName
-
-                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                        $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName, $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024) 
                     }
                 }
                 if ($result.GrowthType -eq "Percent") {

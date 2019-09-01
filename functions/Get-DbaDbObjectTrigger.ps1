@@ -26,7 +26,7 @@ function Get-DbaDbObjectTrigger {
         Allows specify the object type associated with the trigger. Available options All, Table and View. By default is All.
 
     .PARAMETER InputObject
-        Allow pipedline input from Get-DbaDbTable and/or Get-DbaDbView
+        Allow pipeline input from Get-DbaDbTable and/or Get-DbaDbView
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -74,7 +74,7 @@ function Get-DbaDbObjectTrigger {
     )
     process {
         if ($InputObject.Count -gt 0) {
-            $InputObject | foreach-object {
+            foreach ($input in $inputObject) {
                 if (-not ($_ -is [Microsoft.SqlServer.Management.Smo.TableViewBase])) {
                     Stop-Function -Message "InputObject $_ is not of type Table or View." -Continue
                     return

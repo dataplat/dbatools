@@ -126,7 +126,7 @@ function Get-DbaDbMemoryUsage {
                     $percentUsed = [Math]::Round($row.PercentUsed)
                 }
 
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -135,7 +135,8 @@ function Get-DbaDbMemoryUsage {
                     PageCount    = [int]$row.PageCount
                     Size         = [DbaSize]$row.SizeMb * 1024
                     PercentUsed  = $percentUsed
-                } | Select-DefaultView -ExcludeProperty 'PageCount'
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty 'PageCount'
             }
         }
     }
