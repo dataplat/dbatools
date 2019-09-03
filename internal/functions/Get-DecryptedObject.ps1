@@ -1,12 +1,13 @@
 function Get-DecryptedObject {
     <#
-            .SYNOPSIS
-                Internal function.
+    .SYNOPSIS
+        Internal function.
 
-                This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-                Antti Rantasaari 2014, NetSPI
-                License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+        This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+        Antti Rantasaari 2014, NetSPI
+        License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [Microsoft.SqlServer.Management.Smo.Server]$SqlInstance,
@@ -94,7 +95,7 @@ function Get-DecryptedObject {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
             if ($dacEnabled -eq $false) {
-                If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance.")) {
+                if ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance.")) {
                     Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
                     $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
                     $server.Configuration.Alter()

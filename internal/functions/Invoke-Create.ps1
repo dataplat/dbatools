@@ -1,7 +1,8 @@
 function Invoke-Create {
     <#
         For stubborn .net objects that won't throw properly
-       #>
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', "", Justification = "Line 18")]
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [object]$Object

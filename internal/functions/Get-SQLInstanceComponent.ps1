@@ -286,9 +286,7 @@ function Get-SQLInstanceComponent {
                 }
             } elseif ($regKey.GetValueNames() -contains 'InstalledInstances') {
                 $isCluster = $false;
-                $regKey.GetValue('InstalledInstances') | ForEach-Object {
-                    Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_;
-                };
+                $regKey.GetValue('InstalledInstances') | ForEach-Object { Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_; };
             } else {
                 throw "Failed to find any instance names on $env:computername"
             }

@@ -159,7 +159,7 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance','ScriptAnalyzer' {
             $ruleName = $rule.RuleName
             foreach ($command in $commands) {
                 $scriptName = $command.ScriptName
-                $lines = ($scriptWarning | Where-Object {$_.ScriptName -eq $scriptName -and $_.RuleName -eq $ruleName}).Line -join ","
+                $lines = ($scriptAnalyzerWarnings | Where-Object {$_.ScriptName -eq $scriptName -and $_.RuleName -eq $ruleName}).Line -join ","
                 It "$scriptName is adopting OTSB formatting style. $ruleName violation found on the following lines in the file: $lines" {
                     1 | Should -Be 0
                 }

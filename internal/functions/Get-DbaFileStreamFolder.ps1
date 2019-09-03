@@ -32,13 +32,12 @@ function Get-DbaFileStreamFolder {
         Returns any FileStream folders from the Archive database on server1\instance2
 
     .NOTES
-    Author:Stuart Moore (@napalmgram stuart-moore.com )
+        Author:Stuart Moore (@napalmgram stuart-moore.com )
 
-
-    Website: https://dbatools.io
-    Copyright: (c) 2018 by dbatools, licensed under MIT
-    License: MIT https://opensource.org/licenses/MIT
-       #>
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+    #>
     param (
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -73,9 +72,5 @@ function Get-DbaFileStreamFolder {
                 FileStreamFolder = $result.Physical_Name
             }
         }
-
-
     }
-
-    END {}
 }

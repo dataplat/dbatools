@@ -1,28 +1,28 @@
 function Get-BackupAncientHistory {
     <#
-        .SYNOPSIS
-            Returns details of the last full backup of a SQL Server 2000 database
+    .SYNOPSIS
+        Returns details of the last full backup of a SQL Server 2000 database
 
-        .DESCRIPTION
-            Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaDbBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
+    .DESCRIPTION
+        Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaDbBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER Credential
-            Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER Credential
+        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-        .PARAMETER Database
-            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-        .NOTES
+    .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         dbatools PowerShell module (https://dbatools.io)
-       Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
@@ -44,8 +44,8 @@ function Get-BackupAncientHistory {
 
         $databases = @()
         if ($null -ne $Database) {
-            ForEach ($db in $Database) {
-                $databases += [PScustomObject]@{name = $db}
+            foreach ($db in $Database) {
+                $databases += [PScustomObject]@{ name = $db }
             }
         } else {
             $databases = $server.Databases
@@ -56,76 +56,67 @@ function Get-BackupAncientHistory {
         foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "
-            SELECT
-            a.Server,
-             a.[Database],
-             a.Username,
-             a.Start,
-             a.[End],
-             a.Duration,
-             a.[Path],
-             a.Type,
+            SELECT a.Server, a.[Database], a.Username, a.Start, a.[End], a.Duration, a.[Path],
+            a.Type,
             NULL as TotalSize,
-             a.MediaSetId,
-             a.BackupSetID,
-             a.Software,
-              a.position,
-              a.first_lsn,
-              a.database_backup_lsn,
-              a.checkpoint_lsn,
-              a.last_lsn,
-             a.first_lsn as 'FirstLSN',
-              a.database_backup_lsn as 'DatabaseBackupLsn',
-              a.checkpoint_lsn as 'CheckpointLsn',
-              a.last_lsn as 'Lastlsn',
-              a.software_major_version,
-             a.DeviceType,
+            a.MediaSetId,
+            a.BackupSetID,
+            a.Software,
+            a.position,
+            a.first_lsn,
+            a.database_backup_lsn,
+            a.checkpoint_lsn,
+            a.last_lsn,
+            a.first_lsn as 'FirstLSN',
+            a.database_backup_lsn as 'DatabaseBackupLsn',
+            a.checkpoint_lsn as 'CheckpointLsn',
+            a.last_lsn as 'Lastlsn',
+            a.software_major_version,
+            a.DeviceType,
                 NULL as is_copy_only,
             NULL as last_recovery_fork_guid
             FROM (
             SELECT
-              backupset.database_name AS [Database],
-              backupset.user_name AS Username,
-              backupset.backup_start_date AS Start,
-              backupset.server_name as [Server],
-              backupset.backup_finish_date AS [End],
-              DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
-              mediafamily.physical_device_name AS Path,
-              CASE backupset.type
-             WHEN 'L' THEN 'Log'
-             WHEN 'D' THEN 'Full'
-             WHEN 'F' THEN 'File'
-             WHEN 'I' THEN 'Differential'
-             WHEN 'G' THEN 'Differential File'
-             WHEN 'P' THEN 'Partial Full'
-             WHEN 'Q' THEN 'Partial Differential'
-             ELSE NULL
-              END AS Type,
-              backupset.media_set_id AS MediaSetId,
-              mediafamily.media_family_id as mediafamilyid,
-              backupset.backup_set_id as BackupSetID,
-              CASE mediafamily.device_type
-             WHEN 2 THEN 'Disk'
-             WHEN 102 THEN 'Permanent Disk Device'
-             WHEN 5 THEN 'Tape'
-             WHEN 105 THEN 'Permanent Tape Device'
-             WHEN 6 THEN 'Pipe'
-             WHEN 106 THEN 'Permanent Pipe Device'
-             WHEN 7 THEN 'Virtual Device'
-             ELSE 'Unknown'
-             END AS DeviceType,
-              backupset.position,
-              backupset.first_lsn,
-              backupset.database_backup_lsn,
-              backupset.checkpoint_lsn,
-              backupset.last_lsn,
-              backupset.software_major_version,
-              mediaset.software_name AS Software
+            backupset.database_name AS [Database],
+            backupset.user_name AS Username,
+            backupset.backup_start_date AS Start,
+            backupset.server_name as [Server],
+            backupset.backup_finish_date AS [End],
+            DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
+            mediafamily.physical_device_name AS Path,
+            CASE backupset.type
+            WHEN 'L' THEN 'Log'
+            WHEN 'D' THEN 'Full'
+            WHEN 'F' THEN 'File'
+            WHEN 'I' THEN 'Differential'
+            WHEN 'G' THEN 'Differential File'
+            WHEN 'P' THEN 'Partial Full'
+            WHEN 'Q' THEN 'Partial Differential'
+            ELSE NULL
+            END AS Type,
+            backupset.media_set_id AS MediaSetId,
+            mediafamily.media_family_id as mediafamilyid,
+            backupset.backup_set_id as BackupSetID,
+            CASE mediafamily.device_type
+            WHEN 2 THEN 'Disk'
+            WHEN 102 THEN 'Permanent Disk Device'
+            WHEN 5 THEN 'Tape'
+            WHEN 105 THEN 'Permanent Tape Device'
+            WHEN 6 THEN 'Pipe'
+            WHEN 106 THEN 'Permanent Pipe Device'
+            WHEN 7 THEN 'Virtual Device'
+            ELSE 'Unknown'
+            END AS DeviceType,
+            backupset.position,
+            backupset.first_lsn,
+            backupset.database_backup_lsn,
+            backupset.checkpoint_lsn,
+            backupset.last_lsn,
+            backupset.software_major_version,
+            mediaset.software_name AS Software
             FROM msdb..backupmediafamily AS mediafamily
-            JOIN msdb..backupmediaset AS mediaset
-              ON mediafamily.media_set_id = mediaset.media_set_id
-            JOIN msdb..backupset AS backupset
-              ON backupset.media_set_id = mediaset.media_set_id
+            JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
+            JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
             WHERE backupset.database_name = '$db'
                     ) AS a
             where  a.backupsetid in (Select max(backup_set_id) from msdb..backupset where database_name='$db')"
@@ -174,8 +165,5 @@ function Get-BackupAncientHistory {
             }
             $groupResults | Sort-Object -Property LastLsn, Type
         }
-
     }
-
-    END {}
 }
