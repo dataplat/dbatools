@@ -111,14 +111,15 @@ function Remove-DbaRegServer {
                 }
 
                 try {
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ComputerName = $regserver.ComputerName
                         InstanceName = $regserver.InstanceName
                         SqlInstance  = $regserver.SqlInstance
                         Name         = $regserver.Name
                         ServerName   = $regserver.ServerName
                         Status       = "Dropped"
-                    } | Select-DefaultView -Property $defaults
+                    }
+                    Select-DefaultView -InputObject $outputResult -Property $defaults
                 } catch {
                     Stop-Function -Message "Failed to drop $regserver on $target" -ErrorRecord $_ -Continue
                 }

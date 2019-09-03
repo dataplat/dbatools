@@ -107,6 +107,7 @@ function New-DbaDbMaskingConfig {
         Process only table Customer and only the column named "City"
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', "", Justification = "Until PSSA addresses PSScriptAnalyzer/issue 1319")]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -304,9 +305,7 @@ function New-DbaDbMaskingConfig {
                             $minValue = 1
                             $maxValue = 9223372036854775807
                         }
-                        {
-                            $_ -in "char", "nchar", "nvarchar", "varchar"
-                        } {
+                        { $_ -in "char", "nchar", "nvarchar", "varchar" } {
                             if ($columnLength -eq -1) {
                                 if ($_ -in "char", "varchar") {
                                     $minValue = 1
@@ -503,19 +502,9 @@ function New-DbaDbMaskingConfig {
                         $type = "Random"
 
                         switch ($columnType) {
-                            {
-                                $_ -in "bit", "bool"
-                            } {
-                                $subType = "Bool"
-                            }
-                            "bigint" {
-                                $subType = "Number"
-                            }
-                            {
-                                $_ -in "char", "nchar", "nvarchar", "varchar"
-                            } {
-                                $subType = "String2"
-                            }
+                            { $_ -in "bit", "bool" } { $subType = "Bool" }
+                            "bigint" { $subType = "Number" }
+                            { $_ -in "char", "nchar", "nvarchar", "varchar" } { $subType = "String2" }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"

@@ -283,12 +283,10 @@ function New-DbaAgentSchedule {
             # Loop through the array
             foreach ($Item in $FrequencyInterval) {
                 $FrequencyInterval
-                switch ($Item) {
-                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $Interval = [int]$Item }
+                if ([int]$Item -ge 1 -and [int]$Item -le 31) {
+                    $Interval = [int]$Item
                 }
             }
-
-
         }
 
         # If the FrequencyInterval is set for the relative monthly FrequencyInterval

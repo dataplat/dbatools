@@ -30,7 +30,7 @@ function New-DbaDbDataGeneratorConfig {
         Resets the identity column for a table to it's starting value. By default it will continue with the next identity.
 
     .PARAMETER TruncateTable
-        Truncates the tabel befoe inserting the values
+        Truncates the table before inserting the values
 
     .PARAMETER Rows
         Amount of rows that need to be generated. The default is 1000.
@@ -75,6 +75,7 @@ function New-DbaDbDataGeneratorConfig {
         Process only table Customer with all the columns
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', "", Justification = "Until PSSA addresses PSScriptAnalyzer/issue 1319")]
     [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory)]
@@ -194,9 +195,7 @@ function New-DbaDbDataGeneratorConfig {
                     }
 
                     # Get the masking type with the synonym
-                    $dataGenType = $columnTypes | Where-Object {
-                        $columnobject.Name -in $_.Synonym
-                    }
+                    $dataGenType = $columnTypes | Where-Object { $columnobject.Name -in $_.Synonym }
 
                     if ($dataGenType) {
                         # Make it easier to get the type name

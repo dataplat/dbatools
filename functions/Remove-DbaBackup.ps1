@@ -106,14 +106,13 @@ function Remove-DbaBackup {
     process {
         # Process stuff
         Write-Message -Message "Removing backups from $Path" -Level Verbose
-        Find-DbaBackup -Path $Path -BackupFileExtension $BackupFileExtension -RetentionPeriod $RetentionPeriod -CheckArchiveBit:$CheckArchiveBit -EnableException |
-            Foreach-Object {
-            $file = $_
-            if ($PSCmdlet.ShouldProcess($file.Directory.FullName, "Removing backup file $($file.Name)")) {
+        $backups = Find-DbaBackup -Path $Path -BackupFileExtension $BackupFileExtension -RetentionPeriod $RetentionPeriod -CheckArchiveBit:$CheckArchiveBit -EnableException
+        foreach ($backup in $backups) {
+            if ($PSCmdlet.ShouldProcess($backup.Directory.FullName, "Removing backup file $($backup.Name)")) {
                 try {
-                    $file | Remove-Item -Force -EA Stop
+                    $backup | Remove-Item -Force -ErrorAction Stop
                 } catch {
-                    Write-Message -Message "Failed to remove $file." -Level Warning -ErrorRecord $_
+                    Write-Message -Message "Failed to remove $backup." -Level Warning -ErrorRecord $_
                 }
             }
         }
@@ -121,29 +120,7 @@ function Remove-DbaBackup {
         # Cleanup empty backup folders.
         if ($RemoveEmptyBackupFolder) {
             Write-Message -Message "Removing empty folders." -Level Verbose
-            (Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName |
-                Sort-Object -Descending |
-                Foreach-Object {
-                $OrigPath = $_
-                try {
-                    $Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop)
-                } catch {
-                    Write-Message -Message "Can't enumerate $OrigPath." -Level Warning -ErrorRecord $_
-                }
-                if ($Contents.Count -eq 0) {
-                    return $_
-                }
-            } |
-                Foreach-Object {
-                $FolderPath = $_
-                if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) {
-                    try {
-                        $FolderPath | Remove-Item -ErrorAction Stop
-                    } catch {
-                        Write-Message -Message "Failed to remove $FolderPath." -Level Warning -ErrorRecord $_
-                    }
-                }
-            }
+            (Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName | Sort-Object -Descending | ForEach-Object { $OrigPath = $_; try { $Contents = @(Get-ChildItem -Force $OrigPath -ErrorAction Stop) } catch { Write-Message -Message "Can't enumerate $OrigPath." -Level Warning -ErrorRecord $_ }; if ($Contents.Count -eq 0) { return $_ } } | ForEach-Object { $FolderPath = $_; if ($PSCmdlet.ShouldProcess($Path, "Removing empty folder .$($FolderPath.Replace($Path, ''))")) { try { $FolderPath | Remove-Item -ErrorAction Stop } catch { Write-Message -Message "Failed to remove $FolderPath." -Level Warning -ErrorRecord $_ } } }
             if ($EnumErrors) {
                 Write-Message "Errors encountered enumerating folders." -Level Warning -ErrorRecord $EnumErrors
             }

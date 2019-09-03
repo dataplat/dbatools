@@ -173,12 +173,7 @@ function Remove-DbaDbOrphanUser {
 
                                 if ($StackSource -ne "Repair-DbaDbOrphanUser") {
                                     #Need to validate Existing Login because the call does not came from Repair-DbaDbOrphanUser
-                                    $ExistLogin = $server.logins | Where-Object {
-                                        $_.Isdisabled -eq $False -and
-                                        $_.IsSystemObject -eq $False -and
-                                        $_.IsLocked -eq $False -and
-                                        $_.Name -eq $dbuser.Name
-                                    }
+                                    $ExistLogin = $server.logins | Where-Object { $_.Isdisabled -eq $False -and $_.IsSystemObject -eq $False -and $_.IsLocked -eq $False -and $_.Name -eq $dbuser.Name }
                                 }
 
                                 #Schemas only appears on SQL Server 2005 (v9.0)

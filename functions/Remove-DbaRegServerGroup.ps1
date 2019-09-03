@@ -103,13 +103,14 @@ function Remove-DbaRegServerGroup {
                 }
 
                 try {
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ComputerName = $parentserver.ComputerName
                         InstanceName = $parentserver.InstanceName
                         SqlInstance  = $parentserver.SqlInstance
                         Name         = $regservergroup.Name
                         Status       = "Dropped"
-                    } | Select-DefaultView -Property $defaults
+                    }
+                    Select-DefaultView -InputObject $outputResult -Property $defaults
                 } catch {
                     Stop-Function -Message "Failed to drop $regservergroup on $parentserver" -ErrorRecord $_ -Continue
                 }

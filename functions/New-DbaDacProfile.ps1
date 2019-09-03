@@ -5,7 +5,7 @@ function New-DbaDacProfile {
 
     .DESCRIPTION
         The New-DbaDacProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
-        This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
+        This generates a standard template XML which is enough to deploy a dacpac but it is highly recommended that you add additional options to the publish profile.
         If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
         To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
         Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
@@ -27,7 +27,7 @@ function New-DbaDacProfile {
     .PARAMETER ConnectionString
         The connection string to the database you are upgrading.
 
-        Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
+        Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connection string.
 
     .PARAMETER Path
         The directory where you would like to save the profile xml file(s).
@@ -97,11 +97,7 @@ function New-DbaDacProfile {
         function Convert-HashtableToXMLString($PublishOptions) {
             $return = @()
             if ($PublishOptions) {
-                $PublishOptions.GetEnumerator() | ForEach-Object {
-                    $key = $PSItem.Key.ToString()
-                    $value = $PSItem.Value.ToString()
-                    $return += "<$key>$value</$key>"
-                }
+                $PublishOptions.GetEnumerator() | ForEach-Object { $key = $PSItem.Key.ToString(); $value = $PSItem.Value.ToString(); $return += "<$key>$value</$key>" }
             }
             $return | Out-String
         }
@@ -109,12 +105,12 @@ function New-DbaDacProfile {
         function Get-Template ($db, $connstring) {
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
-              <PropertyGroup>
-                <TargetDatabaseName>{0}</TargetDatabaseName>
-                <TargetConnectionString>{1}</TargetConnectionString>
-                <ProfileVersionNumber>1</ProfileVersionNumber>
-                {2}
-              </PropertyGroup>
+                <PropertyGroup>
+                    <TargetDatabaseName>{0}</TargetDatabaseName>
+                    <TargetConnectionString>{1}</TargetConnectionString>
+                    <ProfileVersionNumber>1</ProfileVersionNumber>
+                    {2}
+                </PropertyGroup>
             </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
         }
 
@@ -150,14 +146,14 @@ function New-DbaDacProfile {
             foreach ($db in $Database) {
                 if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
                     $profileTemplate = Get-Template $db, $connstring
-                    $instancename = Get-ServerName $connstring
+                    $instanceName = Get-ServerName $connstring
 
                     try {
-                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        $server = [DbaInstance]($instanceName.ToString().Replace('--', '\'))
+                        $PublishProfile = Join-Path $Path "$($instanceName.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
                         Write-Message -Level Verbose -Message "Writing to $PublishProfile"
                         $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.InstanceName
                             SqlInstance      = $server.FullName
@@ -165,9 +161,10 @@ function New-DbaDacProfile {
                             FileName         = $PublishProfile
                             ConnectionString = $connstring
                             ProfileTemplate  = $profileTemplate
-                        } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
                     } catch {
-                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instanceName -Continue
                     }
                 }
             }

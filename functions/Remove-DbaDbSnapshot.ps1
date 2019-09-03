@@ -149,24 +149,26 @@ function Remove-DbaDbSnapshot {
                         $db.Drop()
                         $server.Refresh()
 
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
                             Status       = "Dropped"
-                        } | Select-DefaultView -Property $defaultprops
+                        }
+                        Select-DefaultView -InputObject $outputResult -Property $defaultprops
                     }
                 } catch {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
                         Status       = (Get-ErrorMessage -Record $_)
-                    } | Select-DefaultView -Property $defaultprops
+                    }
+                    Select-DefaultView -InputObject $outputResult -Property $defaultprops
                 }
             }
         }
