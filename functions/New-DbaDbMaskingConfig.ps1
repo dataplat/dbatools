@@ -330,7 +330,7 @@ function New-DbaDbMaskingConfig {
                             $maxValue = $null
                         }
                         "decimal" {
-                            $min = 1.1
+                            $minValue = 1.1
                             $maxValue = $null
                         }
                         "float" {
@@ -370,12 +370,12 @@ function New-DbaDbMaskingConfig {
                             if ($columnLength -eq 1) {
                                 $maxValue = $columnLength
                             } else {
-                                $min = [int]($columnLength / 2)
+                                $minValue = [int]($columnLength / 2)
                                 $maxValue = $columnLength
                             }
                         }
                         default {
-                            $min = [int]($columnLength / 2)
+                            $minValue = [int]($columnLength / 2)
                             $maxValue = $columnLength
                         }
                     }
@@ -385,7 +385,7 @@ function New-DbaDbMaskingConfig {
                     } else {
 
                         if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                            $min = 2
+                            $minValue = 2
                         }
 
                         if ($columnobject.DataType.Name -eq "geography") {
