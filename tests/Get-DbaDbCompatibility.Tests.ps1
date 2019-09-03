@@ -24,9 +24,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("ALTER DATABASE $db110 SET COMPATIBILITY_LEVEL = 110;")
     }
     AfterAll {
+        try {
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $server.Query("DROP DATABASE $db110")
         $server.Query("DROP DATABASE $db140")
+        } catch {
+            # Don't care.
+        }
     }
     Context "Gets compatibility for multiple databases" {
         $results = Get-DbaDbCompatibility -SqlInstance $script:instance3
