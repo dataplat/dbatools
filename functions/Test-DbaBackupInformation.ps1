@@ -5,12 +5,12 @@ function Test-DbaBackupInformation {
 
     .DESCRIPTION
         Input is normally from a backup history object generated from `Format-DbaBackupInformation`. This is then parse to check that it's valid for restore. Tests performed include:
-          - Checking unbroken LSN chain
-          - If the target database exists and WithReplace has been provided
-          - If any files already exist, but owned by other databases
-          - Creates any new folders required
-          - That the backup files exists at the location specified, and can be seen by the Sql Instance
-          - If no errors are found then the objects for that database will me marked as Verified
+            - Checking unbroken LSN chain
+            - If the target database exists and WithReplace has been provided
+            - If any files already exist, but owned by other databases
+            - Creates any new folders required
+            - That the backup files exists at the location specified, and can be seen by the Sql Instance
+            - If no errors are found then the objects for that database will me marked as Verified
 
     .PARAMETER BackupHistory
         dbatools BackupHistory object. Normally this will have been process with `Select-` and then `Format-DbaBackupInformation`
@@ -104,14 +104,14 @@ function Test-DbaBackupInformation {
             $VerificationErrors = 0
             Write-Message -Message "Testing restore for $Database" -Level Verbose
             #Test we're only restoring backups from one database, or hilarity will ensure
-            $DbHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
+            $DbHistory = $InternalHistory | Where-Object { $_.Database -eq $Database }
             if (( $DbHistory | Select-Object -Property OriginalDatabase -Unique ).Count -gt 1) {
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
             }
-            #Test Db Existance on destination
+            #Test Db Existence on destination
             $DbCheck = Get-DbaDatabase -SqlInstance $RestoreInstance -Database $Database
-            # Only do file and db tests if we're not verifing
+            # Only do file and db tests if we're not verifying
             Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
             If ($VerifyOnly -ne $true) {
                 if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $Continue -ne $true)) {
@@ -188,7 +188,7 @@ function Test-DbaBackupInformation {
 
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}
+                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { $_.IsVerified = $True }
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }

@@ -37,7 +37,7 @@ function Save-DbaDiagnosticQueryScript {
     #>
     [CmdletBinding()]
     param (
-        [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
+        [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("MyDocuments"),
         [switch]$EnableException
     )
     function Get-WebData {
@@ -78,14 +78,15 @@ function Save-DbaDiagnosticQueryScript {
         if ($post.title -like $RssPostFilter) {
             # We found the first post that matches it, lets go visit and scrape.
             $page = Get-WebData -uri $post.link
-            $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.innerText -like $LinkTitleFilter } | ForEach-Object {
-                    [pscustomobject]@{
-                        URL        = $_.href
-                        SQLVersion = $_.innerText -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
-                        FileYear   = ($post.title -split " ")[-1]
-                        FileMonth  = "{0:00}" -f [int]([CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf(($post.title -split " ")[-2]))
-                    }
-                })
+            $pages = $page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.innerText -like $LinkTitleFilter }
+            foreach ($page in $pages) {
+                $glenberrysql += [pscustomobject]@{
+                    URL        = $_.href
+                    SQLVersion = $_.innerText -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
+                    FileYear   = ($post.title -split " ")[-1]
+                    FileMonth  = "{0:00}" -f [int]([CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf(($post.title -split " ")[-2]))
+                }
+            }
             break
         }
     }

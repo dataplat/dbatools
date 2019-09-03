@@ -76,13 +76,13 @@ function Set-DbaPowerPlan {
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
-        [parameter(ValueFromPipeline)]
-        [DbaInstance[]]$ComputerName,
+        [Parameter(ValueFromPipeline)]
+        [DbaInstanceParameter[]]$ComputerName,
         [PSCredential]$Credential,
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan,
-        [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject]$InputObject,
         [switch]$EnableException
     )
 
@@ -210,9 +210,7 @@ function Set-DbaPowerPlan {
             }
 
             if ($data.Count -gt 1) {
-                $data.GetEnumerator() | ForEach-Object {
-                    $_
-                }
+                $data.GetEnumerator() | ForEach-Object { $_ }
             } else {
                 $data
             }

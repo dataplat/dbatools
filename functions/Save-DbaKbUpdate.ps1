@@ -4,7 +4,7 @@ function Save-DbaKbUpdate {
         Downloads patches from Microsoft
 
     .DESCRIPTION
-         Downloads patches from Microsoft
+        Downloads patches from Microsoft
 
     .PARAMETER Name
         The KB name or number. For example, KB4057119 or 4057119.
@@ -13,9 +13,9 @@ function Save-DbaKbUpdate {
         The directory to save the file.
 
     .PARAMETER FilePath
-        The exact file name to save to, otherwise, it uses the name given by the webserver
+        The exact file name to save to, otherwise, it uses the name given by the web server
 
-     .PARAMETER Architecture
+    .PARAMETER Architecture
         Defaults to x64. Can be x64, x86, ia64 or "All"
 
     .PARAMETER InputObject
@@ -111,9 +111,7 @@ function Save-DbaKbUpdate {
                     $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
                     $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
                     $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
-                    $availableTls | ForEach-Object {
-                        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
-                    }
+                    $availableTls | ForEach-Object { Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_ }
 
                     Write-Progress -Activity "Downloading $FilePath" -Id 1
                     (New-Object Net.WebClient).DownloadFile($link, $file)

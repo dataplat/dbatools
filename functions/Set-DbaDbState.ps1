@@ -124,8 +124,7 @@ function Set-DbaDbState {
     param (
         [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
@@ -266,7 +265,7 @@ function Set-DbaDbState {
                 Write-Message -Level Warning -Message "Database $db is a system one, skipping"
                 Continue
             }
-            $dbStatuses = @{}
+            $dbStatuses = @{ }
             $server = $db.Parent
             if ($server -notin $dbStatuses.Keys) {
                 $dbStatuses[$server] = Get-DbaDbState -SqlInstance $server
@@ -461,13 +460,13 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Where-Object {$_} | Get-Unique
+                $warn = $warn | Where-Object { $_ } | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null
             }
             if ($Detached -eq $true) {
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -477,7 +476,8 @@ function Set-DbaDbState {
                     Access       = $db_status.Access
                     Notes        = $warn
                     Database     = $db
-                } | Select-DefaultView -ExcludeProperty Database
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Database
             } else {
                 $db.Refresh()
                 if ($null -eq $warn) {
@@ -487,7 +487,7 @@ function Set-DbaDbState {
                     $newstate = Get-DbState -databaseName $db.Name -dbStatuses $dbStatuses[$server]
                 }
 
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -497,7 +497,8 @@ function Set-DbaDbState {
                     Access       = $newstate.Access
                     Notes        = $warn
                     Database     = $db
-                } | Select-DefaultView -ExcludeProperty Database
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Database
             }
         }
 

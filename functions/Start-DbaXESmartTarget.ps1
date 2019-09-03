@@ -92,11 +92,11 @@ function Start-DbaXESmartTarget {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Database,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [string]$Session,
         [switch]$FailOnProcessingError,
         [object[]]$Responder,
@@ -186,7 +186,7 @@ function Start-DbaXESmartTarget {
                 Start-SmartFunction @PSBoundParameters
             } else {
                 $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
-                Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
+                $job = Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
                     param (
                         $Parameters,
                         $ModulePath
@@ -221,7 +221,8 @@ function Start-DbaXESmartTarget {
                     }
 
                     Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
-                } | Select-Object -Property ID, Name, State
+                }
+                Select-Object -InputObject $job -Property ID, Name, State
             }
         }
     }

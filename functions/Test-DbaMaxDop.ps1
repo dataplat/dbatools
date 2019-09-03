@@ -149,7 +149,7 @@ function Test-DbaMaxDop {
                 }
             }
 
-            [pscustomobject]@{
+            $outputResult = [pscustomobject]@{
                 ComputerName          = $server.ComputerName
                 InstanceName          = $server.ServiceName
                 SqlInstance           = $server.DomainInstanceName
@@ -161,7 +161,8 @@ function Test-DbaMaxDop {
                 NumaNodes             = $NumaNodes
                 NumberOfCores         = $numberOfCores
                 Notes                 = $notes
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
+            }
+            Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 
             # On SQL Server 2016 and higher, MaxDop can be set on a per-database level
             if ($server.VersionMajor -ge 13) {
@@ -169,7 +170,7 @@ function Test-DbaMaxDop {
                 #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
-                $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
+                $databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 
                 foreach ($database in $databases) {
                     if ($database.IsAccessible -eq $false) {
@@ -180,7 +181,7 @@ function Test-DbaMaxDop {
 
                     $dbmaxdop = $database.MaxDop
 
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
@@ -192,7 +193,8 @@ function Test-DbaMaxDop {
                         NumaNodes             = $NumaNodes
                         NumberOfCores         = $numberOfCores
                         Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
-                    }  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
+                    }
+                    Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
                 }
             }
         }

@@ -90,9 +90,7 @@ function Test-DbaDbOwner {
 
             # dynamic sa name for orgs who have changed their sa name
             if (Test-Bound -ParameterName TargetLogin -Not) {
-                $TargetLogin = ($server.logins | Where-Object {
-                        $_.id -eq 1
-                    }).Name
+                $TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
             }
 
             #Validate login
@@ -101,7 +99,7 @@ function Test-DbaDbOwner {
             }
 
             Write-Message -Level Verbose -Message "Checking $db"
-            [pscustomobject]@{
+            $outputResult = [pscustomobject]@{
                 ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
@@ -111,7 +109,8 @@ function Test-DbaDbOwner {
                 CurrentOwner = $db.Owner
                 TargetOwner  = $TargetLogin
                 OwnerMatch   = ($db.owner -eq $TargetLogin)
-            } | Select-DefaultView -ExcludeProperty Server
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty Server
         }
     }
 }

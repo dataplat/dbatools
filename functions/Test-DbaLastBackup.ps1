@@ -346,9 +346,7 @@ function Test-DbaLastBackup {
                 }
                 $fileexists = $false
                 $success = $restoreresult = $dbccresult = "Skipped"
-            } elseif (-not ($lastbackup | Where-Object {
-                        $_.type -eq 'Full'
-                    })) {
+            } elseif (-not ($lastbackup | Where-Object { $_.type -eq 'Full' })) {
                 Write-Message -Level Verbose -Message "No full backup returned from lastbackup."
                 $lastbackup = @{
                     Path = "Not found"
@@ -359,9 +357,7 @@ function Test-DbaLastBackup {
                 Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
                 $fileexists = $dbccresult = "Skipped"
                 $success = $restoreresult = "Restore not located on shared location"
-            } elseif (($lastbackup[0].Path | ForEach-Object {
-                        Test-DbaPath -SqlInstance $destserver -Path $_
-                    }) -eq $false) {
+            } elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaPath -SqlInstance $destserver -Path $_ }) -eq $false) {
                 Write-Message -Level Verbose -Message "SQL Server cannot find backup."
                 $fileexists = $false
                 $success = $restoreresult = $dbccresult = "Skipped"
@@ -477,7 +473,7 @@ function Test-DbaLastBackup {
                 if ($CopyFile) {
                     Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
                     try {
-                        $removearray | Remove-item -ErrorAction Stop
+                        $removearray | Remove-Item -ErrorAction Stop
                     } catch {
                         Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                     }

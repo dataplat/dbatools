@@ -249,7 +249,7 @@ function Set-DbaAgentServer {
 
             if ($CpuPolling) {
                 Write-Message -Message "Setting agent server IsCpuPollingEnabled to $IsCpuPollingEnabled" -Level Verbose
-                $jobServer.IsCpuPollingEnabled = if ($CpuPolling -eq "Enabled") {$true} else {$false}
+                $jobServer.IsCpuPollingEnabled = if ($CpuPolling -eq "Enabled") { $true } else { $false }
             }
 
             if ($LocalHostAlias) {
@@ -279,17 +279,17 @@ function Set-DbaAgentServer {
 
             if ($ReplaceAlertTokens) {
                 Write-Message -Message "Setting agent server ReplaceAlertTokensEnabled to $ReplaceAlertTokens" -Level Verbose
-                $jobServer.ReplaceAlertTokens = if ($ReplaceAlertTokens -eq "Enabled") {$true} else {$false}
+                $jobServer.ReplaceAlertTokens = if ($ReplaceAlertTokens -eq "Enabled") { $true } else { $false }
             }
 
             if ($SaveInSentFolder) {
                 Write-Message -Message "Setting agent server SaveInSentFolder to $SaveInSentFolder" -Level Verbose
-                $jobServer.SaveInSentFolder = if ($SaveInSentFolder -eq "Enabled") {$true} else {$false}
+                $jobServer.SaveInSentFolder = if ($SaveInSentFolder -eq "Enabled") { $true } else { $false }
             }
 
             if ($SqlAgentAutoStart) {
                 Write-Message -Message "Setting agent server SqlAgentAutoStart to $SqlAgentAutoStart" -Level Verbose
-                $jobServer.SqlAgentAutoStart = if ($SqlAgentAutoStart -eq "Enabled") {$true} else {$false}
+                $jobServer.SqlAgentAutoStart = if ($SqlAgentAutoStart -eq "Enabled") { $true } else { $false }
             }
 
             if ($SqlAgentMailProfile) {
@@ -299,17 +299,17 @@ function Set-DbaAgentServer {
 
             if ($SqlAgentRestart) {
                 Write-Message -Message "Setting agent server SqlAgentRestart to $SqlAgentRestart" -Level Verbose
-                $jobServer.SqlAgentRestart = if ($SqlAgentRestart -eq "Enabled") {$true} else {$false}
+                $jobServer.SqlAgentRestart = if ($SqlAgentRestart -eq "Enabled") { $true } else { $false }
             }
 
             if ($SqlServerRestart) {
                 Write-Message -Message "Setting agent server SqlServerRestart to $SqlServerRestart" -Level Verbose
-                $jobServer.SqlServerRestart = if ($SqlServerRestart -eq "Enabled") {$true} else {$false}
+                $jobServer.SqlServerRestart = if ($SqlServerRestart -eq "Enabled") { $true } else { $false }
             }
 
             if ($WriteOemErrorLog) {
                 Write-Message -Message "Setting agent server WriteOemErrorLog to $WriteOemErrorLog" -Level Verbose
-                $jobServer.WriteOemErrorLog = if ($WriteOemErrorLog -eq "Enabled") {$true} else {$false}
+                $jobServer.WriteOemErrorLog = if ($WriteOemErrorLog -eq "Enabled") { $true } else { $false }
             }
 
             #endregion server agent options

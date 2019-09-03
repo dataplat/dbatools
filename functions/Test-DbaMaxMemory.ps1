@@ -113,7 +113,7 @@ function Test-DbaMaxMemory {
 
             $recommendedMax = $recommendedMax / $instanceCount
 
-            [pscustomobject]@{
+            $outputResult = [pscustomobject]@{
                 ComputerName     = $server.ComputerName
                 InstanceName     = $server.ServiceName
                 SqlInstance      = $server.DomainInstanceName
@@ -122,7 +122,8 @@ function Test-DbaMaxMemory {
                 MaxValue         = [int]$maxMemory
                 RecommendedValue = [int]$recommendedMax
                 Server           = $server # This will allowing piping a non-connected object
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceCount, Total, MaxValue, RecommendedValue
+            }
+            Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, InstanceCount, Total, MaxValue, RecommendedValue
         }
     }
 }

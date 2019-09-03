@@ -181,7 +181,7 @@ function Test-DbaIdentityUsage {
                     }
 
                     if ($row.PercentUsed -ge $threshold) {
-                        [PSCustomObject]@{
+                        $outputResult = [PSCustomObject]@{
                             ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
@@ -195,7 +195,8 @@ function Test-DbaIdentityUsage {
                             MaxNumberRows  = $row.MaxNumberRows
                             NumberOfUses   = $row.NumberOfUses
                             PercentUsed    = $row.PercentUsed
-                        } | Select-DefaultView -Exclude MaxNumberRows, NumberOfUses
+                        }
+                        Select-DefaultView -InputObject $outputResult -Exclude MaxNumberRows, NumberOfUses
                     }
                 }
             }

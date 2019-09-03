@@ -191,7 +191,7 @@ function Test-DbaRepLatency {
                             ($info.distributor_latency + $info.subscriber_latency)
                         }
 
-                        [PSCustomObject]@{
+                        $outputResult = [PSCustomObject]@{
                             ComputerName                   = $server.ComputerName
                             InstanceName                   = $server.InstanceName
                             SqlInstance                    = $server.SqlInstance
@@ -208,15 +208,12 @@ function Test-DbaRepLatency {
                             PublisherToDistributorLatency  = $info.distributor_latency
                             DistributorToSubscriberLatency = $info.subscriber_latency
                             TotalLatency                   = $totalLatency
-                        } | Select-DefaultView -ExcludeProperty PublicationType
-
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty PublicationType
 
                         if (!$RetainToken) {
-
                             $pubMon.CleanUpTracerTokenHistory($tracerTokenId)
-
                         }
-
                     }
                 }
             }

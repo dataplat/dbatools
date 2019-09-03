@@ -117,21 +117,19 @@ function Test-DbaDiskAlignment {
                     }
                 }
 
-
                 $disks = @()
-                $disks += $($partitions | ForEach-Object {
-                        Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
-                            Add-Member -Force -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name Type -Value $_.Type -PassThru
-                    } |
-                        Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
-                )
-                Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
+                foreach ($partition in $partitions) {
+                    $obj = Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($partition.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition"
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name BlockSize -Value $partition.BlockSize
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name BootPartition -Value $partition.BootPartition
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name DiskIndex -Value $partition.DiskIndex
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name Index -Value $partition.Index
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name NumberOfBlocks -Value $partition.NumberOfBlocks
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name StartingOffset -Value $partition.StartingOffset
+                    Add-Member -InputObject $obj -Force -MemberType NoteProperty -Name Type -Value $partition.Type
+                    $disks += $obj | Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
+                    Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
+                }
             } catch {
                 Stop-Function -Message "Can't connect to CIM on $ComputerName." -FunctionName $FunctionName -InnerErrorRecord $_
                 return
@@ -256,13 +254,11 @@ function Test-DbaDiskAlignment {
             }
         }
     }
-
     process {
         # uses cim commands
-
-
         foreach ($computer in $ComputerName) {
-            $computer = $ogcomputer = $computer.ComputerName
+            $computer = $computer.ComputerName
+            $ogcomputer = $computer.ComputerName
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential

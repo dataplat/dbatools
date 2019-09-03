@@ -295,10 +295,10 @@ function Rename-DbaDatabase {
         }
 
         # holds all dbs per instance to avoid naming clashes
-        $InstanceDbs = @{}
+        $InstanceDbs = @{ }
 
         # holds all db file enumerations (used for -Move only)
-        $InstanceFiles = @{}
+        $InstanceFiles = @{ }
 
         #region db loop
         foreach ($db in $dbs) {
@@ -308,7 +308,7 @@ function Rename-DbaDatabase {
             # pending renames initialized at db level
             $Pending_Renames = @()
 
-            $Entities_Before = @{}
+            $Entities_Before = @{ }
 
             $server = $db.Parent
             if ($db.Name -in @('master', 'model', 'msdb', 'tempdb', 'distribution')) {
@@ -325,16 +325,16 @@ function Rename-DbaDatabase {
             }
             $Server_Id = $server.DomainInstanceName
             if ( !$InstanceDbs.ContainsKey($Server_Id) ) {
-                $InstanceDbs[$Server_Id] = @{}
+                $InstanceDbs[$Server_Id] = @{ }
                 foreach ($dn in $server.Databases.Name) {
                     $InstanceDbs[$Server_Id][$dn] = 1
                 }
             }
 
-            $Entities_Before['DBN'] = @{}
-            $Entities_Before['FGN'] = @{}
-            $Entities_Before['LGN'] = @{}
-            $Entities_Before['FNN'] = @{}
+            $Entities_Before['DBN'] = @{ }
+            $Entities_Before['FGN'] = @{ }
+            $Entities_Before['LGN'] = @{ }
+            $Entities_Before['FNN'] = @{ }
             $Entities_Before['DBN'][$db.Name] = $db.Name
             #region databasename
             if ($DatabaseName) {
@@ -381,7 +381,7 @@ function Rename-DbaDatabase {
 
             if (!$failed -and $FileGroupName) {
                 $Editable_FGs = $db.FileGroups | Where-Object Name -ne 'PRIMARY'
-                $New_FGNames = @{}
+                $New_FGNames = @{ }
                 foreach ($fg in $db.FileGroups.Name) {
                     $New_FGNames[$fg] = 1
                 }
@@ -437,7 +437,7 @@ function Rename-DbaDatabase {
                 }
             }
             if (!$failed -and $LogicalName) {
-                $New_LogicalNames = @{}
+                $New_LogicalNames = @{ }
                 foreach ($fn in $db.FileGroups.Files.Name) {
                     $New_LogicalNames[$fn] = 1
                 }
@@ -556,7 +556,7 @@ function Rename-DbaDatabase {
             }
             if (!$failed -and $FileName) {
 
-                $New_FileNames = @{}
+                $New_FileNames = @{ }
                 foreach ($fn in $db.FileGroups.Files.FileName) {
                     $New_FileNames[$fn] = 1
                 }
@@ -567,12 +567,12 @@ function Rename-DbaDatabase {
                 # to avoid failing the process because the move won't work
                 # here we have a dict keyed by instance and then keyed by path
                 if ( !$InstanceFiles.ContainsKey($Server_Id) ) {
-                    $InstanceFiles[$Server_Id] = @{}
+                    $InstanceFiles[$Server_Id] = @{ }
                 }
                 foreach ($fn in $New_FileNames.Keys) {
                     $dirname = [IO.Path]::GetDirectoryName($fn)
                     if ( !$InstanceFiles[$Server_Id].ContainsKey($dirname) ) {
-                        $InstanceFiles[$Server_Id][$dirname] = @{}
+                        $InstanceFiles[$Server_Id][$dirname] = @{ }
                         try {
                             $dirfiles = Get-DbaFile -SqlInstance $server -Path $dirname -EnableException
                         } catch {
@@ -832,7 +832,7 @@ function Rename-DbaDatabase {
                     $Entities_Before[$k].Remove($el)
                 }
             }
-            [pscustomobject]@{
+            $outputResult = [PSCustomObject]@{
                 ComputerName       = $server.ComputerName
                 InstanceName       = $server.ServiceName
                 SqlInstance        = $server.DomainInstanceName
@@ -842,12 +842,13 @@ function Rename-DbaDatabase {
                 FGN                = $Entities_Before['FGN']
                 FileGroupsRenames  = ($Entities_Before['FGN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)" }) -Join "`n"
                 LGN                = $Entities_Before['LGN']
-                LogicalNameRenames = ($Entities_Before['LGN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)"  }) -Join "`n"
+                LogicalNameRenames = ($Entities_Before['LGN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)" }) -Join "`n"
                 FNN                = $Entities_Before['FNN']
-                FileNameRenames    = ($Entities_Before['FNN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)"  }) -Join "`n"
+                FileNameRenames    = ($Entities_Before['FNN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)" }) -Join "`n"
                 PendingRenames     = $Final_Renames
                 Status             = $Status
-            } | Select-DefaultView -ExcludeProperty DatabaseRenames, FileGroupsRenames, LogicalNameRenames, FileNameRenames
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty DatabaseRenames, FileGroupsRenames, LogicalNameRenames, FileNameRenames
         }
         #endregion db loop
     }

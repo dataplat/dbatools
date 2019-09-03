@@ -155,12 +155,7 @@ function Repair-DbaDbOrphanUser {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             $UsersToRemove = @()
                             foreach ($User in $UsersToWork) {
-                                $ExistLogin = $server.logins | Where-Object {
-                                    $_.Isdisabled -eq $False -and
-                                    $_.IsSystemObject -eq $False -and
-                                    $_.IsLocked -eq $False -and
-                                    $_.Name -eq $User.Name
-                                }
+                                $ExistLogin = $server.logins | Where-Object { $_.IsDisabled -eq $False -and $_.IsSystemObject -eq $False -and $_.IsLocked -eq $False -and $_.Name -eq $User.Name }
 
                                 if ($ExistLogin) {
                                     if ($server.versionMajor -gt 8) {

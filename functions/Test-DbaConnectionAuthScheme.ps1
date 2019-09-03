@@ -106,12 +106,13 @@ function Test-DbaConnectionAuthScheme {
                 } else {
                     $auth = 'Kerberos'
                 }
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName = $results.ComputerName
                     InstanceName = $results.InstanceName
                     SqlInstance  = $results.SqlInstance
                     Result       = ($server.AuthScheme -eq $auth)
-                } | Select-DefaultView -Property SqlInstance, Result
+                }
+                Select-DefaultView -InputObject $outputResult -Property SqlInstance, Result
             } else {
                 Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
             }

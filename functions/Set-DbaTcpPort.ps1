@@ -19,7 +19,7 @@ function Set-DbaTcpPort {
         TCPPort that SQLService should listen on.
 
     .PARAMETER IpAddress
-        Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.
+        Which IpAddress should the port change , if omitted allip (0.0.0.0) will be changed with the new port number.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -87,24 +87,16 @@ function Set-DbaTcpPort {
             $sqlinstanceName = $args[4]
 
             $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computername
-            $wmiinstance = $wmi.ServerInstances | Where-Object {
-                $_.Name -eq $wmiinstancename
-            }
-            $tcp = $wmiinstance.ServerProtocols | Where-Object {
-                $_.DisplayName -eq 'TCP/IP'
-            }
-            $IpAddress = $tcp.IpAddresses | where-object {
-                $_.IpAddress -eq $IpAddress
-            }
-            $tcpport = $IpAddress.IpAddressProperties | Where-Object {
-                $_.Name -eq 'TcpPort'
-            }
+            $wmiinstance = $wmi.ServerInstances | Where-Object { $_.Name -eq $wmiinstancename }
+            $tcp = $wmiinstance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
+            $IpAddress = $tcp.IpAddresses | Where-Object { $_.IpAddress -eq $IpAddress }
+            $tcpport = $IpAddress.IpAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
 
             $oldport = $tcpport.Value
             try {
                 $tcpport.value = $port
                 $tcp.Alter()
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName       = $computername
                     InstanceName       = $wmiinstancename
                     SqlInstance        = $sqlinstanceName
@@ -113,7 +105,7 @@ function Set-DbaTcpPort {
                     Status             = "Success"
                 }
             } catch {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName       = $computername
                     InstanceName       = $wmiinstancename
                     SqlInstance        = $sqlinstanceName

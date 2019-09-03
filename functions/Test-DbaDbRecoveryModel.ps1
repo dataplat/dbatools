@@ -84,25 +84,20 @@ function Test-DbaDbRecoveryModel {
         }
 
         switch ($RecoveryModel) {
-            "Full" {$recoveryCode = 1}
-            "Bulk_Logged" {$recoveryCode = 2}
-            "Simple" {$recoveryCode = 3}
+            "Full" { $recoveryCode = 1 }
+            "Bulk_Logged" { $recoveryCode = 2 }
+            "Simple" { $recoveryCode = 3 }
         }
 
-        $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
-                ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                SERVERPROPERTY('ServerName') AS SqlInstance
-                        , d.[name] AS [Database]
-                        , d.recovery_model AS RecoveryModel
-                        , d.recovery_model_desc AS RecoveryModelDesc
-                        , CASE
-                            WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
-                            ELSE 0
-                           END AS IsReallyInFullRecoveryModel
-                  FROM sys.databases AS D
-                    INNER JOIN sys.database_recovery_status AS drs
-                       ON D.database_id = drs.database_id
-                  WHERE d.recovery_model = $recoveryCode"
+        $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+        SERVERPROPERTY('ServerName') AS SqlInstance, d.[name] AS [Database], d.recovery_model AS RecoveryModel, d.recovery_model_desc AS RecoveryModelDesc,
+        CASE
+            WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
+            ELSE 0
+        END AS IsReallyInFullRecoveryModel
+        FROM sys.databases AS D
+        INNER JOIN sys.database_recovery_status AS drs ON D.database_id = drs.database_id
+        WHERE d.recovery_model = $recoveryCode"
 
         if ($Database) {
             $dblist = $Database -join "','"
@@ -139,14 +134,15 @@ function Test-DbaDbRecoveryModel {
                         $ActualRecoveryModel = "$($RecoveryModel.ToString().ToUpper())"
                     }
 
-                    [PSCustomObject]@{
+                    $outputResult = [PSCustomObject]@{
                         ComputerName            = $row.ComputerName
                         InstanceName            = $row.InstanceName
                         SqlInstance             = $row.SqlInstance
                         Database                = $row.Database
                         ConfiguredRecoveryModel = $row.RecoveryModelDesc
                         ActualRecoveryModel     = $ActualRecoveryModel
-                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, ConfiguredRecoveryModel, ActualRecoveryModel
+                    }
+                    Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, Database, ConfiguredRecoveryModel, ActualRecoveryModel
                 }
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue

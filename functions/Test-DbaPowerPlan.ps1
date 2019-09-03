@@ -112,13 +112,9 @@ function Test-DbaPowerPlan {
             }
             if ($CustomPowerPlan) {
                 $bpPowerPlan.ElementName = $CustomPowerPlan
-                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object {
-                        $_.ElementName -eq $CustomPowerPlan
-                    }).InstanceID
+                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object { $_.ElementName -eq $CustomPowerPlan }).InstanceID
             } else {
-                $bpPowerPlan.ElementName = $($powerPlans | Where-Object {
-                        $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID
-                    }).ElementName
+                $bpPowerPlan.ElementName = $($powerPlans | Where-Object { $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName
                 if ($null -eq $bpPowerplan.ElementName) {
                     $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
                 }
@@ -136,13 +132,14 @@ function Test-DbaPowerPlan {
                 $isBestPractice = $false
             }
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 ComputerName         = $computer
                 ActivePowerPlan      = $powerPlan.ElementName
                 RecommendedPowerPlan = $bpPowerPlan.ElementName
                 isBestPractice       = $isBestPractice
                 Credential           = $Credential
-            } | Select-DefaultView -ExcludeProperty Credential
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty Credential
         }
     }
 }

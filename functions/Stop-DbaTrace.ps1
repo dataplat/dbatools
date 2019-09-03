@@ -116,7 +116,8 @@ function Stop-DbaTrace {
                             EventCount        = $null
                             DroppedEventCount = $null
                             Parent            = $server
-                        } | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
+                        }
+                        Select-DefaultView -InputObject $output -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'IsRunning'
                     }
                     $output
                 } catch {

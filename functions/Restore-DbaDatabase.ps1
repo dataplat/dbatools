@@ -499,7 +499,7 @@ function Restore-DbaDatabase {
                 $bound = $PSBoundParameters
                 $bound['TrustDbBackupHistory'] = $true
                 $bound['Path'] = $bh
-                Restore-Dbadatabase @bound
+                Restore-DbaDatabase @bound
             }
             break
         }
@@ -513,32 +513,16 @@ function Restore-DbaDatabase {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
                     if ("BackupPath" -notin $f.PSobject.Properties.name) {
                         Write-Message -Level Verbose -Message "adding BackupPath - $($_.FullName)"
-                        $f = $f | Select-Object *, @{
-                            Name = "BackupPath"; Expression = {
-                                $_.FullName
-                            }
-                        }
+                        $f = $f | Select-Object *, @{ Name = "BackupPath"; Expression = { $_.FullName } }
                     }
                     if ("DatabaseName" -notin $f.PSobject.Properties.Name) {
-                        $f = $f | Select-Object *, @{
-                            Name = "DatabaseName"; Expression = {
-                                $_.Database
-                            }
-                        }
+                        $f = $f | Select-Object *, @{ Name = "DatabaseName"; Expression = { $_.Database } }
                     }
                     if ("Database" -notin $f.PSobject.Properties.Name) {
-                        $f = $f | Select-Object *, @{
-                            Name = "Database"; Expression = {
-                                $_.DatabaseName
-                            }
-                        }
+                        $f = $f | Select-Object *, @{ Name = "Database"; Expression = { $_.DatabaseName } }
                     }
                     if ("BackupSetGUID" -notin $f.PSobject.Properties.Name) {
-                        $f = $f | Select-Object *, @{
-                            Name = "BackupSetGUID"; Expression = {
-                                $_.BackupSetID
-                            }
-                        }
+                        $f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetID } }
                     }
                     if ($f.BackupPath -like 'http*') {
                         if ('' -ne $AzureCredential) {
@@ -558,15 +542,7 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-                    $BackupHistory += $F | Select-Object *, @{
-                        Name = "ServerName"; Expression = {
-                            $_.SqlInstance
-                        }
-                    }, @{
-                        Name = "BackupStartDate"; Expression = {
-                            $_.Start -as [DateTime]
-                        }
-                    }
+                    $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
             } else {
                 $files = @()
@@ -688,16 +664,10 @@ function Restore-DbaDatabase {
             if ($StopAfterTestBackupInformation) {
                 return
             }
-            $DbVerfied = ($FilteredBackupHistory | Where-Object {
-                    $_.IsVerified -eq $True
-                } | Sort-Object -Property Database -Unique).Database -join ','
+            $DbVerfied = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True } | Sort-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-            if ((@($FilteredBackupHistory | Where-Object {
-                            $_.IsVerified -eq $True
-                        })).count -lt $FilteredBackupHistory.count) {
-                $DbUnVerified = ($FilteredBackupHistory | Where-Object {
-                        $_.IsVerified -eq $False
-                    } | Sort-Object -Property Database -Unique).Database -join ','
+            if ((@($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True })).count -lt $FilteredBackupHistory.count) {
+                $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Sort-Object -Property Database -Unique).Database -join ','
                 Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
@@ -715,9 +685,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object {
-                    $_.IsVerified -eq $true
-                } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
