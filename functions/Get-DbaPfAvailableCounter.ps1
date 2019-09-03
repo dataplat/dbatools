@@ -71,8 +71,7 @@ function Get-DbaPfAvailableCounter {
     )
     begin {
         $scriptblock = {
-            $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
-                Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
+            $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter | Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
 
             foreach ($counter in $counters) {
                 [pscustomobject]@{
@@ -93,11 +92,9 @@ function Get-DbaPfAvailableCounter {
 
             try {
                 if ($pattern) {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
-                        Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop | Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
                 } else {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
-                        Select-DefaultView -ExcludeProperty Credential
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop | Select-DefaultView -ExcludeProperty Credential
                 }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

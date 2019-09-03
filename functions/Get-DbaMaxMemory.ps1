@@ -60,7 +60,7 @@ function Get-DbaMaxMemory {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -72,14 +72,15 @@ function Get-DbaMaxMemory {
                 $totalMemory = $totalMemory + 1
             }
 
-            [pscustomobject]@{
+            $outputResult = [pscustomobject]@{
                 ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
                 Total        = [int]$totalMemory
                 MaxValue     = [int]$server.Configuration.MaxServerMemory.ConfigValue
                 Server       = $server # This will allowing piping a non-connected object
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Total, MaxValue
+            }
+            Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, Total, MaxValue
         }
     }
 }

@@ -169,7 +169,7 @@ function Get-DbaPfDataCollectorCounterSample {
 
                 foreach ($pscounter in $pscounters) {
                     foreach ($sample in $pscounter.CounterSamples) {
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             ComputerName           = $counterobject.ComputerName
                             DataCollectorSet       = $counterobject.DataCollectorSet
                             DataCollector          = $counterobject.DataCollector
@@ -189,7 +189,8 @@ function Get-DbaPfDataCollectorCounterSample {
                             TimeBase               = $sample.TimeBase
                             Sample                 = $pscounter.CounterSamples
                             CounterSampleObject    = $true
-                        } | Select-DefaultView -ExcludeProperty Sample, CounterSampleObject
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty Sample, CounterSampleObject
                     }
                 }
             }

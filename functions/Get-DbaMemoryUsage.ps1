@@ -52,7 +52,7 @@ function Get-DbaMemoryUsage {
     .EXAMPLE
         PS C:\> $servers | Get-DbaMemoryUsage | Out-Gridview
 
-       Gets results from an array of $servers then diplays them in a gridview.
+        Gets results from an array of $servers then diplays them in a gridview.
     #>
     [CmdletBinding()]
     param (
@@ -65,41 +65,40 @@ function Get-DbaMemoryUsage {
 
     begin {
         if ($Simple) {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = 'total\)\\cache pages'
-            $BufManpagecounters = 'Total pages'
-            $SSAScounters = '(\\memory usage)'
-            $SSIScounters = '(memory)'
+            $memCounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
+            $planCounters = 'total\)\\cache pages'
+            $bufManPageCounters = 'Total pages'
+            $asCounters = '(\\memory usage)'
+            $isCounters = '(memory)'
         } else {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
-            $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
-            $SSAScounters = '(\\memory )'
-            $SSIScounters = '(memory)'
+            $memCounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
+            $planCounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
+            $bufManPageCounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
+            $asCounters = '(\\memory )'
+            $isCounters = '(memory)'
         }
 
         $scriptblock = {
-            param ($Memcounters,
-                $Plancounters,
-                $BufManpagecounters,
-                $SSAScounters,
-                $SSIScounters)
+            param ($memCounters,
+                $planCounters,
+                $bufManPageCounters,
+                $asCounters,
+                $isCounters)
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Memcounters } |
-                    ForEach-Object {
-                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                $availableCounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).Paths
+                $counters = (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).CounterSamples | Where-Object { $_.Path -match $memCounters }
+                foreach ($counter in $counters) {
+                    $instance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
                         ComputerName    = $env:computername
                         SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
+                        CounterInstance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $counter.Path.split("\")[-1]
                         Pages           = $null
-                        Memory          = $_.cookedvalue / 1024
+                        Memory          = $counter.CookedValue / 1024
                     }
                 }
             } catch {
@@ -109,19 +108,18 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Plan Cache Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Plancounters } |
-                    ForEach-Object {
-                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                $availableCounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).Paths
+                $counters = (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).CounterSamples | Where-Object { $_.Path -match $planCounters }
+                foreach ($counter in $counters) {
+                    $instance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
                         ComputerName    = $env:computername
                         SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $_.cookedvalue
-                        Memory          = $_.cookedvalue * 8192 / 1048576
+                        CounterInstance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $counter.Path.split("\")[-1]
+                        Pages           = $counter.CookedValue
+                        Memory          = $counter.CookedValue * 8192 / 1048576
                     }
                 }
             } catch {
@@ -131,19 +129,18 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Buffer Manager Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $BufManpagecounters } |
-                    ForEach-Object {
-                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                $availableCounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).Paths
+                $counters = (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).CounterSamples | Where-Object { $_.Path -match $bufManPageCounters }
+                foreach ($counter in $counters) {
+                    $instance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
                         ComputerName    = $env:computername
                         SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $_.cookedvalue
-                        Memory          = $_.cookedvalue * 8192 / 1048576.0
+                        CounterInstance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $counter.Path.split("\")[-1]
+                        Pages           = $counter.CookedValue
+                        Memory          = $counter.CookedValue * 8192 / 1048576.0
                     }
                 }
             } catch {
@@ -153,19 +150,18 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for SSAS Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSAScounters } |
-                    ForEach-Object {
-                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                $availableCounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).Paths
+                $counters = (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).CounterSamples | Where-Object { $_.Path -match $asCounters }
+                foreach ($counter in $counters) {
+                    $instance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
                         ComputerName    = $env:COMPUTERNAME
                         SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
+                        CounterInstance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $counter.Path.split("\")[-1]
                         Pages           = $null
-                        Memory          = $_.cookedvalue / 1024
+                        Memory          = $counter.CookedValue / 1024
                     }
                 }
             } catch {
@@ -175,19 +171,18 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for SSIS Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSIScounters } |
-                    ForEach-Object {
-                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                $availableCounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).Paths
+                $counters = (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).CounterSamples | Where-Object { $_.Path -match $isCounters }
+                foreach ($counter in $counters) {
+                    $instance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
                         ComputerName    = $env:computername
                         SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
+                        CounterInstance = (($counter.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $counter.Path.split("\")[-1]
                         Pages           = $null
-                        Memory          = $_.cookedvalue / 1024 / 1024
+                        Memory          = $counter.CookedValue / 1024 / 1024
                     }
                 }
             } catch {
@@ -203,7 +198,7 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $memCounters, $planCounters, $bufManPageCounters, $asCounters, $isCounters)) {
                         [PSCustomObject]@{
                             ComputerName    = $result.ComputerName
                             SqlInstance     = $result.SqlInstance

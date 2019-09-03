@@ -168,7 +168,7 @@ function Get-DbaModule {
             Write-Message -Level Verbose -Message "Processing $db on $($server.DomainInstanceName)"
 
             foreach ($row in $server.Query($sql, $db.name)) {
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName  = $server.ComputerName
                     InstanceName  = $server.ServiceName
                     SqlInstance   = $server.DomainInstanceName
@@ -182,7 +182,8 @@ function Get-DbaModule {
                     IsMsShipped   = $row.is_ms_shipped
                     ExecIsStartUp = $row.startup
                     Definition    = $row.definition
-                } | Select-DefaultView -ExcludeProperty Definition
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Definition
             }
         }
     }

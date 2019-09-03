@@ -210,13 +210,7 @@ function Get-DbaLogin {
             }
 
             if ($IncludeFilter) {
-                $serverLogins = $serverLogins | Where-Object {
-                    foreach ($filter in $IncludeFilter) {
-                        if ($_.Name -like $filter) {
-                            return $true;
-                        }
-                    }
-                }
+                $serverLogins = $serverLogins | Where-Object { foreach ($filter in $IncludeFilter) { if ($_.Name -like $filter) { return $true; } } }
             }
 
             if ($ExcludeLogin) {

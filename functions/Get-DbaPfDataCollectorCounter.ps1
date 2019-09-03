@@ -108,7 +108,7 @@ function Get-DbaPfDataCollectorCounter {
         foreach ($counterobject in $InputObject) {
             foreach ($countername in $counterobject.Counters) {
                 if ($Counter -and $Counter -notcontains $countername) { continue }
-                [pscustomobject]@{
+                $outputResult = [pscustomobject]@{
                     ComputerName        = $counterobject.ComputerName
                     DataCollectorSet    = $counterobject.DataCollectorSet
                     DataCollector       = $counterobject.Name
@@ -117,7 +117,8 @@ function Get-DbaPfDataCollectorCounter {
                     FileName            = $counterobject.FileName
                     CounterObject       = $true
                     Credential          = $Credential
-                } | Select-DefaultView -ExcludeProperty DataCollectorObject, Credential, CounterObject, DataCollectorSetXml
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty DataCollectorObject, Credential, CounterObject, DataCollectorSetXml
             }
         }
     }

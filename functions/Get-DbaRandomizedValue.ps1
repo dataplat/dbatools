@@ -89,6 +89,7 @@ function Get-DbaRandomizedValue {
         Generates a random phonenumber like "(123) 4567890"
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', '')] #Until PSSA addresses PSScriptAnalyzer/issue 1319
     [CmdLetBinding()]
     param(
         [string]$DataType,

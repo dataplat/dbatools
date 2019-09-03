@@ -110,7 +110,7 @@ function Get-DbaPfDataCollector {
                     $remote = $null
                 }
 
-                [pscustomobject]@{
+                $outputResult = [pscustomobject]@{
                     ComputerName               = $set.ComputerName
                     DataCollectorSet           = $set.Name
                     Name                       = $col.Name
@@ -133,7 +133,8 @@ function Get-DbaPfDataCollector {
                     CollectorXml               = $col
                     DataCollectorObject        = $true
                     Credential                 = $Credential
-                } | Select-DefaultView -Property $columns
+                }
+                Select-DefaultView -InputObject $outputResult -Property $columns
             }
         }
     }

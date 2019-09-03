@@ -207,7 +207,7 @@ function Get-DbaQueryExecutionTime {
 
                 try {
                     foreach ($row in $db.ExecuteWithResults($sql).Tables.Rows) {
-                        [PSCustomObject]@{
+                        $outputResult = [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
@@ -224,7 +224,8 @@ function Get-DbaQueryExecutionTime {
                             TotalElapsedTimeMs = $row.total_elapsed_time_ms
                             SQLText            = $row.SQLText
                             FullStatementText  = $row.full_statement_text
-                        } | Select-DefaultView -ExcludeProperty FullStatementText
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty FullStatementText
                     }
                 } catch {
                     Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue

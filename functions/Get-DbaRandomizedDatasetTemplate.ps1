@@ -72,14 +72,14 @@ function Get-DbaRandomizedDatasetTemplate {
     }
 
     process {
-        if (Test-FunctionInterrupt) { return}
+        if (Test-FunctionInterrupt) { return }
 
         # Get the templates from the file path
         foreach ($p in $Path) {
             $templates += Get-ChildItem (Resolve-Path -Path "$Path\*.json")
         }
 
-        # Filter the template if neccesary
+        # Filter the template if necessary
         if ($Template) {
             $templates = $templates | Where-Object BaseName -in $Template
         }

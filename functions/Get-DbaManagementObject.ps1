@@ -64,13 +64,7 @@ function Get-DbaManagementObject {
             Write-Verbose -Message "Checking currently loaded SMO version"
             $loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
             if ($loadedversion) {
-                $loadedversion = $loadedversion | ForEach-Object {
-                    if ($_.Location -match "__") {
-                        ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-                    } else {
-                        ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
-                    }
-                }
+                $loadedversion = $loadedversion | ForEach-Object { if ($_.Location -match "__") { ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0] }  else { ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion) } }
             }
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Looking for included smo library"

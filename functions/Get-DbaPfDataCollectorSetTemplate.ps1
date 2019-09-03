@@ -83,24 +83,26 @@ function Get-DbaPfDataCollectorSetTemplate {
                             ($dataset.Name -match $Pattern) -or
                             ($dataset.Description -match $Pattern)
                         ) {
-                            [pscustomobject]@{
+                            $outputResult = [pscustomobject]@{
                                 Name        = $dataset.name
                                 Source      = $meta.Source
-                                UserAccount = $dataset.useraccount
+                                UserAccount = $dataset.UserAccount
                                 Description = $dataset.Description
                                 Path        = $file
                                 File        = $file.Name
-                            } | Select-DefaultView -ExcludeProperty File, Path
+                            }
+                            Select-DefaultView -InputObject $outputResult -ExcludeProperty File, Path
                         }
                     } else {
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             Name        = $dataset.name
                             Source      = $meta.Source
-                            UserAccount = $dataset.useraccount
+                            UserAccount = $dataset.UserAccount
                             Description = $dataset.Description
                             Path        = $file
                             File        = $file.Name
-                        } | Select-DefaultView -ExcludeProperty File, Path
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty File, Path
                     }
                 }
             }

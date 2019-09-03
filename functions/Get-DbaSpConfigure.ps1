@@ -207,7 +207,7 @@ function Get-DbaSpConfigure {
                 if (!([string]::IsNullOrEmpty($prop.RunValue))) {
 
                     $DisplayName = $prop.DisplayName
-                    [pscustomobject]@{
+                    $outputResult = [pscustomobject]@{
                         ServerName            = $server.Name
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
@@ -226,7 +226,8 @@ function Get-DbaSpConfigure {
                         Parent                = $server
                         ConfigName            = ($smoName).$DisplayName
                         Property              = $prop
-                    } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName, Property
+                    }
+                    Select-DefaultView -InputObject $outputResult -ExcludeProperty ServerName, Parent, ConfigName, Property
                 }
             }
         }

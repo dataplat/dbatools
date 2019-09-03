@@ -78,9 +78,7 @@ function Get-DbaPrivilege {
                 $Priv = $null
                 $Priv = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
-                    Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                        $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege'
-                    }
+                    Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege' }
                 }
                 if ($Priv.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, or Lock Pages in Memory Rights on $computer"
@@ -91,14 +89,10 @@ function Get-DbaPrivilege {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                    $blEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                            $_ -like "SeBatchLogonRight*"
-                        })
+                    $blEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like "SeBatchLogonRight*" })
 
                     if ($null -ne $blEntries) {
-                        $blEntries.substring(20).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
-                        }
+                        $blEntries.substring(20).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
                     }
 
                 } -ErrorAction SilentlyContinue
@@ -111,14 +105,10 @@ function Get-DbaPrivilege {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                    $ifiEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                            $_ -like 'SeManageVolumePrivilege*'
-                        })
+                    $ifiEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' })
 
                     if ($null -ne $ifiEntries) {
-                        $ifiEntries.substring(26).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
-                        }
+                        $ifiEntries.substring(26).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
                     }
 
                 } -ErrorAction SilentlyContinue
@@ -131,14 +121,10 @@ function Get-DbaPrivilege {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                    $lpimEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                            $_ -like 'SeLockMemoryPrivilege*'
-                        })
+                    $lpimEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' })
 
                     if ($null -ne $lpimEntries) {
-                        $lpimEntries.substring(24).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
-                        }
+                        $lpimEntries.substring(24).split(",").replace("`*", "") | ForEach-Object { Convert-SIDToUserName -SID $_ }
                     }
                 } -ErrorAction SilentlyContinue
 
@@ -146,13 +132,13 @@ function Get-DbaPrivilege {
                     Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                 }
                 $users = @() + $BL + $ifi + $lpim | Select-Object -Unique
-                $users | ForEach-Object {
+                foreach ($user in $users) {
                     [PSCustomObject]@{
                         ComputerName              = $computer
-                        User                      = $_
-                        LogonAsBatch              = $BL -contains $_
-                        InstantFileInitialization = $ifi -contains $_
-                        LockPagesInMemory         = $lpim -contains $_
+                        User                      = $user
+                        LogonAsBatch              = $BL -contains $user
+                        InstantFileInitialization = $ifi -contains $user
+                        LockPagesInMemory         = $lpim -contains $user
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"

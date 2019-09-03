@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>
 Describe "Get-DbaMemoryUsage Integration Test" -Tag "IntegrationTests" {
     Context "Command actually works" {

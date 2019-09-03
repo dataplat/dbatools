@@ -138,7 +138,7 @@ function Get-DbaOperatingSystem {
                 $IsWsfc = $null
             }
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 ComputerName             = $computerResolved
                 Manufacturer             = $os.Manufacturer
                 Organization             = $os.Organization
@@ -146,7 +146,7 @@ function Get-DbaOperatingSystem {
                 Version                  = $os.Version
                 Build                    = $os.BuildNumber
                 OSVersion                = $os.caption
-                SPVersion                = $os.servicepackmajorversion
+                SPVersion                = $os.ServicePackMajorVersion
                 InstallDate              = [DbaDateTime]$os.InstallDate
                 LastBootTime             = [DbaDateTime]$os.LastBootUpTime
                 LocalDateTime            = [DbaDateTime]$os.LocalDateTime
@@ -176,7 +176,8 @@ function Get-DbaOperatingSystem {
                 CountryCode              = $os.CountryCode
                 Locale                   = $os.Locale
                 IsWsfc                   = $IsWsfc
-            } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, OSVersion, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
+            }
+            Select-DefaultView -InputObject $outputResult -Property ComputerName, Manufacturer, Organization, Architecture, Version, OSVersion, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
         }
     }
 }

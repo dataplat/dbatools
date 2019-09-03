@@ -181,7 +181,7 @@ function Get-DbaTcpPort {
                 $sql = "SELECT local_net_address,local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
                 $port = $server.Query($sql)
 
-                [PsCustomObject]@{
+                $outputResult = [PsCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -189,7 +189,8 @@ function Get-DbaTcpPort {
                     Port         = $port.local_tcp_port
                     Static       = $true
                     Type         = "Normal"
-                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, IPAddress, Port
+                }
+                Select-DefaultView -InputObject $outputResult -Property ComputerName, InstanceName, SqlInstance, IPAddress, Port
             }
         }
     }

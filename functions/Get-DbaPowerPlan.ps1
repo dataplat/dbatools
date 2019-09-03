@@ -86,12 +86,13 @@ function Get-DbaPowerPlan {
                 $powerPlan.ElementName = "Unknown"
             }
 
-            [PSCustomObject]@{
+            $outputResult = [PSCustomObject]@{
                 ComputerName = $computer
                 InstanceId   = $powerPlan.InstanceID
                 PowerPlan    = $powerPlan.ElementName
                 Credential   = $Credential
-            } | Select-DefaultView -ExcludeProperty Credential, InstanceId
+            }
+            Select-DefaultView -InputObject $outputResult -ExcludeProperty Credential, InstanceId
         }
     }
 }
