@@ -263,7 +263,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-								#endregion Default | 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -364,7 +364,7 @@ function Get-DbaCmObject {
                                 20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 								
-								#region Default | 0 = Non-CIM Issue not covered by the framework
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
                                 default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
@@ -375,7 +375,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-								#endregion Default | 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
