@@ -88,9 +88,9 @@ Function Uninstall-DbaSqlWatch {
             }
 
             # get SqlWatch objects
-            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
-            $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
-            $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
+            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
+            $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "vw_sql_perf_mon_*" }
+            $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
             $agentJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }
 
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch SQL Agent jobs")) {
@@ -106,9 +106,7 @@ Function Uninstall-DbaSqlWatch {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch stored procedures from $database on $server."
                     $dropScript = ""
-                    $sprocs | ForEach-Object {
-                        $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
-                    }
+                    $sprocs | ForEach-Object { $dropScript += "DROP PROCEDURE $($PSItem.Name);`n" }
                     if ($dropScript) {
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
                     }
@@ -121,9 +119,7 @@ Function Uninstall-DbaSqlWatch {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch views from $database on $server."
                     $dropScript = ""
-                    $views | ForEach-Object {
-                        $dropScript += "DROP VIEW $($PSItem.Name);`n"
-                    }
+                    $views | ForEach-Object { $dropScript += "DROP VIEW $($PSItem.Name);`n" }
                     if ($dropScript) {
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
                     }
@@ -145,9 +141,7 @@ Function Uninstall-DbaSqlWatch {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch tables from $database on $server."
                     $dropScript = ""
-                    $tables | ForEach-Object {
-                        $dropScript += "DROP TABLE $($PSItem.Name);`n"
-                    }
+                    $tables | ForEach-Object { $dropScript += "DROP TABLE $($PSItem.Name);`n" }
                     if ($dropScript) {
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
                     }

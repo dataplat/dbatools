@@ -148,7 +148,7 @@ function Watch-DbaDbLogin {
             $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
 
             if ($procs.Count -gt 0) {
-                $procs | Select-Object @{Label = "ComputerName"; Expression = {$server.ComputerName}}, @{Label = "InstanceName"; Expression = {$server.ServiceName}}, @{Label = "SqlInstance"; Expression = {$server.DomainInstanceName}}, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+                $procs | Select-Object @{ L = "ComputerName"; E = { $server.ComputerName } }, @{ L = "InstanceName"; E = { $server.ServiceName } }, @{ L = "SqlInstance"; E = { $server.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Message -Level Output -Message "Added process information for $instance to datatable."
             } else {

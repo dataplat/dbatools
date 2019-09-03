@@ -151,6 +151,7 @@ function Update-DbaInstance {
         Extracts the files in local driver on Server1 C:\temp.
 
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', "", Justification = "Line 283 is not parsed properly")]
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
         [parameter(ValueFromPipeline, Position = 1)]
@@ -202,7 +203,7 @@ function Update-DbaInstance {
             }
         }
         $actions = @()
-        $actionTemplate = @{}
+        $actionTemplate = @{ }
         if ($InstanceName) { $actionTemplate.InstanceName = $InstanceName }
         if ($Continue) { $actionTemplate.Continue = $Continue }
         #Putting together list of actions based on current ParameterSet
@@ -280,7 +281,7 @@ function Update-DbaInstance {
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
+        $pathIsNetwork = $Path | ForEach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
@@ -307,7 +308,7 @@ function Update-DbaInstance {
             if (!$components) {
                 Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
             }
-            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
+            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | ForEach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
             # Filter for specific instance name
             if ($InstanceName) {
                 $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
