@@ -114,7 +114,7 @@ function Get-DbaWaitingTask {
                     if ($row.Spid -notin $Spid) { continue }
                 }
 
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -131,7 +131,8 @@ function Get-DbaWaitingTask {
                     SqlText      = $row.SqlText
                     QueryPlan    = $row.QueryPlan
                     InfoUrl      = $row.InfoUrl
-                } | Select-DefaultView -ExcludeProperty 'SqlText', 'QueryPlan', 'InfoUrl'
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty 'SqlText', 'QueryPlan', 'InfoUrl'
             }
         }
     }

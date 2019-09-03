@@ -23,7 +23,7 @@ function Install-DbaInstance {
         * Change the TCP port after the installation is done
         * Enable 'Perform volume maintenance tasks' for the SQL Server account
 
-        Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
+        Note that the downloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
     .PARAMETER SqlInstance
@@ -58,8 +58,7 @@ function Install-DbaInstance {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER Version
@@ -200,7 +199,7 @@ function Install-DbaInstance {
         Run the installation locally with default settings overriding the value of specific configuration items.
         Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias('ComputerName')]
@@ -235,13 +234,13 @@ function Install-DbaInstance {
         [int]$Throttle = 50,
         [Alias('PID')]
         [string]$ProductID,
-        [pscredential]$EngineCredential,
-        [pscredential]$AgentCredential,
-        [pscredential]$ASCredential,
-        [pscredential]$ISCredential,
-        [pscredential]$RSCredential,
-        [pscredential]$FTCredential,
-        [pscredential]$PBEngineCredential,
+        [PSCredential]$EngineCredential,
+        [PSCredential]$AgentCredential,
+        [PSCredential]$ASCredential,
+        [PSCredential]$ISCredential,
+        [PSCredential]$RSCredential,
+        [PSCredential]$FTCredential,
+        [PSCredential]$PBEngineCredential,
         [string]$SaveConfiguration,
         # [string]$DotNetPath,
         [switch]$PerformVolumeMaintenanceTasks,
@@ -249,14 +248,14 @@ function Install-DbaInstance {
         [switch]$EnableException
     )
     begin {
-        Function Read-IniFile {
+        function Read-IniFile {
             # Reads an ini file from a disk and returns a hashtable with a corresponding structure
             Param (
                 $Path
             )
             #Collect config entries from the ini file
             Write-Message -Level Verbose -Message "Reading Ini file from $Path"
-            $config = @{}
+            $config = @{ }
             switch -regex -file $Path {
                 #Comment
                 '^#.*' { continue }
@@ -264,7 +263,7 @@ function Install-DbaInstance {
                 "^\[(.+)\]\s*$" {
                     $section = $matches[1]
                     if (-not $config.$section) {
-                        $config.$section = @{}
+                        $config.$section = @{ }
                     }
                     continue
                 }
@@ -277,7 +276,7 @@ function Install-DbaInstance {
             }
             return $config
         }
-        Function Write-IniFile {
+        function Write-IniFile {
             # Writes a hashtable into a file in a format of an ini file
             Param (
                 [hashtable]$Content,
@@ -295,13 +294,13 @@ function Install-DbaInstance {
             }
             Set-Content -Path $Path -Value $output -Force
         }
-        Function Update-ServiceCredential {
+        function Update-ServiceCredential {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             # updates a service account entry and returns the password as a command line argument
             Param (
                 $Node,
-                [pscredential]$Credential,
+                [PSCredential]$Credential,
                 [string]$AccountName,
                 [string]$PasswordName = $AccountName.Replace('SVCACCOUNT', 'SVCPASSWORD')
             )
@@ -323,7 +322,7 @@ function Install-DbaInstance {
     }
     process {
         if (!$Path) {
-            Stop-Function -Message "Path to SQL Server setup folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\updates' or specify the path in the original command"
+            Stop-function -Message "Path to SQL Server setup folder is not set. Consider running Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\updates' or specify the path in the original command"
             return
         }
         # getting a numeric version for further comparison
@@ -337,7 +336,7 @@ function Install-DbaInstance {
             2017 { '14.0' }
             2019 { '15.0' }
             default {
-                Stop-Function -Message "Version $Version is not supported"
+                Stop-function -Message "Version $Version is not supported"
                 return
             }
         }
@@ -350,7 +349,7 @@ function Install-DbaInstance {
                 if (($fd.MinimumVersion -and $canonicVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $canonicVersion -gt [version]$fd.MaximumVersion)) {
                     # exclude Default and All
                     if ($f -notin 'Default', 'All') {
-                        Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
+                        Stop-function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
                         return
                     }
                 } else {
@@ -370,7 +369,7 @@ function Install-DbaInstance {
             try {
                 $ConfigurationFile = Get-Item -Path $ConfigurationFile -ErrorAction Stop
             } catch {
-                Stop-Function -Message "Configuration file not found" -ErrorRecord $_
+                Stop-function -Message "Configuration file not found" -ErrorRecord $_
                 return
             }
         }
@@ -378,7 +377,7 @@ function Install-DbaInstance {
         # check if installation path(s) is a network path and try to access it from the local machine
         Write-ProgressHelper -ExcludePercent -Activity "Looking for setup files" -StepNumber 0 -Message "Checking if installation is available locally"
         $isNetworkPath = $true
-        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false} }
+        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false } }
         if ($isNetworkPath) {
             Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
             try {
@@ -409,11 +408,11 @@ function Install-DbaInstance {
             try {
                 $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
             } catch {
-                Stop-Function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
+                Stop-function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
             }
             if ($restartNeeded -and (-not $Restart -or $computer.IsLocalHost)) {
                 #Exit the actions loop altogether - nothing can be installed here anyways
-                Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
+                Stop-function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
             }
             # Attempt to configure CredSSP for the remote host when credentials are defined
             if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost -and $Authentication -eq 'Credssp') {
@@ -431,7 +430,7 @@ function Install-DbaInstance {
                     if ($PSCmdlet.ShouldProcess($fullComputerName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
                         $notifiedUnsecure = $true
                     } else {
-                        Stop-Function -Message "Failed to connect to $fullComputerName through $Authentication protocol. No actions will be performed on that computer." -Continue
+                        Stop-function -Message "Failed to connect to $fullComputerName through $Authentication protocol. No actions will be performed on that computer." -Continue
                     }
                 }
             }
@@ -478,11 +477,11 @@ function Install-DbaInstance {
                 try {
                     $setupFile = Find-SqlInstanceSetup @findSetupParams
                 } catch {
-                    Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
+                    Stop-function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
                 }
             }
             if (-not $setupFile) {
-                Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
+                Stop-function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
             }
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Generating a configuration file"
             $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
@@ -493,7 +492,7 @@ function Install-DbaInstance {
                 try {
                     $config = Read-IniFile -Path $ConfigurationFile
                 } catch {
-                    Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
+                    Stop-function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
                 }
             } else {
                 # determine a default user to assign sqladmin permissions
@@ -545,7 +544,7 @@ function Install-DbaInstance {
             }
             $configNode = $config.$mainKey
             if (-not $configNode) {
-                Stop-Function -Message "Incorrect configuration file. Main node $mainKey not found."
+                Stop-function -Message "Incorrect configuration file. Main node $mainKey not found."
                 return
             }
             $execParams = @()
@@ -632,7 +631,7 @@ function Install-DbaInstance {
             try {
                 Write-IniFile -Content $config -Path $configFile
             } catch {
-                Stop-Function -Message "Failed to write config file to $configFile" -ErrorRecord $_
+                Stop-function -Message "Failed to write config file to $configFile" -ErrorRecord $_
             }
             if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
                 $actionPlan += @{

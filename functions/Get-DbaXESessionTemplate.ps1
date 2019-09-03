@@ -108,7 +108,7 @@ function Get-DbaXESessionTemplate {
                             ($session.event_session.TemplateName.'#text' -match $Pattern) -or
                             ($meta.Source -match $Pattern)
                         ) {
-                            [pscustomobject]@{
+                            $outputResult = [pscustomobject]@{
                                 Name          = $session.event_session.name
                                 Category      = $session.event_session.TemplateCategory.'#text'
                                 Source        = $meta.Source
@@ -117,10 +117,11 @@ function Get-DbaXESessionTemplate {
                                 TemplateName  = $session.event_session.TemplateName.'#text'
                                 Path          = $file
                                 File          = $file.Name
-                            } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
+                            }
+                            Select-DefaultView -InputObject $outputResult -ExcludeProperty File, TemplateName, Path
                         }
                     } else {
-                        [pscustomobject]@{
+                        $outputResult = [pscustomobject]@{
                             Name          = $session.event_session.name
                             Category      = $session.event_session.TemplateCategory.'#text'
                             Source        = $meta.Source
@@ -129,7 +130,8 @@ function Get-DbaXESessionTemplate {
                             TemplateName  = $session.event_session.TemplateName.'#text'
                             Path          = $file
                             File          = $file.Name
-                        } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
+                        }
+                        Select-DefaultView -InputObject $outputResult -ExcludeProperty File, TemplateName, Path
                     }
                 }
             }

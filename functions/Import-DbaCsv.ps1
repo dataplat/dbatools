@@ -581,9 +581,7 @@ function Import-DbaCsv {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
                                 try {
-                                    $firstline -split $Delimiter | ForEach-Object {
-                                        $ColumnMap.Add($PSItem, $PSItem)
-                                    }
+                                    $firstline -split $Delimiter | ForEach-Object { $ColumnMap.Add($PSItem, $PSItem) }
                                 } catch {
                                     # oh well, we tried
                                     $ColumnMap = $null
@@ -593,16 +591,12 @@ function Import-DbaCsv {
 
                         if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
-                                foreach ($key in $columnname.Keys) {
-                                    $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key])
-                                }
+                                foreach ($key in $columnname.Keys) { $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key]) }
                             }
                         }
 
                         if ($Column) {
-                            foreach ($columnname in $Column) {
-                                $null = $bulkcopy.ColumnMappings.Add($columnname, $columnname)
-                            }
+                            foreach ($columnname in $Column) { $null = $bulkcopy.ColumnMappings.Add($columnname, $columnname) }
                         }
                     } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_

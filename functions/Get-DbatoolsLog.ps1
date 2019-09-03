@@ -103,19 +103,13 @@ function Get-DbatoolsLog {
     )
     process {
         if ($Errors) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            }
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) }
         } else {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            }
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) }
         }
 
         if (Test-Bound -ParameterName LastError) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            } | Select-Object -Last 1
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
         }
 
         if (Test-Bound -ParameterName Target) {
@@ -123,11 +117,7 @@ function Get-DbatoolsLog {
         }
 
         if (Test-Bound -ParameterName Tag) {
-            $messages = $messages | Where-Object {
-                $_.Tags | Where-Object {
-                    $_ -in $Tag
-                }
-            }
+            $messages = $messages | Where-Object { $_.Tags | Where-Object { $_ -in $Tag } }
         }
 
         if (Test-Bound -ParameterName Runspace) {
@@ -139,9 +129,7 @@ function Get-DbatoolsLog {
             $start = $history[0].StartExecutionTime
             $end = $history[-1].EndExecutionTime
 
-            $messages = $messages | Where-Object {
-                ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
-            }
+            $messages = $messages | Where-Object { ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)) }
         }
 
         if (Test-Bound -ParameterName Level) {
@@ -151,16 +139,7 @@ function Get-DbatoolsLog {
         if ($Raw) {
             return $messages
         } else {
-            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
-                Name       = "Message"
-                Expression = {
-                    $msg = ($_.Message.Split("`n") -join " ")
-                    do {
-                        $msg = $msg.Replace('  ', ' ')
-                    } until ($msg -notmatch '  ')
-                    $msg
-                }
-            }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
+            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{ Name = "Message"; Expression = { $msg = ($_.Message.Split("`n") -join " "); do { $msg = $msg.Replace('  ', ' ') } until ($msg -notmatch '  '); $msg } }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
         }
     }
 }

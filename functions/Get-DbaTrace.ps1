@@ -93,7 +93,7 @@ function Get-DbaTrace {
                     $remotefile = $null
                 }
 
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName      = $server.ComputerName
                     InstanceName      = $server.ServiceName
                     SqlInstance       = $server.DomainInstanceName
@@ -119,7 +119,8 @@ function Get-DbaTrace {
                     DroppedEventCount = $row.dropped_event_count
                     Parent            = $server
                     SqlCredential     = $SqlCredential
-                } | Select-DefaultView -ExcludeProperty Parent, RemotePath, RemoStatus, SqlCredential
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty Parent, RemotePath, RemoStatus, SqlCredential
             }
         }
     }

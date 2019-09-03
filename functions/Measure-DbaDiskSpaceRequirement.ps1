@@ -98,8 +98,8 @@ function Measure-DbaDiskSpaceRequirement {
         [switch]$EnableException
     )
     begin {
-        $local:cacheMP = @{}
-        $local:cacheDP = @{}
+        $local:cacheMP = @{ }
+        $local:cacheDP = @{ }
         function Get-MountPoint {
             [CmdletBinding()]
             param(
@@ -107,8 +107,7 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$credential
             )
-            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n = 'Mountpoint'; e = {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
+            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential | Select-Object @{ n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -211,12 +210,12 @@ function Measure-DbaDiskSpaceRequirement {
         if (Test-Bound 'Database' -not) {
             Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
-        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-        $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{ n = 'Type'; e = { 'Data' } })
+        $sourceFiles += @($sourceDb.LogFiles | Select-Object Name, FileName, Size, @{ n = 'Type'; e = { 'Log' } })
 
         if ($destDb = Get-DbaDatabase -SqlInstance $destServer -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-            $destFiles += @($destDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{ n = 'Type'; e = { 'Data' } })
+            $destFiles += @($destDb.LogFiles | Select-Object Name, FileName, Size, @{ n = 'Type'; e = { 'Log' } })
             $computerName = $destDb.ComputerName
         } else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination."
@@ -227,7 +226,7 @@ function Measure-DbaDiskSpaceRequirement {
             foreach ($destFile in $destFiles) {
                 if (($found = ($sourceFile.Name -eq $destFile.Name))) {
                     # Files found on both sides
-                    [PSCustomObject]@{
+                    $outputResult = [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.ComputerName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -245,13 +244,14 @@ function Measure-DbaDiskSpaceRequirement {
                         DifferenceSize          = [DbaSize]( ($sourceFile.Size * 1000) - ($destFile.Size * 1000) )
                         MountPoint              = Get-MountPointFromPath -Path $destFile.Filename -ComputerName $computerName -Credential $Credential
                         FileLocation            = 'Source and Destination'
-                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
+                    }
+                    Select-DefaultView -InputObject $outputResult -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
                     break
                 }
             }
             if (!$found) {
                 # Files on source but not on destination
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     SourceComputerName      = $sourceServer.ComputerName
                     SourceInstance          = $sourceServer.ServiceName
                     SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -270,14 +270,15 @@ function Measure-DbaDiskSpaceRequirement {
                     MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $Destination `
                         -SqlCredential $DestinationSqlCredential -computerName $computerName -credential $Credential
                     FileLocation            = 'Only on Source'
-                } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         if ($destDb) {
             # Files on destination but not on source (strange scenario but possible)
             $destFilesNotSource = Compare-Object -ReferenceObject $destFiles -DifferenceObject $sourceFiles -Property Name -PassThru
             foreach ($destFileNotSource in $destFilesNotSource) {
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     SourceComputerName      = $sourceServer.ComputerName
                     SourceInstance          = $sourceServer.ServiceName
                     SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -295,7 +296,8 @@ function Measure-DbaDiskSpaceRequirement {
                     DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
                     MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
                     FileLocation            = 'Only on Destination'
-                } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         $DestinationDatabase = $null

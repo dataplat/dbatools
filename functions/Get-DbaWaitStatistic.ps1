@@ -885,7 +885,7 @@ function Get-DbaWaitStatistic {
                     if ($ignorable -contains $waitType) { continue }
                 }
 
-                [PSCustomObject]@{
+                $outputResult = [PSCustomObject]@{
                     ComputerName           = $server.ComputerName
                     InstanceName           = $server.ServiceName
                     SqlInstance            = $server.DomainInstanceName
@@ -902,7 +902,8 @@ function Get-DbaWaitStatistic {
                     Ignorable              = ($ignorable -contains $waitType)
                     URL                    = $row.URL
                     Notes                  = ($details).$waitType
-                } | Select-DefaultView -ExcludeProperty $excludeColumns
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty $excludeColumns
             }
         }
     }

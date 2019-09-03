@@ -128,7 +128,7 @@ function Get-DbaBackupInformation {
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', '')] #Until PSSA addresses PSScriptAnalyzer/issue 1319
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', "", Justification = "Until PSSA addresses PSScriptAnalyzer/issue 1319")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,

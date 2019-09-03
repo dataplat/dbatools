@@ -58,7 +58,7 @@ function Get-DbaAgentSchedule {
 
         Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', '')] #Until PSSA addresses PSScriptAnalyzer/issue 1319
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseConsistentWhitespace', "", Justification = "Until PSSA addresses PSScriptAnalyzer/issue 1319")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

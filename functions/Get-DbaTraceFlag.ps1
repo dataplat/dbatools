@@ -83,7 +83,7 @@ function Get-DbaTraceFlag {
             }
 
             foreach ($tflag in $tflags) {
-                [pscustomobject]@{
+                $outputResult = [pscustomobject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
@@ -91,7 +91,8 @@ function Get-DbaTraceFlag {
                     Global       = $tflag.Global
                     Session      = $tflag.Session
                     Status       = $tflag.Status
-                } | Select-DefaultView -ExcludeProperty 'Session'
+                }
+                Select-DefaultView -InputObject $outputResult -ExcludeProperty 'Session'
             }
         }
     }

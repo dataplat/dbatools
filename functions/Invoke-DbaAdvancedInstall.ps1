@@ -48,8 +48,7 @@ function Invoke-DbaAdvancedInstall {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER PerformVolumeMaintenanceTasks
@@ -92,15 +91,15 @@ function Invoke-DbaAdvancedInstall {
         [string]$SaveConfiguration,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
-        [pscredential]$Credential,
-        [pscredential]$SaCredential,
+        [PSCredential]$Credential,
+        [PSCredential]$SaCredential,
         [switch]$EnableException
     )
     Function Get-SqlInstallSummary {
         # Reads Summary.txt from the SQL Server Installation Log folder
         Param (
             [DbaInstanceParameter]$ComputerName,
-            [pscredential]$Credential,
+            [PSCredential]$Credential,
             [parameter(Mandatory)]
             [version]$Version
         )
@@ -308,6 +307,6 @@ function Invoke-DbaAdvancedInstall {
             $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
         }
     }
-    $output  | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
+    $output | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
     Write-Progress -Activity $activity -Completed
 }

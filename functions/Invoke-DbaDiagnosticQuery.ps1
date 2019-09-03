@@ -35,7 +35,7 @@ function Invoke-DbaDiagnosticQuery {
         The Queries to exclude
 
     .PARAMETER UseSelectionHelper
-        Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
+        Provides a grid view with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
 
     .PARAMETER QueryName
         Only run specific query
@@ -67,12 +67,10 @@ function Invoke-DbaDiagnosticQuery {
         Shows what would happen if the command would execute, but does not actually perform the command
 
     .PARAMETER OutputPath
-        Directory to parsed diagnostict queries to. This will split them based on server, databasename, and query.
+        Directory to parsed diagnostics queries to. This will split them based on server, database name, and query.
 
     .PARAMETER ExportQueries
-        Use this switch to export the diagnostic queries to sql files. I
-        nstead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
-        These sql files will then be created in the OutputDirectory
+        Use this switch to export the diagnostic queries to sql files. Instead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version. These sql files will then be created in the OutputDirectory
 
     .NOTES
         Tags: Database, DMV
@@ -93,7 +91,7 @@ function Invoke-DbaDiagnosticQuery {
     .EXAMPLE
         PS C:\>Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
 
-        Provides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
+        Provides a grid view with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
         Then it will export the results to Export-DbaDiagnosticQuery.
 
     .EXAMPLE
@@ -112,7 +110,7 @@ function Invoke-DbaDiagnosticQuery {
         Export Database Specific Queries For One Target Database
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -QueryName 'Database-scoped Configurations'
 
         Export Database Specific Queries For One Target Database and One Specific Query
 
@@ -122,30 +120,26 @@ function Invoke-DbaDiagnosticQuery {
         Choose Queries To Export
 
     .EXAMPLE
-        PS C:\> [PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif
+        PS C:\> [PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -WhatIf
 
         Parse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further
 
     .EXAMPLE
-        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename TestStuff
+        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -DatabaseName TestStuff
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
 
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
-    [outputtype([pscustomobject[]])]
+    [OutputType([pscustomobject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [Alias('DatabaseName')]
         [object[]]$Database,
-
         [object[]]$ExcludeDatabase,
-
         [object[]]$ExcludeQuery,
-
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [System.IO.FileInfo]$Path,
@@ -156,11 +150,8 @@ function Invoke-DbaDiagnosticQuery {
         [Switch]$ExcludeQueryTextColumn,
         [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing,
-
         [string]$OutputPath,
         [switch]$ExportQueries,
-
-        [switch]
         [switch]$EnableException
     )
 
@@ -226,7 +217,7 @@ function Invoke-DbaDiagnosticQuery {
         foreach ($instance in $SqlInstance) {
             $counter = 0
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -287,8 +278,8 @@ function Invoke-DbaDiagnosticQuery {
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
-                $countDBSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).Count
-                $countInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).Count
+                $countDBSpecific = @($parsedscript | Where-Object { $_.QueryName -in $QueryName -and $_.DBSpecific -eq $true }).Count
+                $countInstanceSpecific = @($parsedscript | Where-Object { $_.QueryName -in $QueryName -and $_.DBSpecific -eq $false }).Count
             } else {
                 #if narrowing queries to database specific, calculate total to process based on instance queries count + (db specific count * databases to run each against)
                 $countDBSpecific = @($parsedscript | Where-Object DBSpecific).Count
@@ -296,13 +287,13 @@ function Invoke-DbaDiagnosticQuery {
 
             }
             if (!$instanceonly -and !$DatabaseSpecific -and !$QueryName) {
-                $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
+                $scriptcount = $countInstanceSpecific + ( $countDBSpecific * $CountOfDatabases )
             } elseif ($instanceOnly) {
                 $scriptcount = $countInstanceSpecific
             } elseif ($DatabaseSpecific) {
                 $scriptcount = $countDBSpecific * $CountOfDatabases
             } elseif ($QueryName.Count -ne 0) {
-                $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
+                $scriptcount = $countInstanceSpecific + ( $countDBSpecific * $CountOfDatabases )
 
 
             }
@@ -317,7 +308,7 @@ function Invoke-DbaDiagnosticQuery {
                         $FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
                         $FullName = Join-Path $OutputPath $FileName
                         Write-Message -Level Verbose -Message  "Creating file: $FullName"
-                        $scriptPart.Text | out-file -FilePath $FullName -Encoding UTF8 -force
+                        $scriptPart.Text | Out-File -FilePath $FullName -Encoding UTF8 -force
                         continue
                     }
 
@@ -391,7 +382,7 @@ function Invoke-DbaDiagnosticQuery {
                             $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentDb, $Scriptpart.QueryName)
                             $FullName = Join-Path $OutputPath $FileName
                             Write-Message -Level Verbose -Message  "Creating file: $FullName"
-                            $scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
+                            $scriptPart.Text | Out-File -FilePath $FullName -encoding UTF8 -force
                             continue
                         }
 

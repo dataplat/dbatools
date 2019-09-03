@@ -44,7 +44,7 @@ function Invoke-DbaQuery {
         If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
     .PARAMETER MessagesToOutput
-        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
+        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the result set too. See examples for detail
 
     .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
@@ -105,11 +105,11 @@ function Invoke-DbaQuery {
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$Database,
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
-        [Int32]$QueryTimeout = 600,
+        [int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]
         [Alias("InputFile")]
         [object[]]$File,
@@ -283,7 +283,7 @@ function Invoke-DbaQuery {
             try {
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
@@ -316,7 +316,7 @@ function Invoke-DbaQuery {
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile

@@ -366,9 +366,9 @@ function Install-DbaMaintenanceSolution {
                     Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
-                        $jobs | ForEach-Object {
-                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name
+                        foreach ($job in $jobs) {
+                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $job.name")) {
+                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $job.name
                             }
                         }
                     }
@@ -385,9 +385,7 @@ function Install-DbaMaintenanceSolution {
                             Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
                             $sql = $fileContents[$file]
                             try {
-                                foreach ($query in ($sql -Split "\nGO\b")) {
-                                    $null = $db.Query($query)
-                                }
+                                foreach ($query in ($sql -Split "\nGO\b")) { $null = $db.Query($query) }
                             } catch {
                                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                             }
