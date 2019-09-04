@@ -12518,14 +12518,14 @@ function Export-DbaInstance {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $stepCounter = $filecounter = 0
+            $stepCounter = $fileCounter = 0
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow"
+            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
 
             if (-not (Test-Path $Path)) {
                 try {
@@ -12769,7 +12769,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
-                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -Append:$Append
+                $null = Export-DbaSysDbUserObject -SqlInstance $server -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-userobjectsinsysdbs.sql"
                 if (-not (Test-Path "$Path\$fileCounter-userobjectsinsysdbs.sql")) {
                     $fileCounter--
@@ -12791,11 +12791,11 @@ function Export-DbaInstance {
         }
     }
     end {
-        $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+        $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server export complete."
         Write-Message -Level Verbose -Message "Export started: $started"
         Write-Message -Level Verbose -Message "Export completed: $(Get-Date)"
-        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
+        Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
     }
 }
 
@@ -13965,6 +13965,106 @@ function Export-DbaSpConfigure {
         Write-Message -Level Verbose -Message "Server configuration export finished"
     }
 }
+
+#.ExternalHelp dbatools-Help.xml
+function Export-DbaSysDbUserObject {
+    
+
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$IncludeDependencies = $false,
+        [string]$BatchSeparator = 'GO',
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
+        [switch]$NoPrefix,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [switch]$NoClobber,
+        [switch]$PassThru,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
+                    Stop-Function -Message "Not a sysadmin on $instance. Quitting."
+                    return
+                }
+                $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $SessionObject.Instance
+
+                $systemDbs = "master", "model", "msdb"
+
+                foreach ($systemDb in $systemDbs) {
+                    $smoDb = $server.databases[$systemDb]
+                    $userObjects = @()
+                    $userObjects += $smoDb.Tables | Where-Object IsSystemObject -ne $true | Select-Object Name, @{l = 'SchemaName'; e = { $_.Schema } } , @{l = 'Type'; e = { 'TABLE' } }, @{l = 'Database'; e = { $systemDb } }
+                    $userObjects += $smoDb.Triggers | Where-Object IsSystemObject -ne $true | Select-Object Name, @{l = 'SchemaName'; e = { $null } } , @{l = 'Type'; e = { 'SQL_TRIGGER' } }, @{l = 'Database'; e = { $systemDb } }
+                    $params = @{
+                        SqlInstance          = $server
+                        Database             = $systemDb
+                        ExcludeSystemObjects = $true
+                        Type                 = 'View', 'TableValuedFunction', 'DefaultConstraint', 'StoredProcedure', 'Rule', 'InlineTableValuedFunction', 'ScalarFunction'
+                    }
+                    $userObjects += Get-DbaModule @params | Sort-Object Type | Select-Object Name, SchemaName, Type, Database
+
+                    if ($userObjects) {
+                        $results = @()
+                        foreach ($userObject in $userObjects) {
+                            $smObject = switch ($userObject.Type) {
+                                "TABLE" { $smoDb.Tables.Item($userObject.Name, $userObject.SchemaName) }
+                                "VIEW" { $smoDb.Views.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_STORED_PROCEDURE" { $smoDb.StoredProcedures.Item($userObject.Name, $userObject.SchemaName) }
+                                "RULE" { $smoDb.Rules.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_TRIGGER" { $smoDb.Triggers.Item($userObject.Name) }
+                                "SQL_TABLE_VALUED_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_SCALAR_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                            }
+                            $results += $smObject
+                        }
+
+                        if ((Test-Path -Path $scriptPath) -and $NoClobber) {
+                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
+                        }
+                        if (!(Test-Bound -ParameterName ScriptingOption)) {
+                            $ScriptingOptionsObject = New-DbaScriptingOption
+                            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+                            $ScriptingOptionsObject.ScriptBatchTerminator = $true
+                            $ScriptingOptionsObject.AnsiFile = $true
+                            if ($IncludeDependencies) {
+                                $ScriptingOptionsObject.WithDependencies = $true
+                            }
+                        }
+
+                        $export = @{
+                            NoPrefix         = $NoPrefix
+                            ScriptingOptions = $ScriptingOptionsObject
+                            BatchSeparator   = $BatchSeparator
+                        }
+
+                        if ($PassThru) {
+                            $results | Export-DbaScript @export -PassThru
+                        } elseif ($Path -Or $FilePath) {
+                            $results | Export-DbaScript @export -FilePath $scriptPath -Append -NoClobber:$NoClobber
+                        }
+                    }
+                }
+            } catch {
+                Stop-Function -Message ("Exporting system objects failed on '{0}'" -f $server.Name)
+            }
+        }
+    }
+}
+
 
 #.ExternalHelp dbatools-Help.xml
 function Export-DbatoolsConfig {
@@ -20118,8 +20218,8 @@ function Get-DbaCmObject {
                                 20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -20129,7 +20229,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -20229,9 +20329,9 @@ function Get-DbaCmObject {
                                 #region 20 = Namespace not empty
                                 20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
-
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -20241,7 +20341,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -74495,112 +74595,6 @@ function Get-DbaServiceErrorMessage {
         else { Return "Unknown error." }
     } else {
         $returnCodes
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbaSysDbUserObjectScript {
-    
-    [CmdletBinding()]
-    param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [switch]$EnableException
-    )
-    begin {
-        function get-sqltypename ($type) {
-            switch ($type) {
-                "VIEW" { "view" }
-                "SQL_TABLE_VALUED_FUNCTION" { "User table valued fsunction" }
-                "DEFAULT_CONSTRAINT" { "User default constraint" }
-                "SQL_STORED_PROCEDURE" { "User stored procedure" }
-                "RULE" { "User rule" }
-                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "User inline table valued function" }
-                "SQL_TRIGGER" { "User server trigger" }
-                "SQL_SCALAR_FUNCTION" { "User scalar function" }
-                default { $type }
-            }
-        }
-    }
-    process {
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
-
-        if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $source. Quitting."
-            return
-        }
-
-        $systemDbs = "master", "model", "msdb"
-
-        foreach ($systemDb in $systemDbs) {
-            $smodb = $server.databases[$systemDb]
-            $destdb = $server.databases[$systemDb]
-            Write-Output "USE $systemDb"
-            Write-Output "GO"
-            $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
-            $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
-            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-            $null = $transfer.CopyAllObjects = $false
-            $null = $transfer.Options.WithDependencies = $true
-            $null = $transfer.ObjectList.Add($schema)
-            $null = $transfer.Options.ScriptBatchTerminator = $true
-            try { $transfer.ScriptTransfer() }
-            catch { }
-            Write-Output "GO"
-
-            foreach ($table in $tables) {
-                Write-Output "GO"
-                $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                $null = $transfer.CopyAllObjects = $false
-                $null = $transfer.Options.WithDependencies = $true
-                $null = $transfer.Options.ScriptBatchTerminator = $true
-                $null = $transfer.ObjectList.Add($table)
-                try { $transfer.ScriptTransfer() } catch {}
-            }
-
-            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -ExcludeSystemObjects | Sort-Object Type
-            Write-Message -Level Verbose -Message "Copying from $systemDb"
-            foreach ($userobject in $userobjects) {
-                Write-Output "GO"
-                $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
-                $db = $userobject.Database
-                $type = get-sqltypename $userobject.Type
-                $userobject.Definition
-                $schema = $userobject.SchemaName
-                $result = Get-DbaModule -SqlInstance $server -ExcludeSystemObjects -Database $db |
-                    Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
-                $smobject = switch ($userobject.Type) {
-                    "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
-                    "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                    "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                    "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                }
-
-                $smobject = switch ($userobject.Type) {
-                    "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
-                    "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
-                }
-                if ($smobject) {
-                    $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                    $null = $transfer.CopyAllObjects = $false
-                    $null = $transfer.Options.WithDependencies = $true
-                    $null = $transfer.ObjectList.Add($smobject)
-                    $null = $transfer.Options.ScriptBatchTerminator = $true
-                    try { $transfer.ScriptTransfer() } catch {}
-                }
-            }
-        }
     }
 }
 
