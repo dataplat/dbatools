@@ -102,7 +102,7 @@ function Repair-DbaDbOrphanUser {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
@@ -127,13 +127,6 @@ function Repair-DbaDbOrphanUser {
             if ($DatabaseCollection.Count -gt 0) {
                 foreach ($db in $DatabaseCollection) {
                     try {
-                        #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-                        if ($server.versionMajor -gt 10) {
-                            if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
-                                Write-Message -Level Warning -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
-                                Continue
-                            }
-                        }
 
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
 
@@ -156,70 +149,70 @@ function Repair-DbaDbOrphanUser {
                                     $_.Name -eq $User.Name
                                 }
 
-                                if ($ExistLogin) {
-                                    if ($server.versionMajor -gt 8) {
-                                        $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
-                                    } else {
-                                        $query = "exec sp_change_users_login 'update_one', '$User'"
-                                    }
-
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
-                                        $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                        Write-Message -Level Verbose -Message "User '$($User.Name)' mapped with their login."
-
-                                        [PSCustomObject]@{
-                                            ComputerName = $server.ComputerName
-                                            InstanceName = $server.ServiceName
-                                            SqlInstance  = $server.DomainInstanceName
-                                            DatabaseName = $db.Name
-                                            User         = $User.Name
-                                            Status       = "Success"
-                                        }
-                                    }
+                            if ($ExistLogin) {
+                                if ($server.versionMajor -gt 8) {
+                                    $query = "ALTER USER " + $User + " WITH LOGIN = " + $User
                                 } else {
-                                    if ($RemoveNotExisting) {
-                                        #add user to collection
-                                        $UsersToRemove += $User
-                                    } else {
-                                        Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
-                                        [PSCustomObject]@{
-                                            ComputerName = $server.ComputerName
-                                            InstanceName = $server.ServiceName
-                                            SqlInstance  = $server.DomainInstanceName
-                                            DatabaseName = $db.Name
-                                            User         = $User.Name
-                                            Status       = "No matching login"
-                                        }
+                                    $query = "exec sp_change_users_login 'update_one', '$User'"
+                                }
+
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
+                                    $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                    Write-Message -Level Verbose -Message "User '$($User.Name)' mapped with their login."
+
+                                    [PSCustomObject]@{
+                                        ComputerName = $server.ComputerName
+                                        InstanceName = $server.ServiceName
+                                        SqlInstance  = $server.DomainInstanceName
+                                        DatabaseName = $db.Name
+                                        User         = $User.Name
+                                        Status       = "Success"
+                                    }
+                                }
+                            } else {
+                                if ($RemoveNotExisting) {
+                                    #add user to collection
+                                    $UsersToRemove += $User
+                                } else {
+                                    Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
+                                    [PSCustomObject]@{
+                                        ComputerName = $server.ComputerName
+                                        InstanceName = $server.ServiceName
+                                        SqlInstance  = $server.DomainInstanceName
+                                        DatabaseName = $db.Name
+                                        User         = $User.Name
+                                        Status       = "No matching login"
                                     }
                                 }
                             }
-
-                            #With the collection complete invoke remove.
-                            if ($RemoveNotExisting) {
-                                if ($Force) {
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
-                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser' with -Force."
-                                        Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
-                                    }
-                                } else {
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
-                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser'."
-                                        Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
-                                    }
-                                }
-                            }
-                        } else {
-                            Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                         }
-                        #reset collection
-                        $UsersToWork = $null
-                    } catch {
-                        Stop-Function -Message $_ -Continue
+
+                        #With the collection complete invoke remove.
+                        if ($RemoveNotExisting) {
+                            if ($Force) {
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
+                                    Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser' with -Force."
+                                    Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
+                                }
+                            } else {
+                                if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaDbOrphanUser")) {
+                                    Write-Message -Level Verbose -Message "Calling 'Remove-DbaDbOrphanUser'."
+                                    Remove-DbaDbOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
+                                }
+                            }
+                        }
+                    } else {
+                        Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                     }
+                    #reset collection
+                    $UsersToWork = $null
+                } catch {
+                    Stop-Function -Message $_ -Continue
                 }
-            } else {
-                Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
+        } else {
+            Write-Message -Level Verbose -Message "There are no databases to analyse."
         }
     }
+}
 }
