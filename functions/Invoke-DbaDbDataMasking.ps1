@@ -416,12 +416,32 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                $newValue = ($newValue -join '')
+                                            } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $valueString = ($row.$($columnobject.Name)).ToString()
+
+                                                $commaIndex = $valueString.IndexOf(",")
+                                                $dotIndex = $valueString.IndexOf(".")
+
+                                                $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+
+                                                if ($commaIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($commaIndex, ',')
+                                                }
+
+                                                if ($dotIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($dotIndex, '.')
+                                                }
+                                            }
+                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
 
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
@@ -436,7 +456,7 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
-                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
                                     $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -513,6 +533,7 @@ function Invoke-DbaDbDataMasking {
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
+                            $stringbuilder.ToString()
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
@@ -530,7 +551,7 @@ function Invoke-DbaDbDataMasking {
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
-                                    } elseif ($columnComposite.Type -eq 'Random') {
+                                    } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
 
@@ -564,10 +585,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $compositeItems = $compositeItems | ForEach-Object {
-                                    $_ = "ISNULL($($_), '')"
-                                    $_
-                                }
+                                $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
                                 $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
                             }
@@ -576,9 +594,9 @@ function Invoke-DbaDbDataMasking {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
+                                $stringbuilder.ToString()
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                $updatequery
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
