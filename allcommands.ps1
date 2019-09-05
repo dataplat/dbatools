@@ -31980,6 +31980,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
     )
@@ -32036,6 +32037,10 @@ function Get-DbaRandomizedValue {
         if ($RandomizerSubType) {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
+            }
+
+            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
             }
         }
 
@@ -32366,6 +32371,8 @@ function Get-DbaRandomizedValue {
                         $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
+                    } elseif ($randSubType -eq 'shuffle') {
+                        $script:faker.Random.Shuffle($Value)
                     } else {
                         $script:faker.Random.$RandomizerSubType()
                     }
@@ -42060,12 +42067,32 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                $newValue = ($newValue -join '')
+                                            } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $valueString = ($row.$($columnobject.Name)).ToString()
+
+                                                $commaIndex = $valueString.IndexOf(",")
+                                                $dotIndex = $valueString.IndexOf(".")
+
+                                                $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+
+                                                if ($commaIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($commaIndex, ',')
+                                                }
+
+                                                if ($dotIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($dotIndex, '.')
+                                                }
+                                            }
+                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
 
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
@@ -42080,7 +42107,7 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
-                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
                                     $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -42157,6 +42184,7 @@ function Invoke-DbaDbDataMasking {
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
+                            $stringbuilder.ToString()
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
@@ -42174,7 +42202,7 @@ function Invoke-DbaDbDataMasking {
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
-                                    } elseif ($columnComposite.Type -eq 'Random') {
+                                    } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
 
@@ -42208,10 +42236,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $compositeItems = $compositeItems | ForEach-Object {
-                                    $_ = "ISNULL($($_), '')"
-                                    $_
-                                }
+                                $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
                                 $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
                             }
@@ -42220,9 +42245,9 @@ function Invoke-DbaDbDataMasking {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
+                                $stringbuilder.ToString()
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                $updatequery
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
@@ -51233,7 +51258,7 @@ function New-DbaDbMaskingConfig {
                             $maxValue = $null
                         }
                         "decimal" {
-                            $min = 1.1
+                            $minValue = 1.1
                             $maxValue = $null
                         }
                         "float" {
@@ -51273,12 +51298,12 @@ function New-DbaDbMaskingConfig {
                             if ($columnLength -eq 1) {
                                 $maxValue = $columnLength
                             } else {
-                                $min = [int]($columnLength / 2)
+                                $minValue = [int]($columnLength / 2)
                                 $maxValue = $columnLength
                             }
                         }
                         default {
-                            $min = [int]($columnLength / 2)
+                            $minValue = [int]($columnLength / 2)
                             $maxValue = $columnLength
                         }
                     }
@@ -51288,7 +51313,7 @@ function New-DbaDbMaskingConfig {
                     } else {
 
                         if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                            $min = 2
+                            $minValue = 2
                         }
 
                         if ($columnobject.DataType.Name -eq "geography") {

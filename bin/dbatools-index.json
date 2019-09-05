@@ -19552,6 +19552,14 @@
                            ""
                        ],
                        [
+                           "Value",
+                           "This is the value that needs to be used for several possible transformations.\r\nOne example is the subtype \"Shuffling\" where the value will be shuffled.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Locale",
                            "Set the local to enable certain settings in the masking. The default is \u0027en\u0027",
                            "",
@@ -19568,7 +19576,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cObject\u003e] [[-Max] \u003cObject\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cObject\u003e] [[-Max] \u003cObject\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Value] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaRegistryRoot",
