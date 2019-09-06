@@ -369,7 +369,6 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
-                                    #} elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
                                 } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                     $newValue = $dictionary.Item($row.$($columnobject.Name))
                                 } else {
@@ -482,9 +481,6 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = ($newValue).Tostring().Replace("'", "''")
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
-
-                                ($row.$($columnobject.Name) -in $dictionary.Keys)
-                                "PersonID: $($row.PersonID) - Orig: $($row.$($columnobject.Name)) - New Value: $newValue"
 
                                 if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
@@ -622,8 +618,6 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
-
-                    $dictionary.Keys
 
                     # Empty the unique values array
                     $uniqueValues = $null
