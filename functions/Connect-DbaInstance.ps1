@@ -141,6 +141,9 @@ function Connect-DbaInstance {
     .PARAMETER Store
         Store where the Azure MSI certificate is stored
 
+    .PARAMETER DisableDefaultInit
+        Use this option for servers with 8000+ databses (other performance impacts may occur)
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -300,6 +303,7 @@ function Connect-DbaInstance {
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
         [ValidateSet('CurrentUser', 'LocalMachine')]
         [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
+        [switch]$DisableDefaultInit,
         [switch]$DisableException
     )
     begin {
@@ -775,7 +779,7 @@ function Connect-DbaInstance {
             # By default, SMO initializes several properties. We push it to the limit and gather a bit more
             # this slows down the connect a smidge but drastically improves overall performance
             # especially when dealing with a multitude of servers
-            if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
+            if ($loadedSmoVersion -ge 11 -and -not $isAzure -and -not $DisableDefaultInit) {
                 try {
                     if ($server.VersionMajor -eq 8) {
                         # 2000
