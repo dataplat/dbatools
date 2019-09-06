@@ -529,6 +529,7 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
+                            $stringbuilder.ToString()
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
@@ -550,7 +551,7 @@ function Invoke-DbaDbDataMasking {
 
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
-                                        $compositeItems += $columnComposite.Value
+                                        $compositeItems += "[$($columnComposite.Value)]"
                                     } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
@@ -587,7 +588,7 @@ function Invoke-DbaDbDataMasking {
 
                                 $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
-                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
+                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
                             }
 
                             try {
