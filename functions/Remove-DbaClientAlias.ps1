@@ -69,7 +69,7 @@ function Remove-DbaClientAlias {
                 $fullKey = "$basekey\Client\ConnectTo"
                 if ((Test-Path $fullKey) -eq $false) {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Warning "Registry key ($fullKey) does not exist. Quitting."
+                    Write-Warning "Registry key ($fullKey) does not exist on $env:COMPUTERNAME"
                     continue
                 }
 
@@ -84,10 +84,9 @@ function Remove-DbaClientAlias {
                     $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
                     foreach ($a in $Alias) {
                         if ($entry.Property -contains $a) {
-                            Remove-ItemProperty -Path $e -Name $a
-
+                            $null = Remove-ItemProperty -Path $e -Name $a
                             [PSCustomObject]@{
-                                ComputerName = $computer
+                                ComputerName = $env:COMPUTERNAME
                                 Architecture = $architecture
                                 Alias        = $a
                                 Status       = "Removed"

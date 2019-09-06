@@ -22,7 +22,11 @@ function Invoke-DbaAdvancedRestore {
         The SqlInstance to which the backups should be restored
 
     .PARAMETER SqlCredential
-        SqlCredential to be used to connect to the target SqlInstance
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER OutputScriptOnly
         If set, the restore will not be performed, but the T-SQL scripts to perform it will be returned

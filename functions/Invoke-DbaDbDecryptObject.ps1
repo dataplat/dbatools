@@ -25,7 +25,11 @@ function Invoke-DbaDbDecryptObject {
         The target SQL Server instance
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Database to look through for the object.
@@ -314,7 +318,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Add the results to the custom object
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
+                            ComputerName = $instance.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.Name
@@ -324,20 +328,12 @@ function Invoke-DbaDbDecryptObject {
                             FullName     = "$($object.Schema).$($object.Name)"
                             Script       = $result
                         }
-
-                    } # end if secret
-
-                } # end for each object
-
-            } # end for each database
-
-        } # end for each instance
-
-    } # process
-
+                    }
+                }
+            }
+        }
+    }
     end {
-        if (Test-FunctionInterrupt) { return }
-
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
 }

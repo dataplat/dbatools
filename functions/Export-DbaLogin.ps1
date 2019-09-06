@@ -10,7 +10,11 @@ function Export-DbaLogin {
         The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
@@ -27,7 +31,7 @@ function Export-DbaLogin {
     .PARAMETER ExcludeJobs
         If this switch is enabled, Agent job ownership will not be exported.
 
-    .PARAMETER ExcludeDatabases
+    .PARAMETER ExcludeDatabase
         If this switch is enabled, mappings for databases will not be exported.
 
     .PARAMETER ExcludePassword
@@ -35,7 +39,7 @@ function Export-DbaLogin {
 
    .PARAMETER DefaultDatabase
         If this switch is enabled, all logins will be scripted with specified default database,
-        that could help to successfuly import logins on server that is missing default database for login.
+        that could help to successfully import logins on server that is missing default database for login.
 
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
@@ -155,7 +159,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [object[]]$Database,
         [switch]$ExcludeJobs,
-        [switch]$ExcludeDatabases,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
         [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -222,12 +227,12 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($ExcludeDatabases -eq $false -or $Database) {
+            if ($ExcludeDatabase -eq $false -or $Database) {
                 # if we got a database or a list of databases passed
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
                 # if we get a list of databases passed (or even the default list of all the databases)
-                # we save outself a call to enumloginmappings if there is no map at all
+                # we save ourself a call to enumloginmappings if there is no map at all
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
@@ -432,8 +437,8 @@ function Export-DbaLogin {
                     }
                 }
 
-                if ($ExcludeDatabases -eq $false) {
-                    $dbs = $sourceLogin.EnumDatabaseMappings()
+                if ($ExcludeDatabase -eq $false) {
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
                         if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {

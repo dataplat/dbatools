@@ -21,7 +21,11 @@ function Invoke-DbaDbDataMasking {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Databases to process through
@@ -129,9 +133,9 @@ function Invoke-DbaDbDataMasking {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
@@ -365,6 +369,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
+                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
+                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
@@ -410,12 +416,32 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                $newValue = ($newValue -join '')
+                                            } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $valueString = ($row.$($columnobject.Name)).ToString()
+
+                                                $commaIndex = $valueString.IndexOf(",")
+                                                $dotIndex = $valueString.IndexOf(".")
+
+                                                $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+
+                                                if ($commaIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($commaIndex, ',')
+                                                }
+
+                                                if ($dotIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($dotIndex, '.')
+                                                }
+                                            }
+                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
 
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
@@ -430,7 +456,7 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
-                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
                                     $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -503,14 +529,14 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
+                            $stringbuilder.ToString()
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
 
                         $stringbuilder = [System.Text.StringBuilder]''
@@ -525,7 +551,7 @@ function Invoke-DbaDbDataMasking {
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
-                                    } elseif ($columnComposite.Type -eq 'Random') {
+                                    } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
 
@@ -559,10 +585,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $compositeItems = $compositeItems | ForEach-Object {
-                                    $_ = "ISNULL($($_), '')"
-                                    $_
-                                }
+                                $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
                                 $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
                             }
@@ -571,9 +594,10 @@ function Invoke-DbaDbDataMasking {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
+                                $stringbuilder.ToString()
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
@@ -591,7 +615,7 @@ function Invoke-DbaDbDataMasking {
                                 Status       = "Masked"
                             }
                         } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
 

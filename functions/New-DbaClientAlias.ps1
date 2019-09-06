@@ -87,10 +87,6 @@ function New-DbaClientAlias {
             foreach ($basekey in $basekeys) {
                 if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
 
-                if ((Test-Path $basekey) -eq $false) {
-                    throw "Base key ($basekey) does not exist. Quitting."
-                }
-
                 $client = "$basekey\Client"
 
                 if ((Test-Path $client) -eq $false) {
@@ -139,8 +135,8 @@ function New-DbaClientAlias {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
-        }
 
-        Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+            Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+        }
     }
 }

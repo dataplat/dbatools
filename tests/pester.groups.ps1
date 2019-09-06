@@ -61,8 +61,9 @@ $TestsRunGroups = @{
         'Test-DbaMaxDop',
         'New-DbaLogin',
         'New-DbaDbUser',
+        'Get-DbaLastGoodCheckDb',
         # doesn't work on appveyor but so works locally D:
-        'Read-DbaXeFile'
+        'Read-DbaXeFile',
         'Find-DbaCommand'
     )
     # do not run everywhere

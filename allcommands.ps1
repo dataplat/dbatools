@@ -928,6 +928,117 @@ function Add-DbaRegServerGroup {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Add-DbaServerRoleMember {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param (
+        [parameter(ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipeline)]
+        [string[]]$ServerRole,
+        [string[]]$Login,
+        [string[]]$Role,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [switch]$EnableException
+    )
+
+    begin {
+        if ( (Test-Bound SqlInstance -Not) -and (Test-Bound ServerRole -Not) -and (Test-Bound Login -Not) ) {
+            Stop-Function -Message "You must pipe in a ServerRole, Login, or specify a SqlInstance"
+            return
+        }
+
+        if (Test-Bound SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+
+            if ((Test-Bound ServerRole -Not ) -and ($inputType -ne 'Microsoft.SqlServer.Management.Smo.ServerRole')) {
+                Stop-Function -Message "You must pipe in a ServerRole or specify a ServerRole."
+                return
+            }
+
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    try {
+                        $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    try {
+                        $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                'Microsoft.SqlServer.Management.Smo.ServerRole' {
+                    Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
+                    try {
+                        $serverRoles = $inputObject
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input -Continue
+                    }
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or role."
+                    continue
+                }
+            }
+
+            foreach ($sr in $serverRoles) {
+                $instance = $sr.Parent
+                foreach ($l in $Login) {
+                    if ( $sr.EnumMemberNames().Contains($l.Name) ) {
+                        Write-Message -Level Warning -Message "Login $l is already a member in server-level role: $sr"
+                        continue
+                    } else {
+                        if ($PSCmdlet.ShouldProcess($instance, "Adding login $l to server-level role: $sr")) {
+                            Write-Message -Level Verbose -Message "Adding login $l to server-level role: $sr on $instance"
+                            try {
+                                $sr.AddMember($l)
+                            } catch {
+                                Stop-Function -Message "Failure adding $l on $instance" -ErrorRecord $_ -Target $sr
+                            }
+                        }
+                    }
+                }
+                foreach ($r in $Role) {
+                    try {
+                        $isServerRole = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $r -EnableException
+                    } catch {
+                        Stop-Function -Message "Failure access $input" -ErrorRecord $_ -Target $input
+                        continue
+                    }
+                    if (-not $isServerRole) {
+                        Write-Message -Level Warning -Message "$r server-level role was not found on $instance"
+                        continue
+                    }
+                    if ($PSCmdlet.ShouldProcess($instance, "Adding role $r to server-level role: $sr")) {
+                        Write-Message -Level Verbose -Message "Adding role $r to server-level role: $sr on $instance"
+                        try {
+                            $sr.AddMembershipToRole($r)
+                        } catch {
+                            Stop-Function -Message "Failure adding $r on $instance" -ErrorRecord $_ -Target $sr
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Backup-DbaDatabase {
     
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
@@ -2079,8 +2190,6 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
-                    $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     if (-not $SqlCredential) {
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
@@ -2092,13 +2201,23 @@ function Connect-DbaInstance {
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
-                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    try {
+                        $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    } catch {
+                        Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
+                        continue
+                    }
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
                     }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
+                    # assign it twice, not sure why but hey it works better
+                    if ($accesstoken) {
+                        $serverconn.AccessToken = $accesstoken
+                    }
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
@@ -2106,6 +2225,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
                     
                     $server
@@ -2176,6 +2296,7 @@ function Connect-DbaInstance {
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                         Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                         Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                        Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -2419,6 +2540,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                 }
             }
 
@@ -3392,6 +3514,8 @@ function Copy-DbaAgentJob {
                             $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
                         }
 
+                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), [Regex]::Escape("@server=N'$($destServer.DomainInstanceName)'")
+
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
 
@@ -4103,6 +4227,7 @@ function Copy-DbaAgentServer {
         [PSCredential]$DestinationSqlCredential,
         [Switch]$DisableJobsOnDestination,
         [Switch]$DisableJobsOnSource,
+        [switch]$ExcludeServerProperties,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -4172,25 +4297,32 @@ function Copy-DbaAgentServer {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
-                    $sql = $sourceAgent.Script() | Out-String
-                    $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
-                    $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
-                    $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
-                    Write-Message -Level Debug -Message $sql
-                    $null = $destServer.Query($sql)
+            if ($ExcludeServerProperties) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping property copy")) {
+                    $copyAgentPropStatus.Status = "Skipped"
+                    $copyAgentPropStatus.Notes = $null
+                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
+            } else {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
+                        $sql = $sourceAgent.Script() | Out-String
+                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
+                        $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
+                        Write-Message -Level Debug -Message $sql
+                        $null = $destServer.Query($sql)
 
-                    $copyAgentPropStatus.Status = "Successful"
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                } catch {
-                    $message = $_.Exception.InnerException.InnerException.InnerException.Message
-                    if (-not $message) { $message = $_.Exception.Message }
-                    $copyAgentPropStatus.Status = "Failed"
-                    $copyAgentPropStatus.Notes = $message
-                    $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message $message -Target $destinstance
+                        $copyAgentPropStatus.Status = "Successful"
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $message = $_.Exception.InnerException.InnerException.InnerException.Message
+                        if (-not $message) { $message = $_.Exception.Message }
+                        $copyAgentPropStatus.Status = "Failed"
+                        $copyAgentPropStatus.Notes = $message
+                        $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                 }
             }
         }
@@ -6924,7 +7056,7 @@ function Copy-DbaDbTableData {
                     $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
                 }
 
-                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
+                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name -and (Test-Bound -ParameterName Query -Not)) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                     return
                 }
@@ -6932,6 +7064,9 @@ function Copy-DbaDbTableData {
 
                 if (Test-Bound -ParameterName Query -Not) {
                     $Query = "SELECT * FROM $fqtnfrom"
+                    $sourceLabel = $fqtnfrom
+                } else {
+                    $sourceLabel = "Query"
                 }
                 try {
                     if ($Truncate -eq $true) {
@@ -6939,7 +7074,7 @@ function Copy-DbaDbTableData {
                             $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                         }
                     }
-                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $fqtnfrom")) {
+                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
@@ -10316,7 +10451,7 @@ function Disable-DbaForceNetworkEncryption {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -10874,7 +11009,7 @@ function Enable-DbaForceNetworkEncryption {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -11740,6 +11875,267 @@ function Export-DbaDacPackage {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Export-DbaDbRole {
+    
+    [CmdletBinding()]
+    param (
+        [parameter()]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [object[]]$Database,
+        [object[]]$Role,
+        [object[]]$ExcludeRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$IncludeRoleMember,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [switch]$Passthru,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
+        [switch]$NoClobber,
+        [switch]$Append,
+        [switch]$NoPrefix,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$EnableException
+    )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+        $outsql = @()
+        $outputFileArray = @()
+        $roleCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+
+        $roleSQL = "SELECT
+                        N'' as RoleName,
+                        CASE dp.state
+                            WHEN 'D' THEN 'DENY'
+                            WHEN 'G' THEN 'GRANT'
+                            WHEN 'R' THEN 'REVOKE'
+                            WHEN 'W' THEN 'GRANT'
+                        END as GrantState,
+                        dp.permission_name as Permission,
+                        CASE dp.class
+                            WHEN 0 THEN ''
+                            WHEN 1 THEN --table or column subset on the table
+                                CASE WHEN dp.major_id < 0 THEN COALESCE('[sys].[' + OBJECT_NAME(dp.major_id) + ']', '')
+                                    ELSE '[' + (SELECT SCHEMA_NAME(schema_id) + '].[' + name FROM sys.objects WHERE object_id = dp.major_id) + ']'
+                                END + -- optionally concatenate column names
+                                    CASE WHEN MAX(dp.minor_id) > 0 THEN ' (['
+                                        + REPLACE((SELECT name + '], [' FROM sys.columns
+                                                WHERE object_id = dp.major_id
+                                                AND column_id IN (SELECT minor_id FROM sys.database_permissions WHERE major_id = dp.major_id AND USER_NAME(grantee_principal_id) = N'')
+                                        FOR XML PATH('')) + '])', ', []', '')
+                                        ELSE ''
+                                    END
+                            WHEN 3 THEN 'SCHEMA::[' + SCHEMA_NAME(dp.major_id) + ']'
+                            WHEN 4 THEN '' + (SELECT RIGHT(type_desc, 4) + '::[' + name FROM sys.database_principals WHERE principal_id = dp.major_id) + ']'
+                            WHEN 5 THEN 'ASSEMBLY::[' + (SELECT name FROM sys.assemblies WHERE assembly_id = dp.major_id) + ']'
+                            WHEN 6 THEN 'TYPE::[' + (SELECT name FROM sys.types WHERE user_type_id = dp.major_id) + ']'
+                            WHEN 10 THEN 'XML SCHEMA COLLECTION::[' + (SELECT SCHEMA_NAME(schema_id) + '.' + name FROM sys.xml_schema_collections WHERE xml_collection_id = dp.major_id) + ']'
+                            WHEN 15 THEN 'MESSAGE TYPE::[' + (SELECT name FROM sys.service_message_types WHERE message_type_id = dp.major_id) + ']'
+                            WHEN 16 THEN 'CONTRACT::[' + (SELECT name FROM sys.service_contracts WHERE service_contract_id = dp.major_id) + ']'
+                            WHEN 17 THEN 'SERVICE::[' + (SELECT name FROM sys.services WHERE service_id = dp.major_id) + ']'
+                            WHEN 18 THEN 'REMOTE SERVICE BINDING::[' + (SELECT name FROM sys.remote_service_bindings WHERE remote_service_binding_id = dp.major_id) + ']'
+                            WHEN 19 THEN 'ROUTE::[' + (SELECT name FROM sys.routes WHERE route_id = dp.major_id) + ']'
+                            WHEN 23 THEN 'FULLTEXT CATALOG::[' + (SELECT name FROM sys.fulltext_catalogs WHERE fulltext_catalog_id = dp.major_id) + ']'
+                            WHEN 24 THEN 'SYMMETRIC KEY::[' + (SELECT name FROM sys.symmetric_keys WHERE symmetric_key_id = dp.major_id) + ']'
+                            WHEN 25 THEN 'CERTIFICATE::[' + (SELECT name FROM sys.certificates WHERE certificate_id = dp.major_id) + ']'
+                            WHEN 26 THEN 'ASYMMETRIC KEY::[' + (SELECT name FROM sys.asymmetric_keys WHERE asymmetric_key_id = dp.major_id) + ']'
+                        END COLLATE DATABASE_DEFAULT  as Type,
+                        CASE dp.state WHEN 'W' THEN ' WITH GRANT OPTION' ELSE '' END as GrantType
+                    FROM sys.database_permissions dp
+                    WHERE USER_NAME(dp.grantee_principal_id) = N''
+                    GROUP BY dp.state, dp.major_id, dp.permission_name, dp.class
+                    UNION ALL
+                    SELECT
+                        N'' as RoleName,
+                        'ALTER' as GrantState,
+                        'AUTHORIZATION' as permission_name,
+                        'SCHEMA::['+s.[name]+']' as Type,
+                        '' as GrantType
+                    from sys.schemas s
+                    join sys.sysusers u on s.principal_id = u.[uid]
+                    where u.[name] = N''"
+
+        $userSQL = "SELECT roles.name as RoleName, users.name as Member
+                    FROM sys.database_principals users
+                    INNER JOIN sys.database_role_members link
+                        ON link.member_principal_id = users.principal_id
+                    INNER JOIN sys.database_principals roles
+                        ON roles.principal_id = link.role_principal_id
+                    WHERE roles.name = N''"
+
+        if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
+            $ScriptingOptionsObject = New-DbaScriptingOption
+            $ScriptingOptionsObject.AllowSystemObjects = $false
+            $ScriptingOptionsObject.IncludeDatabaseRoleMemberships = $true
+            $ScriptingOptionsObject.ContinueScriptingOnError = $false
+            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+            $ScriptingOptionsObject.IncludeIfNotExists = $false
+        }
+
+        if ($ScriptingOptionsObject.NoCommandTerminator) {
+            $commandTerminator = ''
+        } else {
+            $commandTerminator = ';'
+        }
+        $outsql = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $databaseRoles = $input | Get-DbaDBRole -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
+                    Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
+                    $databaseRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or login."
+                    return
+                }
+            }
+            foreach ($dbRole in $databaseRoles) {
+                try {
+                    $server = $dbRole.Parent.Parent
+                    $db = $dbRole.Parent
+                    if ($server.VersionMajor -lt 9) {
+                        Stop-Function -Message "SQL Server version 9 or higher required - $server not supported." -Continue
+                    }
+                    $dbCompatibilityLevel = [int]($db.CompatibilityLevel.ToString().Replace('Version', ''))
+                    if ($dbCompatibilityLevel -lt 90) {
+                        Stop-Function -Message "$db has a compatibility level lower than Version90 and will be skipped." -Target $db -Continue
+                    }
+
+                    $outsql += $dbRole.Script($ScriptingOptionsObject)
+
+                    $query = $roleSQL.Replace('', "$($dbRole.Name)")
+                    $rolePermissions = $($dbRole.Parent).Query($query)
+
+                    foreach ($rolePermission in $rolePermissions) {
+                        $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                        if ($rolePermission.Type) {
+                            $script += " ON " + $rolePermission.Type
+                        }
+                        if ($rolePermission.RoleName) {
+                            $script += " TO [" + $rolePermission.RoleName + "]"
+                        }
+                        if ($rolePermission.GrantType) {
+                            $script += " WITH GRANT OPTION" + $commandTerminator
+                        } else {
+                            $script += $commandTerminator
+                        }
+                        $outsql += "$script"
+                    }
+
+                    if ($IncludeRoleMember) {
+                        $query = $userSQL.Replace('', "$($dbRole.Name)")
+                        $roleUsers = $($dbRole.Parent).Query($query)
+
+                        foreach ($roleUser in $roleUsers) {
+                            if ($server.VersionMajor -lt 11) {
+                                $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
+                            } else {
+                                $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
+                            }
+                            $outsql += "$script"
+                        }
+                    }
+                    $roleObject = [PSCustomObject]@{
+                        Name     = $dbRole.Name
+                        Instance = $dbRole.SqlInstance
+                        Database = $dbRole.Database
+                        Sql      = $outsql
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $dbRole" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                }
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
+        foreach ($dbRole in $roleCollection) {
+            $instanceName = $dbRole.Instance
+            $databaseName = $dbRole.Database
+
+            $outputFileName = $instanceName.Replace('\', '$') + '-' + $databaseName.Replace('\', '$')
+
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
+
+            if ($BatchSeparator) {
+                $sql = $dbRole.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $dbRole.SQL
+            }
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = "$prefix`r`n$sql"
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                if ($outputFileArray -notcontains $outputFileName) {
+                    Write-Message -Level Verbose -Message "New File $outputFileName "
+                    if ($null -ne $prefix) {
+                        $sql = "$prefix`r`n$sql"
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $outputFileArray += $outputFileName
+                    Get-ChildItem $scriptPath
+                } else {
+                    Write-Message -Level Verbose -Message "Adding to $outputFileName "
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append
+                }
+            } else {
+                $sql
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Export-DbaDbTableData {
     
     [CmdletBinding(SupportsShouldProcess)]
@@ -12122,14 +12518,14 @@ function Export-DbaInstance {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $stepCounter = $filecounter = 0
+            $stepCounter = $fileCounter = 0
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timenow"
+            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $path = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
 
             if (-not (Test-Path $Path)) {
                 try {
@@ -12373,7 +12769,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
-                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -Append:$Append
+                $null = Export-DbaSysDbUserObject -SqlInstance $server -FilePath "$Path\$fileCounter-userobjectsinsysdbs.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-userobjectsinsysdbs.sql"
                 if (-not (Test-Path "$Path\$fileCounter-userobjectsinsysdbs.sql")) {
                     $fileCounter--
@@ -12395,11 +12791,11 @@ function Export-DbaInstance {
         }
     }
     end {
-        $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+        $totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server export complete."
         Write-Message -Level Verbose -Message "Export started: $started"
         Write-Message -Level Verbose -Message "Export completed: $(Get-Date)"
-        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
+        Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
     }
 }
 
@@ -12515,7 +12911,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [object[]]$Database,
         [switch]$ExcludeJobs,
-        [switch]$ExcludeDatabases,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
         [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -12582,12 +12979,12 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($ExcludeDatabases -eq $false -or $Database) {
+            if ($ExcludeDatabase -eq $false -or $Database) {
                 # if we got a database or a list of databases passed
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
                 # if we get a list of databases passed (or even the default list of all the databases)
-                # we save outself a call to enumloginmappings if there is no map at all
+                # we save ourself a call to enumloginmappings if there is no map at all
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
@@ -12792,8 +13189,8 @@ function Export-DbaLogin {
                     }
                 }
 
-                if ($ExcludeDatabases -eq $false) {
-                    $dbs = $sourceLogin.EnumDatabaseMappings()
+                if ($ExcludeDatabase -eq $false) {
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
                         if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
@@ -13271,6 +13668,241 @@ function Export-DbaScript {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Export-DbaServerRole {
+    
+    [CmdletBinding()]
+    param (
+        [parameter()]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [string[]]$ServerRole,
+        [string[]]$ExcludeServerRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$IncludeRoleMember,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [switch]$Passthru,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
+        [switch]$NoClobber,
+        [switch]$Append,
+        [switch]$NoPrefix,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [switch]$EnableException
+    )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+        $outsql = @()
+        $outputFileArray = @()
+        $roleCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
+
+        $roleSQL = "SELECT
+                    CASE SPerm.state
+                        WHEN 'D' THEN 'DENY'
+                        WHEN 'G' THEN 'GRANT'
+                        WHEN 'R' THEN 'REVOKE'
+                        WHEN 'W' THEN 'GRANT'
+                    END as GrantState,
+                    sPerm.permission_name as Permission,
+                    Case
+                        WHEN SPerm.class = 100 THEN ''
+                        WHEN SPerm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN SPerm.class = 105 THEN 'ON ENDPOINT::' + QuoteName(ep.name)
+                        WHEN SPerm.class = 108 THEN 'ON AVAILABILITY GROUP::' + QUOTENAME(ag.name)
+                        ELSE ''
+                    END as OnClause,
+                    QuoteName(SP.name) as RoleName,
+                    Case
+                        WHEN SPerm.state = 'W' THEN 'WITH GRANT OPTION AS ' + QUOTENAME(gsp.Name)
+                        ELSE ''
+                    END as GrantOption
+                FROM sys.server_permissions SPerm
+                INNER JOIN sys.server_principals SP
+                    ON SP.principal_id = SPerm.grantee_principal_id
+                INNER JOIN sys.server_principals gsp
+                    ON gsp.principal_id = SPerm.grantor_principal_id
+                LEFT JOIN sys.endpoints ep
+                    ON ep.endpoint_id = SPerm.major_id
+                    AND SPerm.class = 105
+                LEFT JOIN sys.server_principals sp2
+                    ON sp2.principal_id = SPerm.major_id
+                    AND SPerm.class = 101
+                LEFT JOIN
+                (
+                    Select
+                        ar.replica_metadata_id,
+                        ag.name
+                    from sys.availability_groups ag
+                    INNER JOIN sys.availability_replicas ar
+                        ON ag.group_id = ar.group_id
+                ) ag
+                    ON ag.replica_metadata_id = SPerm.major_id
+                    AND SPerm.class = 108
+                where sp.type='R'
+                and sp.name=N''"
+
+        if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
+            $ScriptingOptionsObject = New-DbaScriptingOption
+            $ScriptingOptionsObject.AllowSystemObjects = $false
+            $ScriptingOptionsObject.ContinueScriptingOnError = $false
+            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+            $ScriptingOptionsObject.IncludeIfNotExists = $true
+            $ScriptingOptionsObject.ScriptOwner = $true
+        }
+
+        if ($ScriptingOptionsObject.NoCommandTerminator) {
+            $commandTerminator = ''
+        } else {
+            $commandTerminator = ';'
+        }
+        $outsql = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a ServerRole or server or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential  -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                }
+                'Microsoft.SqlServer.Management.Smo.ServerRole' {
+                    Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
+                    $serverRoles = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or serverrole."
+                    return
+                }
+            }
+
+            foreach ($role in $serverRoles) {
+                $server = $role.Parent
+
+                if ($server.ServerType -eq 'SqlAzureDatabase') {
+                    Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+                }
+
+                try {
+                    # Get user defined Server roles
+                    if ($server.VersionMajor -ge 11) {
+                        $outsql += $role.Script($ScriptingOptionsObject)
+
+                        $query = $roleSQL.Replace('', "$($role.Name)")
+                        $rolePermissions = $server.Query($query)
+
+                        foreach ($rolePermission in $rolePermissions) {
+                            $script = $rolePermission.GrantState + " " + $rolePermission.Permission
+                            if ($rolePermission.OnClause) {
+                                $script += " " + $rolePermission.OnClause
+                            }
+                            if ($rolePermission.RoleName) {
+                                $script += " TO " + $rolePermission.RoleName
+                            }
+                            if ($rolePermission.GrantOption) {
+                                $script += " " + $rolePermission.GrantOption + $commandTerminator
+                            } else {
+                                $script += $commandTerminator
+                            }
+                            $outsql += "$script"
+                        }
+                    }
+
+                    if ($IncludeRoleMember) {
+                        foreach ($roleUser in $role.Login) {
+                            $script = 'ALTER SERVER ROLE [' + $role.Role + "] ADD MEMBER [" + $roleUser + "]" + $commandTerminator
+                            $outsql += "$script"
+                        }
+                    }
+                    if ($outsql) {
+                        $roleObject = [PSCustomObject]@{
+                            Name     = $role.Name
+                            Instance = $role.SqlInstance
+                            Sql      = $outsql
+                        }
+                    }
+                    $roleCollection.Add($roleObject) | Out-Null
+                    $outsql = @()
+                } catch {
+                    $outsql = @()
+                    Stop-Function -Message "Error occurred processing role $Role" -Category ConnectionError -ErrorRecord $_ -Target $role.SqlInstance -Continue
+                }
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
+        foreach ($role in $roleCollection) {
+            $instanceName = $role.Instance
+
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
+
+            if ($BatchSeparator) {
+                $sql = $role.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $role.SQL
+            }
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = "$prefix`r`n$sql"
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                $outputFileName = $instanceName.Replace('\', '$')
+                if ($outputFileArray -notcontains $outputFileName) {
+                    Write-Message -Level Verbose -Message "New File $outputFileName "
+                    if ($null -ne $prefix) {
+                        $sql = "$prefix`r`n$sql"
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $outputFileArray += $outputFileName
+                    Get-ChildItem $scriptPath
+                } else {
+                    Write-Message -Level Verbose -Message "Adding to $outputFileName "
+                    $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append
+                }
+            } else {
+                $sql
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Export-DbaSpConfigure {
     
     [CmdletBinding()]
@@ -13331,6 +13963,193 @@ function Export-DbaSpConfigure {
     }
     end {
         Write-Message -Level Verbose -Message "Server configuration export finished"
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Export-DbaSysDbUserObject {
+    
+
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$IncludeDependencies = $false,
+        [string]$BatchSeparator = 'GO',
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [string]$FilePath,
+        [switch]$NoPrefix,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
+        [switch]$NoClobber,
+        [switch]$PassThru,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
+                    Stop-Function -Message "Not a sysadmin on $instance. Quitting."
+                    return
+                }
+                $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $SessionObject.Instance
+
+                $systemDbs = "master", "model", "msdb"
+
+                foreach ($systemDb in $systemDbs) {
+                    $smoDb = $server.databases[$systemDb]
+                    $userObjects = @()
+                    $userObjects += $smoDb.Tables | Where-Object IsSystemObject -ne $true | Select-Object Name, @{l = 'SchemaName'; e = { $_.Schema } } , @{l = 'Type'; e = { 'TABLE' } }, @{l = 'Database'; e = { $systemDb } }
+                    $userObjects += $smoDb.Triggers | Where-Object IsSystemObject -ne $true | Select-Object Name, @{l = 'SchemaName'; e = { $null } } , @{l = 'Type'; e = { 'SQL_TRIGGER' } }, @{l = 'Database'; e = { $systemDb } }
+                    $params = @{
+                        SqlInstance          = $server
+                        Database             = $systemDb
+                        ExcludeSystemObjects = $true
+                        Type                 = 'View', 'TableValuedFunction', 'DefaultConstraint', 'StoredProcedure', 'Rule', 'InlineTableValuedFunction', 'ScalarFunction'
+                    }
+                    $userObjects += Get-DbaModule @params | Sort-Object Type | Select-Object Name, SchemaName, Type, Database
+
+                    if ($userObjects) {
+                        $results = @()
+                        foreach ($userObject in $userObjects) {
+                            $smObject = switch ($userObject.Type) {
+                                "TABLE" { $smoDb.Tables.Item($userObject.Name, $userObject.SchemaName) }
+                                "VIEW" { $smoDb.Views.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_STORED_PROCEDURE" { $smoDb.StoredProcedures.Item($userObject.Name, $userObject.SchemaName) }
+                                "RULE" { $smoDb.Rules.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_TRIGGER" { $smoDb.Triggers.Item($userObject.Name) }
+                                "SQL_TABLE_VALUED_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                                "SQL_SCALAR_FUNCTION" { $smoDb.UserDefinedFunctions.Item($userObject.Name, $userObject.SchemaName) }
+                            }
+                            $results += $smObject
+                        }
+
+                        if ((Test-Path -Path $scriptPath) -and $NoClobber) {
+                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
+                        }
+                        if (!(Test-Bound -ParameterName ScriptingOption)) {
+                            $ScriptingOptionsObject = New-DbaScriptingOption
+                            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+                            $ScriptingOptionsObject.ScriptBatchTerminator = $true
+                            $ScriptingOptionsObject.AnsiFile = $true
+                            if ($IncludeDependencies) {
+                                $ScriptingOptionsObject.WithDependencies = $true
+                            }
+                        }
+
+                        $export = @{
+                            NoPrefix         = $NoPrefix
+                            ScriptingOptions = $ScriptingOptionsObject
+                            BatchSeparator   = $BatchSeparator
+                        }
+
+                        if ($PassThru) {
+                            $results | Export-DbaScript @export -PassThru
+                        } elseif ($Path -Or $FilePath) {
+                            $results | Export-DbaScript @export -FilePath $scriptPath -Append -NoClobber:$NoClobber
+                        }
+                    }
+                }
+            } catch {
+                Stop-Function -Message ("Exporting system objects failed on '{0}'" -f $server.Name)
+            }
+        }
+    }
+}
+
+
+#.ExternalHelp dbatools-Help.xml
+function Export-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'FullName')]
+    Param (
+        [Parameter(ParameterSetName = "FullName", Mandatory = $true)]
+        [string]
+        $FullName,
+
+        [Parameter(ParameterSetName = "Module", Mandatory = $true)]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = "Module", Position = 1)]
+        [string]
+        $Name = "*",
+
+        [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $Config,
+
+        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
+        [string]
+        $ModuleName,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [int]
+        $ModuleVersion = 1,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "FileUserShared",
+
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'Config')]
+        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'FullName')]
+        [Parameter(Position = 2, Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $OutPath,
+
+        [switch]
+        $SkipUnchanged,
+
+        [switch]$EnableException
+    )
+
+    begin {
+        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
+
+        $items = @()
+
+        if (($Scope -band 15) -and ($ModuleName)) {
+            Stop-Function -Message "Cannot export modulecache to registry! Please pick a file scope for your export destination" -EnableException $EnableException -Category InvalidArgument -Tag 'fail', 'scope', 'registry'
+            return
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $ModuleName) {
+            foreach ($item in $Config) { $items += $item }
+            if ($FullName) { $items = Get-DbatoolsConfig -FullName $FullName }
+            if ($Module) { $items = Get-DbatoolsConfig -Module $Module -Name $Name }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $ModuleName) {
+            try { Write-DbatoolsConfigFile -Config ($items | Where-Object { -not $SkipUnchanged -or -not $_.Unchanged } ) -Path $OutPath -Replace }
+            catch {
+                Stop-Function -Message "Failed to export to file" -EnableException $EnableException -ErrorRecord $_ -Tag 'fail', 'export'
+                return
+            }
+        } else {
+            if ($Scope -band 16) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true) -Path (Join-Path $script:path_FileUserLocal "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+            if ($Scope -band 32) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileUserShared "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+            if ($Scope -band 64) {
+                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileSystem "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
+            }
+        }
     }
 }
 
@@ -14090,7 +14909,7 @@ function Find-DbaBackup {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
         } catch {
-            Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+            Stop-Function -Message "Failed to interpret retention time." -ErrorRecord $_
         }
 
         # Filter out unarchived files if -CheckArchiveBit parameter is used
@@ -14222,7 +15041,7 @@ function Find-DbaCommand {
                     $helpcoll.Add($x)
                 }
                 # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
-                $dest = "$moduleDirectory\bin\dbatools-index.json"
+                $dest = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
                 $helpcoll | ConvertTo-Json -Depth 4 | Out-File $dest -Encoding UTF8
             }
         }
@@ -14231,7 +15050,7 @@ function Find-DbaCommand {
     }
     process {
         $Pattern = $Pattern.TrimEnd("s")
-        $idxFile = "$moduleDirectory\bin\dbatools-index.json"
+        $idxFile = Resolve-Path "$moduleDirectory\bin\dbatools-index.json"
         if (!(Test-Path $idxFile) -or $Rebuild) {
             Write-Message -Level Verbose -Message "Rebuilding index into $idxFile"
             $swRebuild = [system.diagnostics.stopwatch]::StartNew()
@@ -14400,7 +15219,7 @@ function Find-DbaDbDisabledIndex {
                                     }
                                 }
                             } else {
-                                Write-Message -Level Verbose -Message "No Disabled indexes found!"
+                                Write-Message -Level Verbose -Message "No Disabled indexes found"
                             }
                         }
                     } catch {
@@ -18721,11 +19540,11 @@ function Get-DbaBuildReference {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
-                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Check your module integrity!"
+                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Please check your module integrity or reinstall dbatools."
             }
 
             if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
-                throw "Build reference file not found, check module health!"
+                throw "Build reference file not found, please check module health."
             }
 
             # If no writable copy exists, create one and return the module original
@@ -19063,71 +19882,67 @@ function Get-DbaClientAlias {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
+    begin {
+        $scriptblock = {
+            function Get-ItemPropertyValue {
+                param (
+                    [parameter()]
+                    [String]$Path,
+                    [parameter()]
+                    [String]$Name
+                )
+                (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            }
 
-    process {
-        foreach ($computer in $ComputerName) {
-            $scriptblock = {
+            $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 
-                function Get-ItemPropertyValue {
-                    param (
-                        [parameter()]
-                        [String]$Path,
-                        [parameter()]
-                        [String]$Name
-                    )
-                    (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            foreach ($basekey in $basekeys) {
+
+                
+                if ((Test-Path $basekey) -eq $false) {
+                    continue
                 }
 
-                $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
+                $client = "$basekey\Client"
 
-                foreach ($basekey in $basekeys) {
+                if ((Test-Path $client) -eq $false) {
+                    continue
+                }
 
-                    if ((Test-Path $basekey) -eq $false) {
-                        
-                        Write-Warning "Base key ($basekey) does not exist. Quitting."
-                        continue
-                    }
+                $connect = "$client\ConnectTo"
 
-                    $client = "$basekey\Client"
+                if ((Test-Path $connect) -eq $false) {
+                    continue
+                }
 
-                    if ((Test-Path $client) -eq $false) {
-                        continue
-                    }
+                if ($basekey -like "*WOW64*") {
+                    $architecture = "32-bit"
+                } else {
+                    $architecture = "64-bit"
+                }
 
-                    $connect = "$client\ConnectTo"
-
-                    if ((Test-Path $connect) -eq $false) {
-                        continue
-                    }
-
-                    if ($basekey -like "*WOW64*") {
-                        $architecture = "32-bit"
-                    } else {
-                        $architecture = "64-bit"
-                    }
-
-                    # "Get SQL Server alias for $ComputerName for $architecture"
-                    $all = Get-Item -Path $connect
-                    foreach ($entry in $all.Property) {
-                        $value = Get-ItemPropertyValue -Path $connect -Name $entry
-                        $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
-                        if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
-
-                        [pscustomobject]@{
-                            ComputerName   = $env:COMPUTERNAME
-                            NetworkLibrary = $protocol
-                            ServerName     = $clean
-                            AliasName      = $entry
-                            AliasString    = $value
-                            Architecture   = $architecture
-                        }
+                # "Get SQL Server alias for $ComputerName for $architecture"
+                $all = Get-Item -Path $connect
+                foreach ($entry in $all.Property) {
+                    $value = Get-ItemPropertyValue -Path $connect -Name $entry
+                    $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
+                    if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
+                    [pscustomobject]@{
+                        ComputerName   = $env:COMPUTERNAME
+                        NetworkLibrary = $protocol
+                        ServerName     = $clean
+                        AliasName      = $entry
+                        AliasString    = $value
+                        Architecture   = $architecture
                     }
                 }
             }
-
+        }
+    }
+    process {
+        foreach ($computer in $ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
-                    Select-DefaultView -Property ComputerName, Architecture, NetworkLibrary, ServerName, AliasName
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
@@ -19277,7 +20092,7 @@ function Get-DbaCmObject {
             # Ensure using the right credentials
             try { $cred = $connection.GetCredential($Credential) }
             catch {
-                $message = "Bad credentials! "
+                $message = "Bad credentials. "
                 if ($Credential) { $message += "The credentials for $($Credential.UserName) are known to not work. " }
                 else { $message += "The windows credentials are known to not work. " }
                 if ($connection.EnableCredentialFailover -or $connection.OverrideExplicitCredential) { $message += "The connection is configured to use credentials that are known to be good, but none have been registered yet. " }
@@ -19358,10 +20173,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19382,10 +20197,10 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Please check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
-                                15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                15 { Stop-Function -Message "[$computer] Invalid query string. Please check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 15 = Invalid Query
                                 #region 16 = Method not available
                                 16 { Stop-Function -Message "[$computer] The specified method on $ClassName is not available." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19400,11 +20215,11 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -19414,7 +20229,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -19470,10 +20285,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19494,7 +20309,7 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
                                 15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -19512,11 +20327,11 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
-
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -19526,7 +20341,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -24028,6 +24843,9 @@ function Get-DbaDbRole {
         }
 
         foreach ($db in $InputObject) {
+            if ($db.IsAccessible -eq $false) {
+                continue
+            }
             $server = $db.Parent
             Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $server"
 
@@ -26028,7 +26846,7 @@ function Get-DbaForceNetworkEncryption {
                     [pscustomobject]$result
                 }
             } catch {
-                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
@@ -27829,7 +28647,7 @@ function Get-DbaLastGoodCheckDb {
 
                 ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
                 if ($lastKnownGoodArray.count -ge 2) {
-                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest!"
+                    Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest."
                 }
                 [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
@@ -31162,6 +31980,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
     )
@@ -31220,7 +32039,9 @@ function Get-DbaRandomizedValue {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            
+            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
+            }
         }
 
         if (-not $Min) {
@@ -31244,19 +32065,19 @@ function Get-DbaRandomizedValue {
 
             switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
-                    if ($Min -lt -9223372036854775808) {
+                    if (-not $Min -or $Min -lt -9223372036854775808) {
                         $Min = -9223372036854775808
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 9223372036854775807) {
+                    if (-not $Max -or $Max -gt 9223372036854775807) {
                         $Max = 9223372036854775807
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
                 }
 
                 { $psitem -in 'bit', 'bool' } {
-                    if ($faker.System.Random.Bool()) {
+                    if ($script:faker.Random.Bool()) {
                         1
                     } else {
                         0
@@ -31264,84 +32085,84 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd")
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
-                    $faker.Finance.Amount($Min, $Max, $Precision)
+                    $script:faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
-                    if ($Min -lt -2147483648) {
+                    if (-not $Min -or $Min -lt -2147483648) {
                         $Min = -2147483648
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 2147483647) {
+                    if (-not $Max -or $Max -gt 2147483647 -or $Max -lt $Min) {
                         $Max = 2147483647
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
 
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 }
                 'smallint' {
-                    if ($Min -lt -32768) {
+                    if (-not $Min -or $Min -lt -32768) {
                         $Min = 32768
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 32767) {
+                    if (-not $Max -or $Max -gt 32767 -or $Max -lt $Min) {
                         $Max = 32767
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 'time' {
-                    ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
+                    ($script:faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
-                    if ($Min -lt 0) {
+                    if (-not $Min -or $Min -lt 0) {
                         $Min = 0
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 255) {
+                    if (-not $Max -or $Max -gt 255 -or $Max -lt $Min) {
                         $Max = 255
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 { $psitem -in 'uniqueidentifier', 'guid' } {
-                    $faker.System.Random.Guid().Guid
+                    $script:faker.System.Random.Guid().Guid
                 }
                 'userdefineddatatype' {
                     if ($Max -eq 1) {
-                        if ($faker.System.Random.Bool()) {
+                        if ($script:faker.System.Random.Bool()) {
                             1
                         } else {
                             0
@@ -31351,7 +32172,7 @@ function Get-DbaRandomizedValue {
                     }
                 }
                 { $psitem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
-                    $faker.Random.String2($Min, $Max, $CharacterString)
+                    $script:faker.Random.String2($Min, $Max, $CharacterString)
                 }
 
             }
@@ -31364,35 +32185,35 @@ function Get-DbaRandomizedValue {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
-                        $faker.Address.Latitude($Min, $Max)
+                        $script:faker.Address.Latitude($Min, $Max)
                     } elseif ($randSubType -eq 'zipcode') {
                         if ($Format) {
-                            $faker.Address.ZipCode("$($Format)")
+                            $script:faker.Address.ZipCode("$($Format)")
                         } else {
-                            $faker.Address.ZipCode()
+                            $script:faker.Address.ZipCode()
                         }
                     } else {
-                        $faker.Address.$RandomizerSubType()
+                        $script:faker.Address.$RandomizerSubType()
                     }
 
                 }
                 'commerce' {
                     if ($randSubType -eq 'categories') {
-                        $faker.Commerce.Categories($Max)
+                        $script:faker.Commerce.Categories($Max)
                     } elseif ($randSubType -eq 'departments') {
-                        $faker.Commerce.Department($Max)
+                        $script:faker.Commerce.Department($Max)
                     } elseif ($randSubType -eq 'price') {
-                        $faker.Commerce.Price($min, $Max, $Precision, $Symbol)
+                        $script:faker.Commerce.Price($min, $Max, $Precision, $Symbol)
                     } else {
-                        $faker.Commerce.$RandomizerSubType()
+                        $script:faker.Commerce.$RandomizerSubType()
                     }
 
                 }
                 'company' {
-                    $faker.Company.$RandomizerSubType()
+                    $script:faker.Company.$RandomizerSubType()
                 }
                 'database' {
-                    $faker.Database.$RandomizerSubType()
+                    $script:faker.Database.$RandomizerSubType()
                 }
                 'date' {
                     if ($randSubType -eq 'between') {
@@ -31408,7 +32229,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -31418,9 +32239,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -31430,13 +32251,13 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
 
                     } elseif ($randSubType -eq 'recent') {
-                        $faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -31447,34 +32268,34 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } else {
-                        $faker.Date.$RandomizerSubType()
+                        $script:faker.Date.$RandomizerSubType()
                     }
                 }
                 'finance' {
                     if ($randSubType -eq 'account') {
-                        $faker.Finance.Account($Max)
+                        $script:faker.Finance.Account($Max)
                     } elseif ($randSubType -eq 'amount') {
-                        $faker.Finance.Amount($Min, $Max, $Precision)
+                        $script:faker.Finance.Amount($Min, $Max, $Precision)
                     } else {
-                        $faker.Finance.$RandomizerSubType()
+                        $script:faker.Finance.$RandomizerSubType()
                     }
                 }
                 'hacker' {
-                    $faker.Hacker.$RandomizerSubType()
+                    $script:faker.Hacker.$RandomizerSubType()
                 }
                 'image' {
-                    $faker.Image.$RandomizerSubType()
+                    $script:faker.Image.$RandomizerSubType()
                 }
                 'internet' {
                     if ($randSubType -eq 'password') {
-                        $faker.Internet.Password($Max)
+                        $script:faker.Internet.Password($Max)
                     } else {
-                        $faker.Internet.$RandomizerSubType()
+                        $script:faker.Internet.$RandomizerSubType()
                     }
                 }
                 'lorem' {
@@ -31484,7 +32305,7 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraph($Min)
+                        $script:faker.Lorem.Paragraph($Min)
 
                     } elseif ($randSubType -eq 'paragraphs') {
                         if ($Min -lt 1) {
@@ -31492,19 +32313,19 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraphs($Min)
+                        $script:faker.Lorem.Paragraphs($Min)
 
                     } elseif ($randSubType -eq 'letter') {
-                        $faker.Lorem.Letter($Max)
+                        $script:faker.Lorem.Letter($Max)
                     } elseif ($randSubType -eq 'lines') {
-                        $faker.Lorem.Lines($Max)
+                        $script:faker.Lorem.Lines($Max)
                     } elseif ($randSubType -eq 'sentence') {
                         if ($Min -lt 1) {
                             $Min = 1
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentence($Min, $Max)
+                        $script:faker.Lorem.Sentence($Min, $Max)
 
                     } elseif ($randSubType -eq 'sentences') {
                         if ($Min -lt 1) {
@@ -31512,49 +32333,59 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentences($Min, $Max)
+                        $script:faker.Lorem.Sentences($Min, $Max)
 
                     } elseif ($randSubType -eq 'slug') {
-                        $faker.Lorem.Slug($Max)
+                        $script:faker.Lorem.Slug($Max)
                     } elseif ($randSubType -eq 'words') {
-                        $faker.Lorem.Words($Max)
+                        $script:faker.Lorem.Words($Max)
                     } else {
-                        $faker.Lorem.$RandomizerSubType()
+                        $script:faker.Lorem.$RandomizerSubType()
                     }
                 }
                 'name' {
-                    $faker.Name.$RandomizerSubType()
+                    $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $faker.Person.$RandomizerSubType
+                    if ($randSubType -eq "phone") {
+                        if ($Format) {
+                            $script:faker.Phone.PhoneNumber($Format)
+                        } else {
+                            $script:faker.Phone.PhoneNumber()
+                        }
+                    } else {
+                        $script:faker.Person.$RandomizerSubType
+                    }
                 }
                 'phone' {
                     if ($Format) {
-                        $faker.Phone.PhoneNumber($Format)
+                        $script:faker.Phone.PhoneNumber($Format)
                     } else {
-                        $faker.Phone.PhoneNumber()
+                        $script:faker.Phone.PhoneNumber()
                     }
                 }
                 'random' {
                     if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
-                        $faker.Random.$RandomizerSubType($Min, $Max)
+                        $script:faker.Random.$RandomizerSubType($Min, $Max)
                     } elseif ($randSubType -eq 'bytes') {
-                        $faker.Random.Bytes($Max)
+                        $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
-                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                        $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
+                    } elseif ($randSubType -eq 'shuffle') {
+                        $script:faker.Random.Shuffle($Value)
                     } else {
-                        $faker.Random.$RandomizerSubType()
+                        $script:faker.Random.$RandomizerSubType()
                     }
                 }
                 'rant' {
                     if ($randSubType -eq 'reviews') {
-                        $faker.Rant.Review($faker.Commerce.Product())
+                        $script:faker.Rant.Review($script:faker.Commerce.Product())
                     } elseif ($randSubType -eq 'reviews') {
-                        $faker.Rant.Reviews($faker.Commerce.Product(), $Max)
+                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max)
                     }
                 }
                 'system' {
-                    $faker.System.$RandomizerSubType()
+                    $script:faker.System.$RandomizerSubType()
                 }
             }
         }
@@ -32411,27 +33242,32 @@ function Get-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if ($server.ServerType -eq 'SqlAzureDatabase') {
+                Stop-Function -Message "The SqlAzureDatabase - $server is not supported." -Continue
+            }
             $serverroles = $server.Roles
 
             if ($ServerRole) {
-                $serverroles = $serverroles | Where-Object Name -In $ServerRole
+                $serverRoles = $serverRoles | Where-Object Name -In $ServerRole
             }
             if ($ExcludeServerRole) {
-                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
+                $serverRoles = $serverRoles | Where-Object Name -NotIn $ExcludeServerRole
             }
             if ($ExcludeFixedRole) {
-                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
+                $serverRoles = $serverRoles | Where-Object IsFixedRole -eq $false
             }
 
-            foreach ($role in $serverroles) {
+            foreach ($role in $serverRoles) {
                 $members = $role.EnumMemberNames()
 
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Role -Value $role.Name
+                Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ServerRole -Value $role.Name
 
-                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as Role', 'Login', 'IsFixedRole', 'DateCreated', 'DateModified'
+                $default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Login', 'Owner', 'IsFixedRole', 'DateCreated', 'DateModified'
                 Select-DefaultView -InputObject $role -Property $default
             }
         }
@@ -33863,6 +34699,60 @@ function Get-DbatoolsChangeLog {
     } catch {
         Stop-Function -Message "Failure" -ErrorRecord $_
         return
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = "FullName")]
+    param (
+        [Parameter(ParameterSetName = "FullName", Position = 0)]
+        [string]$FullName = "*",
+        [Parameter(ParameterSetName = "Module", Position = 1)]
+        [string]$Name = "*",
+        [Parameter(ParameterSetName = "Module", Position = 0)]
+        [string]$Module = "*",
+        [switch]$Force
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        "Module" {
+            $Name = $Name.ToLowerInvariant()
+            $Module = $Module.ToLowerInvariant()
+
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+        }
+
+        "FullName" {
+            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbatoolsConfigValue {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
+    [CmdletBinding()]
+    param (
+        [Alias('Name')]
+        [Parameter(Mandatory)]
+        [string]$FullName,
+        [object]$Fallback,
+        [switch]$NotNull
+    )
+
+    $FullName = $FullName.ToLowerInvariant()
+
+    $temp = $null
+    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
+    if ($temp -eq $null) { $temp = $Fallback }
+
+    if ($NotNull -and ($temp -eq $null)) {
+        Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
+    } else {
+        return $temp
     }
 }
 
@@ -37532,6 +38422,110 @@ function Import-DbaSpConfigure {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Import-DbatoolsConfig {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
+    [CmdletBinding(DefaultParameterSetName = "Path")]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Path")]
+        [string[]]
+        $Path,
+
+        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
+        [string]
+        $ModuleName,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [int]
+        $ModuleVersion = 1,
+
+        [Parameter(ParameterSetName = "ModuleName")]
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "FileUserLocal, FileUserShared, FileSystem",
+
+        [Parameter(ParameterSetName = "Path")]
+        [string[]]
+        $IncludeFilter,
+
+        [Parameter(ParameterSetName = "Path")]
+        [string[]]
+        $ExcludeFilter,
+
+        [Parameter(ParameterSetName = "Path")]
+        [switch]
+        $Peek,
+
+        [switch]$EnableException
+    )
+
+    begin {
+        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
+    }
+    process {
+        #region Explicit Path
+        foreach ($item in $Path) {
+            try {
+                if ($item -like "http*") { $data = Read-DbatoolsConfigFile -Weblink $item -ErrorAction Stop }
+                else {
+                    $pathItem = $null
+                    try { $pathItem = Resolve-DbaPath -Path $item -SingleItem -Provider FileSystem }
+                    catch { }
+                    if ($pathItem) { $data = Read-DbatoolsConfigFile -Path $pathItem -ErrorAction Stop }
+                    else { $data = Read-DbatoolsConfigFile -RawJson $item -ErrorAction Stop }
+                }
+            } catch { Stop-Function -Message "Failed to import $item" -EnableException $EnableException -Tag 'fail', 'import' -ErrorRecord $_ -Continue -Target $item }
+
+            :element foreach ($element in $data) {
+                #region Exclude Filter
+                foreach ($exclusion in $ExcludeFilter) {
+                    if ($element.FullName -like $exclusion) {
+                        continue element
+                    }
+                }
+                #endregion Exclude Filter
+
+                #region Include Filter
+                if ($IncludeFilter) {
+                    $isIncluded = $false
+                    foreach ($inclusion in $IncludeFilter) {
+                        if ($element.FullName -like $inclusion) {
+                            $isIncluded = $true
+                            break
+                        }
+                    }
+
+                    if (-not $isIncluded) { continue }
+                }
+                #endregion Include Filter
+
+                if ($Peek) { $element }
+                else {
+                    try {
+                        if (-not $element.KeepPersisted) { Set-DbatoolsConfig -FullName $element.FullName -Value $element.Value -EnableException }
+                        else { Set-DbatoolsConfig -FullName $element.FullName -PersistedValue $element.Value -PersistedType $element.Type }
+                    } catch {
+                        Stop-Function -Message "Failed to set '$($element.FullName)'" -ErrorRecord $_ -EnableException $EnableException -Tag 'fail', 'import' -Continue -Target $item
+                    }
+                }
+            }
+        }
+        #endregion Explicit Path
+
+        if ($ModuleName) {
+            $data = Read-DbatoolsConfigPersisted -Module $ModuleName -Scope $Scope -ModuleVersion $ModuleVersion
+
+            foreach ($value in $data.Values) {
+                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException}
+                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
+            }
+        }
+    }
+    end {
+
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Import-DbaXESessionTemplate {
     
     [CmdletBinding()]
@@ -38334,7 +39328,7 @@ function Install-DbaMaintenanceSolution {
         }
 
         if ($ReplaceExisting -eq $true) {
-            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+            Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
@@ -38833,8 +39827,8 @@ function Install-DbaWhoIsActive {
         $zipfile = "$temp\spwhoisactive.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
-            $baseUrl = "http://whoisactive.com/downloads"
-            $latest = ((Invoke-TlsWebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
+            $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
+            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | where-object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -38886,7 +39880,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
@@ -39106,6 +40100,7 @@ function Invoke-DbaAdvancedInstall {
     $connectionParams = @{
         ComputerName = $ComputerName
         ErrorAction  = "Stop"
+        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
     if ($Credential) { $connectionParams.Credential = $Credential }
     # need to figure out where to store the config file
@@ -40789,9 +41784,9 @@ function Invoke-DbaDbDataMasking {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
@@ -41025,6 +42020,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
+                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
+                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
@@ -41070,12 +42067,32 @@ function Invoke-DbaDbDataMasking {
                                     try {
                                         $newValue = $null
 
-                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                $newValue = ($newValue -join '')
+                                            } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $valueString = ($row.$($columnobject.Name)).ToString()
+
+                                                $commaIndex = $valueString.IndexOf(",")
+                                                $dotIndex = $valueString.IndexOf(".")
+
+                                                $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+
+                                                if ($commaIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($commaIndex, ',')
+                                                }
+
+                                                if ($dotIndex -ne -1) {
+                                                    $newValue = $newValue.Insert($dotIndex, '.')
+                                                }
+                                            }
+                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
                                             $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         } else {
                                             $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
                                         }
-
                                     } catch {
 
                                         Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
@@ -41090,7 +42107,7 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $updates += "[$($columnobject.Name)] = 0"
                                     }
-                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal') {
+                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
                                     $updates += "[$($columnobject.Name)] = $newValue"
                                 } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
@@ -41163,14 +42180,14 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-
                             Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
+                            $stringbuilder.ToString()
                             Write-Message -Level VeryVerbose -Message "$updatequery"
                             $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
 
                         $stringbuilder = [System.Text.StringBuilder]''
@@ -41185,7 +42202,7 @@ function Invoke-DbaDbDataMasking {
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += $columnComposite.Value
-                                    } elseif ($columnComposite.Type -eq 'Random') {
+                                    } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
 
@@ -41219,10 +42236,7 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $compositeItems = $compositeItems | ForEach-Object {
-                                    $_ = "ISNULL($($_), '')"
-                                    $_
-                                }
+                                $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
                                 $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
                             }
@@ -41231,9 +42245,10 @@ function Invoke-DbaDbDataMasking {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
+                                $stringbuilder.ToString()
                                 Write-Message -Level VeryVerbose -Message "$updatequery"
                                 $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
                         }
 
@@ -41251,7 +42266,7 @@ function Invoke-DbaDbDataMasking {
                                 Status       = "Masked"
                             }
                         } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name)" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
 
@@ -41824,7 +42839,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Add the results to the custom object
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
+                            ComputerName = $instance.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.Name
@@ -41834,20 +42849,12 @@ function Invoke-DbaDbDecryptObject {
                             FullName     = "$($object.Schema).$($object.Name)"
                             Script       = $result
                         }
-
-                    } # end if secret
-
-                } # end for each object
-
-            } # end for each database
-
-        } # end for each instance
-
-    } # process
-
+                    }
+                }
+            }
+        }
+    }
     end {
-        if (Test-FunctionInterrupt) { return }
-
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
 }
@@ -43688,10 +44695,10 @@ function Invoke-DbaDbPiiScan {
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
         [int]$SampleCount = 100,
-        [string]$KnownNamesFile,
-        [string]$PatternsFile,
-        [switch]$ExcludeDefaultKnownNames,
-        [switch]$ExcludeDefaultPatterns,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$EnableException
     )
 
@@ -43701,7 +44708,7 @@ function Invoke-DbaDbPiiScan {
         $patterns = @()
 
         # Get the known names
-        if (-not $ExcludeDefaultKnownNames) {
+        if (-not $ExcludeDefaultKnownName) {
             try {
                 $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
                 $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -43712,7 +44719,7 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get the patterns
-        if (-not $ExcludeDefaultPatterns) {
+        if (-not $ExcludeDefaultPattern) {
             try {
                 $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
                 $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -43723,29 +44730,29 @@ function Invoke-DbaDbPiiScan {
         }
 
         # Get custom known names and patterns
-        if ($KnownNamesFile) {
-            if (Test-Path -Path $KnownNamesFile) {
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
                 try {
-                    $knownNames += Get-Content -Path $KnownNamesFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNamesFile
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNamesFile
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
             }
         }
 
-        if ($PatternsFile) {
-            if (Test-Path -Path $PatternsFile) {
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
                 try {
-                    $patterns += Get-Content -Path $PatternsFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternsFile
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
                     return
                 }
             } else {
-                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternsFile
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
             }
         }
 
@@ -43772,8 +44779,6 @@ function Invoke-DbaDbPiiScan {
         if (Test-FunctionInterrupt) {
             return
         }
-
-        $results = @()
 
         # Loop through the instances
         foreach ($instance in $SqlInstance) {
@@ -43820,6 +44825,7 @@ function Invoke-DbaDbPiiScan {
 
                 # Loop through the tables
                 foreach ($tableobject in $tables) {
+                    Write-Message -Level Verbose -Message "Scanning table [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                     $progressTask = "Scanning columns and data"
                     Write-Progress -Id $progressId -Activity $progressActivity -Status (& $progressStatusBlock) -CurrentOperation $progressTask -PercentComplete ($tableNumber / $($tables.Count) * 100)
@@ -43837,48 +44843,40 @@ function Invoke-DbaDbPiiScan {
 
                     # Loop through the columns
                     foreach ($columnobject in $columns) {
+                        $candidateFound = $false
 
-                        if ($columnobject.DataType -eq 'geography') {
-                            # Add the results
-                            $results += [pscustomobject]@{
-                                ComputerName   = $db.Parent.ComputerName
-                                InstanceName   = $db.Parent.ServiceName
-                                SqlInstance    = $db.Parent.DomainInstanceName
-                                Database       = $dbName
-                                Schema         = $tableobject.Schema
-                                Table          = $tableobject.Name
-                                Column         = $columnobject.Name
-                                "PII-Category" = "Location"
-                                "PII-Name"     = "Location"
-                                FoundWith      = "DataType"
-                            }
-                        } elseif ($columnobject.DataType -in 'geometry', 'hierarchyid') {
-                            # Add the results
-                            $results += [pscustomobject]@{
-                                ComputerName   = $db.Parent.ComputerName
-                                InstanceName   = $db.Parent.ServiceName
-                                SqlInstance    = $db.Parent.DomainInstanceName
-                                Database       = $dbName
-                                Schema         = $tableobject.Schema
-                                Table          = $tableobject.Name
-                                Column         = $columnobject.Name
-                                "PII-Category" = "Other"
-                                "PII-Name"     = "N/A"
-                                FoundWith      = "DataType"
+                        if ($columnobject.DataType.Name -eq "geography") {
+                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                # Add the results
+                                [pscustomobject]@{
+                                    ComputerName   = $db.Parent.ComputerName
+                                    InstanceName   = $db.Parent.ServiceName
+                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                    Database       = $dbName
+                                    Schema         = $tableobject.Schema
+                                    Table          = $tableobject.Name
+                                    Column         = $columnobject.Name
+                                    "PII-Category" = "Location"
+                                    "PII-Name"     = "Geography"
+                                    FoundWith      = "DataType"
+                                    MaskingType    = "Random"
+                                    MaskingSubType = "Decimal"
+                                }
+
+                                $candidateFound = $true
+
                             }
                         } else {
                             if ($knownNames.Count -ge 1) {
-                                # Go through the first check to see if any column is found with a known type
-                                foreach ($knownName in $knownNames) {
-
-                                    foreach ($pattern in $knownName.Pattern) {
-
-                                        if ($columnobject.Name -match $pattern ) {
-                                            # Check if the results not already contain a similar object
-                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
+                                # Check if the results not already contain a similar object
+                                #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                if (-not $candidateFound) {
+                                    # Go through the first check to see if any column is found with a known type
+                                    foreach ($knownName in $knownNames) {
+                                        foreach ($pattern in $knownName.Pattern) {
+                                            if (-not $candidateFound -and $columnobject.Name -match $pattern) {
                                                 # Add the results
-                                                $results += [pscustomobject]@{
+                                                [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -43889,52 +44887,48 @@ function Invoke-DbaDbPiiScan {
                                                     "PII-Category" = $knownName.Category
                                                     "PII-Name"     = $knownName.Name
                                                     FoundWith      = "KnownName"
+                                                    MaskingType    = $knownName.MaskingType
+                                                    MaskingSubType = $knownName.MaskingSubType
                                                 }
+
+                                                $candidateFound = $true
                                             }
                                         }
                                     }
+
                                     $knownName = $null
                                 }
                             } else {
                                 Write-Message -Level Verbose -Message "No known names found to perform check on"
                             }
-                        } # End for each column
-                    }
 
-                    if ($patterns.Count -ge 1) {
-                        # Check if the results not already contain a similar object
-                        if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-                            # Setup the query
-                            $query = "SELECT TOP($SampleCount) " + "[" + ($columns.Name -join "],[") + "] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            if ($patterns.Count -ge 1) {
+                                # Check if the results not already contain a similar object
+                                #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
+                                if (-not $candidateFound) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
-                            # Get the data
-                            $dataset = @()
+                                    # Get the data
+                                    $dataset = @()
 
-                            try {
-                                $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
-                            } catch {
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
-                            }
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                    }
 
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
 
-                            # Check if there is any data
-                            if ($dataset.Count -ge 1) {
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
 
-                                # Loop through the columns
-                                foreach ($columnobject in $columns) {
-
-                                    # Loop through the patterns
-                                    foreach ($patternobject in $patterns) {
-
-                                        # If there is a result from the match
-                                        if ($dataset.$($columnobject.Name) -match $patternobject.Pattern) {
-
-                                            # Check if the results not already contain a similar object
-                                            if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
-
+                                            # If there is a result from the match
+                                            if (-not $candidateFound -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
                                                 # Add the results
-                                                $results += [pscustomobject]@{
+                                                [pscustomobject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -43945,18 +44939,23 @@ function Invoke-DbaDbPiiScan {
                                                     "PII-Category" = $patternobject.category
                                                     "PII-Name"     = $patternobject.Name
                                                     FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
                                                 }
+
+                                                $candidateFound = $true
                                             }
+
+                                            $patternobject = $null
                                         }
-                                        $patternobject = $null
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
                                     }
                                 }
                             } else {
-                                Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
                         }
-                    } else {
-                        Write-Message -Level Verbose -Message "No patterns found to perform check on"
                     }
 
                     $tableNumber++
@@ -43964,12 +44963,9 @@ function Invoke-DbaDbPiiScan {
                 } # End for each table
             } # End for each database
         } # End for each instance
-
-        # Return the results
-        return $results
-
     } # End process
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaDbShrink {
@@ -43988,7 +44984,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSize,
+        [int64]$StepSize,
         [int]$StatementTimeout = 0,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
@@ -45057,7 +46053,7 @@ function Invoke-DbaQuery {
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found" -Category ObjectNotFound
                             return
                         }
                         $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
@@ -45065,7 +46061,7 @@ function Invoke-DbaQuery {
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found." -Category ObjectNotFound
                             return
                         }
 
@@ -48267,7 +49263,10 @@ function New-DbaAzAccessToken {
                 public string ClientSecret { get; set; }
             }
 "@
-            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly)
+            Add-Type -TypeDefinition $source -ReferencedAssemblies ([Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly,
+                [PowerShell].Assembly,
+                [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.GetReferencedAssemblies()[0])
+
         }
 
         switch ($Subtype) {
@@ -48393,10 +49392,6 @@ function New-DbaClientAlias {
             foreach ($basekey in $basekeys) {
                 if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
 
-                if ((Test-Path $basekey) -eq $false) {
-                    throw "Base key ($basekey) does not exist. Quitting."
-                }
-
                 $client = "$basekey\Client"
 
                 if ((Test-Path $client) -eq $false) {
@@ -48437,9 +49432,9 @@ function New-DbaClientAlias {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
-        }
 
-        Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+            Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+        }
     }
 }
 
@@ -48510,7 +49505,7 @@ function New-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }
         }
@@ -50042,7 +51037,6 @@ function New-DbaDbMaskingConfig {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -50051,17 +51045,72 @@ function New-DbaDbMaskingConfig {
         [parameter(Mandatory)]
         [string]$Path,
         [string]$Locale = 'en',
+        [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+        [int]$SampleCount = 100,
+        [string]$KnownNameFilePath,
+        [string]$PatternFilePath ,
+        [switch]$ExcludeDefaultKnownName,
+        [switch]$ExcludeDefaultPattern,
         [switch]$Force,
+        [parameter(ValueFromPipeline = $true)]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     begin {
 
-        # Get all the different column types
-        try {
-            $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
-        } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -ErrorRecord $_ -Continue
+        # Initialize the arrays
+        $knownNames = @()
+        $patterns = @()
+
+        # Get the known names
+        if (-not $ExcludeDefaultKnownName) {
+            try {
+                $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
+                return
+            }
         }
+
+        # Get the patterns
+        if (-not $ExcludeDefaultPattern) {
+            try {
+                $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
+                return
+            }
+        }
+
+        # Get custom known names and patterns
+        if ($KnownNameFilePath) {
+            if (Test-Path -Path $KnownNameFilePath) {
+                try {
+                    $knownNames += Get-Content -Path $KnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse known types file" -ErrorRecord $_ -Target $KnownNameFilePath
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find known names file" -Target $KnownNameFilePath
+            }
+        }
+
+        if ($PatternFilePath ) {
+            if (Test-Path -Path $PatternFilePath ) {
+                try {
+                    $patterns += Get-Content -Path $PatternFilePath  -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Couldn't parse patterns file" -ErrorRecord $_ -Target $PatternFilePath
+                    return
+                }
+            } else {
+                Stop-Function -Message "Couldn't not find patterns file" -Target $PatternFilePath
+            }
+        }
+
         # Check if the Path is accessible
         if (-not (Test-Path -Path $Path)) {
             try {
@@ -50075,20 +51124,24 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+
+        $maskingconfig = @()
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
+        if (Test-FunctionInterrupt) { return }
+
+        if ($InputObject) {
+            $searchArray = @()
+            $searchArray += $InputObject | Select-Object ComputerName, InstanceName, SqlInstance, Database, Schema, Table, Column
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $databases += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-        $results = @()
-        foreach ($db in $InputObject) {
+        foreach ($db in $databases) {
             $server = $db.Parent
             $tables = @()
 
@@ -50123,6 +51176,8 @@ function New-DbaDbMaskingConfig {
                 }
 
                 foreach ($columnobject in $columncollection) {
+                    $result = $minValue = $maxValue = $null
+
                     # Skip incompatible columns
                     if ($columnobject.Identity) {
                         Write-Message -Level Verbose -Message "Skipping $columnobject because it is an identity column"
@@ -50154,7 +51209,15 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    $maskingType = $columnType = $min = $null
+                    $searchObject = [pscustomobject]@{
+                        ComputerName = $db.Parent.ComputerName
+                        InstanceName = $db.Parent.ServiceName
+                        SqlInstance  = $db.Parent.DomainInstanceName
+                        Database     = $db.Name
+                        Schema       = $tableobject.Schema
+                        Table        = $tableobject.Name
+                        Column       = $columnobject.Name
+                    }
 
                     if ($columnobject.Datatype.Name -in 'date', 'datetime', 'datetime2', 'smalldatetime', 'time') {
                         $columnLength = $columnobject.Datatype.NumericScale
@@ -50162,127 +51225,208 @@ function New-DbaDbMaskingConfig {
                         $columnLength = $columnobject.Datatype.MaximumLength
                     }
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                        $min = 2
-                    }
+                    $columnType = $columnobject.DataType.Name
 
-                    if (-not $columnType) {
-                        $columnType = $columnobject.DataType.Name.ToLowerInvariant()
-                    }
-
-                    # Get the masking type with the synonym
-                    $maskingType = $columnTypes | Where-Object {
-                        $columnobject.Name -in $_.Synonym
-                    }
-
-                    if ($maskingType) {
-                        # Make it easier to get the type name
-                        $maskingType = $maskingType | Select-Object TypeName -ExpandProperty TypeName
-
-                        $type = $null
-                        $subtype = $null
-
-                        switch ($maskingType.ToLowerInvariant()) {
-                            "address" {
-                                $type = "Address"
-                                $subtype = "StreetAddress"
-                            }
-                            "bic" {
-                                $type = "Finance"
-                                $subtype = "Bic"
-                            }
-                            "city" {
-                                $type = "Address"
-                                $subtype = "City"
-                            }
-                            "company" {
-                                $type = "Company"
-                                $subtype = "CompanyName"
-                            }
-                            "country" {
-                                $type = "Address"
-                                $subtype = "Country"
-                            }
-                            "countrycode" {
-                                $type = "Address"
-                                $subtype = "CountryCode"
-                            }
-                            "creditcard" {
-                                $type = "Finance"
-                                $subtype = "CreditcardNumber"
-                            }
-                            "creditcardcvv" {
-                                $type = "Finance"
-                                $subtype = "CreditCardCvv"
-                            }
-                            "email" {
-                                $type = "Internet"
-                                $subtype = "Email"
-                            }
-                            "ethereum" {
-                                $type = "Finance"
-                                $subtype = "EthereumAddress"
-                            }
-                            "firstname" {
-                                $type = "Name"
-                                $subtype = "Firstname"
-                            }
-                            "fullname" {
-                                $type = "Name"
-                                $subtype = "FullName"
-                            }
-                            "iban" {
-                                $type = "Finance"
-                                $subtype = "Iban"
-                            }
-                            "lastname" {
-                                $type = "Name"
-                                $subtype = "Lastname"
-                            }
-                            "latitude" {
-                                $type = "Address"
-                                $subtype = "Latitude"
-                            }
-                            "longitude" {
-                                $type = "Address"
-                                $subtype = "Longitude"
-                            }
-                            "phone" {
-                                $type = "Phone"
-                                $subtype = "PhoneNumber"
-                            }
-                            "state" {
-                                $type = "Address"
-                                $subtype = "State"
-                            }
-                            "stateabbr" {
-                                $type = "Address"
-                                $subtype = "StateAbbr"
-                            }
-                            "username" {
-                                $type = "Internet"
-                                $subtype = "UserName"
-                            }
-                            "zipcode" {
-                                $type = "Address"
-                                $subtype = "Zipcode"
+                    switch ($columnType) {
+                        "bigint" {
+                            $minValue = 1
+                            $maxValue = 9223372036854775807
+                        }
+                        {
+                            $_ -in "char", "nchar", "nvarchar", "varchar"
+                        } {
+                            if ($columnLength -eq -1) {
+                                if ($_ -in "char", "varchar") {
+                                    $minValue = 1
+                                    $maxValue = 8000
+                                } elseif ($_ -in "nchar", "nvarchar") {
+                                    $minValue = 1
+                                    $maxValue = 4000
+                                }
+                            } else {
+                                $minValue = [int]($columnLength / 2)
+                                $maxValue = $columnLength
                             }
                         }
+                        "date" {
+                            $maxValue = $null
+                        }
+                        "datetime" {
+                            $maxValue = $null
+                        }
+                        "datetime2" {
+                            $maxValue = $null
+                        }
+                        "decimal" {
+                            $minValue = 1.1
+                            $maxValue = $null
+                        }
+                        "float" {
+                            $minValue = 1.1
+                            $maxValue = $null
+                        }
+                        "int" {
+                            $minValue = 1
+                            $maxValue = 2147483647
+                        }
+                        "money" {
+                            $minValue = 1.0
+                            $maxValue = 922337203685477.5807
+                        }
+                        "smallint" {
+                            $minValue = 1
+                            $maxValue = 32767
+                        }
+                        "smalldatetime" {
+                            $maxValue = $null
+                        }
+                        "text" {
+                            $minValue = 10
+                            $maxValue = 2147483647
+                        }
+                        "time" {
+                            $maxValue = $null
+                        }
+                        "tinyint" {
+                            $minValue = 1
+                            $maxValue = 255
+                        }
+                        "varbinary" {
+                            $maxValue = $columnLength
+                        }
+                        "userdefineddatatype" {
+                            if ($columnLength -eq 1) {
+                                $maxValue = $columnLength
+                            } else {
+                                $minValue = [int]($columnLength / 2)
+                                $maxValue = $columnLength
+                            }
+                        }
+                        default {
+                            $minValue = [int]($columnLength / 2)
+                            $maxValue = $columnLength
+                        }
+                    }
 
+                    if ($searchArray -contains $searchObject) {
+                        $result = $InputObject | Where-Object { $_.Database -eq $searchObject.Name -and $_.Schema -eq $searchObject.Schema -and $_.Table -eq $searchObject.Name -and $_.Column -eq $searchObject.Name }
+                    } else {
+
+                        if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
+                            $minValue = 2
+                        }
+
+                        if ($columnobject.DataType.Name -eq "geography") {
+                            # Add the results
+                            $result = [pscustomobject]@{
+                                ComputerName   = $db.Parent.ComputerName
+                                InstanceName   = $db.Parent.ServiceName
+                                SqlInstance    = $db.Parent.DomainInstanceName
+                                Database       = $db.Name
+                                Schema         = $tableobject.Schema
+                                Table          = $tableobject.Name
+                                Column         = $columnobject.Name
+                                "PII-Category" = "Location"
+                                "PII-Name"     = "Geography"
+                                FoundWith      = "DataType"
+                                MaskingType    = "Random"
+                                MaskingSubType = "Decimal"
+                            }
+                        } else {
+                            if ($knownNames.Count -ge 1) {
+                                # Go through the first check to see if any column is found with a known type
+                                foreach ($knownName in $knownNames) {
+                                    foreach ($pattern in $knownName.Pattern) {
+                                        if ($null -eq $result -and $columnobject.Name -match $pattern ) {
+                                            # Add the results
+                                            $result = [pscustomobject]@{
+                                                ComputerName   = $db.Parent.ComputerName
+                                                InstanceName   = $db.Parent.ServiceName
+                                                SqlInstance    = $db.Parent.DomainInstanceName
+                                                Database       = $db.Name
+                                                Schema         = $tableobject.Schema
+                                                Table          = $tableobject.Name
+                                                Column         = $columnobject.Name
+                                                "PII-Category" = $knownName.Category
+                                                "PII-Name"     = $knownName.Name
+                                                FoundWith      = "KnownName"
+                                                MaskingType    = $knownName.MaskingType
+                                                MaskingSubType = $knownName.MaskingSubType
+                                            }
+                                        }
+                                    }
+                                }
+                                $knownName = $null
+                            } else {
+                                Write-Message -Level Verbose -Message "No known names found to perform check on"
+                            }
+
+                            # Go through the second check to see if any column is found with a known type
+                            if ($patterns.Count -ge 1) {
+                                if ($null -eq $result) {
+                                    # Setup the query
+                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                                    # Get the data
+                                    $dataset = @()
+
+                                    try {
+                                        $dataset += Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
+                                    } catch {
+                                        $errormessage = $_.Exception.Message.ToString()
+                                        Stop-Function -Message "Error executing query [$($tableobject.Schema)].[$($tableobject.Name)]: $errormessage" -Target $updatequery -Continue -ErrorRecord $_
+                                    }
+
+                                    # Check if there is any data
+                                    if ($dataset.Count -ge 1) {
+
+                                        # Loop through the patterns
+                                        foreach ($patternobject in $patterns) {
+
+                                            # If there is a result from the match
+                                            if ($null -eq $result -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
+                                                # Add the results
+                                                $result = [pscustomobject]@{
+                                                    ComputerName   = $db.Parent.ComputerName
+                                                    InstanceName   = $db.Parent.ServiceName
+                                                    SqlInstance    = $db.Parent.DomainInstanceName
+                                                    Database       = $db.Name
+                                                    Schema         = $tableobject.Schema
+                                                    Table          = $tableobject.Name
+                                                    Column         = $columnobject.Name
+                                                    "PII-Category" = $patternobject.Category
+                                                    "PII-Name"     = $patternobject.Name
+                                                    FoundWith      = "Pattern"
+                                                    MaskingType    = $patternobject.MaskingType
+                                                    MaskingSubType = $patternobject.MaskingSubType
+                                                }
+                                            }
+                                            $patternobject = $null
+                                        }
+                                    } else {
+                                        Write-Message -Message "Table $($tableobject.Name) does not contain any rows" -Level Verbose
+                                    }
+                                }
+                            } else {
+                                Write-Message -Level Verbose -Message "No patterns found to perform check on"
+                            }
+                        }
+                    }
+
+                    if ($result) {
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
-                            MaskingType     = $type
-                            SubType         = $subtype
+                            CharacterString = $( if ($result.MaskingType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
+                            MaskingType     = $result.MaskingType
+                            SubType         = $result.MaskingSubType
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             Composite       = $null
                         }
-
                     } else {
                         $type = "Random"
 
@@ -50291,85 +51435,64 @@ function New-DbaDbMaskingConfig {
                                 $_ -in "bit", "bool"
                             } {
                                 $subType = "Bool"
-                                $MaxValue = $null
                             }
                             "bigint" {
                                 $subType = "Number"
-                                $MaxValue = 9223372036854775807
                             }
                             {
                                 $_ -in "char", "nchar", "nvarchar", "varchar"
                             } {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
-                            }
-                            "int" {
-                                $subType = "Number"
-                                $MaxValue = 2147483647
                             }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "datetime2" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "decimal" {
                                 $subType = "Decimal"
-                                $MaxValue = $null
                             }
                             "float" {
                                 $subType = "Float"
-                                $MaxValue = $null
+                            }
+                            "int" {
+                                $subType = "Number"
                             }
                             "money" {
                                 $type = "Commerce"
                                 $subType = "Price"
-                                $min = -922337203685477.5808
-                                $MaxValue = 922337203685477.5807
                             }
                             "smallint" {
                                 $subType = "Number"
-                                $MaxValue = 32767
                             }
                             "smalldatetime" {
                                 $subType = "Date"
-                                $MaxValue = $null
                             }
                             "text" {
                                 $subType = "String"
-                                $maxValue = 2147483647
                             }
                             "time" {
                                 $type = "Date"
                                 $subType = "Past"
-                                $MaxValue = $null
                             }
                             "tinyint" {
                                 $subType = "Number"
-                                $MaxValue = 255
                             }
                             "varbinary" {
                                 $subType = "Byte"
-                                $MaxValue = $columnLength
                             }
                             "userdefineddatatype" {
                                 if ($columnLength -eq 1) {
                                     $subType = "Bool"
-                                    $MaxValue = $columnLength
                                 } else {
                                     $subType = "String2"
-                                    $min = [int]($columnLength / 2)
-                                    $MaxValue = $columnLength
                                 }
                             }
                             "uniqueidentifier" {
@@ -50377,17 +51500,15 @@ function New-DbaDbMaskingConfig {
                             }
                             default {
                                 $subType = "String2"
-                                $min = [int]($columnLength / 2)
-                                $MaxValue = $columnLength
                             }
                         }
 
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
-                            CharacterString = $null
-                            MinValue        = $min
-                            MaxValue        = $MaxValue
+                            CharacterString = $( if ($subType -in "String", "String2") { $CharacterString } else { $null } )
+                            MinValue        = $minValue
+                            MaxValue        = $maxValue
                             MaskingType     = $type
                             SubType         = $subType
                             Format          = $null
@@ -50397,7 +51518,6 @@ function New-DbaDbMaskingConfig {
                         }
                     }
                 }
-
 
                 # Check if something needs to be generated
                 if ($columns) {
@@ -50414,7 +51534,7 @@ function New-DbaDbMaskingConfig {
 
             # Check if something needs to be generated
             if ($tables) {
-                $results += [PSCustomObject]@{
+                $maskingconfig += [PSCustomObject]@{
                     Name   = $db.Name
                     Type   = "DataMaskingConfiguration"
                     Tables = $tables
@@ -50422,24 +51542,26 @@ function New-DbaDbMaskingConfig {
             } else {
                 Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
             }
-        }
 
-        # Write the data to the Path
-        if ($results) {
-            try {
-                $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
+            # Write the data to the Path
+            if ($maskingconfig) {
+                Write-Message -Message "Writing masking config" -Level Verbose
+                try {
+                    $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                    $temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
-                if (-not $script:isWindows) {
-                    $temppath = $temppath.Replace("\", "/")
+                    if (-not $script:isWindows) {
+                        $temppath = $temppath.Replace("\", "/")
+                    }
+
+                    Set-Content -Path $temppath -Value ($maskingconfig | ConvertTo-Json -Depth 5)
+                    Get-ChildItem -Path $temppath
+                } catch {
+                    Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
                 }
-                Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                Get-ChildItem -Path $temppath
-            } catch {
-                Stop-Function -Message "Something went wrong writing the results to the $Path" -Target $Path -Continue -ErrorRecord $_
+            } else {
+                Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
             }
-        } else {
-            Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
         }
     }
 }
@@ -51259,7 +52381,7 @@ function New-DbaDirectory {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
         }
 
-        $sql = "EXEC master.dbo.xp_create_subdir'$path'"
+        $sql = "EXEC master.dbo.xp_create_subdir '$path'"
         Write-Message -Level Debug -Message $sql
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
@@ -51278,6 +52400,7 @@ function New-DbaDirectory {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function New-DbaEndpoint {
@@ -51759,7 +52882,7 @@ function New-DbaServerRole {
     )
     process {
         if (-not $ServerRole) {
-            Stop-Function -Message "You must specify a new server-role name. Use -ServerRole parameter."
+            Stop-Function -Message "You must specify a new server-level role name. Use -ServerRole parameter."
             return
         }
 
@@ -51770,16 +52893,15 @@ function New-DbaServerRole {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $serverroles = $server.Roles
+            $serverRoles = $server.Roles
 
             foreach ($role in $ServerRole) {
-                if ($serverroles | Where-Object Name -eq $role) {
-                    Stop-Function -Message "The $role role already exist within database $db on instance $server." -Target $db -Continue
+                if ($serverRoles | Where-Object Name -eq $role) {
+                    Stop-Function -Message "The server-level role $role already exists on instance $server." -Target $instance -Continue
                 }
 
-                Write-Message -Level Verbose -Message "Add roles to Instance $server"
-
-                if ($Pscmdlet.ShouldProcess("Creating new Serve-role $role on $server")) {
+                if ($Pscmdlet.ShouldProcess("Creating new server-level role $role on $server")) {
+                    Write-Message -Level Verbose -Message "Creating new server-level role $role on $server"
                     try {
                         $newServerRole = New-Object -TypeName Microsoft.SqlServer.Management.Smo.ServerRole
                         $newServerRole.Name = $role
@@ -51791,11 +52913,7 @@ function New-DbaServerRole {
 
                         $newServerRole.Create()
 
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $newServerRole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $newServerRole -Property ComputerName, InstanceName, SqlInstance, Name, Owner
+                        Get-DbaServerRole -SqlInstance $server -ServerRole $role -EnableException
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
@@ -52045,7 +53163,7 @@ Ideally start a new console, perform the minimal steps required to reproduce the
 
             try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
             catch {
-                Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
+                Stop-Function -Message "Failed to export dump to file." -ErrorRecord $_ -Target $filePathXml
                 return
             }
 
@@ -52495,13 +53613,13 @@ function Publish-DbaDacPackage {
         }
 
         if (-not (Test-Path -Path $Path)) {
-            Stop-Function -Message "$Path not found!"
+            Stop-Function -Message "$Path not found."
             return
         }
 
         if ($PsCmdlet.ParameterSetName -eq 'Xml') {
             if (-not (Test-Path -Path $PublishXml)) {
-                Stop-Function -Message "$PublishXml not found!"
+                Stop-Function -Message "$PublishXml not found."
                 return
             }
         }
@@ -53259,6 +54377,188 @@ function Read-DbaXEFile {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Register-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $Config,
+
+        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = "Name", Position = 1)]
+        [string]
+        $Name = "*",
+
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "UserDefault",
+
+        [switch]$EnableException
+    )
+
+    begin {
+        if ($script:NoRegistry -and ($Scope -band 14)) {
+            Stop-Function -Message "Cannot register configurations on non-windows machines to registry. Please specify a file-based scope" -Tag 'NotSupported' -Category NotImplemented
+            return
+        }
+
+        # Linux and MAC default to local user store file
+        if ($script:NoRegistry -and ($Scope -eq "UserDefault")) {
+            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileUserLocal
+        }
+        # Linux and MAC get redirection for SystemDefault to FileSystem
+        if ($script:NoRegistry -and ($Scope -eq "SystemDefault")) {
+            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileSystem
+        }
+
+        $parSet = $PSCmdlet.ParameterSetName
+
+        function Write-Config {
+            [CmdletBinding()]
+            Param (
+                [Sqlcollaborative.Dbatools.Configuration.Config]
+                $Config,
+
+                [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+                $Scope,
+
+                [bool]
+                $EnableException,
+
+                [string]
+                $FunctionName = (Get-PSCallStack)[0].Command
+            )
+
+            if (-not $Config -or ($Config.RegistryData -eq "<type not supported>")) {
+                Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Tag "config", "fail" -Target $Config -FunctionName $FunctionName
+                return
+            }
+
+            try {
+                Write-Message -Level Verbose -Message "Registering $($Config.FullName) for $Scope" -Tag "Config" -Target $Config -FunctionName $FunctionName
+                #region User Default
+                if (1 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryUserDefault -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryUserDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion User Default
+
+                #region User Mandatory
+                if (2 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryUserEnforced -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryUserEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion User Mandatory
+
+                #region System Default
+                if (4 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryMachineDefault -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryMachineDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion System Default
+
+                #region System Mandatory
+                if (8 -band $Scope) {
+                    Ensure-RegistryPath -Path $script:path_RegistryMachineEnforced -ErrorAction Stop
+                    Set-ItemProperty -Path $script:path_RegistryMachineEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
+                }
+                #endregion System Mandatory
+            } catch {
+                Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Tag "config", "fail" -Target $Config -ErrorRecord $_ -FunctionName $FunctionName
+                return
+            }
+        }
+
+        function Ensure-RegistryPath {
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "")]
+            [CmdletBinding()]
+            Param (
+                [string]
+                $Path
+            )
+
+            if (-not (Test-Path $Path)) {
+                $null = New-Item $Path -Force
+            }
+        }
+
+        # For file based persistence
+        $configurationItems = @()
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        #region Registry Based
+        if ($Scope -band 15) {
+            switch ($parSet) {
+                "Default" {
+                    foreach ($item in $Config) {
+                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
+                    }
+
+                    foreach ($item in $FullName) {
+                        if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
+                            Write-Config -Config ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
+                        }
+                    }
+                }
+                "Name" {
+                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
+                    }
+                }
+            }
+        }
+        #endregion Registry Based
+
+        #region File Based
+        else {
+            switch ($parSet) {
+                "Default" {
+                    foreach ($item in $Config) {
+                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
+                    }
+
+                    foreach ($item in $FullName) {
+                        if (($configurationItems.FullName -notcontains $item) -and ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
+                            $configurationItems += [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
+                        }
+                    }
+                }
+                "Name" {
+                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
+                    }
+                }
+            }
+        }
+        #endregion File Based
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        #region Finish File Based Persistence
+        if ($Scope -band 16) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserLocal "psf_config.json")
+        }
+        if ($Scope -band 32) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserShared "psf_config.json")
+        }
+        if ($Scope -band 64) {
+            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileSystem "psf_config.json")
+        }
+        #endregion Finish File Based Persistence
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Remove-DbaAgDatabase {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -53897,7 +55197,7 @@ function Remove-DbaClientAlias {
                 $fullKey = "$basekey\Client\ConnectTo"
                 if ((Test-Path $fullKey) -eq $false) {
                     
-                    Write-Warning "Registry key ($fullKey) does not exist. Quitting."
+                    Write-Warning "Registry key ($fullKey) does not exist on $env:COMPUTERNAME"
                     continue
                 }
 
@@ -53912,10 +55212,9 @@ function Remove-DbaClientAlias {
                     $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
                     foreach ($a in $Alias) {
                         if ($entry.Property -contains $a) {
-                            Remove-ItemProperty -Path $e -Name $a
-
+                            $null = Remove-ItemProperty -Path $e -Name $a
                             [PSCustomObject]@{
-                                ComputerName = $computer
+                                ComputerName = $env:COMPUTERNAME
                                 Architecture = $architecture
                                 Alias        = $a
                                 Status       = "Removed"
@@ -54975,7 +56274,7 @@ function Remove-DbaDbOrphanUser {
                                                         }
                                                     }
                                                 } else {
-                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
+                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema."
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
@@ -55011,7 +56310,7 @@ function Remove-DbaDbOrphanUser {
                                         if ($Force) {
                                             if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
                                                 $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
+                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used."
                                             }
                                         } else {
                                             Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
@@ -55614,7 +56913,7 @@ function Remove-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -57454,7 +58753,12 @@ function Reset-DbaAdmin {
             # Setup remote session if server is not local
             if (-not $instance.IsLocalHost) {
                 try {
-                    $session = New-PSSession -ComputerName $hostname -ErrorAction Stop
+                    $connectionParams = @{
+                        ComputerName = $hostname
+                        ErrorAction  = "Stop"
+                        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+                    }
+                    $session = New-PSSession @connectionParams
                 } catch {
                     Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
                 }
@@ -57742,7 +59046,66 @@ function Reset-DbaAdmin {
         }
     }
     end {
-        Write-Message -Level Verbose -Message "Script complete!"
+        Write-Message -Level Verbose -Message "Script complete."
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Reset-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
+    param (
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $ConfigurationItem,
+
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = 'Module')]
+        [string]
+        $Name = "*",
+
+        [switch]$EnableException
+    )
+
+    process {
+        #region By configuration Item
+        foreach ($item in $ConfigurationItem) {
+            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                try { $item.ResetValue() }
+                catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+            }
+        }
+        #endregion By configuration Item
+
+        #region By FullName
+        foreach ($nameItem in $FullName) {
+            # The configuration items themselves can be cast to string, so they need to be filtered out,
+            # otherwise on bind they would execute for this code-path as well.
+            if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+
+            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                    try { $item.ResetValue() }
+                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+                }
+            }
+        }
+        #endregion By FullName
+        if ($Module) {
+            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name)) {
+                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
+                    try { $item.ResetValue() }
+                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
+                }
+            }
+        }
     }
 }
 
@@ -60938,7 +62301,7 @@ function Set-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }
         }
@@ -62880,7 +64243,7 @@ function Set-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
@@ -64301,7 +65664,7 @@ function Start-DbaMigration {
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures')]
+        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'DataCollector', 'StartupProcedures', 'AgentServerProperties')]
         [string[]]$Exclude,
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
@@ -64500,7 +65863,8 @@ function Start-DbaMigration {
 
         if ($Exclude -notcontains 'AgentServer') {
             Write-Message -Level Verbose -Message "Migrating job server"
-            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+            $ExcludeAgentServerProperties = $Exclude -contains 'AgentServerProperties'
+            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -ExcludeServerProperties:$ExcludeAgentServerProperties
         }
 
         if ($Exclude -notcontains 'StartupProcedures') {
@@ -66446,11 +67810,16 @@ function Test-DbaConnection {
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $ping = New-Object System.Net.NetworkInformation.Ping
             $timeout = 1000 #milliseconds
-            $reply = $ping.Send($instance.ComputerName, $timeout)
-            $pingable = $reply.Status -eq 'Success'
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
+                $reply = $ping.Send($instance.ComputerName, $timeout)
+                $pingable = $reply.Status -eq 'Success'
+            } catch {
+                $pingable = $false
+            }
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance.InputObject -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
                 if (-not $instanceName) {
@@ -66458,7 +67827,7 @@ function Test-DbaConnection {
                 }
             } catch {
                 $connectSuccess = $false
-                $instanceName = $instance.InstanceName
+                $instanceName = $instance.InputObject
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
@@ -66479,7 +67848,7 @@ function Test-DbaConnection {
             # Auth Scheme
             $authwarning = $null
             try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.InputObject -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
             } catch {
                 $authscheme = $_
             }
@@ -67322,7 +68691,7 @@ function Test-DbaDbDataMaskingConfig {
             return
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $randomizerTypes = Get-DbaRandomizedType
 
@@ -67393,7 +68762,7 @@ function Test-DbaDbDataMaskingConfig {
                 # Test date types
                 if ($column.ColumnType.ToLower() -eq 'date') {
 
-                    if ($column.MaskingType -ne 'Date') {
+                    if ($column.MaskingType -ne 'Date' -and ($column.SubType -ne 'DateOfBirth' -and $null -ne $column.Subtype)) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
@@ -68865,7 +70234,7 @@ function Test-DbaLastBackup {
                 $success = $restoreresult = $dbccresult = "Skipped"
             }
             if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
-                Write-Message -Level Verbose -Message "Looking good!"
+                Write-Message -Level Verbose -Message "Looking good."
 
                 $fileexists = $true
                 $ogdbname = $dbname
@@ -70811,7 +72180,157 @@ function Uninstall-DbatoolsWatchUpdate {
             Invoke-Command -ScriptBlock $script
         }
 
-        Write-Message -Level Output -Message "All done!"
+        Write-Message -Level Output -Message "All done."
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Unregister-DbatoolsConfig {
+    
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    param (
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        $ConfigurationItem,
+
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [string[]]
+        $FullName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
+        [string]
+        $Module,
+
+        [Parameter(ParameterSetName = 'Module')]
+        [string]
+        $Name = "*",
+
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = "UserDefault"
+    )
+
+    begin {
+        if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*") -and ($Scope -band 15)) {
+            Stop-Function -Message "Cannot unregister configurations from registry on non-windows machines." -Tag 'NotSupported' -Category ResourceUnavailable
+            return
+        }
+
+        #region Initialize Collection
+        $registryProperties = @()
+        if ($Scope -band 1) {
+            if (Test-Path $script:path_RegistryUserDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserDefault }
+        }
+        if ($Scope -band 2) {
+            if (Test-Path $script:path_RegistryUserEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserEnforced }
+        }
+        if ($Scope -band 4) {
+            if (Test-Path $script:path_RegistryMachineDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineDefault }
+        }
+        if ($Scope -band 8) {
+            if (Test-Path $script:path_RegistryMachineEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineEnforced }
+        }
+        $pathProperties = @()
+        if ($Scope -band 16) {
+            $fileUserLocalSettings = @()
+            if (Test-Path (Join-Path $script:path_FileUserLocal "psf_config.json")) { $fileUserLocalSettings = Get-Content (Join-Path $script:path_FileUserLocal "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileUserLocalSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileUserLocal "psf_config.json")
+                    Properties = $fileUserLocalSettings
+                    Changed    = $false
+                }
+            }
+        }
+        if ($Scope -band 32) {
+            $fileUserSharedSettings = @()
+            if (Test-Path (Join-Path $script:path_FileUserShared "psf_config.json")) { $fileUserSharedSettings = Get-Content (Join-Path $script:path_FileUserShared "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileUserSharedSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileUserShared "psf_config.json")
+                    Properties = $fileUserSharedSettings
+                    Changed    = $false
+                }
+            }
+        }
+        if ($Scope -band 64) {
+            $fileSystemSettings = @()
+            if (Test-Path (Join-Path $script:path_FileSystem "psf_config.json")) { $fileSystemSettings = Get-Content (Join-Path $script:path_FileSystem "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
+            if ($fileSystemSettings) {
+                $pathProperties += [pscustomobject]@{
+                    Path       = (Join-Path $script:path_FileSystem "psf_config.json")
+                    Properties = $fileSystemSettings
+                    Changed    = $false
+                }
+            }
+        }
+        #endregion Initialize Collection
+
+        $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        # Silently skip since no action necessary
+        if (-not ($pathProperties -or $registryProperties)) { return }
+
+        foreach ($item in $ConfigurationItem) {
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item.FullName })) {
+                Remove-ItemProperty -Path $hive.PSPath -Name $item.FullName
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item.FullName })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item.FullName
+                $fileConfig.Changed = $true
+            }
+        }
+
+        foreach ($item in $FullName) {
+            # Ignore string-casted configurations
+            if ($item -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item })) {
+                Remove-ItemProperty -Path $hive.PSPath -Name $item
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item
+                $fileConfig.Changed = $true
+            }
+        }
+
+        if ($Module) {
+            $compoundName = "{0}.{1}" -f $Module, $Name
+
+            # Registry
+            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -like $compoundName })) {
+                foreach ($propName in $hive.PSObject.Properties.Name) {
+                    if ($propName -in $common) { continue }
+
+                    if ($propName -like $compoundName) {
+                        Remove-ItemProperty -Path $hive.PSPath -Name $propName
+                    }
+                }
+            }
+            # Prepare file
+            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -like $compoundName })) {
+                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NotLike $compoundName
+                $fileConfig.Changed = $true
+            }
+        }
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($fileConfig in $pathProperties) {
+            if (-not $fileConfig.Changed) { continue }
+
+            if ($fileConfig.Properties) {
+                $fileConfig.Properties | ConvertTo-Json | Set-Content -Path $fileConfig.Path -Encoding UTF8
+            } else {
+                Remove-Item $fileConfig.Path
+            }
+        }
     }
 }
 
@@ -71314,7 +72833,7 @@ function Watch-DbaDbLogin {
         
         if ($SqlCms) {
             try {
-                $servers = Get-DbaRegServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
+                $servers = Get-DbaRegServer -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
                 return
@@ -72006,642 +73525,6 @@ function Write-DbaDbTableData {
 }
 
 #.ExternalHelp dbatools-Help.xml
-function Export-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'FullName')]
-    Param (
-        [Parameter(ParameterSetName = "FullName", Mandatory = $true)]
-        [string]
-        $FullName,
-
-        [Parameter(ParameterSetName = "Module", Mandatory = $true)]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = "Module", Position = 1)]
-        [string]
-        $Name = "*",
-
-        [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $Config,
-
-        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
-        [string]
-        $ModuleName,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [int]
-        $ModuleVersion = 1,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "FileUserShared",
-
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'Config')]
-        [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'FullName')]
-        [Parameter(Position = 2, Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $OutPath,
-
-        [switch]
-        $SkipUnchanged,
-
-        [switch]$EnableException
-    )
-
-    begin {
-        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
-
-        $items = @()
-
-        if (($Scope -band 15) -and ($ModuleName)) {
-            Stop-Function -Message "Cannot export modulecache to registry! Please pick a file scope for your export destination" -EnableException $EnableException -Category InvalidArgument -Tag 'fail', 'scope', 'registry'
-            return
-        }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        if (-not $ModuleName) {
-            foreach ($item in $Config) { $items += $item }
-            if ($FullName) { $items = Get-DbatoolsConfig -FullName $FullName }
-            if ($Module) { $items = Get-DbatoolsConfig -Module $Module -Name $Name }
-        }
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        if (-not $ModuleName) {
-            try { Write-DbatoolsConfigFile -Config ($items | Where-Object { -not $SkipUnchanged -or -not $_.Unchanged } ) -Path $OutPath -Replace }
-            catch {
-                Stop-Function -Message "Failed to export to file" -EnableException $EnableException -ErrorRecord $_ -Tag 'fail', 'export'
-                return
-            }
-        } else {
-            if ($Scope -band 16) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true) -Path (Join-Path $script:path_FileUserLocal "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-            if ($Scope -band 32) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileUserShared "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-            if ($Scope -band 64) {
-                Write-DbatoolsConfigFile -Config (Get-DbatoolsConfig -Module $ModuleName -Force | Where-Object ModuleExport | Where-Object Unchanged -NE $true)  -Path (Join-Path $script:path_FileSystem "$($ModuleName.ToLowerInvariant())-$($ModuleVersion).json")
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = "FullName")]
-    param (
-        [Parameter(ParameterSetName = "FullName", Position = 0)]
-        [string]$FullName = "*",
-        [Parameter(ParameterSetName = "Module", Position = 1)]
-        [string]$Name = "*",
-        [Parameter(ParameterSetName = "Module", Position = 0)]
-        [string]$Module = "*",
-        [switch]$Force
-    )
-
-    switch ($PSCmdlet.ParameterSetName) {
-        "Module" {
-            $Name = $Name.ToLowerInvariant()
-            $Module = $Module.ToLowerInvariant()
-
-            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
-        }
-
-        "FullName" {
-            [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbatoolsConfigValue {
-    
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
-    [CmdletBinding()]
-    param (
-        [Alias('Name')]
-        [Parameter(Mandatory)]
-        [string]$FullName,
-        [object]$Fallback,
-        [switch]$NotNull
-    )
-
-    $FullName = $FullName.ToLowerInvariant()
-
-    $temp = $null
-    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
-    if ($temp -eq $null) { $temp = $Fallback }
-
-    if ($NotNull -and ($temp -eq $null)) {
-        Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
-    } else {
-        return $temp
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Import-DbatoolsConfig {
-    
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
-    [CmdletBinding(DefaultParameterSetName = "Path")]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Path")]
-        [string[]]
-        $Path,
-
-        [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
-        [string]
-        $ModuleName,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [int]
-        $ModuleVersion = 1,
-
-        [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "FileUserLocal, FileUserShared, FileSystem",
-
-        [Parameter(ParameterSetName = "Path")]
-        [string[]]
-        $IncludeFilter,
-
-        [Parameter(ParameterSetName = "Path")]
-        [string[]]
-        $ExcludeFilter,
-
-        [Parameter(ParameterSetName = "Path")]
-        [switch]
-        $Peek,
-
-        [switch]$EnableException
-    )
-
-    begin {
-        Write-Message -Level InternalComment -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")" -Tag 'debug', 'start', 'param'
-    }
-    process {
-        #region Explicit Path
-        foreach ($item in $Path) {
-            try {
-                if ($item -like "http*") { $data = Read-DbatoolsConfigFile -Weblink $item -ErrorAction Stop }
-                else {
-                    $pathItem = $null
-                    try { $pathItem = Resolve-DbaPath -Path $item -SingleItem -Provider FileSystem }
-                    catch { }
-                    if ($pathItem) { $data = Read-DbatoolsConfigFile -Path $pathItem -ErrorAction Stop }
-                    else { $data = Read-DbatoolsConfigFile -RawJson $item -ErrorAction Stop }
-                }
-            } catch { Stop-Function -Message "Failed to import $item" -EnableException $EnableException -Tag 'fail', 'import' -ErrorRecord $_ -Continue -Target $item }
-
-            :element foreach ($element in $data) {
-                #region Exclude Filter
-                foreach ($exclusion in $ExcludeFilter) {
-                    if ($element.FullName -like $exclusion) {
-                        continue element
-                    }
-                }
-                #endregion Exclude Filter
-
-                #region Include Filter
-                if ($IncludeFilter) {
-                    $isIncluded = $false
-                    foreach ($inclusion in $IncludeFilter) {
-                        if ($element.FullName -like $inclusion) {
-                            $isIncluded = $true
-                            break
-                        }
-                    }
-
-                    if (-not $isIncluded) { continue }
-                }
-                #endregion Include Filter
-
-                if ($Peek) { $element }
-                else {
-                    try {
-                        if (-not $element.KeepPersisted) { Set-DbatoolsConfig -FullName $element.FullName -Value $element.Value -EnableException }
-                        else { Set-DbatoolsConfig -FullName $element.FullName -PersistedValue $element.Value -PersistedType $element.Type }
-                    } catch {
-                        Stop-Function -Message "Failed to set '$($element.FullName)'" -ErrorRecord $_ -EnableException $EnableException -Tag 'fail', 'import' -Continue -Target $item
-                    }
-                }
-            }
-        }
-        #endregion Explicit Path
-
-        if ($ModuleName) {
-            $data = Read-DbatoolsConfigPersisted -Module $ModuleName -Scope $Scope -ModuleVersion $ModuleVersion
-
-            foreach ($value in $data.Values) {
-                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException}
-                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
-            }
-        }
-    }
-    end {
-
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Register-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $Config,
-
-        [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = "Name", Position = 1)]
-        [string]
-        $Name = "*",
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "UserDefault",
-
-        [switch]$EnableException
-    )
-
-    begin {
-        if ($script:NoRegistry -and ($Scope -band 14)) {
-            Stop-Function -Message "Cannot register configurations on non-windows machines to registry. Please specify a file-based scope" -Tag 'NotSupported' -Category NotImplemented
-            return
-        }
-
-        # Linux and MAC default to local user store file
-        if ($script:NoRegistry -and ($Scope -eq "UserDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileUserLocal
-        }
-        # Linux and MAC get redirection for SystemDefault to FileSystem
-        if ($script:NoRegistry -and ($Scope -eq "SystemDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileSystem
-        }
-
-        $parSet = $PSCmdlet.ParameterSetName
-
-        function Write-Config {
-            [CmdletBinding()]
-            Param (
-                [Sqlcollaborative.Dbatools.Configuration.Config]
-                $Config,
-
-                [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-                $Scope,
-
-                [bool]
-                $EnableException,
-
-                [string]
-                $FunctionName = (Get-PSCallStack)[0].Command
-            )
-
-            if (-not $Config -or ($Config.RegistryData -eq "<type not supported>")) {
-                Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Tag "config", "fail" -Target $Config -FunctionName $FunctionName
-                return
-            }
-
-            try {
-                Write-Message -Level Verbose -Message "Registering $($Config.FullName) for $Scope" -Tag "Config" -Target $Config -FunctionName $FunctionName
-                #region User Default
-                if (1 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryUserDefault -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryUserDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion User Default
-
-                #region User Mandatory
-                if (2 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryUserEnforced -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryUserEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion User Mandatory
-
-                #region System Default
-                if (4 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryMachineDefault -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryMachineDefault -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion System Default
-
-                #region System Mandatory
-                if (8 -band $Scope) {
-                    Ensure-RegistryPath -Path $script:path_RegistryMachineEnforced -ErrorAction Stop
-                    Set-ItemProperty -Path $script:path_RegistryMachineEnforced -Name $Config.FullName -Value $Config.RegistryData -ErrorAction Stop
-                }
-                #endregion System Mandatory
-            } catch {
-                Stop-Function -Message "Failed to export $($Config.FullName), to scope $Scope" -EnableException $EnableException -Tag "config", "fail" -Target $Config -ErrorRecord $_ -FunctionName $FunctionName
-                return
-            }
-        }
-
-        function Ensure-RegistryPath {
-            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "")]
-            [CmdletBinding()]
-            Param (
-                [string]
-                $Path
-            )
-
-            if (-not (Test-Path $Path)) {
-                $null = New-Item $Path -Force
-            }
-        }
-
-        # For file based persistence
-        $configurationItems = @()
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        #region Registry Based
-        if ($Scope -band 15) {
-            switch ($parSet) {
-                "Default" {
-                    foreach ($item in $Config) {
-                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
-                    }
-
-                    foreach ($item in $FullName) {
-                        if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
-                            Write-Config -Config ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
-                        }
-                    }
-                }
-                "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
-                        Write-Config -Config $item -Scope $Scope -EnableException $EnableException
-                    }
-                }
-            }
-        }
-        #endregion Registry Based
-
-        #region File Based
-        else {
-            switch ($parSet) {
-                "Default" {
-                    foreach ($item in $Config) {
-                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
-                    }
-
-                    foreach ($item in $FullName) {
-                        if (($configurationItems.FullName -notcontains $item) -and ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
-                            $configurationItems += [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
-                        }
-                    }
-                }
-                "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
-                        if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
-                    }
-                }
-            }
-        }
-        #endregion File Based
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        #region Finish File Based Persistence
-        if ($Scope -band 16) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserLocal "psf_config.json")
-        }
-        if ($Scope -band 32) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileUserShared "psf_config.json")
-        }
-        if ($Scope -band 64) {
-            Write-DbatoolsConfigFile -Config $configurationItems -Path (Join-Path $script:path_FileSystem "psf_config.json")
-        }
-        #endregion Finish File Based Persistence
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Reset-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
-    param (
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $ConfigurationItem,
-
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = 'Module')]
-        [string]
-        $Name = "*",
-
-        [switch]$EnableException
-    )
-
-    process {
-        #region By configuration Item
-        foreach ($item in $ConfigurationItem) {
-            if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                try { $item.ResetValue() }
-                catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-            }
-        }
-        #endregion By configuration Item
-
-        #region By FullName
-        foreach ($nameItem in $FullName) {
-            # The configuration items themselves can be cast to string, so they need to be filtered out,
-            # otherwise on bind they would execute for this code-path as well.
-            if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
-
-            foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                    try { $item.ResetValue() }
-                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-                }
-            }
-        }
-        #endregion By FullName
-        if ($Module) {
-            foreach ($item in (Get-DbatoolsConfig -Module $Module -Name $Name)) {
-                if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {
-                    try { $item.ResetValue() }
-                    catch { Stop-Function -Message "Failed to reset the configuration item." -ErrorRecord $_ -Continue -EnableException $EnableException }
-                }
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Unregister-DbatoolsConfig {
-    
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
-    param (
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $ConfigurationItem,
-
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [string[]]
-        $FullName,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Module')]
-        [string]
-        $Module,
-
-        [Parameter(ParameterSetName = 'Module')]
-        [string]
-        $Name = "*",
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "UserDefault"
-    )
-
-    begin {
-        if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*") -and ($Scope -band 15)) {
-            Stop-Function -Message "Cannot unregister configurations from registry on non-windows machines." -Tag 'NotSupported' -Category ResourceUnavailable
-            return
-        }
-
-        #region Initialize Collection
-        $registryProperties = @()
-        if ($Scope -band 1) {
-            if (Test-Path $script:path_RegistryUserDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserDefault }
-        }
-        if ($Scope -band 2) {
-            if (Test-Path $script:path_RegistryUserEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryUserEnforced }
-        }
-        if ($Scope -band 4) {
-            if (Test-Path $script:path_RegistryMachineDefault) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineDefault }
-        }
-        if ($Scope -band 8) {
-            if (Test-Path $script:path_RegistryMachineEnforced) { $registryProperties += Get-ItemProperty -Path $script:path_RegistryMachineEnforced }
-        }
-        $pathProperties = @()
-        if ($Scope -band 16) {
-            $fileUserLocalSettings = @()
-            if (Test-Path (Join-Path $script:path_FileUserLocal "psf_config.json")) { $fileUserLocalSettings = Get-Content (Join-Path $script:path_FileUserLocal "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileUserLocalSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileUserLocal "psf_config.json")
-                    Properties = $fileUserLocalSettings
-                    Changed    = $false
-                }
-            }
-        }
-        if ($Scope -band 32) {
-            $fileUserSharedSettings = @()
-            if (Test-Path (Join-Path $script:path_FileUserShared "psf_config.json")) { $fileUserSharedSettings = Get-Content (Join-Path $script:path_FileUserShared "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileUserSharedSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileUserShared "psf_config.json")
-                    Properties = $fileUserSharedSettings
-                    Changed    = $false
-                }
-            }
-        }
-        if ($Scope -band 64) {
-            $fileSystemSettings = @()
-            if (Test-Path (Join-Path $script:path_FileSystem "psf_config.json")) { $fileSystemSettings = Get-Content (Join-Path $script:path_FileSystem "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
-            if ($fileSystemSettings) {
-                $pathProperties += [pscustomobject]@{
-                    Path       = (Join-Path $script:path_FileSystem "psf_config.json")
-                    Properties = $fileSystemSettings
-                    Changed    = $false
-                }
-            }
-        }
-        #endregion Initialize Collection
-
-        $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-        # Silently skip since no action necessary
-        if (-not ($pathProperties -or $registryProperties)) { return }
-
-        foreach ($item in $ConfigurationItem) {
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item.FullName })) {
-                Remove-ItemProperty -Path $hive.PSPath -Name $item.FullName
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item.FullName })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item.FullName
-                $fileConfig.Changed = $true
-            }
-        }
-
-        foreach ($item in $FullName) {
-            # Ignore string-casted configurations
-            if ($item -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
-
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item })) {
-                Remove-ItemProperty -Path $hive.PSPath -Name $item
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -contains $item })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NE $item
-                $fileConfig.Changed = $true
-            }
-        }
-
-        if ($Module) {
-            $compoundName = "{0}.{1}" -f $Module, $Name
-
-            # Registry
-            foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -like $compoundName })) {
-                foreach ($propName in $hive.PSObject.Properties.Name) {
-                    if ($propName -in $common) { continue }
-
-                    if ($propName -like $compoundName) {
-                        Remove-ItemProperty -Path $hive.PSPath -Name $propName
-                    }
-                }
-            }
-            # Prepare file
-            foreach ($fileConfig in ($pathProperties | Where-Object { $_.Properties.FullName -like $compoundName })) {
-                $fileConfig.Properties = $fileConfig.Properties | Where-Object FullName -NotLike $compoundName
-                $fileConfig.Changed = $true
-            }
-        }
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        foreach ($fileConfig in $pathProperties) {
-            if (-not $fileConfig.Changed) { continue }
-
-            if ($fileConfig.Properties) {
-                $fileConfig.Properties | ConvertTo-Json | Set-Content -Path $fileConfig.Path -Encoding UTF8
-            } else {
-                Remove-Item $fileConfig.Path
-            }
-        }
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
 function Connect-AsServer {
     
     [CmdletBinding()]
@@ -73114,7 +73997,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential cred = TranslateNativeCred(handle);
             return cred;
@@ -73123,7 +74006,7 @@ namespace CredEnum {
         {
             if (IsInvalid)
             {
-                throw new InvalidOperationException("Invalid CriticalHandle!");
+                throw new InvalidOperationException("Invalid CriticalHandle.");
             }
             Credential[] Credentials = new Credential[count];
             IntPtr pTemp = IntPtr.Zero;
@@ -73737,112 +74620,6 @@ function Get-DbaServiceErrorMessage {
         else { Return "Unknown error." }
     } else {
         $returnCodes
-    }
-}
-
-#.ExternalHelp dbatools-Help.xml
-function Get-DbaSysDbUserObjectScript {
-    
-    [CmdletBinding()]
-    param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [switch]$EnableException
-    )
-    begin {
-        function get-sqltypename ($type) {
-            switch ($type) {
-                "VIEW" { "view" }
-                "SQL_TABLE_VALUED_FUNCTION" { "User table valued fsunction" }
-                "DEFAULT_CONSTRAINT" { "User default constraint" }
-                "SQL_STORED_PROCEDURE" { "User stored procedure" }
-                "RULE" { "User rule" }
-                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "User inline table valued function" }
-                "SQL_TRIGGER" { "User server trigger" }
-                "SQL_SCALAR_FUNCTION" { "User scalar function" }
-                default { $type }
-            }
-        }
-    }
-    process {
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
-
-        if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $source. Quitting."
-            return
-        }
-
-        $systemDbs = "master", "model", "msdb"
-
-        foreach ($systemDb in $systemDbs) {
-            $smodb = $server.databases[$systemDb]
-            $destdb = $server.databases[$systemDb]
-            Write-Output "USE $systemDb"
-            Write-Output "GO"
-            $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
-            $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
-            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-            $null = $transfer.CopyAllObjects = $false
-            $null = $transfer.Options.WithDependencies = $true
-            $null = $transfer.ObjectList.Add($schema)
-            $null = $transfer.Options.ScriptBatchTerminator = $true
-            try { $transfer.ScriptTransfer() }
-            catch { }
-            Write-Output "GO"
-
-            foreach ($table in $tables) {
-                Write-Output "GO"
-                $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                $null = $transfer.CopyAllObjects = $false
-                $null = $transfer.Options.WithDependencies = $true
-                $null = $transfer.Options.ScriptBatchTerminator = $true
-                $null = $transfer.ObjectList.Add($table)
-                try { $transfer.ScriptTransfer() } catch {}
-            }
-
-            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -ExcludeSystemObjects | Sort-Object Type
-            Write-Message -Level Verbose -Message "Copying from $systemDb"
-            foreach ($userobject in $userobjects) {
-                Write-Output "GO"
-                $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
-                $db = $userobject.Database
-                $type = get-sqltypename $userobject.Type
-                $userobject.Definition
-                $schema = $userobject.SchemaName
-                $result = Get-DbaModule -SqlInstance $server -ExcludeSystemObjects -Database $db |
-                    Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
-                $smobject = switch ($userobject.Type) {
-                    "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
-                    "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                    "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                    "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
-                }
-
-                $smobject = switch ($userobject.Type) {
-                    "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
-                    "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
-                    "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
-                }
-                if ($smobject) {
-                    $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                    $null = $transfer.CopyAllObjects = $false
-                    $null = $transfer.Options.WithDependencies = $true
-                    $null = $transfer.ObjectList.Add($smobject)
-                    $null = $transfer.Options.ScriptBatchTerminator = $true
-                    try { $transfer.ScriptTransfer() } catch {}
-                }
-            }
-        }
     }
 }
 
@@ -76146,10 +76923,15 @@ function Invoke-Command2 {
                 Authentication = $Authentication
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
+                UseSSL         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             if (Test-Windows -NoWarn) {
-                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                $psSessionSplat += @{ SessionOption = $timeout }
+                $psSessionOptionsSplat = @{
+                    IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                    IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                }
+                $sessionOption = New-PSSessionOption @psSessionOptionsSplat
+                $psSessionSplat += @{ SessionOption = $sessionOption }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }
@@ -76193,6 +76975,7 @@ function Invoke-Command2 {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-CommandWithFallback {
@@ -80158,7 +80941,7 @@ function Invoke-Parallel {
                                 NewVarName = ('__using_{0}' -f $Var.SubExpression.VariablePath.UserPath)
                             }
                         } catch {
-                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable!"
+                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable."
                         }
                     }
                     $ParamsToAdd += $UsingVariableData | Select-Object -ExpandProperty NewName -Unique
@@ -80862,7 +81645,7 @@ function New-DbaMessageLevelModifier {
     )
 
     if (Test-Bound -ParameterName IncludeFunctionName, ExcludeFunctionName, IncludeModuleName, ExcludeModuleName, IncludeTags, ExcludeTags -Not) {
-        Stop-Function -Message "Must specify at least one condition in order to apply message level modifier!" -EnableException $EnableException -Category InvalidArgument
+        Stop-Function -Message "Must specify at least one condition in order to apply message level modifier." -EnableException $EnableException -Category InvalidArgument
         return
     }
 
@@ -81043,14 +81826,14 @@ function Remove-DbaMessageLevelModifier {
             if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLowerInvariant())) {
                 [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLowerInvariant())
             } else {
-                Stop-Function -Message "No message level modifier of name $item found!" -EnableException $EnableException -Category InvalidArgument -Continue
+                Stop-Function -Message "No message level modifier of name $item found." -EnableException $EnableException -Category InvalidArgument -Continue
             }
         }
         foreach ($item in $Modifier) {
             if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.Name)) {
                 [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.Name)
             } else {
-                Stop-Function -Message "No message level modifier of name $($item.Name) found!" -EnableException $EnableException -Category InvalidArgument -Continue
+                Stop-Function -Message "No message level modifier of name $($item.Name) found." -EnableException $EnableException -Category InvalidArgument -Continue
             }
         }
     }
@@ -81229,7 +82012,7 @@ function Start-DbaRunspace {
                     Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
             }
         }
 
@@ -81274,7 +82057,7 @@ function Stop-DbaRunspace {
                     Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
             }
         }
 
@@ -81513,7 +82296,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($parentPath | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($parentPath.Provider.Name -ne $Provider))
@@ -81533,7 +82316,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($resolvedPaths | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($resolvedPaths.Provider.Name -ne $Provider))

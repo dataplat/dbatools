@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 15, 2019
+-- Last Modified: August 8, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -85,7 +85,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3076.1		CU14								3/25/2019		https://support.microsoft.com/en-us/help/4484710/cumulative-update-14-for-sql-server-2017	
 -- 14.0.3103.1		CU14 + Security Update				5/14/2019		https://support.microsoft.com/en-us/help/4494352/security-update-for-sql-server-2017-cu-14-gdr-may-14-2019
 -- 14.0.3162.1		CU15								5/23/2019		https://support.microsoft.com/en-us/help/4498951/cumulative-update-15-for-sql-server-2017
--- 14.0.3192.2		CU15 + Security Update				7/9/2019		https://support.microsoft.com/en-us/help/4505225/security-update-for-sql-server-2017-cu15-gdr-july-9-2019 	
+-- 14.0.3192.2		CU15 + Security Update				7/9/2019		https://support.microsoft.com/en-us/help/4505225/security-update-for-sql-server-2017-cu15-gdr-july-9-2019 
+-- 14.0.3223.3		CU16								8/1/2019		https://support.microsoft.com/en-us/help/4508218/cumulative-update-16-for-sql-server-2017
 		
 															
 
@@ -219,6 +220,13 @@ DBCC TRACESTATUS (-1);
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
 --           https://bit.ly/2HrQUpU         
+
+-- TF 7745 - Prevents Query Store data from being written to disk in case of a failover or shutdown command
+--           https://bit.ly/2GU69Km
+
+-- TF 7752 - Enables asynchronous load of Query Store 
+--           This allows a database to become online and queries to be executed before the Query Store has been fully recovered 
+ 
 
 -- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
 -- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
@@ -1481,7 +1489,7 @@ qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
--- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
+,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]

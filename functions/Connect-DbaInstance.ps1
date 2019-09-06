@@ -468,8 +468,6 @@ function Connect-DbaInstance {
                         return
                     }
 
-                    Write-Message -Level Verbose -Message "Creating 'Active Directory Interactive' connstring"
-                    $azureconnstring = "Data Source=tcp:$instance;UID=dbatools;Initial Catalog=$Database;Authentication=Active Directory Interactive"
                     if (-not $SqlCredential) {
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
@@ -481,13 +479,23 @@ function Connect-DbaInstance {
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
-                    $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    try {
+                        $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                    } catch {
+                        Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
+                        continue
+                    }
                     Write-Message -Level Verbose -Message $sqlconn.ConnectionString
+                    # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
                     }
                     $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                     Write-Message -Level Verbose -Message "Connecting to Azure: $instance"
+                    # assign it twice, not sure why but hey it works better
+                    if ($accesstoken) {
+                        $serverconn.AccessToken = $accesstoken
+                    }
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     # Make ComputerName easily available in the server object
@@ -495,6 +503,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
                     <# Fixing that changed the db context back to master so we're SOL here until we can figure out another way.
                     # $currentdb = $server.Databases[$Database] | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
@@ -575,6 +584,7 @@ function Connect-DbaInstance {
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                         Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                         Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                        Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     }
                     if ($MinimumVersion -and $server.VersionMajor) {
                         if ($server.versionMajor -lt $MinimumVersion) {
@@ -818,6 +828,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                 }
             }
 
