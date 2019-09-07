@@ -41781,6 +41781,8 @@ function Invoke-DbaDbDataMasking {
         [int]$MaxValue,
         [int]$ModulusFactor = 10,
         [switch]$ExactLength,
+        [int]$ConnectionTimeout = 0,
+        [int]$CommandTimeout = 300,
         [switch]$EnableException
     )
     begin {
@@ -41850,7 +41852,7 @@ function Invoke-DbaDbDataMasking {
                 }
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false -ConnectTimeout $ConnectionTimeout
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $transaction = $sqlconn.BeginTransaction()
@@ -41876,7 +41878,8 @@ function Invoke-DbaDbDataMasking {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        $data = $db.Query($query) | ConvertTo-DbaDataTable
+                        $data = $db.Query($query)
+
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -41887,7 +41890,7 @@ function Invoke-DbaDbDataMasking {
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
 
-                        for ($i = 0; $i -lt $data.Rows.Count; $i++) {
+                        for ($i = 0; $i -lt $data.Count; $i++) {
 
                             $rowValue = New-Object PSCustomObject
 
@@ -41986,10 +41989,10 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         $rowNumber = $stepcounter = 0
-                        $rowItems = $data.Rows[0] | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
-                        foreach ($row in $data.Rows) {
+                        $rowItems = $data | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+                        foreach ($row in $data) {
                             if ((($stepcounter++) % 100) -eq 0) {
-                                Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             }
 
                             $updates = $wheres = @()
@@ -42020,8 +42023,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
-                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
-                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
+                                } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
+                                    $newValue = $dictionary.Item($row.$($columnobject.Name))
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
@@ -42133,7 +42136,7 @@ function Invoke-DbaDbDataMasking {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
 
-                                if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)) {
+                                if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
@@ -42180,12 +42183,12 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                            $sqlcmd.CommandTimeout = $CommandTimeout
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
-                            $stringbuilder.ToString()
-                            Write-Message -Level VeryVerbose -Message "$updatequery"
+                            Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
                             $errormessage = $_.Exception.Message.ToString()
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
@@ -42201,7 +42204,7 @@ function Invoke-DbaDbDataMasking {
 
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
-                                        $compositeItems += $columnComposite.Value
+                                        $compositeItems += "[$($columnComposite.Value)]"
                                     } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
@@ -42238,15 +42241,15 @@ function Invoke-DbaDbDataMasking {
 
                                 $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
-                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
+                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
                             }
 
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                                $sqlcmd.CommandTimeout = $CommandTimeout
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
-                                $stringbuilder.ToString()
-                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
                                 $errormessage = $_.Exception.Message.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
@@ -44907,7 +44910,7 @@ function Invoke-DbaDbPiiScan {
                                 #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
                                 if (-not $candidateFound) {
                                     # Setup the query
-                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                     # Get the data
                                     $dataset = @()
@@ -51365,7 +51368,7 @@ function New-DbaDbMaskingConfig {
                             if ($patterns.Count -ge 1) {
                                 if ($null -eq $result) {
                                     # Setup the query
-                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                     # Get the data
                                     $dataset = @()
@@ -74508,6 +74511,7 @@ function Get-DbaReportingService {
     }
     process {
         foreach ($computer in $ComputerName) {
+            $serviceArray = @()
             Write-Message -Level VeryVerbose -Message "Getting Reporting Server namespace on $Computer" -Target $Computer
             try {
                 $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer\ReportServer -Query "Select Name FROM __NAMESPACE" -EnableException -Credential $credential
@@ -74530,49 +74534,52 @@ function Get-DbaReportingService {
                     Stop-Function -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)\$($namespaceVersion.Name)." -Target $Computer -ErrorRecord $_ -Continue
                 }
                 ForEach ($service in $services) {
-                    if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
-                        #Add other properties and methods
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
-                        Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
+                    if ($serviceArray -notcontains $($service.ServiceName)) {
+                        if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
+                            #Add other properties and methods
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
+                            Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
 
-                        try {
-                            $service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
-                        } catch {
-                            Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
-                        }
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service32.SystemName
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
-                        $startMode = switch ($service32.StartMode) {
-                            Auto { 'Automatic' } #Replacing for consistency to match other SQL Services
-                            default { $_ }
-                        }
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $startMode
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
-                        Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
-                            param ([bool]$Force = $false)
-                            Stop-DbaService -InputObject $this -Force:$Force
-                        }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
-                            param ([bool]$Force = $false)
-                            Restart-DbaService -InputObject $this -Force:$Force
-                        }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
-                            param (
-                                [parameter(Mandatory)]
-                                [string]$Mode
-                            )
-                            $supportedModes = @("Automatic", "Manual", "Disabled")
-                            if ($Mode -notin $supportedModes) {
-                                Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
-                                Return
+                            try {
+                                $service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
+                            } catch {
+                                Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
                             }
-                            Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
-                            $this.StartMode = $Mode
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service32.SystemName
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
+                            $startMode = switch ($service32.StartMode) {
+                                Auto { 'Automatic' } #Replacing for consistency to match other SQL Services
+                                default { $_ }
+                            }
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $startMode
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
+                            Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
+                                param ([bool]$Force = $false)
+                                Stop-DbaService -InputObject $this -Force:$Force
+                            }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
+                                param ([bool]$Force = $false)
+                                Restart-DbaService -InputObject $this -Force:$Force
+                            }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
+                                param (
+                                    [parameter(Mandatory)]
+                                    [string]$Mode
+                                )
+                                $supportedModes = @("Automatic", "Manual", "Disabled")
+                                if ($Mode -notin $supportedModes) {
+                                    Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
+                                    Return
+                                }
+                                Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
+                                $this.StartMode = $Mode
+                            }
+                            $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
+                            Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                         }
-                        $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
-                        Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
+                        $serviceArray += $service.ServiceName
                     }
                 }
             }
