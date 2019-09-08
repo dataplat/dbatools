@@ -66,7 +66,7 @@ function Test-DbaConnection {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
@@ -78,9 +78,9 @@ function Test-DbaConnection {
             $localInfo = [pscustomobject]@{
                 Windows    = [environment]::OSVersion.Version.ToString()
                 Edition    = $PSVersionTable.PSEdition
-                PowerShell = $PSVersionTable.PSversion.ToString()
+                PowerShell = $PSVersionTable.PSVersion.ToString()
                 CLR        = [string]$PSVersionTable.CLRVersion
-                SMO        = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
+                SMO        = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
                 DomainUser = $env:computername -ne $env:USERDOMAIN
                 RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
             }
@@ -88,23 +88,23 @@ function Test-DbaConnection {
             try {
                 <# gather following properties #>
                 <#
-                        InputName        :
-                        ComputerName     :
-                        IPAddress        :
-                        DNSHostName      :
-                        DNSDomain        :
-                        Domain           :
-                        DNSHostEntry     :
-                        FQDN             :
-                        FullComputerName :
-                     #>
+                    InputName        :
+                    ComputerName     :
+                    IPAddress        :
+                    DNSHostName      :
+                    DNSDomain        :
+                    Domain           :
+                    DNSHostEntry     :
+                    FQDN             :
+                    FullComputerName :
+                #>
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
             } catch {
                 Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
 
-            # Test for WinRM #Test-WinRM neh
-            Write-Message -Level Verbose -Message "Checking remote acccess"
+            # Test for WinRM #Test-WinRM
+            Write-Message -Level Verbose -Message "Checking remote access"
             try {
                 $null = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock { Get-ChildItem } -ErrorAction Stop
                 $remoting = $true
@@ -112,7 +112,7 @@ function Test-DbaConnection {
                 $remoting = $_
             }
 
-            # Test Connection first using Ping class which requires ICMP access then failback to tcp if pings are blocked
+            # Test Connection first using Ping class which requires ICMP access then fail back to tcp if pings are blocked
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $ping = New-Object System.Net.NetworkInformation.Ping
             $timeout = 1000 #milliseconds
@@ -146,7 +146,7 @@ function Test-DbaConnection {
 
             # TCP Port
             try {
-                $tcpport = (Get-DbaTcpPort -SqlInstance $server -EnableException).Port
+                $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
             } catch {
                 $tcpport = $_
             }
