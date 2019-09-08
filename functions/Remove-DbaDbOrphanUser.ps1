@@ -166,141 +166,141 @@ function Remove-DbaDbOrphanUser {
                                         $_.IsLocked -eq $False -and
                                         $_.Name -eq $dbuser.Name
                                     }
-                            }
+                                }
 
-                            #Schemas only appears on SQL Server 2005 (v9.0)
-                            if ($server.versionMajor -gt 8) {
+                                #Schemas only appears on SQL Server 2005 (v9.0)
+                                if ($server.versionMajor -gt 8) {
 
-                                #reset variables
-                                $AlterSchemaOwner = ""
-                                $DropSchema = ""
+                                    #reset variables
+                                    $AlterSchemaOwner = ""
+                                    $DropSchema = ""
 
-                                #Validate if user owns any schema
-                                $Schemas = @()
-                                $Schemas = $db.Schemas | Where-Object Owner -eq $dbuser.Name
+                                    #Validate if user owns any schema
+                                    $Schemas = @()
+                                    $Schemas = $db.Schemas | Where-Object Owner -eq $dbuser.Name
 
-                                if (@($Schemas).Count -gt 0) {
-                                    Write-Message -Level Verbose -Message "User $dbuser owns one or more schemas."
+                                    if (@($Schemas).Count -gt 0) {
+                                        Write-Message -Level Verbose -Message "User $dbuser owns one or more schemas."
 
-                                    foreach ($sch in $Schemas) {
-                                        <#
+                                        foreach ($sch in $Schemas) {
+                                            <#
                                                 On sql server 2008 or lower the EnumObjects method does not accept empty parameter.
                                                 0x1FFFFFFF is the way we can say we want everything known by those versions
 
                                                 When it is a higher version we can use empty to get all
                                             #>
-                                        if ($server.versionMajor -lt 11) {
-                                            $NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
-                                        } else {
-                                            $NumberObjects = ($db.EnumObjects() | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
-                                        }
+                                            if ($server.versionMajor -lt 11) {
+                                                $NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
+                                            } else {
+                                                $NumberObjects = ($db.EnumObjects() | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
+                                            }
 
-                                        if ($NumberObjects -gt 0) {
-                                            if ($Force) {
-                                                Write-Message -Level Verbose -Message "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
+                                            if ($NumberObjects -gt 0) {
+                                                if ($Force) {
+                                                    Write-Message -Level Verbose -Message "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
 
-                                                if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used.")) {
-                                                    $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+                                                    if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used.")) {
+                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
-                                                    [pscustomobject]@{
-                                                        ComputerName      = $server.ComputerName
-                                                        InstanceName      = $server.ServiceName
-                                                        SqlInstance       = $server.DomainInstanceName
-                                                        DatabaseName      = $db.Name
-                                                        SchemaName        = $sch.Name
-                                                        Action            = "ALTER OWNER"
-                                                        SchemaOwnerBefore = $sch.Owner
-                                                        SchemaOwnerAfter  = "dbo"
+                                                        [pscustomobject]@{
+                                                            ComputerName      = $server.ComputerName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
+                                                            SchemaName        = $sch.Name
+                                                            Action            = "ALTER OWNER"
+                                                            SchemaOwnerBefore = $sch.Owner
+                                                            SchemaOwnerAfter  = "dbo"
+                                                        }
                                                     }
+                                                } else {
+                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' owned by user $($dbuser.Name) have $NumberObjects underlying objects. If you want to change the schemas' owner to 'dbo' and drop the user anyway, use -Force parameter. Skipping user '$dbuser'."
+                                                    $SkipUser = $true
+                                                    break
                                                 }
                                             } else {
-                                                Write-Message -Level Warning -Message "Schema '$($sch.Name)' owned by user $($dbuser.Name) have $NumberObjects underlying objects. If you want to change the schemas' owner to 'dbo' and drop the user anyway, use -Force parameter. Skipping user '$dbuser'."
-                                                $SkipUser = $true
-                                                break
-                                            }
-                                        } else {
-                                            if ($sch.Name -eq $dbuser.Name) {
-                                                Write-Message -Level Verbose -Message "The schema '$($sch.Name)' have the same name as user $dbuser. Schema will be dropped."
+                                                if ($sch.Name -eq $dbuser.Name) {
+                                                    Write-Message -Level Verbose -Message "The schema '$($sch.Name)' have the same name as user $dbuser. Schema will be dropped."
 
-                                                if ($Pscmdlet.ShouldProcess($db.Name, "Dropping schema '$($sch.Name)'.")) {
-                                                    $DropSchema += "DROP SCHEMA [$($sch.Name)]"
+                                                    if ($Pscmdlet.ShouldProcess($db.Name, "Dropping schema '$($sch.Name)'.")) {
+                                                        $DropSchema += "DROP SCHEMA [$($sch.Name)]"
 
-                                                    [pscustomobject]@{
-                                                        ComputerName      = $server.ComputerName
-                                                        InstanceName      = $server.ServiceName
-                                                        SqlInstance       = $server.DomainInstanceName
-                                                        DatabaseName      = $db.Name
-                                                        SchemaName        = $sch.Name
-                                                        Action            = "DROP"
-                                                        SchemaOwnerBefore = $sch.Owner
-                                                        SchemaOwnerAfter  = "N/A"
+                                                        [pscustomobject]@{
+                                                            ComputerName      = $server.ComputerName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
+                                                            SchemaName        = $sch.Name
+                                                            Action            = "DROP"
+                                                            SchemaOwnerBefore = $sch.Owner
+                                                            SchemaOwnerAfter  = "N/A"
+                                                        }
                                                     }
-                                                }
-                                            } else {
-                                                Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
+                                                } else {
+                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
 
-                                                if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
-                                                    $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+                                                    if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
+                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
-                                                    [pscustomobject]@{
-                                                        ComputerName      = $server.ComputerName
-                                                        InstanceName      = $server.ServiceName
-                                                        SqlInstance       = $server.DomainInstanceName
-                                                        DatabaseName      = $db.Name
-                                                        SchemaName        = $sch.Name
-                                                        Action            = "ALTER OWNER"
-                                                        SchemaOwnerBefore = $sch.Owner
-                                                        SchemaOwnerAfter  = "dbo"
+                                                        [pscustomobject]@{
+                                                            ComputerName      = $server.ComputerName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
+                                                            SchemaName        = $sch.Name
+                                                            Action            = "ALTER OWNER"
+                                                            SchemaOwnerBefore = $sch.Owner
+                                                            SchemaOwnerAfter  = "dbo"
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
 
-                                } else {
-                                    Write-Message -Level Verbose -Message "User $dbuser does not own any schema. Will be dropped."
-                                }
-
-                                $query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $dbuser
-
-                                Write-Message -Level Debug -Message $query
-                            } else {
-                                $query = "EXEC master.dbo.sp_droplogin @loginame = N'$($dbuser.name)'"
-                            }
-
-                            if ($ExistLogin) {
-                                if (-not $SkipUser) {
-                                    if ($Force) {
-                                        if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
-                                            $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                            Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
-                                        }
                                     } else {
-                                        Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
-                                        Continue
+                                        Write-Message -Level Verbose -Message "User $dbuser does not own any schema. Will be dropped."
                                     }
+
+                                    $query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $dbuser
+
+                                    Write-Message -Level Debug -Message $query
+                                } else {
+                                    $query = "EXEC master.dbo.sp_droplogin @loginame = N'$($dbuser.name)'"
                                 }
-                            } else {
-                                if (-not $SkipUser) {
-                                    if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
-                                        $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                        Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name)."
+
+                                if ($ExistLogin) {
+                                    if (-not $SkipUser) {
+                                        if ($Force) {
+                                            if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
+                                                $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
+                                            }
+                                        } else {
+                                            Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."
+                                            Continue
+                                        }
+                                    }
+                                } else {
+                                    if (-not $SkipUser) {
+                                        if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
+                                            $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                            Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name)."
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            Write-Message -Level Verbose -Message "No orphan users found on database $db."
                         }
-                    } else {
-                        Write-Message -Level Verbose -Message "No orphan users found on database $db."
+                        #reset collection
+                        $users = $null
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
                     }
-                    #reset collection
-                    $users = $null
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
                 }
+            } else {
+                Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
-        } else {
-            Write-Message -Level Verbose -Message "There are no databases to analyse."
         }
     }
-}
 }
