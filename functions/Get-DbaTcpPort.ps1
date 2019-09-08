@@ -18,6 +18,9 @@ function Get-DbaTcpPort {
 
         $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
+    .PARAMETER Credential
+        Credential object used to connect to the Computer as a different user
+
     .PARAMETER All
         If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
@@ -68,6 +71,7 @@ function Get-DbaTcpPort {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
