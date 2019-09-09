@@ -688,17 +688,24 @@ function Invoke-DbaDbDataMasking {
 
                 # Export the dictionary when needed
                 if ($DictionaryExportPath) {
-                    Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
                     try {
+                        if (-not (Test-Path -Path $DictionaryExportPath)) {
+                            New-Item -Path $DictionaryExportPath -ItemType Directory
+                        }
+
+                        Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
+
                         $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                        $dictionaryFileName = "$Path\$($filenamepart).$($db.Name)._Dictionary.csv"
+                        $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
 
                         if (-not $script:isWindows) {
                             $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
                         }
 
-                        $dictionary.GetEnumerator() | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
-                        Get-ChildItem -Path $dictionaryFileName
+                        $dictionary.GetEnumerator() | Sort-Object Key | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+                        $file = Get-ChildItem -Path $dictionaryFileName
+
+                        $file.FullName
                     } catch {
                         Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
                     }
