@@ -146,7 +146,7 @@ function Invoke-DbaDbDataMasking {
         [switch]$ExactLength,
         [int]$ConnectionTimeout = 0,
         [int]$CommandTimeout = 300,
-        [string]$DictionaryFilePath,
+        [string[]]$DictionaryFilePath,
         [string]$DictionaryExportPath,
         [switch]$EnableException
     )
