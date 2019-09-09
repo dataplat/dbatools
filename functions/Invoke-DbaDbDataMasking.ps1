@@ -160,6 +160,36 @@ function Invoke-DbaDbDataMasking {
         $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -ExpandProperty Subtype -Unique
 
         $supportedFakerSubTypes += "Date"
+
+        # Import the dictionary files
+        if ($DictionaryFilePath.Count -ge 1) {
+            $dictionary = @{ }
+
+            foreach ($file in $DictionaryFilePath) {
+                if (Test-Path -Path $file) {
+                    try {
+                        # Import the keys and values
+                        $items = Import-Csv -Path $file
+
+                        # Loop through the items and define the types
+                        foreach ($item in $items) {
+                            if ($item.Type) {
+                                $type = [type]"$($_.type)"
+                            } else {
+                                $type = [type]"string"
+                            }
+
+                            # Add the items to the hash array
+                            $dictionary.Add($_.Key, ($($_.Value) -as $type))
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
+                    }
+                } else {
+                    Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
+                }
+            }
+        }
     }
 
     process {
@@ -210,7 +240,9 @@ function Invoke-DbaDbDataMasking {
             }
 
             foreach ($dbname in $Database) {
-                $dictionary = @{ }
+                if (-not $DictionaryFilePath) {
+                    $dictionary = @{ }
+                }
 
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
@@ -666,10 +698,8 @@ function Invoke-DbaDbDataMasking {
                     } catch {
                         Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
                     }
-
-
                 }
-            }
-        }
-    }
-}
+            } # End foreach database
+        } # End foreach instance
+    } # End process block
+} # End
