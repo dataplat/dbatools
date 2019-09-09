@@ -188,8 +188,6 @@ function Invoke-DbaDbDataMasking {
             }
         }
 
-        $dictionary = @{ }
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -202,6 +200,8 @@ function Invoke-DbaDbDataMasking {
             }
 
             foreach ($dbname in $Database) {
+                $dictionary = @{ }
+
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
                 }
