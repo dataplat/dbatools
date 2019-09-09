@@ -166,6 +166,7 @@ function Invoke-DbaDbDataMasking {
             $dictionary = @{ }
 
             foreach ($file in $DictionaryFilePath) {
+                Write-Message -Level Verbose -Message "Importing dictionary file '$file'"
                 if (Test-Path -Path $file) {
                     try {
                         # Import the keys and values
@@ -174,13 +175,15 @@ function Invoke-DbaDbDataMasking {
                         # Loop through the items and define the types
                         foreach ($item in $items) {
                             if ($item.Type) {
-                                $type = [type]"$($_.type)"
+                                $type = [type]"$($item.type)"
                             } else {
                                 $type = [type]"string"
                             }
 
                             # Add the items to the hash array
-                            $dictionary.Add($_.Key, ($($_.Value) -as $type))
+                            if ($dictionary.Keys -notcontains $item.Key) {
+                                $dictionary.Add($item.Key, ($($item.Value) -as $type))
+                            }
                         }
                     } catch {
                         Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
@@ -189,6 +192,10 @@ function Invoke-DbaDbDataMasking {
                     Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
                 }
             }
+
+            $dictionary
+
+            return
         }
     }
 
