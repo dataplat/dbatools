@@ -71,6 +71,12 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER CommandTimeout
         Timeout for the database connection in seconds. Default is 300.
 
+    .PARAMETER DictionaryFilePath
+        Import the dictionary to be used in in the database masking
+
+    .PARAMETER DictionaryExportPath
+        Export the dictionary to the given path. Naming convention will be [instance]_[database]_Dictionary.csv
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -138,6 +144,8 @@ function Invoke-DbaDbDataMasking {
         [switch]$ExactLength,
         [int]$ConnectionTimeout = 0,
         [int]$CommandTimeout = 300,
+        [string]$DictionaryFilePath,
+        [string]$DictionaryExportPath,
         [switch]$EnableException
     )
     begin {
