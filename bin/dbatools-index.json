@@ -20989,6 +20989,14 @@
                            ""
                        ],
                        [
+                           "Credential",
+                           "Credential object used to connect to the Computer as a different user",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "All",
                            "If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.",
                            "",
@@ -21013,7 +21021,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-All] [-ExcludeIpv6] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-All] [-ExcludeIpv6] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaTempdbUsage",
