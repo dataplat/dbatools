@@ -180,7 +180,7 @@ function Invoke-DbaDbDataMasking {
                                 $type = [type]"string"
                             }
 
-                            # Add the items to the hash array
+                            # Add the item to the hash array
                             if ($dictionary.Keys -notcontains $item.Key) {
                                 $dictionary.Add($item.Key, ($($item.Value) -as $type))
                             }
@@ -192,10 +192,6 @@ function Invoke-DbaDbDataMasking {
                     Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
                 }
             }
-
-            $dictionary
-
-            return
         }
     }
 
@@ -228,6 +224,7 @@ function Invoke-DbaDbDataMasking {
             if ($Table -and $tabletest.Name -notin $Table) {
                 continue
             }
+
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables -Continue
