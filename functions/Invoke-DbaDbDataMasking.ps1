@@ -703,9 +703,8 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         $dictionary.GetEnumerator() | Sort-Object Key | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
-                        $file = Get-ChildItem -Path $dictionaryFileName
 
-                        $file.FullName
+                        Get-ChildItem -Path $dictionaryFileName
                     } catch {
                         Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
                     }
