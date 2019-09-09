@@ -658,7 +658,7 @@ function Invoke-DbaDbDataMasking {
                         $dictionaryFileName = "$Path\$($filenamepart).$($db.Name)._Dictionary.csv"
 
                         if (-not $script:isWindows) {
-                            $temppath = $temppath.Replace("\", "/")
+                            $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
                         }
 
                         $dictionary.GetEnumerator() | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
