@@ -652,9 +652,22 @@ function Invoke-DbaDbDataMasking {
 
                 # Export the dictionary when needed
                 if ($DictionaryExportPath) {
-                    $dictionaryFileName = "$($server.ComputerName)_$($server.DbaInstanceName)_$($db.Name)_Dictionary.csv"
+                    Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
+                    try {
+                        $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                        $dictionaryFileName = "$Path\$($filenamepart).$($db.Name)._Dictionary.csv"
 
-                    $dictionary.GetEnumerator() | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+                        if (-not $script:isWindows) {
+                            $temppath = $temppath.Replace("\", "/")
+                        }
+
+                        $dictionary.GetEnumerator() | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+                        Get-ChildItem -Path $dictionaryFileName
+                    } catch {
+                        Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
+                    }
+
+
                 }
             }
         }
