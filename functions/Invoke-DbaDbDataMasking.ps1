@@ -642,11 +642,19 @@ function Invoke-DbaDbDataMasking {
                     $uniqueValues = $null
                 }
 
+                # Commit the transaction and close it
                 try {
                     $null = $transaction.Commit()
                     $sqlconn.Close()
                 } catch {
                     Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+                }
+
+                # Export the dictionary when needed
+                if ($DictionaryExportPath) {
+                    $dictionaryFileName = "$($server.ComputerName)_$($server.DbaInstanceName)_$($db.Name)_Dictionary.csv"
+
+                    $dictionary.GetEnumerator() | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
                 }
             }
         }
