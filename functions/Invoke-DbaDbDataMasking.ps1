@@ -77,6 +77,8 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER DictionaryExportPath
         Export the dictionary to the given path. Naming convention will be [instance]_[database]_Dictionary.csv
 
+        Be carefull with this feature, this export is the key to get the original values which is a security risk!
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
