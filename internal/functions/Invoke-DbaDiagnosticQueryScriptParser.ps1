@@ -27,7 +27,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
 
     foreach ($line in $fullscript) {
         if ($start -eq $false) {
-            if (($line -match "You have the correct major version of SQL Server for this diagnostic information script") -or ($line.StartsWith("-- Server level queries ***"))) {
+            if (($line -match "You have the correct major version of SQL Server for this diagnostic information script") -or ($line.StartsWith("-- Server level queries ***") -or ($line.StartsWith("-- Instance level queries ***")))) {
                 $start = $true
             }
             continue
