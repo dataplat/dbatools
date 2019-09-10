@@ -71,6 +71,14 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER CommandTimeout
         Timeout for the database connection in seconds. Default is 300.
 
+    .PARAMETER DictionaryFilePath
+        Import the dictionary to be used in in the database masking
+
+    .PARAMETER DictionaryExportPath
+        Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv
+
+        Be carefull with this feature, this export is the key to get the original values which is a security risk!
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -138,6 +146,8 @@ function Invoke-DbaDbDataMasking {
         [switch]$ExactLength,
         [int]$ConnectionTimeout = 0,
         [int]$CommandTimeout = 300,
+        [string[]]$DictionaryFilePath,
+        [string]$DictionaryExportPath,
         [switch]$EnableException
     )
     begin {
@@ -150,6 +160,39 @@ function Invoke-DbaDbDataMasking {
         $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -ExpandProperty Subtype -Unique
 
         $supportedFakerSubTypes += "Date"
+
+        # Import the dictionary files
+        if ($DictionaryFilePath.Count -ge 1) {
+            $dictionary = @{ }
+
+            foreach ($file in $DictionaryFilePath) {
+                Write-Message -Level Verbose -Message "Importing dictionary file '$file'"
+                if (Test-Path -Path $file) {
+                    try {
+                        # Import the keys and values
+                        $items = Import-Csv -Path $file
+
+                        # Loop through the items and define the types
+                        foreach ($item in $items) {
+                            if ($item.Type) {
+                                $type = [type]"$($item.type)"
+                            } else {
+                                $type = [type]"string"
+                            }
+
+                            # Add the item to the hash array
+                            if ($dictionary.Keys -notcontains $item.Key) {
+                                $dictionary.Add($item.Key, ($($item.Value) -as $type))
+                            }
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
+                    }
+                } else {
+                    Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
+                }
+            }
+        }
     }
 
     process {
@@ -181,14 +224,13 @@ function Invoke-DbaDbDataMasking {
             if ($Table -and $tabletest.Name -notin $Table) {
                 continue
             }
+
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables -Continue
                 }
             }
         }
-
-        $dictionary = @{ }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -202,6 +244,10 @@ function Invoke-DbaDbDataMasking {
             }
 
             foreach ($dbname in $Database) {
+                if (-not $DictionaryFilePath) {
+                    $dictionary = @{ }
+                }
+
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
                 }
@@ -632,13 +678,38 @@ function Invoke-DbaDbDataMasking {
                     $uniqueValues = $null
                 }
 
+                # Commit the transaction and close it
                 try {
                     $null = $transaction.Commit()
                     $sqlconn.Close()
                 } catch {
                     Stop-Function -Message "Failure" -Continue -ErrorRecord $_
                 }
-            }
-        }
-    }
-}
+
+                # Export the dictionary when needed
+                if ($DictionaryExportPath) {
+                    try {
+                        if (-not (Test-Path -Path $DictionaryExportPath)) {
+                            New-Item -Path $DictionaryExportPath -ItemType Directory
+                        }
+
+                        Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
+
+                        $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                        $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
+
+                        if (-not $script:isWindows) {
+                            $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
+                        }
+
+                        $dictionary.GetEnumerator() | Sort-Object Key | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+
+                        Get-ChildItem -Path $dictionaryFileName
+                    } catch {
+                        Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
+                    }
+                }
+            } # End foreach database
+        } # End foreach instance
+    } # End process block
+} # End
