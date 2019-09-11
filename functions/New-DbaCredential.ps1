@@ -105,7 +105,7 @@ function New-DbaCredential {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $mappedClass = switch ($MappedClassType) {
             "CryptographicProvider" { 1 }
@@ -131,7 +131,11 @@ function New-DbaCredential {
                 if ($currentCred) {
                     if ($force) {
                         Write-Message -Level Verbose -Message "Dropping credential $Name"
-                        $currentCred.Drop()
+                        try {
+                            $currentCred.Drop()
+                        } catch {
+                            Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
+                        }
                     } else {
                         Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
                     }
@@ -151,7 +155,7 @@ function New-DbaCredential {
 
                         Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
                     } catch {
-                        Stop-Function -Message "Failed to create credential in $cred on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -InnerErrorRecord $_ -Continue
+                        Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
                     }
                 }
             }
