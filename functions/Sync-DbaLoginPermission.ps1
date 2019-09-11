@@ -70,7 +70,6 @@ function Sync-DbaLoginPermission {
         Copies permissions ONLY for logins netnerds and realcajun.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
