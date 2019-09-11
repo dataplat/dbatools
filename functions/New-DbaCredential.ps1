@@ -75,10 +75,16 @@ function New-DbaCredential {
         Creates a credential, "AzureBackupBlobStore", on Server1 using the Access Keys for Backup To URL. Identity must be the full URI for the blob container that will be the backup target. The SecurePassword supplied is one of the two Access Keys for the Azure Storage Account.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Name 'https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Store Container Name>' -Identity 'SHARED ACCESS SIGNATURE' -SecurePassword (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+        PS C:\> $sasParams = @{
+        >>SqlInstance = "server1"
+        >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
+        >>Identity = "SHARED ACCESS SIGNATURE"
+        >>SecurePassword = (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @sasParams
 
-        Create a credential on Server1 using a SAS token for Backup To URL. Name has to be the full URI for the blob store container that will be the backup target. The SecurePassword will be the Share Access Token (SAS) and passed in as a SecureString.
-
+        Create a credential on Server1 using a SAS token for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
+        The SecurePassword will be the Shared Access Token (SAS), as a SecureString.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
