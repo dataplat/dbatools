@@ -104,7 +104,7 @@ function Copy-DbaAgentProxy {
         if ($ExcludeProxyAccount) {
             $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }

@@ -55,7 +55,7 @@ function Test-DbaLsnChain {
             $TypeName = "BackupTypeDescription"
         }
         Write-Message -Level VeryVerbose -Message "Testing LSN Chain - Type $typename"
-        $FullDBAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database', 'Full') }
+        $FullDBAnchor = $TestHistory | Where-Object { $_.$TypeName -in ('Database', 'Full') }
 
         if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).Count -ne 1) {
             $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).Count
@@ -72,16 +72,16 @@ function Test-DbaLsnChain {
         #Via LSN chain:
         [BigInt]$CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN.ToString()
         [BigInt]$FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN.ToString()
-        $BackupWrongLSN = $FilteredRestoreFiles | Where-Object {$_.DatabaseBackupLSN -ne $CheckPointLSN}
+        $BackupWrongLSN = $FilteredRestoreFiles | Where-Object { $_.DatabaseBackupLSN -ne $CheckPointLSN }
         #Should be 0 in there, if not, lets check that they're from during the full backup
         if ($BackupWrongLSN.count -gt 0 ) {
-            if (($BackupWrongLSN | Where-Object {[BigInt]$_.LastLSN.ToString() -lt $FullDBLastLSN}).count -gt 0) {
+            if (($BackupWrongLSN | Where-Object { [BigInt]$_.LastLSN.ToString() -lt $FullDBLastLSN }).count -gt 0) {
                 Write-Message -Level Warning -Message "We have non matching LSNs - not supported"
                 return $false
                 break;
             }
         }
-        $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database Differential', 'Differential')}
+        $DiffAnchor = $TestHistory | Where-Object { $_.$TypeName -in ('Database Differential', 'Differential') }
         #Check for no more than a single Differential backup
         if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1) {
             Write-Message -Level Warning -Message "More than 1 differential backup, not supported"
@@ -96,7 +96,7 @@ function Test-DbaLsnChain {
 
 
         #Check T-log LSNs form a chain.
-        $TranLogBackups = $TestHistory | Where-Object {$_.$TypeName -in ('Transaction Log', 'Log') -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
+        $TranLogBackups = $TestHistory | Where-Object { $_.$TypeName -in ('Transaction Log', 'Log') -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN } | Sort-Object -Property LastLSN, FirstLsn
         for ($i = 0; $i -lt ($TranLogBackups.count)) {
             Write-Message -Level Debug -Message "looping t logs"
             if ($i -eq 0) {

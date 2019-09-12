@@ -31,7 +31,7 @@ function Unregister-RemoteSessionConfiguration {
                     Unregister-PSSessionConfiguration -Name $Name -ErrorAction Stop -NoServiceRestart -Confirm:$false 3>$null
                     [pscustomobject]@{ 'Name' = $Name; 'Status' = 'Unregistered' ; Successful = $true }
                 } catch {
-                    return [pscustomobject]@{ 'Name' = $Name ; 'Status' = $_  ; Successful = $false}
+                    return [pscustomobject]@{ 'Name' = $Name ; 'Status' = $_  ; Successful = $false }
                 }
             }
         }

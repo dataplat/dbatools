@@ -110,7 +110,7 @@ function Copy-DbaInstanceAudit {
         }
         $serverAudits = $sourceServer.Audits
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
