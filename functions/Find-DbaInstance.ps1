@@ -213,7 +213,7 @@ function Find-DbaInstance {
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
-        Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaRegServer instead.
+        Using this method regularly is not recommended. Use Get-DbaService or Get-DbaRegServer instead.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
