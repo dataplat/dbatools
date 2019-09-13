@@ -85,7 +85,7 @@ function Get-DbaSsisExecutionHistory {
         [switch]$EnableException
     )
     begin {
-        $params = @{}
+        $params = @{ }
 
         #build status parameter
         $statuses = @{

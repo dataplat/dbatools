@@ -44,12 +44,12 @@ function Convert-DbaTimelineStatusColor {
         $Status
     )
     $out = switch ($Status) {
-        "Failed" {"#FF3D3D"}
-        "Succeeded" {"#36B300"}
-        "Retry" {"#FFFF00"}
-        "Canceled" {"#C2C2C2"}
-        "In Progress" {"#00CCFF"}
-        default {"#FF00CC"}
+        "Failed" { "#FF3D3D" }
+        "Succeeded" { "#36B300" }
+        "Retry" { "#FFFF00" }
+        "Canceled" { "#C2C2C2" }
+        "In Progress" { "#00CCFF" }
+        default { "#FF00CC" }
     }
     return $out
 }

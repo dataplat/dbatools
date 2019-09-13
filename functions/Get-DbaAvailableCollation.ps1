@@ -54,8 +54,8 @@ function Get-DbaAvailableCollation {
 
         #No longer supported by Windows, but still shows up in SQL Server
         #http://www.databaseteam.org/1-ms-sql-server/982faddda7a789a1.htm
-        $locales = @{66577 = "Japanese_Unicode"}
-        $codePages = @{}
+        $locales = @{66577 = "Japanese_Unicode" }
+        $codePages = @{ }
 
         function Get-LocaleDescription ($LocaleId) {
             if ($locales.ContainsKey($LocaleId)) {

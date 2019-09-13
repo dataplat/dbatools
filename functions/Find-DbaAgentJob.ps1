@@ -174,7 +174,7 @@ function Find-DbaAgentJob {
 
             if ($LastUsed) {
                 $DaysBack = $LastUsed * -1
-                $SinceDate = (Get-date).AddDays($DaysBack)
+                $SinceDate = (Get-Date).AddDays($DaysBack)
                 Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
                 $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
             }

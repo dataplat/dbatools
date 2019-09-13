@@ -64,7 +64,7 @@ function Test-DbaSpn {
     )
     begin {
         # spare the cmdlet to search for the same account over and over
-        $resultCache = @{}
+        $resultCache = @{ }
     }
     process {
         foreach ($computer in $ComputerName) {
