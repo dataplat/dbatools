@@ -1,7 +1,7 @@
 function Invoke-Create {
     <#
         For stubborn .net objects that won't throw properly
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [object]$Object

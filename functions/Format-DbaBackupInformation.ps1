@@ -150,7 +150,7 @@ function Format-DbaBackupInformation {
             }
             if ("OriginalFileList" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalFileList' -Type NoteProperty -Value ''
-                $History | ForEach-Object {$_.OriginalFileList = $_.FileList}
+                $History | ForEach-Object { $_.OriginalFileList = $_.FileList }
             }
             if ("OriginalFullName" -notin $History.PSobject.Properties.name) {
                 $History | Add-Member -Name 'OriginalFullName' -Type NoteProperty -Value $History.FullName
@@ -159,9 +159,9 @@ function Format-DbaBackupInformation {
                 $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
             }
             switch ($History.Type) {
-                'Full' {$History.Type = 'Database'}
-                'Differential' {$History.Type = 'Database Differential'}
-                'Log' {$History.Type = 'Transaction Log'}
+                'Full' { $History.Type = 'Database' }
+                'Differential' { $History.Type = 'Database Differential' }
+                'Log' { $History.Type = 'Transaction Log' }
             }
 
 

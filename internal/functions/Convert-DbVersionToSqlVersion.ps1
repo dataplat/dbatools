@@ -20,7 +20,7 @@ Returns "SQL Server vNext CTP1"
     )
 
     $dbversion = switch ($dbversion) {
-        869 { "SQL Server 2017"}
+        869 { "SQL Server 2017" }
         856 { "SQL Server vNext CTP1" }
         852 { "SQL Server 2016" }
         829 { "SQL Server 2016 Prerelease" }

@@ -50,7 +50,7 @@ function Update-Dbatools {
         [switch]$EnableException
     )
     $MyModuleBase = [SqlCollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
-    $InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
+    $InstallScript = Join-Path -path $MyModuleBase -ChildPath "install.ps1";
     if ($Development) {
         Write-Message -Level Verbose -Message "Installing dev/beta channel via $Installscript.";
         if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {

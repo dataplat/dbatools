@@ -96,7 +96,7 @@ function Copy-DbaRegServer {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Invoke-ParseServerGroup {
             [cmdletbinding()]

@@ -214,7 +214,7 @@ function Set-DbaLogin {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $allLogins = @{}
+        $allLogins = @{ }
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
             try {
