@@ -28,7 +28,7 @@ function Find-DbaAgentJob {
         Supports regular expression (e.g. MyJob*) being passed in.
 
     .PARAMETER LastUsed
-        Find all jobs that havent ran in the INT number of previous day(s)
+        Find all jobs that haven't ran in the INT number of previous day(s)
 
     .PARAMETER IsDisabled
         Find all jobs that are disabled

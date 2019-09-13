@@ -4,7 +4,7 @@ function Export-DbaDbRole {
         Exports database roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
 
     .DESCRIPTION
-        Exports databsase roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
+        Exports database roles to a T-SQL file. Export includes Role creation, object permissions and Schema ownership.
 
         This command is based off of John Eisbrener's post "Fully Script out a MSSQL Database Role"
         Reference:  https://dbaeyes.wordpress.com/2013/04/19/fully-script-out-a-mssql-database-role/
@@ -137,7 +137,7 @@ function Export-DbaDbRole {
     .EXAMPLE
         PS C:\> Get-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole
 
-        Exports all roles from all databases on sqlserver2008, exludes all roles marked as as FixedRole
+        Exports all roles from all databases on sqlserver2008, excludes all roles marked as as FixedRole
 
     #>
     [CmdletBinding()]
