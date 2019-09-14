@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command gets suggestions" {
         $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
-        It "Should get results for $dbaname" {
+        It "Should get results for $dbname" {
             $results | Should Not Be $null
         }
         $results.foreach{
@@ -48,10 +48,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command makes right suggestions" {
         $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
-        It "Should sugggest PAGE compression for a table with no updates or scans" {
+        It "Should suggest PAGE compression for a table with no updates or scans" {
             $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
         }
-        It "Should sugggest ROW compression for table with more updates" {
+        It "Should suggest ROW compression for table with more updates" {
             $($results | Where-Object { $_.TableName -eq "sysallparams"}).CompressionTypeRecommendation | Should Be "ROW"
         }
     }
