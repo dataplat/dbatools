@@ -28,7 +28,7 @@ function Find-DbaAgentJob {
         Supports regular expression (e.g. MyJob*) being passed in.
 
     .PARAMETER LastUsed
-        Find all jobs that havent ran in the INT number of previous day(s)
+        Find all jobs that haven't ran in the INT number of previous day(s)
 
     .PARAMETER IsDisabled
         Find all jobs that are disabled
@@ -174,7 +174,7 @@ function Find-DbaAgentJob {
 
             if ($LastUsed) {
                 $DaysBack = $LastUsed * -1
-                $SinceDate = (Get-date).AddDays($DaysBack)
+                $SinceDate = (Get-Date).AddDays($DaysBack)
                 Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
                 $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
             }

@@ -354,7 +354,7 @@ function Copy-DbaAgentJobCategory {
             return
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }

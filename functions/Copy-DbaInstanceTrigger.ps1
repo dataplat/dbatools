@@ -102,7 +102,7 @@ function Copy-DbaInstanceTrigger {
         }
         $serverTriggers = $sourceServer.Triggers
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }

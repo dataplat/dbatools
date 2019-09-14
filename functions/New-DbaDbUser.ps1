@@ -95,7 +95,7 @@ function New-DbaDbUser {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Test-SqlLoginInDatabase {
             param(

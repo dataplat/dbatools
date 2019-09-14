@@ -78,7 +78,7 @@ function Get-DbaAgentSchedule {
             )
 
             # Get the culture to make sure the right date and time format is displayed
-            $datetimeFormat = (Get-culture).DateTimeFormat
+            $datetimeFormat = (Get-Culture).DateTimeFormat
 
             # Set the intial description
             $description = ""

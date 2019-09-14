@@ -269,7 +269,7 @@ function Copy-DbaDatabase {
             return
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Join-Path {
             <#

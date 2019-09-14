@@ -116,51 +116,51 @@ function Get-DbatoolsLog {
             $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
                 ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
             } | Select-Object -Last 1
-        }
+    }
 
-        if (Test-Bound -ParameterName Target) {
-            $messages = $messages | Where-Object TargetObject -eq $Target
-        }
+    if (Test-Bound -ParameterName Target) {
+        $messages = $messages | Where-Object TargetObject -eq $Target
+    }
 
-        if (Test-Bound -ParameterName Tag) {
-            $messages = $messages | Where-Object {
-                $_.Tags | Where-Object {
-                    $_ -in $Tag
-                }
+    if (Test-Bound -ParameterName Tag) {
+        $messages = $messages | Where-Object {
+            $_.Tags | Where-Object {
+                $_ -in $Tag
             }
-        }
-
-        if (Test-Bound -ParameterName Runspace) {
-            $messages = $messages | Where-Object Runspace -eq $Runspace
-        }
-
-        if (Test-Bound -ParameterName Last) {
-            $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
-            $start = $history[0].StartExecutionTime
-            $end = $history[-1].EndExecutionTime
-
-            $messages = $messages | Where-Object {
-                ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
-            }
-        }
-
-        if (Test-Bound -ParameterName Level) {
-            $messages = $messages | Where-Object Level -In $Level
-        }
-
-        if ($Raw) {
-            return $messages
-        } else {
-            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
-                Name       = "Message"
-                Expression = {
-                    $msg = ($_.Message.Split("`n") -join " ")
-                    do {
-                        $msg = $msg.Replace('  ', ' ')
-                    } until ($msg -notmatch '  ')
-                    $msg
-                }
-            }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
         }
     }
+
+    if (Test-Bound -ParameterName Runspace) {
+        $messages = $messages | Where-Object Runspace -eq $Runspace
+    }
+
+    if (Test-Bound -ParameterName Last) {
+        $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
+        $start = $history[0].StartExecutionTime
+        $end = $history[-1].EndExecutionTime
+
+        $messages = $messages | Where-Object {
+            ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+        }
+    }
+
+    if (Test-Bound -ParameterName Level) {
+        $messages = $messages | Where-Object Level -In $Level
+    }
+
+    if ($Raw) {
+        return $messages
+    } else {
+        $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
+            Name       = "Message"
+            Expression = {
+                $msg = ($_.Message.Split("`n") -join " ")
+                do {
+                    $msg = $msg.Replace('  ', ' ')
+                } until ($msg -notmatch '  ')
+                $msg
+            }
+        }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
+    }
+}
 }
