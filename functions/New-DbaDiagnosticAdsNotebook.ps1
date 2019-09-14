@@ -135,9 +135,9 @@ function New-DbaDiagnosticAdsNotebook {
         Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName |
             Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
             ForEach-Object {
-            $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
-            $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
-        }
+                $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
+                $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
+            }
 
         $preamble = '
         {

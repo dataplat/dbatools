@@ -134,7 +134,7 @@ function Invoke-DbaDbDbccUpdateUsage {
             $dbs = $server.Databases
 
             if (Test-Bound -ParameterName Database) {
-                $dbs = $dbs | Where-Object {($_.Name -In $Database) -or ($_.ID -In $Database) }
+                $dbs = $dbs | Where-Object { ($_.Name -In $Database) -or ($_.ID -In $Database) }
             }
 
             foreach ($db in $dbs) {

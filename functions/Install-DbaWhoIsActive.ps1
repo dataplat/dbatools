@@ -86,7 +86,7 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -94,7 +94,7 @@ function Install-DbaWhoIsActive {
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
             $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
-            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | where-object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
+            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | Where-Object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {

@@ -124,7 +124,7 @@ function Export-DbaDiagnosticQuery {
 
                     if (-not $NoPlanExport) {
                         Write-Message -Level Verbose -Message "Exporting $planfilename"
-                        if ($plan) {$plan | Out-File -FilePath $planfilename}
+                        if ($plan) { $plan | Out-File -FilePath $planfilename }
                     }
                 }
 

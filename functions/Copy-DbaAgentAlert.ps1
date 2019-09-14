@@ -102,7 +102,7 @@ function Copy-DbaAgentAlert {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }

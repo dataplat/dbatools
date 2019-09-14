@@ -115,7 +115,7 @@ function Copy-DbaCredential {
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Copy-Credential {
             <#

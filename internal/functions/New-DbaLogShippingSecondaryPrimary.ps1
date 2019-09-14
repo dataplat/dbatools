@@ -143,7 +143,7 @@ function New-DbaLogShippingSecondaryPrimary {
 
     # Check of the MonitorServerSecurityMode value is of type string and set the integer value
     if ($MonitorServerSecurityMode -notin 0, 1) {
-        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) {"WINDOWS" { 1 } "SQLSERVER" { 0 } }
+        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) { "WINDOWS" { 1 } "SQLSERVER" { 0 } }
         Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
     }
 

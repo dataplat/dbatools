@@ -101,7 +101,7 @@ function Invoke-DbaBalanceDataFiles {
         [switch]$Force
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 

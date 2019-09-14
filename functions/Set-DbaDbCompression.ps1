@@ -129,7 +129,7 @@ function Set-DbaDbCompression {
                 Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $server" -Target $server -Continue
             }
             try {
-                $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0}
+                $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 if ($Database) {
                     $dbs = $dbs | Where-Object { $_.Name -in $Database }
                 }
@@ -153,7 +153,7 @@ function Set-DbaDbCompression {
                     if ($CompressionType -eq "Recommended") {
                         if (Test-Bound "InputObject") {
                             Write-Message -Level Verbose -Message "Using passed in compression suggestions"
-                            $compressionSuggestion = $InputObject | Where-Object {$_.Database -eq $db.name}
+                            $compressionSuggestion = $InputObject | Where-Object { $_.Database -eq $db.name }
                         } else {
                             Write-Message -Level Verbose -Message "Testing database for compression suggestions for $instance.$db"
                             $compressionSuggestion = Test-DbaDbCompression -SqlInstance $server -Database $db.Name
@@ -167,22 +167,22 @@ function Set-DbaDbCompression {
                     if ($CompressionType -eq "Recommended") {
                         if ($Pscmdlet.ShouldProcess($db, "Applying suggested compression using results from Test-DbaDbCompression")) {
                             Write-Message -Level Verbose -Message "Applying suggested compression settings using Test-DbaDbCompression"
-                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcessed'; e = {"False"}}
-                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -notin @('NO_GAIN', '?') -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
-                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
+                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcessed'; e = { "False" } }
+                            foreach ($obj in ($results | Where-Object { $_.CompressionTypeRecommendation -notin @('NO_GAIN', '?') -and $_.PercentCompression -ge $PercentCompression } | Sort-Object PercentCompression -Descending)) {
+                                if ($MaxRunTime -ne 0 -and ($(Get-Date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
                                 if ($obj.indexId -le 1) {
                                     ##heaps and clustered indexes
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName)"
-                                    $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
+                                    $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $obj.Partition }).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $($obj.Schema)].Rebuild()
                                     $obj.AlreadyProcessed = "True"
                                 } else {
                                     ##nonclustered indexes
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName).$($obj.IndexName)"
-                                    $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
+                                    $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $obj.Partition }).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].Rebuild()
                                     $obj.AlreadyProcessed = "True"
                                 }
@@ -192,14 +192,14 @@ function Set-DbaDbCompression {
                     } else {
                         if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
                             Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
-                            foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object {!$_.IsMemoryOptimized}) {
-                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
+                            foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object { !$_.IsMemoryOptimized -and !$_.HasSparseColumn }) {
+                                if ($MaxRunTime -ne 0 -and ($(Get-Date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
-                                foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -notin ($CompressionType, 'ColumnStore', 'ColumnStoreArchive')})) {
+                                foreach ($p in $($obj.PhysicalPartitions | Where-Object { $_.DataCompression -notin ($CompressionType, 'ColumnStore', 'ColumnStoreArchive') })) {
                                     Write-Message -Level Verbose -Message "Compressing table $($obj.Schema).$($obj.Name)"
-                                    $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
+                                    $($obj.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                     $obj.Rebuild()
                                     [pscustomobject]@{
                                         ComputerName                  = $server.ComputerName
@@ -211,7 +211,7 @@ function Set-DbaDbCompression {
                                         IndexName                     = $null
                                         Partition                     = $p.PartitionNumber
                                         IndexID                       = 0
-                                        IndexType                     = Switch ($obj.HasHeapIndex) {$false {"ClusteredIndex"} $true {"Heap"}}
+                                        IndexType                     = Switch ($obj.HasHeapIndex) { $false { "ClusteredIndex" } $true { "Heap" } }
                                         PercentScan                   = $null
                                         PercentUpdate                 = $null
                                         RowEstimatePercentOriginal    = $null
@@ -224,12 +224,12 @@ function Set-DbaDbCompression {
                                     }
                                 }
 
-                                foreach ($index in $($obj.Indexes | Where-Object {!$_.IsMemoryOptimized -and $_.IndexType -notmatch 'Columnstore'})) {
-                                    if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
+                                foreach ($index in $($obj.Indexes | Where-Object { !$_.IsMemoryOptimized -and $_.IndexType -notmatch 'Columnstore' })) {
+                                    if ($MaxRunTime -ne 0 -and ($(Get-Date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                         Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                         break
                                     }
-                                    foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
+                                    foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                         Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name) Partition $($p.PartitionNumber)"
 
                                         ## There is a bug in SMO where setting compression to None at the index level doesn't work
@@ -239,7 +239,7 @@ function Set-DbaDbCompression {
                                             $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = $CompressionType)"
                                             $Server.Query($query, $db.Name)
                                         } else {
-                                            $($Index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
+                                            $($Index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                             $index.Rebuild()
                                         }
 
@@ -267,8 +267,8 @@ function Set-DbaDbCompression {
                                     }
                                 }
                             }
-                            foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object {$_.Indexes}).Indexes) {
-                                foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
+                            foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object { $_.Indexes }).Indexes) {
+                                foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                     Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
 
                                     ## There is a bug in SMO where setting compression to None at the index level doesn't work
@@ -279,7 +279,7 @@ function Set-DbaDbCompression {
                                         $query
                                         $Server.Query($query, $db.Name)
                                     } else {
-                                        $($index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
+                                        $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                         $index.Rebuild()
                                     }
 
