@@ -369,6 +369,15 @@ ORDER BY [TableName] ASC;
 
 $sqlRestrict
 
+BEGIN
+    -- remove any tables with sparse columns
+    DELETE tdc
+    FROM ##TestDbaCompression tdc
+    INNER JOIN sys.columns c
+        on tdc.ObjectId = c.object_id
+    WHERE c. is_sparse = 1
+END
+
 $sqlVersionRestrictions
 
 DECLARE @schema SYSNAME
