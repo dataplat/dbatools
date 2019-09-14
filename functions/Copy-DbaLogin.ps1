@@ -125,10 +125,12 @@ function Copy-DbaLogin {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
+        [parameter(ParameterSetName = "File", Mandatory)]
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(ParameterSetName = "SqlInstance", Mandatory)]
+        [parameter(ParameterSetName = "InputObject")]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
