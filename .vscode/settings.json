@@ -18,5 +18,5 @@
 	"[powershell]": {
 		"editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
     },
-    "powershell.scriptAnalysis.settingsPath": "{workingDirectory}\\bin\\PSScriptAnalyzerRules.psd1"
+    "powershell.scriptAnalysis.settingsPath": "bin\\PSScriptAnalyzerRules.psd1"
 }
