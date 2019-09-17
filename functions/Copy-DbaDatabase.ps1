@@ -1287,7 +1287,7 @@ function Copy-DbaDatabase {
 
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $dbName")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
                                 # needed because the newly restored database doesn't show up
                                 $destServer.Databases.Refresh()
                                 $dbOwner = $sourceServer.Databases[$dbName].Owner
@@ -1295,9 +1295,9 @@ function Copy-DbaDatabase {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
                                 try {
-                                    $null = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
+                                    $null = $destServer.Query("ALTER DATABASE [$destinationDbName] SET READ_WRITE")
                                 } catch {
-                                    Stop-Function -Message "Failure setting $dbname to read-write on destination server" -ErrorRecord $_
+                                    Stop-Function -Message "Failure setting $destinationDbName to read-write on destination server" -ErrorRecord $_
                                 }
                             }
                         }
