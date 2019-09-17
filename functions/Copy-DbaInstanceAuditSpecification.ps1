@@ -106,7 +106,7 @@ function Copy-DbaInstanceAuditSpecification {
 
         $AuditSpecifications = $sourceServer.ServerAuditSpecifications
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }

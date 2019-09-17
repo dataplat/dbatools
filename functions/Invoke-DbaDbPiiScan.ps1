@@ -4,7 +4,7 @@ function Invoke-DbaDbPiiScan {
         Command to return any columns that could potentially contain PII (Personal Identifiable Information)
 
     .DESCRIPTION
-        This command will go through the tables in your database and asses each column.
+        This command will go through the tables in your database and assess each column.
         It will first check the columns names if it was named in such a way that it would indicate PII.
         The next thing that it will do is pattern recognition by looking into the data from the table.
 

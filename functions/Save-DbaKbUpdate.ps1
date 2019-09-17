@@ -58,7 +58,7 @@ function Save-DbaKbUpdate {
         PS C:\> Save-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\temp
 
         Downloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\temp. This works for SQL Server or any other KB.
-#>
+    #>
     [CmdletBinding()]
     param(
         [string[]]$Name,

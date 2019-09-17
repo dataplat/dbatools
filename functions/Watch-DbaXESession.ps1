@@ -126,7 +126,7 @@ function Watch-DbaXESession {
 
                 # Format output
                 foreach ($event in $xevent) {
-                    $hash = [ordered]@{}
+                    $hash = [ordered]@{ }
 
                     foreach ($column in $columns) {
                         $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls

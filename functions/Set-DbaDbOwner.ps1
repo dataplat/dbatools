@@ -122,7 +122,7 @@ function Set-DbaDbOwner {
             }
 
             #Owner cannot be a group
-            $TargetLoginObject = $server.Logins | where-object {$PSItem.Name -eq $TargetLogin }| Select-Object -property  Name, LoginType
+            $TargetLoginObject = $server.Logins | Where-Object { $PSItem.Name -eq $TargetLogin } | Select-Object -property  Name, LoginType
             if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
                 Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
             }

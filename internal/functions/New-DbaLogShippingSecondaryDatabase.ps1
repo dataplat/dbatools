@@ -100,7 +100,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
         .EXAMPLE
             New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
-       #>
+    #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
 
@@ -166,7 +166,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
     # Check the restore mode
     if ($RestoreMode -notin 0, 1) {
-        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0}  "Standby" { 1 } }
+        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0 }  "Standby" { 1 } }
         Write-Message -Message "Setting restore mode to $RestoreMode." -Level Verbose
     }
 

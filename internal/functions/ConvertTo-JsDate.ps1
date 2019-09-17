@@ -32,7 +32,7 @@ function ConvertTo-JsDate {
             ConvertTo-JsDate (Get-Date)
 
             Returned output: new Date(2018, 7, 14, 07, 40, 42)
-       #>
+    #>
 
     [CmdletBinding()]
     param (
