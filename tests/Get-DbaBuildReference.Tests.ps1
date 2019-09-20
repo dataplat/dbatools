@@ -34,7 +34,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
         It "LastUpdated is updated regularly (keeps everybody on their toes)" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
-            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-90)
+            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-45)
         }
         It "LastUpdated is not in the future" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
