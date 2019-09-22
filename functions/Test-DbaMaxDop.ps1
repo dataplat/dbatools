@@ -4,7 +4,7 @@ function Test-DbaMaxDop {
         Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
     .DESCRIPTION
-        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
+        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator/),
         this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
         For SQL Server 2016 shows:
