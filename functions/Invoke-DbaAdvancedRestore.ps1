@@ -66,6 +66,9 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER WithReplace
         Indicated that if the database already exists it should be replaced
 
+    .PARAMETER KeepReplication
+        Indicates whether replication configuration should be restored as part of the database restore operation
+
     .PARAMETER KeepCDC
         Indicates whether CDC information should be restored as part of the database
 
@@ -125,6 +128,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$WithReplace,
+        [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
         [switch]$EnableException
@@ -228,6 +232,9 @@ function Invoke-DbaAdvancedRestore {
                 }
                 if ($BlockSize) {
                     $Restore.Blocksize = $BlockSize
+                }
+                if ($KeepReplication) {
+                    $Restore.KeepReplication = $KeepReplication
                 }
                 if ($true -ne $Continue -and ($null -eq $Pages)) {
                     foreach ($file in $backup.FileList) {
@@ -339,6 +346,7 @@ function Invoke-DbaAdvancedRestore {
                                 Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
+                                KeepReplication        = $KeepReplication
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
