@@ -24595,6 +24595,14 @@
                            "False"
                        ],
                        [
+                           "KeepReplication",
+                           "Indicates whether replication configuration should be restored as part of the database restore operation",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "KeepCDC",
                            "Indicates whether CDC information should be restored as part of the database",
                            "",
@@ -24635,7 +24643,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedRestore [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-OutputScriptOnly] [-VerifyOnly] [[-RestoreTime] \u003cDateTime\u003e] [[-StandbyDirectory] \u003cString\u003e] [-NoRecovery] [[-MaxTransferSize] \u003cInt32\u003e] [[-BlockSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-Continue] [[-AzureCredential] \u003cString\u003e] [-WithReplace] [-KeepCDC] [[-PageRestore] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedRestore [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-OutputScriptOnly] [-VerifyOnly] [[-RestoreTime] \u003cDateTime\u003e] [[-StandbyDirectory] \u003cString\u003e] [-NoRecovery] [[-MaxTransferSize] \u003cInt32\u003e] [[-BlockSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-Continue] [[-AzureCredential] \u003cString\u003e] [-WithReplace] [-KeepReplication] [-KeepCDC] [[-PageRestore] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedUpdate",
@@ -38561,6 +38569,14 @@
                            "False"
                        ],
                        [
+                           "KeepReplication",
+                           "Indicates whether replication configuration should be restored as part of the database restore operation",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "XpDirTree",
                            "Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree\r\nThis will scan recursively from the passed in path\r\nYou must have sysadmin role membership on the instance for this to work.",
                            "",
@@ -38849,7 +38865,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] [-TrustDbBackupHistory] \r\n[-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] -PageRestore \u003cObject\u003e \r\n-PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Restore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-DestinationDataDirectory \u003cString\u003e] [-DestinationLogDirectory \u003cString\u003e] [-DestinationFileStreamDirectory \u003cString\u003e] [-RestoreTime \u003cDateTime\u003e] [-NoRecovery] [-WithReplace] [-KeepReplication] [-XpDirTree] [-OutputScriptOnly] [-VerifyOnly] [-MaintenanceSolutionBackup] [-FileMapping \u003cHashtable\u003e] [-IgnoreLogBackup] [-UseDestinationDefaultDirectories] [-ReuseSourceFolderStructure] [-DestinationFilePrefix \u003cString\u003e] [-RestoredDatabaseNamePrefix \u003cString\u003e] \r\n[-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-DirectoryRecurse] [-EnableException] [-StandbyDirectory \u003cString\u003e] [-Continue] [-AzureCredential \u003cString\u003e] [-ReplaceDbNameInFile] [-DestinationFileSuffix \u003cString\u003e] [-KeepCDC] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Path \u003cObject[]\u003e [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-TrustDbBackupHistory] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-EnableException] [-AzureCredential \u003cString\u003e] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] -PageRestore \u003cObject\u003e \r\n-PageRestoreTailFolder \u003cString\u003e [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRestore-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cObject[]\u003e] [-OutputScriptOnly] [-EnableException] [-AzureCredential \u003cString\u003e] [-Recover] [-GetBackupInformation \u003cString\u003e] [-StopAfterGetBackupInformation] [-SelectBackupInformation \u003cString\u003e] [-StopAfterSelectBackupInformation] [-FormatBackupInformation \u003cString\u003e] [-StopAfterFormatBackupInformation] [-TestBackupInformation \u003cString\u003e] [-StopAfterTestBackupInformation] [-StatementTimeout \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Restore-DbaDbCertificate",
@@ -47048,7 +47064,7 @@
     },
     {
         "Name":  "Test-DbaMaxDop",
-        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),\nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n- Instance max dop configured and the calculated recommendation\n- max dop configured per database (new feature)\n\nMore info:\nhttps://support.microsoft.com/en-us/kb/2806535\nhttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
+        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator/),\nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n- Instance max dop configured and the calculated recommendation\n- max dop configured per database (new feature)\n\nMore info:\nhttps://support.microsoft.com/en-us/kb/2806535\nhttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
         "Tags":  [
                      "MaxDop",
                      "SpConfigure"

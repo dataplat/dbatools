@@ -40222,6 +40222,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$WithReplace,
+        [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
         [switch]$EnableException
@@ -40325,6 +40326,9 @@ function Invoke-DbaAdvancedRestore {
                 }
                 if ($BlockSize) {
                     $Restore.Blocksize = $BlockSize
+                }
+                if ($KeepReplication) {
+                    $Restore.KeepReplication = $KeepReplication
                 }
                 if ($true -ne $Continue -and ($null -eq $Pages)) {
                     foreach ($file in $backup.FileList) {
@@ -40436,6 +40440,7 @@ function Invoke-DbaAdvancedRestore {
                                 Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
+                                KeepReplication        = $KeepReplication
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
@@ -59430,6 +59435,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][DateTime]$RestoreTime = (Get-Date).AddYears(1),
         [parameter(ParameterSetName = "Restore")][switch]$NoRecovery,
         [parameter(ParameterSetName = "Restore")][switch]$WithReplace,
+        [parameter(ParameterSetName = "Restore")][switch]$KeepReplication,
         [parameter(ParameterSetName = "Restore")][Switch]$XpDirTree,
         [switch]$OutputScriptOnly,
         [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
@@ -59777,7 +59783,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
