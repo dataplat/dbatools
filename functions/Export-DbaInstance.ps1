@@ -50,9 +50,6 @@ function Export-DbaInstance {
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
 
-    .PARAMETER FilePath
-        Specifies the full file path of the output file.
-
     .PARAMETER WithReplace
         If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
 
@@ -141,8 +138,6 @@ function Export-DbaInstance {
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
-        [Alias("OutFile", "FileName")]
-        [string]$FilePath,
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
