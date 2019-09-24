@@ -17,7 +17,7 @@ function Get-DbaCmObject {
         The name of the class to retrieve.
 
     .PARAMETER Query
-        The Wmi/Cim query tu run against the server.
+        The Wmi/Cim query to run against the server.
 
     .PARAMETER ComputerName
         The computer(s) to connect to. Defaults to localhost.
