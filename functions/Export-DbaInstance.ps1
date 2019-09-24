@@ -137,6 +137,7 @@ function Export-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
+        [Alias("FilePath")]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
