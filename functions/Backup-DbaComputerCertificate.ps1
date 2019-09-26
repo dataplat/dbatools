@@ -40,13 +40,12 @@ function Backup-DbaComputerCertificate {
     .EXAMPLE
         PS C:\> Get-DbaComputerCertificate | Backup-DbaComputerCertificate -Path C:\temp
 
-        Backs up all certs to C:\temp. Autonames the files.
+        Backs up all certs to C:\temp. Auto-names the files.
 
     .EXAMPLE
-        PS C:\> Backup-DbaComputerCertificate -FilePath C:\temp\cert.cer
+        PS C:\> Get-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 | Backup-DbaComputerCertificate -FilePath C:\temp\29C469578D6C6211076A09CEE5C5797EEA0C2713.cer
 
-        Backs up the local C:\temp\cert.cer from the local computer's LocalMachine\My (Personal) certificate store.
-
+        Backs up certificate with the thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 to the temp directory.
     #>
     [CmdletBinding()]
     param (
