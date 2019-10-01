@@ -1039,6 +1039,33 @@ function Add-DbaServerRoleMember {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function Backup-DbaComputerCertificate {
+    
+    [CmdletBinding()]
+    param (
+        [Alias("Password")]
+        [SecureString]$SecurePassword,
+        [parameter(ValueFromPipeline, Mandatory)]
+        [object[]]$InputObject,
+        [string]$Path = $pwd,
+        [string]$FilePath,
+        [ValidateSet("Authenticode", "Cert", "Pfx", "Pkcs12", "Pkcs7", "SerializedCert")]
+        [string]$Type = "Cert",
+        [switch]$EnableException
+    )
+    process {
+        foreach ($cert in $InputObject) {
+            if ((Test-Bound -Parameter FilePath -Not)) {
+                $FilePath = "$Path\$($cert.ComputerName)-$($cert.Thumbprint).cer"
+            }
+            $certfromraw = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($cert.RawData, $SecurePassword)
+            [io.file]::WriteAllBytes($FilePath, $certfromraw.Export($Type))
+            Get-ChildItem $FilePath
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function Backup-DbaDatabase {
     
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]

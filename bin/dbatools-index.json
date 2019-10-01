@@ -1060,6 +1060,69 @@
         "Syntax":  "Add-DbaServerRoleMember [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [[-Role] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Backup-DbaComputerCertificate",
+        "Description":  "Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.",
+        "Tags":  "Certificate",
+        "Synopsis":  "Backs up a computer certificate - useful for older systems and backing up remote certs to local disk.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Backup-DbaComputerCertificate",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaComputerCertificate | Backup-DbaComputerCertificate -Path C:\\temp\nBacks up all certs to C:\\temp. Auto-names the files.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 | Backup-DbaComputerCertificate -FilePath C:\\temp\\29C469578D6C6211076A09CEE5C5797EEA0C2713.cer\nBacks up certificate with the thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 to the temp directory.",
+        "Params":  [
+                       [
+                           "SecurePassword",
+                           "Export using a password",
+                           "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "The target certificate object. Accepts input from Get-DbaComputerCertificate.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Export to a directory",
+                           "",
+                           false,
+                           "false",
+                           "$pwd"
+                       ],
+                       [
+                           "FilePath",
+                           "Export to a specific file name",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Type",
+                           "Export type. Options include: Authenticode, Cert, Pfx, Pkcs12, Pkcs7, SerializedCert.",
+                           "",
+                           false,
+                           "false",
+                           "Cert"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Backup-DbaComputerCertificate [[-SecurePassword] \u003cSecureString\u003e] [-InputObject] \u003cObject[]\u003e [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Type] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Backup-DbaDatabase",
         "Description":  "Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.",
         "Tags":  [
