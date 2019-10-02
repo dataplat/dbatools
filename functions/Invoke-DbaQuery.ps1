@@ -267,7 +267,7 @@ function Invoke-DbaQuery {
             Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
             return
         }
-        if (Test-Bound -ParameterName "SqlInstance" -Not) {
+        if ((Test-Bound -ParameterName "SqlInstance" -Not) -and (Test-Bound -ParameterName "InputObject" -Not)) {
             Stop-Function -Category InvalidArgument -Message "Parameter -SqlInstance is required"
             return
         }
