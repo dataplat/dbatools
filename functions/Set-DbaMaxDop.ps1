@@ -44,7 +44,7 @@ function Set-DbaMaxDop {
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
     .PARAMETER Confirm
-        Prompts you for confirmation before running the cmdlet.
+        Prompts you for conf    irmation before running the cmdlet.
 
     .NOTES
         Tags: MaxDop, SpConfigure
@@ -85,7 +85,6 @@ function Set-DbaMaxDop {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -101,6 +100,11 @@ function Set-DbaMaxDop {
     process {
         if ((Test-Bound -Parameter Database) -and (Test-Bound -Parameter AllDatabases) -and (Test-Bound -Parameter ExcludeDatabase)) {
             Stop-Function -Category InvalidArgument -Message "-Database, -AllDatabases and -ExcludeDatabase are mutually exclusive. Please choose only one. Quitting."
+            return
+        }
+
+        if ((Test-Bound -Parameter SqlInstance) -or (Test-Bound -Parameter InputObject)) {
+            Stop-Function -Category InvalidArgument -Message "Please provide either the SqlInstance or an Input object. Quitting."
             return
         }
 
