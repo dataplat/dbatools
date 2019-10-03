@@ -61,7 +61,7 @@ function Publish-DbaDacPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER DacFxPath
-        Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used.
+        Path to the dac dll. If this is omitted, then the version of dac dll which is packaged with dbatools is used.
 
     .NOTES
         Tags: Migration, Database, Dacpac
@@ -105,11 +105,6 @@ function Publish-DbaDacPackage {
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentScript -ScriptOnly
 
         Does not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.
-
-    .EXAMPLE
-        PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
-
-        Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
     #>
     [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
