@@ -51,7 +51,7 @@ function Add-DbaDbRoleMember {
         https://dbatools.io/Add-DbaDbRoleMember
 
     .EXAMPLE
-        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -DatabaseUser user1
+        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -User user1
 
         Adds user1 to the role db_owner in the database mydb on the local default SQL Server instance
 
