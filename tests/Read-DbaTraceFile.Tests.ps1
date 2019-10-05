@@ -66,8 +66,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Verify Failure with Mocks" {
         It "Should Fail Connection to SqlInstance" {
             Mock Connect-SqlInstance { throw } -module dbatools
-            Mock Stop-Function { "Failure" } -module dbatools
-            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -BeLike "Error occurred while establishing connection*"
+            Mock Stop-Function { "Error occurred while establishing connection to NotAnInstance" } -module dbatools
+            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -BeLike "Error occurred while establishing connection to NotAnInstance"
         }
         It "Should try `$CurrentPath" {
             #This mock forces line 257 to be tested
