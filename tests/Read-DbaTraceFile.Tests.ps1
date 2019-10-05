@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Database', 'Login', 'Spid', 'EventClass', 'ObjectType', 'ErrorId', 'EventSequence', 'TextData', 'ApplicationName', 'ObjectName', 'Where', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -65,19 +65,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Verify Failure with Mocks" {
         It "Should Fail Connection to SqlInstance" {
-            mock Connect-SqlInstance {throw} -module dbatools
-            mock Stop-Function {"Failure"} -module dbatools
-            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -be "Failure"
+            Mock Connect-SqlInstance { throw } -module dbatools
+            Mock Stop-Function { "Failure" } -module dbatools
+            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -BeLike "Error occurred while establishing connection*"
         }
         It "Should try `$CurrentPath" {
             #This mock forces line 257 to be tested
-            mock Test-Bound {$false} -module dbatools
+            Mock Test-Bound { $false } -module dbatools
             (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Not -Be $null
         }
         It "Should Fail to find the Path" {
-            mock Test-DbaPath {$false} -module dbatools
-            mock Write-Message {"Path Does Not Exist"} -module dbatools
-            (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Be "Failure"
+            Mock Test-DbaPath { $false } -module dbatools
+            Mock Write-Message { "Path Does Not Exist" } -module dbatools
+            (Read-DbaTraceFile -SqlInstance "$script:Instance2" ) | Should -Be "Path does not exist*"
         }
     }
 }
