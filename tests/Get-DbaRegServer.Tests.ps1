@@ -77,6 +77,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Get-DbaRegServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
+        It "Should filter subgroups" {
+            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group -ExcludeGroup "$group\$group2"
+            $results.Count | Should Be 1
+            $results.Group | Should Be $group
+        }
 
         # Property Comparisons will come later when we have the commands
     }
