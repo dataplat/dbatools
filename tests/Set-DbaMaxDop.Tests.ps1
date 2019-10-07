@@ -81,7 +81,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.CurrentInstanceMaxDop | Should Not BeNullOrEmpty
             $results.CurrentInstanceMaxDop | Should Be 4
         }
-        It 'Maxdop should not match expected' {
+        It 'Maxdop should match expected' {
             $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should Be 4
         }
     }

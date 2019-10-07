@@ -44,7 +44,7 @@ function Set-DbaMaxDop {
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
     .PARAMETER Confirm
-        Prompts you for conf    irmation before running the cmdlet.
+        Prompts you for confirmation before running the cmdlet.
 
     .NOTES
         Tags: MaxDop, SpConfigure
@@ -83,7 +83,7 @@ function Set-DbaMaxDop {
         Set recommended Max DOP for all databases on server sql2016.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -96,6 +96,11 @@ function Set-DbaMaxDop {
         [switch]$AllDatabases,
         [switch]$EnableException
     )
+    begin {
+        if ($MaxDop -eq -1) {
+            $UseRecommended = $true
+        }
+    }
 
     process {
         if ((Test-Bound -Parameter Database) -and (Test-Bound -Parameter AllDatabases) -and (Test-Bound -Parameter ExcludeDatabase)) {
@@ -103,16 +108,12 @@ function Set-DbaMaxDop {
             return
         }
 
-        if ((Test-Bound -Parameter SqlInstance) -or (Test-Bound -Parameter InputObject)) {
+        if ((Test-Bound -not -Parameter SqlInstance) -and (Test-Bound -not -Parameter InputObject)) {
             Stop-Function -Category InvalidArgument -Message "Please provide either the SqlInstance or an Input object. Quitting."
             return
         }
 
         $dbscopedconfiguration = $false
-
-        if ($MaxDop -eq -1) {
-            $UseRecommended = $true
-        }
 
         if ((Test-Bound -Not -Parameter InputObject)) {
             $InputObject = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
@@ -244,7 +245,7 @@ function Set-DbaMaxDop {
                             }
                         }
                     } else {
-                        Select-DefaultView -InputObject $results -Property InstanceName, PreviousInstanceMaxDopValue, CurrentInstanceMaxDop
+                        Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, PreviousInstanceMaxDopValue, CurrentInstanceMaxDop
                     }
                 } catch {
                     Stop-Function -Message "Could not modify Max Degree of Parallelism for $server." -ErrorRecord $_ -Target $server -Continue
