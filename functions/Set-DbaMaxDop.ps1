@@ -85,6 +85,7 @@ function Set-DbaMaxDop {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -104,12 +105,12 @@ function Set-DbaMaxDop {
 
     process {
         if ((Test-Bound -Parameter Database) -and (Test-Bound -Parameter AllDatabases) -and (Test-Bound -Parameter ExcludeDatabase)) {
-            Stop-Function -Category InvalidArgument -Message "-Database, -AllDatabases and -ExcludeDatabase are mutually exclusive. Please choose only one. Quitting."
+            Stop-Function -Category InvalidArgument -Message "-Database, -AllDatabases and -ExcludeDatabase are mutually exclusive. Please choose only one."
             return
         }
 
         if ((Test-Bound -not -Parameter SqlInstance) -and (Test-Bound -not -Parameter InputObject)) {
-            Stop-Function -Category InvalidArgument -Message "Please provide either the SqlInstance or an Input object. Quitting."
+            Stop-Function -Category InvalidArgument -Message "Please provide either the SqlInstance or an Input object."
             return
         }
 

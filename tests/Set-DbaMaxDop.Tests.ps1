@@ -74,7 +74,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Piping works" {
+    Context "Piping from Test-DbaMaxDop works" {
         $results = Test-DbaMaxDop -SqlInstance $script:instance2 | Set-DbaMaxDop -MaxDop 4
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         It 'Command returns output' {
@@ -83,6 +83,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
         It 'Maxdop should match expected' {
             $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should Be 4
+        }
+    }
+
+    Context "Piping SqlInstance name works" {
+        $results = $script:instance2 | Set-DbaMaxDop -MaxDop 2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        It 'Command returns output' {
+            $results.CurrentInstanceMaxDop | Should Not BeNullOrEmpty
+            $results.CurrentInstanceMaxDop | Should Be 2
+        }
+        It 'Maxdop should match expected' {
+            $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should Be 2
         }
     }
 }
