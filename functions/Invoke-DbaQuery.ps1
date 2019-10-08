@@ -268,7 +268,7 @@ function Invoke-DbaQuery {
             return
         }
         if (Test-Bound -ParameterName "SqlInstance", "InputObject" -Not) {
-            Stop-Function -Category InvalidArgument -Message "Parameter -SqlInstance is required"
+            Stop-Function -Category InvalidArgument -Message "Please provide either SqlInstance or InputObject"
             return
         }
 
