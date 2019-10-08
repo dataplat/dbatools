@@ -206,12 +206,6 @@ function Get-DbaRegServer {
             $servers = $servers | Where-Object Id -in $Id
         }
 
-        if ($ExcludeGroup) {
-            $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
-            Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
-            $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
-        }
-
         foreach ($server in $servers) {
             $az = $azureids | Where-Object Id -in $server.Id
             if ($az) {
@@ -232,6 +226,9 @@ function Get-DbaRegServer {
                 $groupname = $null
             }
 
+            if ($ExcludeGroup -and ($groupname -in $ExcludeGroup)) {
+                continue
+            }
 
             if ($server.ConnectionStringWithEncryptedPassword) {
                 $encodedconnstring = $connstring = $server.ConnectionStringWithEncryptedPassword
