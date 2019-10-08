@@ -251,7 +251,7 @@ function Read-DbaTraceFile {
             if (Test-Bound -Parameter Path) {
                 $currentPath = $path
             } else {
-                $currentPath = $server.ConnectionContext.ExecuteScalar("Select path from sys.traces where is_default = 1")
+                $currentPath = $server.ConnectionContext.ExecuteScalar("SELECT path FROM sys.traces WHERE is_default = 1")
             }
 
             foreach ($file in $currentPath) {
@@ -264,8 +264,11 @@ function Read-DbaTraceFile {
                     Continue
                 }
 
-                $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, * FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
+                $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, *
+                FROM [fn_trace_gettable]('$file', DEFAULT)
+                $Where"
 
+                Write-Message -Message "SQL: $sql" -Level Debug
                 try {
                     $server.Query($sql)
                 } catch {
