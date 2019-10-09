@@ -60,21 +60,4 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $warn | Should -Be $null
         }
     }
-    Context "Verify Failure with Mocks" {
-        It "Should Fail Connection to SqlInstance" {
-            Mock Connect-SqlInstance { throw } -Module dbatools
-            Mock Stop-Function { return "Failure" } -Module dbatools
-            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -be "Failure"
-        }
-        It "Should try `$CurrentPath" {
-            #This mock forces line 257 to be tested
-            Mock Test-Bound { return $false } -Module dbatools
-            (Read-DbaTraceFile -SqlInstance "$script:instance2" ) | Should -Not -Be $null
-        }
-        It "Should Fail to find the Path" {
-            Mock Test-DbaPath { return $false } -Module dbatools
-            Mock Write-Message { "Path does not exist" } -Module dbatools
-            (Read-DbaTraceFile -SqlInstance "$script:instance2" ) | Should -Be "Path does not exist"
-        }
-    }
 }
