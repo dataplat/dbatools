@@ -1,10 +1,10 @@
-function Enable-DbaHideInstance {
+function Disable-DbaHideInstance {
     <#
     .SYNOPSIS
-        Enables Hide Instance of SQL Engine.
+        Disables Hide Instance of SQL Engine.
 
     .DESCRIPTION
-        Enables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
+        Disables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
 
         This setting is found in Configuration Manager.
 
@@ -34,17 +34,17 @@ function Enable-DbaHideInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        PS C:\> Enable-DbaHideInstance
+        PS C:\> Disable-DbaHideInstance
 
-        Enables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
-
-    .EXAMPLE
-        PS C:\> Enable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2
-
-        Enables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
+        Disables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
 
     .EXAMPLE
-        PS C:\> Enable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+        PS C:\> Disable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2
+
+        Disables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
+
+    .EXAMPLE
+        PS C:\> Disable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
         Shows what would happen if the command were executed.
 
@@ -107,7 +107,7 @@ function Enable-DbaHideInstance {
 
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name HideInstance -Value $true
+                Set-ItemProperty -Path $regpath -Name HideInstance -Value $false
                 $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
@@ -121,7 +121,7 @@ function Enable-DbaHideInstance {
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regroot for $($instance.InstanceName)")) {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
+                    Write-Message -Level Critical -Message "HideInstance was successfully disabled on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
