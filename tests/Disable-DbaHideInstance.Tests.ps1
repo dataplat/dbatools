@@ -17,6 +17,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $results = Disable-DbaHideInstance $script:instance1 -EnableException
 
     It "returns false" {
-        $results.ForceEncryption -eq $false
+        $results.HideInstance -eq $false
     }
 }
