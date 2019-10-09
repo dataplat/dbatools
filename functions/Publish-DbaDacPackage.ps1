@@ -1,10 +1,10 @@
 function Publish-DbaDacPackage {
     <#
     .SYNOPSIS
-        The Publish-DbaDacPackage command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
+        The Publish-DbaDacPackage command takes a dacpac and publishes it to a database.
 
     .DESCRIPTION
-        Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package (Microsoft.Data.Tools.MSBuild) and this uses that nuget package.
+        Publishes the dacpac taken from SSDT project or Export-DbaDacPackage. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -61,7 +61,7 @@ function Publish-DbaDacPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER DacFxPath
-        Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used.
+        Path to the dac dll. If this is omitted, then the version of dac dll which is packaged with dbatools is used.
 
     .NOTES
         Tags: Migration, Database, Dacpac
@@ -70,6 +70,8 @@ function Publish-DbaDacPackage {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package (Microsoft.Data.Tools.MSBuild) and this uses that nuget package.
 
     .LINK
         https://dbatools.io/Publish-DbaDacPackage
@@ -103,11 +105,6 @@ function Publish-DbaDacPackage {
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentScript -ScriptOnly
 
         Does not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.
-
-    .EXAMPLE
-        PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
-
-        Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
     #>
     [CmdletBinding(DefaultParameterSetName = 'Obj', SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
