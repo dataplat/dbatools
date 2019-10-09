@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $configs = $script:instance1, $script:instance2 | Get-DbaSpConfigure -ConfigName DefaultTraceEnabled
+        $configs = $script:instance1, $script:instance2 | Get-DbaSpConfigure -Name DefaultTraceEnabled
         $configs | Set-DbaSpConfigure -Value $true -WarningAction SilentlyContinue
     }
     AfterAll {
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Verifying command output" {
         It "returns results" {
-            $results = Get-DbaTrace -SqlInstance $script:instance1, $script:instance2 -Id 1 | Read-DbaTraceFile
+            $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile
             $results.DatabaseName.Count | Should -BeGreaterThan 0
         }
 
@@ -42,38 +42,38 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     and ApplicationName not like 'Microsoft SQL Server Management Studio%'"
 
             # Collect the results into a variable so that the bulk import is super fast
-            Get-DbaTrace -SqlInstance $script:instance1, $script:instance2 -Id 1 | Read-DbaTraceFile -Where $where -WarningAction SilentlyContinue -WarningVariable warn > $null
+            Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -Where $where -WarningAction SilentlyContinue -WarningVariable warn > $null
             $warn | Should -Be $null
         }
     }
     Context "Verify Parameter Use" {
         It "Should execute using parameters Database, Login, Spid" {
-            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
         It "Should execute using parameters EventClass, ObjectType, ErrorId" {
-            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
         It "Should execute using parameters EventSequence, TextData, ApplicationName, ObjectName" {
-            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
     }
     Context "Verify Failure with Mocks" {
         It "Should Fail Connection to SqlInstance" {
-            Mock Connect-SqlInstance { throw } -module dbatools
-            Mock Stop-Function { "Error occurred while establishing connection to NotAnInstance" } -Module dbatools
-            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -BeLike "Error occurred while establishing connection to NotAnInstance"
+            Mock Connect-SqlInstance { throw } -Module dbatools
+            Mock Stop-Function { return "Failure" } -Module dbatools
+            (Read-DbaTraceFile -SqlInstance "NotAnInstance" ) | Should -be "Failure"
         }
         It "Should try `$CurrentPath" {
             #This mock forces line 257 to be tested
-            Mock Test-Bound { $false } -module dbatools
+            Mock Test-Bound { return $false } -Module dbatools
             (Read-DbaTraceFile -SqlInstance "$script:instance2" ) | Should -Not -Be $null
         }
         It "Should Fail to find the Path" {
-            Mock Test-DbaPath { $false } -module dbatools
-            Mock Write-Message { "Path does not exist" } -module dbatools
+            Mock Test-DbaPath { return $false } -Module dbatools
+            Mock Write-Message { "Path does not exist" } -Module dbatools
             (Read-DbaTraceFile -SqlInstance "$script:instance2" ) | Should -Be "Path does not exist"
         }
     }
