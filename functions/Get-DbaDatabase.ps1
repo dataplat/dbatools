@@ -258,9 +258,9 @@ function Get-DbaDatabase {
             function Invoke-QueryRawDatabases {
                 try {
                     if ($server.VersionMajor -eq 8) {
-                        $server.Query("SELECT *, SUSER_NAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+                        $server.Query("SELECT *, SUSER_SNAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
                     } else {
-                        $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+                        $server.Query("SELECT *, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
