@@ -179,12 +179,12 @@ function Copy-DbaDatabase {
 
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -AllDatabases -SharedPath https://someblob.blob.core.windows.net/sql
+        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -AllDatabases -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql
 
         Migrate all user databases from instance sql2014 to the specified Azure SQL Manage Instance using the blob storage account https://someblob.blob.core.windows.net/sql using a Shared Access Signature (SAS) credential with a name matching the blob storage account
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -Database MyDb -NewName AzureDb -WithReplace -SharedPath https://someblob.blob.core.windows.net/sql -Azure Credential AzBlobCredential
+        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -Database MyDb -NewName AzureDb -WithReplace -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql -AzureCredential AzBlobCredential
 
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
     #>
