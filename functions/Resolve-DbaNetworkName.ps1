@@ -70,19 +70,9 @@ function Resolve-DbaNetworkName {
         PS C:\> Resolve-DbaNetworkName -ComputerName ServerA
 
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA
-
+        
     .EXAMPLE
-        PS C:\> Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
-
-        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress
-
-    .EXAMPLE
-        PS C:\> Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
-
-        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
-
-    .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016\sqlexpress, sql2014 | Resolve-DbaNetworkName
 
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegServer
 
