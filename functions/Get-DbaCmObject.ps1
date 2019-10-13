@@ -57,7 +57,7 @@ function Get-DbaCmObject {
         https://dbatools.io/Get-DbaCmObject
 
     .EXAMPLE
-        PS C:\> Get-DbaCmObject win32_OperatingSystem
+        PS C:\> Get-DbaCmObject -ClassName win32_OperatingSystem
 
         Retrieves the common operating system information from the local computer.
 
