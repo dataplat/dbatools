@@ -24,9 +24,9 @@ function Register-DbaTeppArgumentCompleter {
             Whether this TEPP applies to all commands in dbatools that have the specified parameter.
 
         .EXAMPLE
-            Register-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database
+            Register-DbaTeppArgumentCompleter -Command Get-DbaDbBackupHistory -Parameter Database
 
-            Registers the "Database" parameter of the Get-DbaBackupHistory to receive Database-Tepp
+            Registers the "Database" parameter of the Get-DbaDbBackupHistory to receive Database-Tepp
        #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
@@ -64,9 +64,9 @@ function Register-DbaTeppArgumentCompleter {
         $lowername = $PSBoundParameters.Name
 
         if ($null -eq $lowername) {
-            $lowername = $p.ToLower()
+            $lowername = $p.ToLowerInvariant()
         } else {
-            $lowername = $lowername.ToLower()
+            $lowername = $lowername.ToLowerInvariant()
         }
 
         if ($All) { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername) }

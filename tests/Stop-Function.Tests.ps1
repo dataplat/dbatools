@@ -24,7 +24,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -63,7 +63,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -91,7 +91,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             try {
                 $ExceptionName = $record.Exception.InnerException.GetType().FullName
             } catch {
-                $ExceptionName = "Meeep!"
+                $ExceptionName = "Meeep."
             }
 
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
@@ -137,11 +137,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 
@@ -171,7 +171,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -206,7 +206,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -266,11 +266,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 

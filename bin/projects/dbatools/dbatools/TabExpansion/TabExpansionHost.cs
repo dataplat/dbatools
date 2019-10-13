@@ -136,10 +136,16 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         public static void CalculateTabExpansion()
         {
             foreach (FunctionInfo info in DbatoolsCommands)
-                foreach (ParameterMetadata paramInfo in info.Parameters.Values)
-                    foreach (TabCompletionSet set in TabCompletionSets)
-                        if (set.Applies(info.Name, paramInfo.Name))
-                            SetTeppScript(info.Name, paramInfo.Name, set.Script);
+            {
+                try
+                {
+                    foreach (ParameterMetadata paramInfo in info.Parameters.Values)
+                        foreach (TabCompletionSet set in TabCompletionSets)
+                            if (set.Applies(info.Name, paramInfo.Name))
+                                SetTeppScript(info.Name, paramInfo.Name, set.Script);
+                }
+                catch { }
+            }
         }
         #endregion Utility methods
 

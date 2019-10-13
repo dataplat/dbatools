@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDbGrowthEvent {
     <#
     .SYNOPSIS
@@ -17,7 +16,11 @@ function Find-DbaDbGrowthEvent {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -54,35 +57,35 @@ function Find-DbaDbGrowthEvent {
         Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
     .LINK
-        https://dbatools.io/Find-DbaDatabaseGrowthEvent
+        https://dbatools.io/Find-DbaDbGrowthEvent
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost
 
         Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost -UseLocalTime
 
         Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
 
         Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
 
         Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
 
         Returns any database Auto Shrink events in the Default Trace for every database on the ServerA\SQL2016 instance.
 
     .EXAMPLE
-        PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
 
         Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
 
@@ -90,10 +93,8 @@ function Find-DbaDbGrowthEvent {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [ValidateSet('Growth', 'Shrink')]
@@ -101,7 +102,6 @@ function Find-DbaDbGrowthEvent {
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
         [switch]$UseLocalTime,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -222,15 +222,13 @@ function Find-DbaDbGrowthEvent {
                     1 AS [SessionLoginName],
                     1 AS [SPID]
             END CATCH"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases

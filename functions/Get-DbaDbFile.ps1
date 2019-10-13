@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbFile {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Get-DbaDbFile {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Credentials to connect to the SQL Server instance if the calling user doesn't have permission
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -60,7 +63,6 @@ function Get-DbaDbFile {
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
@@ -87,7 +89,6 @@ function Get-DbaDbFile {
             case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
             case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             vfs.num_of_writes as NumberOfDiskWrites,
             vfs.num_of_reads as NumberOfDiskReads,
             vfs.num_of_bytes_read as BytesReadFromDisk,
@@ -120,7 +121,6 @@ function Get-DbaDbFile {
             fileproperty(df.name, 'spaceused') as UsedSpace,
             df.size as Size,
             case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
-            case CONVERT(INT,df.status & 0x10) / 16 when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             case CONVERT(INT,df.status & 0x1000) / 4096 when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case CONVERT(INT,df.status & 0x10000000) / 268435456 when 1 then 'True' when 0 then 'False' End as IsSparse,
             case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
@@ -208,56 +208,53 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                             $_.drive -eq $result.PhysicalName.Substring(0, 1)
                         } | Select-Object $MbFreeColName
 
-                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
-                    }
+                    $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                 }
-                if ($result.GrowthType -eq "Percent") {
-                    $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
-                } else {
-                    $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
-                }
-                if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
-                    [dbasize]$nextgrowtheventadd = 0
-                }
+            }
+            if ($result.GrowthType -eq "Percent") {
+                $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
+            } else {
+                $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
+            }
+            if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
+                [dbasize]$nextgrowtheventadd = 0
+            }
 
-                [PSCustomObject]@{
-                    ComputerName             = $server.ComputerName
-                    InstanceName             = $server.ServiceName
-                    SqlInstance              = $server.DomainInstanceName
-                    Database                 = $db.name
-                    FileGroupName            = $result.FileGroupName
-                    ID                       = $result.ID
-                    Type                     = $result.Type
-                    TypeDescription          = $result.TypeDescription
-                    LogicalName              = $result.LogicalName.Trim()
-                    PhysicalName             = $result.PhysicalName.Trim()
-                    State                    = $result.State
-                    MaxSize                  = $maxsize
-                    Growth                   = $result.Growth
-                    GrowthType               = $result.GrowthType
-                    NextGrowthEventSize      = $nextgrowtheventadd
-                    Size                     = $size
-                    UsedSpace                = $usedspace
-                    AvailableSpace           = $AvailableSpace
-                    IsOffline                = $result.IsOffline
-                    IsReadOnly               = $result.IsReadOnly
-                    IsReadOnlyMedia          = $result.IsReadOnlyMedia
-                    IsSparse                 = $result.IsSparse
-                    NumberOfDiskWrites       = $result.NumberOfDiskWrites
-                    NumberOfDiskReads        = $result.NumberOfDiskReads
-                    ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
-                    WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
-                    VolumeFreeSpace          = $VolumeFreeSpace
-                    FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
-                    FileGroupType            = $result.FileGroupType
-                    FileGroupTypeDescription = $result.FileGroupTypeDescription
-                    FileGroupDefault         = $result.FileGroupDefault
-                    FileGroupReadOnly        = $result.FileGroupReadOnly
-                }
+            [PSCustomObject]@{
+                ComputerName             = $server.ComputerName
+                InstanceName             = $server.ServiceName
+                SqlInstance              = $server.DomainInstanceName
+                Database                 = $db.name
+                FileGroupName            = $result.FileGroupName
+                ID                       = $result.ID
+                Type                     = $result.Type
+                TypeDescription          = $result.TypeDescription
+                LogicalName              = $result.LogicalName.Trim()
+                PhysicalName             = $result.PhysicalName.Trim()
+                State                    = $result.State
+                MaxSize                  = $maxsize
+                Growth                   = $result.Growth
+                GrowthType               = $result.GrowthType
+                NextGrowthEventSize      = $nextgrowtheventadd
+                Size                     = $size
+                UsedSpace                = $usedspace
+                AvailableSpace           = $AvailableSpace
+                IsOffline                = $result.IsOffline
+                IsReadOnly               = $result.IsReadOnly
+                IsReadOnlyMedia          = $result.IsReadOnlyMedia
+                IsSparse                 = $result.IsSparse
+                NumberOfDiskWrites       = $result.NumberOfDiskWrites
+                NumberOfDiskReads        = $result.NumberOfDiskReads
+                ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
+                WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
+                VolumeFreeSpace          = $VolumeFreeSpace
+                FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
+                FileGroupType            = $result.FileGroupType
+                FileGroupTypeDescription = $result.FileGroupTypeDescription
+                FileGroupDefault         = $result.FileGroupDefault
+                FileGroupReadOnly        = $result.FileGroupReadOnly
             }
         }
     }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseFIle
-    }
+}
 }

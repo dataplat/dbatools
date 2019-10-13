@@ -25,7 +25,11 @@ function Get-DbaWaitStatistic {
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
         Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
@@ -60,7 +64,7 @@ function Get-DbaWaitStatistic {
         Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
 
     .EXAMPLE
-        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select-Object *
 
         Shows detailed notes, if available, from Paul's post
 
@@ -79,12 +83,10 @@ function Get-DbaWaitStatistic {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
         [switch]$IncludeIgnorable,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -868,7 +870,7 @@ function Get-DbaWaitStatistic {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
             if ($IncludeIgnorable) {

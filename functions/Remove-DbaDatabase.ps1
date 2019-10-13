@@ -1,25 +1,26 @@
 function Remove-DbaDatabase {
     <#
     .SYNOPSIS
-        Drops a database, hopefully even the really stuck ones.
+        Drops a user database, hopefully even the really stuck ones.
 
     .DESCRIPTION
-        Tries a bunch of different ways to remove a database or two or more.
+        Tries a bunch of different ways to remove a user created database or two or more.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase), to be removed.
-
-    .PARAMETER IncludeSystemDb
-        Use this switch to disable any kind of verbose messages
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -59,30 +60,25 @@ function Remove-DbaDatabase {
         Does not prompt and swiftly removes containeddb on SQL Server sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance | Remove-DbaDatabase
 
         Removes all the user databases from server\instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance server\instance -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+        PS C:\> Get-DbaDatabase -SqlInstance server\instance | Remove-DbaDatabase -Confirm:$false
 
         Removes all the user databases from server\instance without any confirmation
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("Databases")]
         [object[]]$Database,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$IncludeSystemDb,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -92,16 +88,14 @@ function Remove-DbaDatabase {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
         }
 
+        # Excludes system databases as these cannot be deleted
         $system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
-
-        if (-not($IncludeSystemDb)) {
-            $InputObject = $InputObject | Where-Object { $_.Name -notin $system_dbs}
-        }
+        $InputObject = $InputObject | Where-Object { $_.Name -notin $system_dbs }
 
         foreach ($db in $InputObject) {
             try {

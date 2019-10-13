@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
     <#
     .SYNOPSIS
@@ -12,7 +11,11 @@ function Get-DbaDatabase {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -145,11 +148,9 @@ function Get-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [Alias("SystemDbOnly", "NoUserDb", "ExcludeAllUserDb")]
@@ -168,7 +169,6 @@ function Get-DbaDatabase {
         [datetime]$NoFullBackupSince,
         [switch]$NoLogBackup,
         [datetime]$NoLogBackupSince,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$IncludeLastUsed,
         [switch]$OnlyAccessible
@@ -188,7 +188,7 @@ function Get-DbaDatabase {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (!$IncludeLastUsed) {
@@ -251,7 +251,7 @@ function Get-DbaDatabase {
                 'ReadWrite' { @($false) }
                 default { @($true, $false) }
             }
-            $Encrypt = switch (Test-Bound $Encrypted) {
+            $Encrypt = switch (Test-Bound -Parameter 'Encrypted') {
                 $true { @($true) }
                 default { @($true, $false, $null) }
             }
@@ -284,18 +284,18 @@ function Get-DbaDatabase {
             }
             $inputobject = $inputObject |
                 Where-Object {
-                ($_.Name -in $Database -or !$Database) -and
-                ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                ($_.Owner -in $Owner -or !$Owner) -and
-                $_.ReadOnly -in $Readonly -and
-                $_.IsAccessible -in $AccessibleFilter -and
-                $_.IsSystemObject -in $DBType -and
-                ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
-                $_.EncryptionEnabled -in $Encrypt
-            }
+                    ($_.Name -in $Database -or !$Database) -and
+                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                    ($_.Owner -in $Owner -or !$Owner) -and
+                    $_.ReadOnly -in $Readonly -and
+                    $_.IsAccessible -in $AccessibleFilter -and
+                    $_.IsSystemObject -in $DBType -and
+                    ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
+                    ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                    $_.EncryptionEnabled -in $Encrypt
+                }
             if ($NoFullBackup -or $NoFullBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
 
@@ -306,7 +306,7 @@ function Get-DbaDatabase {
 
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog )
+                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastLog )
                 if ($null -ne $NoLogBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
                     $inputobject = $inputobject |

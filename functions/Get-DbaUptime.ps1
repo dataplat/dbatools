@@ -12,13 +12,11 @@ function Get-DbaUptime {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-        To connect to SQL Server as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
@@ -50,7 +48,7 @@ function Get-DbaUptime {
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaUptime
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Get-DbaUptime
 
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
 
@@ -58,11 +56,9 @@ function Get-DbaUptime {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -71,8 +67,8 @@ function Get-DbaUptime {
     }
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($instance in $SqlInstance) {
             if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
                 $servername = $instance.SqlInstance
@@ -85,7 +81,7 @@ function Get-DbaUptime {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Getting start times for $servername"
             #Get tempdb creation date

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaTrace {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Get-DbaTrace {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        A credential to use to connect to the SQL Instance rather than using Windows Authentication
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
         The id(s) of the Trace
@@ -45,17 +48,14 @@ function Get-DbaTrace {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int[]]$Id,
         [switch]$Default,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
 
         # A Microsoft.SqlServer.Management.Trace.TraceServer class exists but is buggy
         # and requires x86 PowerShell. So we'll go with T-SQL.
@@ -72,7 +72,7 @@ function Get-DbaTrace {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
 

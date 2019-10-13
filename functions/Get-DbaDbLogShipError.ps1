@@ -11,7 +11,11 @@ function Get-DbaDbLogShipError {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
@@ -84,7 +88,6 @@ function Get-DbaDbLogShipError {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -95,7 +98,6 @@ function Get-DbaDbLogShipError {
         [datetime]$DateTimeTo,
         [switch]$Primary,
         [switch]$Secondary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -103,7 +105,7 @@ function Get-DbaDbLogShipError {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.EngineEdition -match "Express") {
@@ -219,8 +221,5 @@ DROP TABLE #DatabaseID;"
                 Write-Message -Message "No log shipping errors found" -Level Verbose
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLogShippingError
     }
 }

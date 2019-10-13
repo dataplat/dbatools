@@ -2,6 +2,8 @@
 
 Want to contribute to the project? We'd love to have you! Visit our [contributing.md](contributing.md) for a jump start.
 
+Want to say thanks? Click the star at the top of the page 🌟
+
 ## Key links for reference:
 
 - [dbatools Slack channel](https://sqlcommunity.slack.com/messages/C1M2WEASG/) for general discussion on the module and asking questions
@@ -88,7 +90,7 @@ $startDbaMigrationSplat = @{
     Exclude = 'BackupDevice','SysDbUserObjects','Credentials'
 }
 
-Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
+Start-DbaMigration @startDbaMigrationSplat -Force | Select-Object * | Out-GridView
 
 # Know how snapshots used to be a PITA? Now they're super easy
 New-DbaDbSnapshot -SqlInstance $new -Database db1 -Name db1_snapshot
@@ -101,7 +103,7 @@ Remove-DbaDbSnapshot -SqlInstance $new -Snapshot db1_snapshot # or -Database db1
 $old | Get-DbaLastGoodCheckDb | Out-GridView
 
 # Here's how you can find your integrity jobs and easily start them. Then, you can watch them run, and finally check your newest DBCC CHECKDB results
-$old | Get-DbaAgentJob | Where Name -match integrity | Start-DbaAgentJob
+$old | Get-DbaAgentJob | Where-Object Name -match integrity | Start-DbaAgentJob
 $old | Get-DbaRunningJob
 $old | Get-DbaLastGoodCheckDb | Out-GridView
 
@@ -132,7 +134,7 @@ Invoke-DbaDbClone -SqlInstance $new -Database db1 -CloneDatabase db1_clone | Out
 
 # Read and watch XEvents
 Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile
-Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile | Select -ExpandProperty Fields | Out-GridView
+Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile | Select-Object -ExpandProperty Fields | Out-GridView
 
 # Reset-DbaAdmin
 Reset-DbaAdmin -SqlInstance $instance -Login sqladmin -Verbose

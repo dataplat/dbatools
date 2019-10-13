@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Add-DbaAgReplica {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the replica. Defaults to the SQL Server instance name.
@@ -105,7 +108,7 @@ function Add-DbaAgReplica {
         [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode = 'Automatic',
+        [string]$SeedingMode,
         [string]$Endpoint,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
@@ -119,7 +122,7 @@ function Add-DbaAgReplica {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Certificate) {
@@ -163,6 +166,33 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                        if ($SeedingMode -eq "Automatic") {
+                            $serviceaccount = $server.ServiceAccount.Trim()
+                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+
+                            if ($serviceaccount) {
+                                if ($serviceaccount.StartsWith("NT ")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith("$saname")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith(".")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                            }
+
+                            if (-not $serviceaccount) {
+                                $serviceaccount = "$saname`$"
+                            }
+
+                            if ($server.HostPlatform -ne "Linux") {
+                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
+                                }
+                            }
+                        }
                     }
 
                     if ($Passthru) {

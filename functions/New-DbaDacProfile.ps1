@@ -15,7 +15,11 @@ function New-DbaDacProfile {
         The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database name you are targeting
@@ -68,9 +72,7 @@ function New-DbaDacProfile {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [string[]]$Database,
@@ -125,6 +127,8 @@ function New-DbaDacProfile {
                 $instance = $builder['server']
             }
 
+            $instance = $instance.ToString().Replace('TCP:', '')
+            $instance = $instance.ToString().Replace('tcp:', '')
             return $instance.ToString().Replace('\', '--')
         }
     }
@@ -135,7 +139,7 @@ function New-DbaDacProfile {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $ConnectionString += $server.ConnectionContext.ConnectionString.Replace(';Application Name="dbatools PowerShell module - dbatools.io"', '')
@@ -168,8 +172,5 @@ function New-DbaDacProfile {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaPublishProfile
     }
 }

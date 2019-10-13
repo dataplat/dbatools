@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Backup-DbaDbMasterKey {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Backup-DbaDbMasterKey {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Backup master key from specific database(s).
@@ -155,8 +158,5 @@ function Backup-DbaDbMasterKey {
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Backup-DbaDatabaseMasterKey
     }
 }

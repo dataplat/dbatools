@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaBackup {
     <#
     .SYNOPSIS
@@ -76,7 +75,6 @@ function Find-DbaBackup {
         [parameter(Mandatory, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
         [string]$RetentionPeriod ,
         [switch]$CheckArchiveBit = $false ,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -118,10 +116,10 @@ function Find-DbaBackup {
 
             switch ($Units) {
                 #Variable marked as unused by PSScriptAnalyzer
-                'h' {<# $UnitString = 'Hours';#> [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value)  }
-                'd' {<# $UnitString = 'Days';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value)   }
-                'w' {<# $UnitString = 'Weeks';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
-                'm' {<# $UnitString = 'Months';#> [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
+                'h' { <# $UnitString = 'Hours';#> [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value) }
+                'd' { <# $UnitString = 'Days';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value) }
+                'w' { <# $UnitString = 'Weeks';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
+                'm' { <# $UnitString = 'Months';#> [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
             }
             $ReturnDatetime
         }
@@ -146,7 +144,7 @@ function Find-DbaBackup {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
         } catch {
-            Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+            Stop-Function -Message "Failed to interpret retention time." -ErrorRecord $_
         }
 
         # Filter out unarchived files if -CheckArchiveBit parameter is used

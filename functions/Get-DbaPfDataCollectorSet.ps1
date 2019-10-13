@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorSet {
     <#
     .SYNOPSIS
@@ -177,8 +176,8 @@ function Get-DbaPfDataCollectorSet {
         'SubdirectoryFormatPattern', 'Task', 'TaskArguments', 'TaskRunAsSelf', 'TaskUserTextArguments', 'UserAccount'
     }
     process {
-        
-        
+
+
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns

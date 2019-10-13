@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaHelpIndex {
     <#
     .SYNOPSIS
@@ -31,7 +30,11 @@ function Get-DbaHelpIndex {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -121,11 +124,8 @@ function Get-DbaHelpIndex {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [Parameter(ValueFromPipeline)]
@@ -135,7 +135,6 @@ function Get-DbaHelpIndex {
         [switch]$IncludeDataTypes,
         [switch]$Raw,
         [switch]$IncludeFragmentation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -1005,7 +1004,7 @@ function Get-DbaHelpIndex {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase

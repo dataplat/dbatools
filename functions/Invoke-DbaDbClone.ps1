@@ -18,7 +18,11 @@ function Invoke-DbaDbClone {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database to clone - this list is auto-populated from the server.
@@ -43,7 +47,7 @@ function Invoke-DbaDbClone {
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -69,8 +73,8 @@ function Invoke-DbaDbClone {
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database mydb | Invoke-DbaDbClone -CloneDatabase myclone, myclone2 -UpdateStatistics
 
         Updates the statistics of mydb then clones to myclone and myclone2
-        
-#>
+
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -144,27 +148,27 @@ function Invoke-DbaDbClone {
                 $sqlWith = "WITH $noStats,$noQueryStore"
             }
         }
-        
-        $sql2012min = [version]"11.0.7001.0" # SQL 2012 SP4
-        $sql2014min = [version]"12.0.5000.0" # SQL 2014 SP2
+
+        $sql2012min = [version]"11.0.7001" # SQL 2012 SP4
+        $sql2014min = [version]"12.0.5000" # SQL 2014 SP2
         $sql2014CuMin = [version]"12.0.5538" # SQL 2014 SP2 + CU3
-        $sql2016min = [version]"13.0.4001.0" # SQL 2016 SP1
+        $sql2016min = [version]"13.0.4001" # SQL 2016 SP1
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $instance = $server.Name
-            
+
             if (-not (Test-Bound -ParameterName CloneDatabase)) {
                 $CloneDatabase = "$($db.Name)_clone"
             }
-            
+
             if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2012 SP4 and above required." -Target $server -Continue
             }
@@ -208,7 +212,7 @@ function Invoke-DbaDbClone {
             }
 
             $dbName = $db.Name
-            
+
             foreach ($clonedb in $CloneDatabase) {
                 Write-Message -Level Verbose -Message "Cloning $clonedb from $db"
                 if ($server.Databases[$clonedb]) {
@@ -228,8 +232,5 @@ function Invoke-DbaDbClone {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseClone
     }
 }

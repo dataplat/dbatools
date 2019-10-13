@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaRepServerSetting {
     <#
     .SYNOPSIS
@@ -11,10 +10,17 @@ function Export-DbaRepServerSetting {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the path to a file which will contain the output.
+        Specifies the directory where the file or files will be exported.
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
     .PARAMETER Passthru
         Output script to console
@@ -70,13 +76,14 @@ function Export-DbaRepServerSetting {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Path,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
+        [object[]]$InputObject,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [switch]$Passthru,
@@ -84,18 +91,25 @@ function Export-DbaRepServerSetting {
         [switch]$Append,
         [switch]$EnableException
     )
+    begin {
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
+        }
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
         }
 
         foreach ($repserver in $InputObject) {
-            $server = $repserver.SqlServerName
-            if (-not (Test-Bound -ParameterName Path)) {
-                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-                $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
-            }
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $repserver.SqlServerName
+
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
@@ -112,13 +126,11 @@ function Export-DbaRepServerSetting {
             if ($Passthru) {
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
+                continue
             }
 
-            if ($Path) {
-
-                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $path -Encoding $encoding -Append
-                $out | Out-File -FilePath $path -Encoding $encoding -Append
-            }
+            "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $FilePath -Encoding $encoding -Append
+            $out | Out-File -FilePath $FilePath -Encoding $encoding -Append:$Append
         }
     }
 }

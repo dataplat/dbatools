@@ -10,7 +10,11 @@ function Get-DbaDbMailLog {
         TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Since
         Datetime object used to narrow the results to the send request date
@@ -40,7 +44,7 @@ function Get-DbaDbMailLog {
         Returns the entire DBMail log on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the entire DBMail log on sql01\sharepoint, includes all returned information.
 
@@ -54,15 +58,12 @@ function Get-DbaDbMailLog {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,
         [ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
         [string[]]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

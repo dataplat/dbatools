@@ -29,6 +29,9 @@ Function Invoke-DbaAdvancedUpdate {
           to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
+    .PARAMETER ExtractPath
+        Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -44,6 +47,12 @@ Function Invoke-DbaAdvancedUpdate {
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 
     Invokes update actions on SQL1 after restarting it.
+
+    .EXAMPLE
+    PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions -ExtractPath C:\temp
+
+    Extracts required files to the specific location "C:\temp". Invokes update actions on SQL1 after restarting it.
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
@@ -53,7 +62,9 @@ Function Invoke-DbaAdvancedUpdate {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
         [pscredential]$Credential,
+        [string]$ExtractPath,
         [switch]$EnableException
+
     )
     $computer = $ComputerName
     $activity = "Updating SQL Server components on $computer"
@@ -106,20 +117,25 @@ Function Invoke-DbaAdvancedUpdate {
                 $execParams.Authentication = "Default"
             }
         }
-        # Find a temporary folder to extract to - the drive that has most free space
-        try {
-            $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential -EnableException:$true | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
-            if (!$chosenDrive) {
-                # Fall back to the system drive
-                $chosenDrive = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:SystemDrive } -Raw -ErrorAction Stop
+
+        if (!$ExtractPath) {
+            # Find a temporary folder to extract to - the drive that has most free space
+            try {
+                $chosenDrive = (Get-DbaDiskSpace -ComputerName $computer -Credential $Credential -EnableException:$true | Sort-Object -Property Free -Descending | Select-Object -First 1).Name
+                if (!$chosenDrive) {
+                    # Fall back to the system drive
+                    $chosenDrive = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { $env:SystemDrive } -Raw -ErrorAction Stop
+                }
+            } catch {
+                $msg = "Failed to retrieve a disk drive to extract the update"
+                $output.Notes += $msg
+                Stop-Function -Message $msg -ErrorRecord $_
+                return $output
             }
-        } catch {
-            $msg = "Failed to retrieve a disk drive to extract the update"
-            $output.Notes += $msg
-            Stop-Function -Message $msg -ErrorRecord $_
-            return $output
+        } else {
+            $chosenDrive = $ExtractPath
         }
-        $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($currentAction.KB)_Extract"
+        $spExtractPath = $chosenDrive.TrimEnd('\') + "\dbatools_KB$($currentAction.KB)_Extract_$([guid]::NewGuid().Guid.Replace('-',''))"
         $output.ExtractPath = $spExtractPath
         try {
             # Extract file
@@ -127,7 +143,7 @@ Function Invoke-DbaAdvancedUpdate {
             Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath"
             $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
             if (-not $extractResult.Successful) {
-                $msg = "Extraction failed with exit code $($extractResult.ExitCode)"
+                $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a location instead using -ExportPath"
                 $output.Notes += $msg
                 Stop-Function -Message $msg
                 return $output

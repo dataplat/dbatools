@@ -25,7 +25,11 @@ function Invoke-DbaDbShrink {
         The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -124,11 +128,8 @@ function Invoke-DbaDbShrink {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
@@ -138,20 +139,14 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSize,
+        [int64]$StepSize,
         [int]$StatementTimeout = 0,
-        [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        if ($LogsOnly) {
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
-            $FileType = 'Log'
-        }
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
@@ -182,13 +177,13 @@ function Invoke-DbaDbShrink {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
             Write-Message -Level Verbose -Message "Connection timeout set to $StatementTimeout"
 
-            $dbs = $server.Databases | Where-Object {$_.IsAccessible}
+            $dbs = $server.Databases | Where-Object { $_.IsAccessible }
 
             if ($AllUserDatabases) {
                 $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
@@ -331,8 +326,5 @@ function Invoke-DbaDbShrink {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }

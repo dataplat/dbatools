@@ -87,12 +87,11 @@ function New-DbaLogShippingPrimaryDatabase {
         .EXAMPLE
             New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -CompressBackup -HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -118,7 +117,6 @@ function New-DbaLogShippingPrimaryDatabase {
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )
@@ -157,7 +155,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Check of the MonitorServerSecurityMode value is of type string and set the integer value
     if ($MonitorServerSecurityMode -notin 0, 1) {
-        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) {"WINDOWS" { 1 } "SQLSERVER" { 0 } }
+        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) { "WINDOWS" { 1 } "SQLSERVER" { 0 } }
         Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
     }
 

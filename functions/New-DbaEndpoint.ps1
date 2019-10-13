@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function New-DbaEndpoint {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the endpoint. If a name is not specified, one will be auto-generated.
@@ -75,19 +78,19 @@ function New-DbaEndpoint {
         https://dbatools.io/New-DbaEndpoint
 
     .EXAMPLE
-        PS C:\> New-DbaEndpoint -SqlInstance localhost
+        PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring
 
-        Creates all Endpoint(s) on the local default SQL Server instance
+        Creates a database mirroring endpoint on localhost\sql2017 which using the default port
 
     .EXAMPLE
-        PS C:\> New-DbaEndpoint -SqlInstance localhost, sql2016
+        PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring -Port 5055
 
-        Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+        Creates a database mirroring endpoint on localhost\sql2017 which uses alternative port 5055
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
@@ -116,7 +119,7 @@ function New-DbaEndpoint {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (-not (Test-Bound -ParameterName Owner)) {

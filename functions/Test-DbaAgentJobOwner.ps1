@@ -13,7 +13,11 @@ function Test-DbaAgentJobOwner {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
@@ -23,9 +27,6 @@ function Test-DbaAgentJobOwner {
 
     .PARAMETER Login
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
-
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -64,7 +65,6 @@ function Test-DbaAgentJobOwner {
     [OutputType('System.Object[]')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
@@ -72,13 +72,10 @@ function Test-DbaAgentJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         #connect to the instance and set return array empty
         $return = @()
     }
@@ -144,7 +141,7 @@ function Test-DbaAgentJobOwner {
             if ($Job) {
                 $results = $return
             } else {
-                $results = $return | Where-Object {$_.OwnerMatch -eq $False}
+                $results = $return | Where-Object { $_.OwnerMatch -eq $False }
             }
         }
     }

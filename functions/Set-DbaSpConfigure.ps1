@@ -13,7 +13,11 @@ function Set-DbaSpConfigure {
         collection and receive pipeline input
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the configuration to be set -- Configs is auto-populated for tabbing convenience.
@@ -66,10 +70,9 @@ function Set-DbaSpConfigure {
 
         Returns information on the action that would be performed. No actual change will be made.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Alias("NewValue", "NewConfig")]
@@ -78,8 +81,7 @@ function Set-DbaSpConfigure {
         [string[]]$Name,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -107,7 +109,7 @@ function Set-DbaSpConfigure {
 
             If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentConfigValue to $value.")) {
                 try {
-                    $server.Configuration.$configuration.ConfigValue = $value
+                    $configobject.Property.ConfigValue = $value
                     $server.Configuration.Alter()
 
                     [pscustomobject]@{

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaWindowsLogin {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Test-DbaWindowsLogin {
         The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
         Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
@@ -24,9 +27,6 @@ function Test-DbaWindowsLogin {
 
     .PARAMETER IgnoreDomains
         Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
-
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,8 +62,7 @@ function Test-DbaWindowsLogin {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Login,
@@ -71,14 +70,10 @@ function Test-DbaWindowsLogin {
         [ValidateSet("LoginsOnly", "GroupsOnly", "None")]
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         if ($IgnoreDomains) {
             $IgnoreDomainsNormalized = $IgnoreDomains.ToUpper()
             Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -116,7 +111,7 @@ function Test-DbaWindowsLogin {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 Write-Message -Message "Connected to: $instance." -Level Verbose
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
 
@@ -281,8 +276,5 @@ function Test-DbaWindowsLogin {
 
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }

@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
     <#
     .SYNOPSIS
@@ -30,7 +29,11 @@ function Get-DbaBuildReference {
         Target any number of instances, in order to return their build state.
 
     .PARAMETER SqlCredential
-        When connecting to an instance, use the credentials specified.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
         Looks online for the most up to date reference, replacing the local one.
@@ -67,7 +70,7 @@ function Get-DbaBuildReference {
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
@@ -95,20 +98,16 @@ function Get-DbaBuildReference {
         $CumulativeUpdate,
 
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
 
         [switch]
         $Update,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -132,11 +131,11 @@ function Get-DbaBuildReference {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
-                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Check your module integrity!"
+                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Please check your module integrity or reinstall dbatools."
             }
 
             if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
-                throw "Build reference file not found, check module health!"
+                throw "Build reference file not found, please check module health."
             }
 
             # If no writable copy exists, create one and return the module original
@@ -309,7 +308,7 @@ function Get-DbaBuildReference {
         }
         #endregion Helper functions
 
-        $moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
+        $moduledirectory = $script:PSModuleRoot
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
@@ -391,7 +390,7 @@ function Get-DbaBuildReference {
             try {
                 $null = $server.Version.ToString()
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #endregion Ensure the connection is established
 
@@ -461,8 +460,5 @@ function Get-DbaBuildReference {
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }

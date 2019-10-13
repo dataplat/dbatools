@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Enable-DbaFilestream {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Enable-DbaFilestream {
         The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Login to the target server using alternative credentials.
@@ -59,7 +62,7 @@ function Enable-DbaFilestream {
 
         Using this pipeline you can scan a range of SQL instances and enable filestream on only those on which it's disabled.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
@@ -96,6 +99,8 @@ function Enable-DbaFilestream {
             2 = 'FileStream enabled for T-Sql and IO streaming access'
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
+
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ($ShareName -and $level -lt 2) {

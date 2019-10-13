@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function New-DbaSsisCatalog {
         SQL Server you wish to run the function on.
 
     .PARAMETER SqlCredential
-        Credentials used to connect to the SQL Server
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SecurePassword
         Required password that will be used for the security key in SSISDB.
@@ -84,7 +87,7 @@ function New-DbaSsisCatalog {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             ## check if SSIS and Engine running on box

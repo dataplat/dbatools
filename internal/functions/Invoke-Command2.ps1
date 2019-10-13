@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-Command2 {
     <#
         .SYNOPSIS
@@ -64,7 +63,7 @@ function Invoke-Command2 {
     )
     <# Note: Credential stays as an object type for legacy reasons. #>
 
-    $InvokeCommandSplat = @{}
+    $InvokeCommandSplat = @{ }
     if ($ArgumentList) {
         $InvokeCommandSplat["ArgumentList"] = $ArgumentList
     }
@@ -89,10 +88,15 @@ function Invoke-Command2 {
                 Authentication = $Authentication
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
+                UseSSL         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             if (Test-Windows -NoWarn) {
-                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                $psSessionSplat += @{ SessionOption = $timeout }
+                $psSessionOptionsSplat = @{
+                    IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                    IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                }
+                $sessionOption = New-PSSessionOption @psSessionOptionsSplat
+                $psSessionSplat += @{ SessionOption = $sessionOption }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }

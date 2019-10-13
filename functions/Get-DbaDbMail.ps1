@@ -10,7 +10,11 @@ function Get-DbaDbMail {
         TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -34,7 +38,7 @@ function Get-DbaDbMail {
         Returns the db mail server object on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMail -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMail -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the db mail server object on sql01\sharepoint then return a bunch more columns
 
@@ -48,9 +52,7 @@ function Get-DbaDbMail {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )

@@ -134,8 +134,7 @@ function New-DbaCmConnection {
         $CimWinRMOptions,
         [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
         $CimDCOMOptions,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -169,7 +168,7 @@ function New-DbaCmConnection {
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
                     [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
-                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled!" }
+                } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }
         }

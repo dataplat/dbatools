@@ -59,7 +59,7 @@ Which ships with PowerShell Version 5 but will run under v3.
                 Position = 0,
                 ParameterSetName = "Path",
                 ValueFromPipeline,
-                ValueFromPipelineByPropertyName = $true)]
+                ValueFromPipelineByPropertyName)]
             [ValidateNotNullOrEmpty()]
             [string]
             $Path,
@@ -67,7 +67,7 @@ Which ships with PowerShell Version 5 but will run under v3.
             [parameter (
                 Mandatory,
                 ParameterSetName = "LiteralPath",
-                ValueFromPipelineByPropertyName = $true)]
+                ValueFromPipelineByPropertyName)]
             [ValidateNotNullOrEmpty()]
             [Alias("PSPath")]
             [string]

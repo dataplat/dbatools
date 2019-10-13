@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName','Credential','Alias','EnableException'
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Alias', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -29,8 +29,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $aliases.AliasName -contains 'dbatoolscialias1' | Should Be $true
             }
 
-            $null = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
-
+            It "removes the alias and shows computername" {
+                $results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
+                $results.ComputerName | Should -Not -BeNullOrEmpty
+            }
             $aliases = Get-DbaClientAlias
             It "alias is not included in results" {
                 $aliases.AliasName -notcontains 'dbatoolscialias1' | Should Be $true
