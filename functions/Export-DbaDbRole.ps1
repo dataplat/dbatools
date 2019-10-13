@@ -122,7 +122,7 @@ function Export-DbaDbRole {
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\temp\roles.sql
 
-        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file without the 'GO' batch separator.
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file.
 
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun -Path C:\temp\roles.sql
