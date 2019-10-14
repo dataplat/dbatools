@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
     <#
     .SYNOPSIS
@@ -6,6 +5,7 @@ function Test-DbaBuild {
 
     .DESCRIPTION
         Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, End Of Support, wherever possible. It adds a Compliance property as true/false, and adds details about the "targeted compliance".
+        The build data used can be found here: https://dbatools.io/builds
 
     .PARAMETER Build
         Instead of connecting to a real instance, pass a string identifying the build to get the info back.
@@ -23,7 +23,11 @@ function Test-DbaBuild {
         Target any number of instances, in order to return their compliance state.
 
     .PARAMETER SqlCredential
-        When connecting to an instance, use the credentials specified.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
         Looks online for the most up to date reference, replacing the local one.
@@ -40,7 +44,7 @@ function Test-DbaBuild {
         Tags: SqlBuild, Version
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -93,7 +97,7 @@ function Test-DbaBuild {
         Returns information builds identified by these versions strings.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild "12.0.4511"
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a.
 
@@ -106,13 +110,11 @@ function Test-DbaBuild {
         [string]$MaxBehind,
         [switch] $Latest,
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Update,
         [switch]$Quiet,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -143,7 +145,7 @@ function Test-DbaBuild {
             $MaxBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>SP|CU)$'
             $pieces = $MaxBehind.Split(' ')	| Where-Object { $_ }
             try {
-                $ParsedMaxBehind = @{}
+                $ParsedMaxBehind = @{ }
                 foreach ($piece in $pieces) {
                     $pieceMatch = $MaxBehindValidator.Match($piece)
                     if ($pieceMatch.Success -ne $true) {
@@ -271,8 +273,5 @@ function Test-DbaBuild {
                 $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlBuild
     }
 }

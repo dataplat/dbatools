@@ -100,13 +100,12 @@ function New-DbaLogShippingSecondaryDatabase {
 
         .EXAMPLE
             New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
-       #>
+    #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
 
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,
@@ -137,7 +136,6 @@ function New-DbaLogShippingSecondaryDatabase {
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
         [System.Management.Automation.PSCredential]$MonitorCredential,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )
@@ -146,14 +144,14 @@ function New-DbaLogShippingSecondaryDatabase {
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
     }
 
     # Try connecting to the instance
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
     }
 
     # Check if the database is present on the primary sql server
@@ -168,7 +166,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
     # Check the restore mode
     if ($RestoreMode -notin 0, 1) {
-        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0}  "Standby" { 1 } }
+        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0 }  "Standby" { 1 } }
         Write-Message -Message "Setting restore mode to $RestoreMode." -Level Verbose
     }
 

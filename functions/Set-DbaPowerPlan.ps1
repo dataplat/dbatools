@@ -72,7 +72,7 @@ function Set-DbaPowerPlan {
 
         Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
@@ -108,7 +108,7 @@ function Set-DbaPowerPlan {
 
                 $computerResolved = $computerResolved.FullComputerName
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $computer
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $computer
                 return
             }
 
@@ -193,8 +193,8 @@ function Set-DbaPowerPlan {
 
     process {
         # uses cim commands
-        
-        
+
+
         if (Test-Bound -ParameterName ComputerName) {
             $InputObject += Get-DbaPowerPlan -ComputerName $ComputerName -Credential $Credential
         }

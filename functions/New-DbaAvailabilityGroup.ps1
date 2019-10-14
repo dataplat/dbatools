@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
@@ -28,13 +27,21 @@ function New-DbaAvailabilityGroup {
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER PrimarySqlCredential
-        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Secondary
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the Availability Group.
@@ -145,7 +152,7 @@ function New-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HA
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -227,7 +234,6 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
-        [Alias("NetworkShare")]
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$Force,
@@ -240,7 +246,7 @@ function New-DbaAvailabilityGroup {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
@@ -256,7 +262,7 @@ function New-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NetworkShare -CustomMessage "Using the parameter NetworkShare is deprecated. This parameter will be removed in version 1.0.0 or before. Use SharedPath instead."
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         $stepCounter = $wait = 0
@@ -266,10 +272,20 @@ function New-DbaAvailabilityGroup {
             return
         }
 
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
+            }
+        }
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+            Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
 
@@ -335,7 +351,7 @@ function New-DbaAvailabilityGroup {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
             }
@@ -393,6 +409,7 @@ function New-DbaAvailabilityGroup {
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
                     $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
+                    $ag.DtcSupportEnabled = $DtcSupport
                 }
 
                 if ($server.VersionMajor -ge 14) {
@@ -417,7 +434,7 @@ function New-DbaAvailabilityGroup {
                 }
 
                 if ($server.VersionMajor -ge 13) {
-                    $replicaparams += @{SeedingMode = $SeedingMode}
+                    $replicaparams += @{SeedingMode = $SeedingMode }
                 }
 
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
@@ -577,37 +594,43 @@ function New-DbaAvailabilityGroup {
 
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
-
-        $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
-
-        foreach ($second in $secondaries) {
-            if ($server.HostPlatform -ne "Linux" -and $second.HostPlatform -ne "Linux") {
-                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                    $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
-                }
-            }
-            if ($SeedingMode -eq 'Automatic') {
-                $done = $false
-                try {
-                    if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                        do {
-                            $second.Refresh()
-                            $second.AvailabilityGroups.Refresh()
-                            if (Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name) {
-                                $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
-                                $done = $true
-                            } else {
-                                $wait++
-                                Start-Sleep -Seconds 1
-                            }
-                        } while ($wait -lt 20 -and $done -eq $false)
+        $dbdone = $false
+        do {
+            foreach ($second in $secondaries) {
+                if ($SeedingMode -eq 'Automatic') {
+                    $done = $false
+                    try {
+                        if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                            do {
+                                $second.Refresh()
+                                $second.AvailabilityGroups.Refresh()
+                                if (Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name) {
+                                    $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                                    $done = $true
+                                } else {
+                                    $wait++
+                                    Start-Sleep -Seconds 1
+                                }
+                            } while ($wait -lt 20 -and $done -eq $false)
+                        }
+                    } catch {
+                        # Log the exception but keep going
+                        Stop-Function -Message "Failure" -ErrorRecord $_
                     }
-                } catch {
-                    # Log the exception but keep going
-                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+                if ($Database) {
+                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
                 }
             }
-        }
+
+            if (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database) {
+                $dbdone = $true
+            } else {
+                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
+                $dbwait++
+                Start-Sleep -Seconds 1
+            }
+        } while ($dbwait -lt 20 -and $dbdone -eq $false)
 
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name

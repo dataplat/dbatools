@@ -10,13 +10,11 @@ function New-DbaDbUser {
         The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-        To connect to SQL Server as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -79,13 +77,11 @@ function New-DbaDbUser {
         Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
 
     #>
-    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
     param(
         [parameter(Mandatory, Position = 1)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
@@ -95,11 +91,12 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+
         function Test-SqlLoginInDatabase {
             param(
                 [Microsoft.SqlServer.Management.Smo.Login]$Login,
@@ -108,7 +105,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Login -eq $smoLogin ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
@@ -130,7 +127,7 @@ function New-DbaDbUser {
 
             # Does user exist with same login?
             if ( $existingUser = ( $Database.Users | Where-Object Name -eq $Username ) ) {
-                if (Test-Bound 'Force') {
+                if ($Force) {
                     if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
                         try {
                             $existingUser.Drop()
@@ -150,7 +147,7 @@ function New-DbaDbUser {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $databases = $server.Databases | Where-Object IsAccessible -eq $true
@@ -163,6 +160,10 @@ function New-DbaDbUser {
             }
             if (Test-Bound 'IncludeSystem' -Not) {
                 $databases = $databases | Where-Object IsSystemObject -NE $true
+            }
+
+            if ($null -eq $databases -or $databases.Count -eq 0) {
+                Stop-Function -Message "Error occurred while establishing a connection to $Database" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             foreach ($db in $databases) {
@@ -219,7 +220,7 @@ function New-DbaDbUser {
                         $smoUser.Name = $Name
 
                         if ( $PSBoundParameters.Keys -contains 'Login' -and $Login.GetType().Name -eq 'Login' ) {
-                            $smoUser.Login = Login
+                            $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
 

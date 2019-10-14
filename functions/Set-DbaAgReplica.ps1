@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Set-DbaAgReplica {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Replica
         The replicas to modify.
@@ -52,6 +55,9 @@ function Set-DbaAgReplica {
 
         Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
 
+    .PARAMETER SessionTimeout
+        How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -64,8 +70,9 @@ function Set-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG
+        Tags: AvailabilityGroup, HA, AG, Replica
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -82,7 +89,7 @@ function Set-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
         Sets the backup priority to 5000 for the selected availability groups.
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -96,10 +103,11 @@ function Set-DbaAgReplica {
         [int]$BackupPriority,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole,
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole,
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
+        [int]$SessionTimeout,
         [string]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
         [parameter(ValueFromPipeline)]
@@ -111,6 +119,16 @@ function Set-DbaAgReplica {
             if (-not $AvailabilityGroup -or -not $Replica) {
                 Stop-Function -Message "You must specify an AvailabilityGroup and replica or pipe in an availabilty group to continue."
                 return
+            }
+        }
+
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
             }
         }
 
@@ -152,6 +170,14 @@ function Set-DbaAgReplica {
 
                     if ($SeedingMode) {
                         $agreplica.SeedingMode = $SeedingMode
+                    }
+
+                    if ($SessionTimeout) {
+                        if ($SessionTimeout -lt 10) {
+                            $Message = "We recommend that you keep the time-out period at 10 seconds or greater. Setting the value to less than 10 seconds creates the possibility of a heavily loaded system missing pings and falsely declaring failure. Please see sqlps.io/agrec for more information."
+                            Write-Message -Message $Message -Level Warning
+                        }
+                        $agreplica.SessionTimeout = $SessionTimeout
                     }
 
                     $agreplica.Alter()

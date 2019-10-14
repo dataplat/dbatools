@@ -78,16 +78,16 @@ Which ships with PowerShell Version 5 but will run under v3.
         [CmdletBinding(DefaultParameterSetName = "Path", SupportsShouldProcess, HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393252")]
         param
         (
-            [parameter (Mandatory, Position = 0, ParameterSetName = "Path", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, Position = 0, ParameterSetName = "PathWithForce", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, Position = 0, ParameterSetName = "PathWithUpdate", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
+            [parameter (Mandatory, ParameterSetName = "Path", ValueFromPipeline, ValueFromPipelineByPropertyName)]
+            [parameter (Mandatory, ParameterSetName = "PathWithForce", ValueFromPipeline, ValueFromPipelineByPropertyName)]
+            [parameter (Mandatory, ParameterSetName = "PathWithUpdate", ValueFromPipeline, ValueFromPipelineByPropertyName)]
             [ValidateNotNullOrEmpty()]
             [string[]]
             $Path,
 
-            [parameter (Mandatory, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+            [parameter (Mandatory, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName)]
+            [parameter (Mandatory, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName)]
+            [parameter (Mandatory, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName)]
             [ValidateNotNullOrEmpty()]
             [Alias("PSPath")]
             [string[]]

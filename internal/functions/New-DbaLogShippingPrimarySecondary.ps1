@@ -48,11 +48,10 @@ function New-DbaLogShippingPrimarySecondary {
 
         .EXAMPLE
             New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -SecondaryServer sql2 -SecondaryDatabase DB1_DR
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
@@ -65,7 +64,6 @@ function New-DbaLogShippingPrimarySecondary {
         [ValidateNotNullOrEmpty()]
         [DBAInstanceParameter]$SecondaryServer,
         [PSCredential]$SecondarySqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

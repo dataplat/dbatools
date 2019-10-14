@@ -34,25 +34,41 @@ function Invoke-DbaDbLogShipping {
         You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SourceCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Database to set up log shipping for.
 
-    .PARAMETER BackupNetworkPath
+    .PARAMETER SharedPath
         The backup unc path to place the backup files. This is the root directory.
         A directory with the name of the database will be created in this path.
 
-    .PARAMETER BackupLocalPath
+    .PARAMETER LocalPath
         If the backup path is locally for the source server you can also set this value.
 
     .PARAMETER BackupJob
@@ -348,8 +364,8 @@ function Invoke-DbaDbLogShipping {
         >> SourceSqlInstance = 'sql1'
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
-        >> BackupNetworkPath= '\\sql1\logshipping'
-        >> BackupLocalPath= 'D:\Data\logshipping'
+        >> SharedPath= '\\sql1\logshipping'
+        >> LocalPath= 'D:\Data\logshipping'
         >> BackupScheduleFrequencyType = 'daily'
         >> BackupScheduleFrequencyInterval = 1
         >> CompressBackup = $true
@@ -374,7 +390,7 @@ function Invoke-DbaDbLogShipping {
         >> SourceSqlInstance = 'sql1'
         >> DestinationSqlInstance = 'sql2'
         >> Database = 'db1'
-        >> BackupNetworkPath= '\\sql1\logshipping'
+        >> SharedPath= '\\sql1\logshipping'
         >> GenerateFullBackup = $true
         >> Force = $true
         >> }
@@ -385,199 +401,122 @@ function Invoke-DbaDbLogShipping {
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
 
     param(
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("SourceServerInstance", "SourceSqlServerSqlServer", "Source")]
-        [object]$SourceSqlInstance,
-
+        [DbaInstanceParameter]$SourceSqlInstance,
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("DestinationServerInstance", "DestinationSqlServer", "Destination")]
-        [object[]]$DestinationSqlInstance,
-
+        [DbaInstanceParameter[]]$DestinationSqlInstance,
         [System.Management.Automation.PSCredential]
         $SourceSqlCredential,
-
         [System.Management.Automation.PSCredential]
         $SourceCredential,
-
         [System.Management.Automation.PSCredential]
         $DestinationSqlCredential,
-
         [System.Management.Automation.PSCredential]
         $DestinationCredential,
-
         [Parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Database,
-
         [parameter(Mandatory)]
-        [string]$BackupNetworkPath,
-
-        [string]$BackupLocalPath,
-
+        [Alias("BackupNetworkPath")]
+        [string]$SharedPath,
+        [Alias("BackupLocalPath")]
+        [string]$LocalPath,
         [string]$BackupJob,
-
         [int]$BackupRetention,
-
         [string]$BackupSchedule,
-
         [switch]$BackupScheduleDisabled,
-
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$BackupScheduleFrequencyType,
-
         [object[]]$BackupScheduleFrequencyInterval,
-
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$BackupScheduleFrequencySubdayType,
-
         [int]$BackupScheduleFrequencySubdayInterval,
-
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$BackupScheduleFrequencyRelativeInterval,
-
         [int]$BackupScheduleFrequencyRecurrenceFactor,
-
         [string]$BackupScheduleStartDate,
-
         [string]$BackupScheduleEndDate,
-
         [string]$BackupScheduleStartTime,
-
         [string]$BackupScheduleEndTime,
-
         [int]$BackupThreshold,
-
         [switch]$CompressBackup,
-
         [string]$CopyDestinationFolder,
-
         [string]$CopyJob,
-
         [int]$CopyRetention,
-
         [string]$CopySchedule,
-
         [switch]$CopyScheduleDisabled,
-
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$CopyScheduleFrequencyType,
-
         [object[]]$CopyScheduleFrequencyInterval,
-
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$CopyScheduleFrequencySubdayType,
-
         [int]$CopyScheduleFrequencySubdayInterval,
-
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$CopyScheduleFrequencyRelativeInterval,
-
         [int]$CopyScheduleFrequencyRecurrenceFactor,
-
         [string]$CopyScheduleStartDate,
-
         [string]$CopyScheduleEndDate,
-
         [string]$CopyScheduleStartTime,
-
         [string]$CopyScheduleEndTime,
-
         [switch]$DisconnectUsers,
-
         [string]$FullBackupPath,
-
         [switch]$GenerateFullBackup,
-
         [int]$HistoryRetention,
-
         [switch]$NoRecovery,
-
         [switch]$NoInitialization,
-
         [string]$PrimaryMonitorServer,
-
         [System.Management.Automation.PSCredential]
         $PrimaryMonitorCredential,
-
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$PrimaryMonitorServerSecurityMode,
-
         [switch]$PrimaryThresholdAlertEnabled,
-
         [string]$RestoreDataFolder,
-
         [string]$RestoreLogFolder,
-
         [int]$RestoreDelay,
-
         [int]$RestoreAlertThreshold,
-
         [string]$RestoreJob,
-
         [int]$RestoreRetention,
-
         [string]$RestoreSchedule,
-
         [switch]$RestoreScheduleDisabled,
-
         [ValidateSet("Daily", "Weekly", "AgentStart", "IdleComputer")]
         [object]$RestoreScheduleFrequencyType,
-
         [object[]]$RestoreScheduleFrequencyInterval,
-
         [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
         [object]$RestoreScheduleFrequencySubdayType,
-
         [int]$RestoreScheduleFrequencySubdayInterval,
-
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
         [object]$RestoreScheduleFrequencyRelativeInterval,
-
         [int]$RestoreScheduleFrequencyRecurrenceFactor,
-
         [string]$RestoreScheduleStartDate,
-
         [string]$RestoreScheduleEndDate,
-
         [string]$RestoreScheduleStartTime,
-
         [string]$RestoreScheduleEndTime,
-
         [int]$RestoreThreshold,
-
         [string]$SecondaryDatabasePrefix,
-
         [string]$SecondaryDatabaseSuffix,
-
         [string]$SecondaryMonitorServer,
-
         [System.Management.Automation.PSCredential]
         $SecondaryMonitorCredential,
-
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$SecondaryMonitorServerSecurityMode,
-
         [switch]$SecondaryThresholdAlertEnabled,
-
         [switch]$Standby,
-
         [string]$StandbyDirectory,
-
         [switch]$UseExistingFullBackup,
-
         [string]$UseBackupFolder,
-
         [switch]$Force,
-
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+
         Write-Message -Message "Started log shipping for $SourceSqlInstance to $DestinationSqlInstance" -Level Verbose
 
         # Try connecting to the instance
@@ -590,7 +529,7 @@ function Invoke-DbaDbLogShipping {
 
 
         # Check the instance if it is a named instance
-        $SourceServerName, $SourceInstanceName = $SourceSqlInstance.Split("\")
+        $SourceServerName, $SourceInstanceName = $SourceSqlInstance.FullName.Split("\")
 
         if ($null -eq $SourceInstanceName) {
             $SourceInstanceName = "MSSQLSERVER"
@@ -609,12 +548,12 @@ function Invoke-DbaDbLogShipping {
         }
 
         # Check the backup network path
-        Write-Message -Message "Testing backup network path $BackupNetworkPath" -Level Verbose
-        if ((Test-DbaPath -Path $BackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-            Stop-Function -Message "Backup network path $BackupNetworkPath is not valid or can't be reached." -Target $SourceSqlInstance
+        Write-Message -Message "Testing backup network path $SharedPath" -Level Verbose
+        if ((Test-DbaPath -Path $SharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+            Stop-Function -Message "Backup network path $SharedPath is not valid or can't be reached." -Target $SourceSqlInstance
             return
-        } elseif ($BackupNetworkPath -notmatch $RegexUnc) {
-            Stop-Function -Message "Backup network path $BackupNetworkPath has to be in the form of \\server\share." -Target $SourceSqlInstance
+        } elseif ($SharedPath -notmatch $RegexUnc) {
+            Stop-Function -Message "Backup network path $SharedPath has to be in the form of \\server\share." -Target $SourceSqlInstance
             return
         }
 
@@ -935,7 +874,7 @@ function Invoke-DbaDbLogShipping {
                 return
             }
 
-            $DestinationServerName, $DestinationInstanceName = $destInstance.Split("\")
+            $DestinationServerName, $DestinationInstanceName = $destInstance.FullName.Split("\")
 
             if ($null -eq $DestinationInstanceName) {
                 $DestinationInstanceName = "MSSQLSERVER"
@@ -1116,43 +1055,43 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the local backup path
-                if ($BackupLocalPath) {
-                    if ($BackupLocalPath.EndsWith("\")) {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
+                if ($LocalPath) {
+                    if ($LocalPath.EndsWith("\")) {
+                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
                     } else {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
                     }
                 } else {
-                    $BackupLocalPath = $BackupNetworkPath
+                    $LocalPath = $SharedPath
 
-                    if ($BackupLocalPath.EndsWith("\")) {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
+                    if ($LocalPath.EndsWith("\")) {
+                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
                     } else {
-                        $DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
                     }
                 }
-                Write-Message -Message "Backup local path set to $DatabaseBackupLocalPath." -Level Verbose
+                Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
 
                 # Setting the backup network path for the database
-                if ($BackupNetworkPath.EndsWith("\")) {
-                    $DatabaseBackupNetworkPath = "$BackupNetworkPath$($db.Name)"
+                if ($SharedPath.EndsWith("\")) {
+                    $DatabaseSharedPath = "$SharedPath$($db.Name)"
                 } else {
-                    $DatabaseBackupNetworkPath = "$BackupNetworkPath\$($db.Name)"
+                    $DatabaseSharedPath = "$SharedPath\$($db.Name)"
                 }
-                Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
+                Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
 
 
                 # Checking if the database network path exists
                 if ($setupResult -ne 'Failed') {
-                    Write-Message -Message "Testing database backup network path $DatabaseBackupNetworkPath" -Level Verbose
-                    if ((Test-DbaPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+                    Write-Message -Message "Testing database backup network path $DatabaseSharedPath" -Level Verbose
+                    if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
                         # To to create the backup directory for the database
                         try {
-                            Write-Message -Message "Database backup network path $DatabaseBackupNetworkPath not found. Trying to create it.." -Level Verbose
+                            Write-Message -Message "Database backup network path $DatabaseSharedPath not found. Trying to create it.." -Level Verbose
 
                             Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
-                                Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
-                                $null = New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force
+                                Write-Message -Message "Creating backup folder $DatabaseSharedPath" -Level Verbose
+                                $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Credential $SourceCredential -Force:$Force
                             }
                         } catch {
                             $setupResult = "Failed"
@@ -1304,6 +1243,8 @@ function Invoke-DbaDbLogShipping {
                                 $comment = "The path to the full backup could not be reached"
                                 Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $destInstance -Continue
                             }
+
+                            $BackupPath = $FullBackupPath
                         } elseif ($UseBackupFolder.Length -ge 1) {
                             Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
                             if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
@@ -1317,7 +1258,7 @@ function Invoke-DbaDbLogShipping {
                             Write-Message -Message "No path to the full backup is set. Trying to retrieve the last full backup for $db from $SourceSqlInstance" -Level Verbose
 
                             # Get the last full backup
-                            $LastBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
+                            $LastBackup = Get-DbaDbBackupHistory -SqlInstance $SourceSqlInstance -Database $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                             # Check if there was a last backup
                             if ($null -eq $LastBackup) {
@@ -1355,7 +1296,7 @@ function Invoke-DbaDbLogShipping {
 
                 # Check if the copy job name is set
                 if ($CopyJob) {
-                    $DatabaseCopyJob = "$($CopyJob)$($db.Name))"
+                    $DatabaseCopyJob = "$($CopyJob)$($db.Name)"
                 } else {
                     $DatabaseCopyJob = "LSCopy_$($SourceServerName)_$($db.Name)"
                 }
@@ -1410,16 +1351,16 @@ function Invoke-DbaDbLogShipping {
                         if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
 
                             Write-Message -Message "Generating full backup." -Level Verbose
-                            Write-Message -Message "Backing up database $db to $DatabaseBackupNetworkPath" -Level Verbose
+                            Write-Message -Message "Backing up database $db to $DatabaseSharedPath" -Level Verbose
 
                             try {
                                 $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
                                 $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
                                     -SqlCredential $SourceSqlCredential `
-                                    -BackupDirectory $DatabaseBackupNetworkPath `
+                                    -BackupDirectory $DatabaseSharedPath `
                                     -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
-                                    -Databases $($db.Name) `
+                                    -Database $($db.Name) `
                                     -Type Full
 
                                 Write-Message -Message "Backup completed." -Level Verbose
@@ -1446,7 +1387,7 @@ function Invoke-DbaDbLogShipping {
                 }
 
                 # Check the primary monitor server
-                if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
+                if ($Force -and (-not $PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
                     Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Verbose
                     $PrimaryMonitorServer = $SourceSqlInstance
                 }
@@ -1580,10 +1521,10 @@ function Invoke-DbaDbLogShipping {
                             New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
                                 -SqlCredential $SourceSqlCredential `
                                 -Database $($db.Name) `
-                                -BackupDirectory $DatabaseBackupLocalPath `
+                                -BackupDirectory $DatabaseLocalPath `
                                 -BackupJob $DatabaseBackupJob `
                                 -BackupRetention $BackupRetention `
-                                -BackupShare $DatabaseBackupNetworkPath `
+                                -BackupShare $DatabaseSharedPath `
                                 -BackupThreshold $BackupThreshold `
                                 -CompressBackup:$BackupCompression `
                                 -HistoryRetention $HistoryRetention `
@@ -1648,7 +1589,7 @@ function Invoke-DbaDbLogShipping {
 
                             New-DbaLogShippingSecondaryPrimary -SqlInstance $destInstance `
                                 -SqlCredential $DestinationSqlCredential `
-                                -BackupSourceDirectory $DatabaseBackupNetworkPath `
+                                -BackupSourceDirectory $DatabaseSharedPath `
                                 -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
                                 -CopyJob $DatabaseCopyJob `
                                 -FileRetentionPeriod $BackupRetention `
@@ -1710,9 +1651,9 @@ function Invoke-DbaDbLogShipping {
                                 -RestoreThreshold $RestoreThreshold `
                                 -ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
                                 -HistoryRetention $HistoryRetention `
-                                -MonitorServer $PrimaryMonitorServer `
-                                -MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-                                -MonitorCredential $PrimaryMonitorCredential
+                                -MonitorServer $SecondaryMonitorServer `
+                                -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
+                                -MonitorCredential $SecondaryMonitorCredential
 
                             # Check if the copy job needs to be enabled or disabled
                             if ($CopyScheduleDisabled) {
@@ -1753,6 +1694,5 @@ function Invoke-DbaDbLogShipping {
     } # end process
     end {
         Write-Message -Message "Finished setting up log shipping." -Level Verbose
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShipping
     }
 }

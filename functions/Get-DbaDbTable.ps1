@@ -10,7 +10,11 @@ function Get-DbaDbTable {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -29,6 +33,9 @@ function Get-DbaDbTable {
         The correct way to find table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
         Any actual usage of the ] must be escaped by duplicating the ] character.
         The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -78,27 +85,25 @@ function Get-DbaDbTable {
         The Table name, Schema name and Database name must be wrapped in square brackets [ ]
         Special charcters like " must be escaped by a ` charcter.
         In addition any actual instance of the ] character must be escaped by being duplicated.
-       #>
+    #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
         [string[]]$Table,
-        [switch][Alias('Silent')]
-        $EnableException
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$EnableException
     )
 
     begin {
         if ($Table) {
             $fqtns = @()
             foreach ($t in $Table) {
-                $fqtn = Get-TableNameParts -Table $t
+                $fqtn = Get-ObjectNameParts -ObjectName $t
 
                 if (!$fqtn.Parsed) {
                     Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
@@ -108,7 +113,7 @@ function Get-DbaDbTable {
                 $fqtns += [PSCustomObject] @{
                     Database   = $fqtn.Database
                     Schema     = $fqtn.Schema
-                    Table      = $fqtn.Table
+                    Table      = $fqtn.Name
                     InputValue = $fqtn.InputValue
                 }
             }
@@ -120,71 +125,45 @@ function Get-DbaDbTable {
 
     process {
         foreach ($instance in $sqlinstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
 
-            try {
-                #only look at online databases (Status equal normal)
-                $dbs = $server.Databases | Where-Object IsAccessible
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+            Write-Message -Level Verbose -Message "Processing $db"
 
-                #If IncludeSystemDBs is false, exclude systemdbs
-                if (!$IncludeSystemDBs -and !$Database) {
-                    $dbs = $dbs | Where-Object { !$_.IsSystemObject }
-                }
-
-                if ($Database) {
-                    $dbs = $dbs | Where-Object { $Database -contains $_.Name }
-                }
-
-                if ($ExcludeDatabase) {
-                    $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
-                }
-            } catch {
-                Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
-            }
-
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db"
-
-                if ($fqtns) {
-                    $tables = @()
-                    foreach ($fqtn in $fqtns) {
-                        # If the user specified a database in a three-part name, and it's not the
-                        # database currently being processed, skip this table.
-                        if ($fqtn.Database) {
-                            if ($fqtn.Database -ne $db.Name) {
-                                continue
-                            }
+            if ($fqtns) {
+                $tables = @()
+                foreach ($fqtn in $fqtns) {
+                    # If the user specified a database in a three-part name, and it's not the
+                    # database currently being processed, skip this table.
+                    if ($fqtn.Database) {
+                        if ($fqtn.Database -ne $db.Name) {
+                            continue
                         }
-
-                        $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
-
-                        if (-not $tbl) {
-                            Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
-                        }
-                        $tables += $tbl
                     }
-                } else {
-                    $tables = $db.Tables
+
+                    $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+
+                    if (-not $tbl) {
+                        Write-Message -Level Verbose -Message "Could not find table $($fqtn.Name) in $db on $server"
+                    }
+                    $tables += $tbl
                 }
+            } else {
+                $tables = $db.Tables
+            }
 
-                foreach ($sqltable in $tables) {
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
+            foreach ($sqltable in $tables) {
+                $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
-                    $defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+                $defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
 
-                    Select-DefaultView -InputObject $sqltable -Property $defaultprops
-                }
+                Select-DefaultView -InputObject $sqltable -Property $defaultprops
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
     }
 }

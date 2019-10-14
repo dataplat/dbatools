@@ -39,16 +39,15 @@ function Get-DbaNetworkCertificate {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-    
+
     process {
         # Registry access
-        
-        
+
+
         foreach ($computer in $computername) {
 
             try {

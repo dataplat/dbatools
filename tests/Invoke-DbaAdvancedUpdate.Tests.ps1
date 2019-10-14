@@ -102,11 +102,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         )
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException', 'ExtractPath'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     Context "Validate upgrades to a latest version" {
@@ -123,7 +123,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'dummy'
             $result.Notes | Should -BeLike 'Restart is required for computer * to finish the installation of SQL2017RTMCU12'
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
         It "Should mock-upgrade 2008 to SP3CU7" {
             $results = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Restart $true -EnableException -Action $doubleAction
@@ -140,7 +140,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be 'dummy'
             $result.Notes | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
 
             #2008SP3CU7
             $result = $results | Select-Object -First 1 -Skip 1
@@ -151,7 +151,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be 'dummy'
             $result.Notes | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
     Context "Negative tests" {
@@ -167,9 +167,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'dummy'
-            $result.Notes | Should -BeLike '*failed with exit code 12345'
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
-            $warVar | Should -BeLike '*failed with exit code 12345'
+            $result.Notes | Should -BeLike '*failed with exit code 12345*'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+            $warVar | Should -BeLike '*failed with exit code 12345*'
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
         }

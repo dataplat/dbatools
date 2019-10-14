@@ -89,7 +89,7 @@ function Register-DbaMessageEvent {
         $RunspaceFilter
     )
 
-    $newName = $Name.ToLower()
+    $newName = $Name.ToLowerInvariant()
     $eventSubscription = New-Object Sqlcollaborative.Dbatools.Message.MessageEventSubscription
     $eventSubscription.Name = $newName
     $eventSubscription.ScriptBlock = $ScriptBlock

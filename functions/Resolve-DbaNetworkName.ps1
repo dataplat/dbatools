@@ -39,7 +39,11 @@ function Resolve-DbaNetworkName {
         This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
 
     .PARAMETER Credential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Turbo
         Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,
@@ -78,20 +82,18 @@ function Resolve-DbaNetworkName {
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegServer
 
     #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias('FastParrot')]
         [switch]$Turbo,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -105,7 +107,7 @@ function Resolve-DbaNetworkName {
                 if ($ComputerName -match "\.") {
                     return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
                 } else {
-                    return "$env:USERDNSDOMAIN".ToLower()
+                    return "$env:USERDNSDOMAIN".ToLowerInvariant()
                 }
             } else {
                 return $fqdn.Substring($fqdn.IndexOf(".") + 1)
@@ -113,6 +115,24 @@ function Resolve-DbaNetworkName {
         }
     }
     process {
+        if ((Get-DbatoolsConfigValue -FullName commands.resolve-dbanetworkname.bypass)) {
+            foreach ($computer in $ComputerName) {
+                [pscustomobject]@{
+                    InputName        = $computer
+                    ComputerName     = $computer
+                    IPAddress        = $computer
+                    DNSHostname      = $computer
+                    DNSDomain        = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    Domain           = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    DNSHostEntry     = $computer
+                    FQDN             = $computer
+                    FullComputerName = $computer
+                }
+                continue
+            }
+            return
+        }
+
         if (-not (Test-Windows -NoWarn)) {
             Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
             $Turbo = $true
@@ -252,7 +272,7 @@ function Resolve-DbaNetworkName {
             }
 
             # returning the final result
-            return $result
+            $result
         }
     }
 }

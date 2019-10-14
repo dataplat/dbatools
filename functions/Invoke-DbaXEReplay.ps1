@@ -1,5 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Invoke-DbaXeReplay {
+function Invoke-DbaXEReplay {
     <#
     .SYNOPSIS
         This command replays events from Read-DbaXEFile on one or more target servers
@@ -15,7 +14,11 @@ function Invoke-DbaXeReplay {
         Target SQL Server(s)
 
     .PARAMETER SqlCredential
-        Used to provide alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The initial starting database.
@@ -46,17 +49,17 @@ function Invoke-DbaXeReplay {
         https://dbatools.io/Invoke-DbaXEReplay
 
     .EXAMPLE
-        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017
 
         Runs all batch_text for sql_batch_completed against tempdb on sql2017.
 
     .EXAMPLE
-        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
 
         Sets the *initial* database to planning then runs only sql_batch_completed against sql2017.
 
     .EXAMPLE
-        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016
+        PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017, sql2016
 
         Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
 
@@ -66,9 +69,7 @@ function Invoke-DbaXeReplay {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Event = @('sql_batch_completed', 'rcp_completed'),

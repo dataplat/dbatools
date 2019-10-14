@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','ExcludeUser','ExcludeSystem','Owner','Encrypted','Status','Access','RecoveryModel','NoFullBackup','NoFullBackupSince','NoLogBackup','NoLogBackupSince','EnableException','IncludeLastUsed','OnlyAccessible'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeUser', 'ExcludeSystem', 'Owner', 'Encrypted', 'Status', 'Access', 'RecoveryModel', 'NoFullBackup', 'NoFullBackupSince', 'NoLogBackup', 'NoLogBackupSince', 'EnableException', 'IncludeLastUsed', 'OnlyAccessible'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -63,7 +63,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                     }
                 ) #databases
             } #object
-        } -ModuleName dbatools #mock connect-sqlserver
+        } -ModuleName dbatools #mock connect-SqlInstance
         function Invoke-QueryRawDatabases { }
         Mock Invoke-QueryRawDatabases -MockWith {
             [object]@(
@@ -113,7 +113,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         }
                     )
                 } #object
-            } -ModuleName dbatools #mock connect-sqlserver
+            } -ModuleName dbatools #mock connect-SqlInstance
             function Invoke-QueryDBlastUsed { }
             Mock Invoke-QueryDBlastUsed -MockWith {
                 [object]

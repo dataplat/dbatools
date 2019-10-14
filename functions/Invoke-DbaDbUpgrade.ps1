@@ -10,7 +10,11 @@ function Invoke-DbaDbUpgrade {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object used to connect to the SQL Server as a different user.
+        SqlLogin to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -91,10 +95,9 @@ function Invoke-DbaDbUpgrade {
         Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -107,9 +110,11 @@ function Invoke-DbaDbUpgrade {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
+    begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
     process {
 
         if (Test-Bound -not 'SqlInstance', 'InputObject') {
@@ -273,8 +278,5 @@ function Invoke-DbaDbUpgrade {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
     }
 }

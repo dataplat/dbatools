@@ -1,4 +1,3 @@
-#ValidationTags#FlowControl,Pipeline#
 function Set-DbaSpn {
     <#
     .SYNOPSIS
@@ -61,12 +60,12 @@ function Set-DbaSpn {
         Connects to Active Directory and adds a provided SPN to the given account, without the delegation.
 
     .EXAMPLE
-        PS C:\> Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn
+        PS C:\> Test-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn
 
         Sets all missing SPNs for sql2016
 
     .EXAMPLE
-        PS C:\> Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
+        PS C:\> Test-DbaSpn -ComputerName sql2016 | Where-Object { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
 
         Displays what would happen trying to set all missing SPNs for sql2016
 
@@ -82,7 +81,6 @@ function Set-DbaSpn {
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [switch]$NoDelegation,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

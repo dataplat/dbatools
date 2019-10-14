@@ -67,9 +67,7 @@ function Remove-DbaLogin {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
         [string[]]$Login,
@@ -78,14 +76,16 @@ function Remove-DbaLogin {
         [switch]$Force,
         [switch]$EnableException
     )
-
+    begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
     process {
 
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
         }

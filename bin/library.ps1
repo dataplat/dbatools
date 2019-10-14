@@ -34,24 +34,14 @@ Mostly for developers working on the library.
 
 #>
 
-#region Test whether the module had already been imported
-if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type) {
-    # No need to load the library again, if the module was once already imported.
-    Write-Verbose -Message "Library already loaded, will not load again"
-    $ImportLibrary = $false
-} else {
-    Write-Verbose -Message "Library not present already, will import"
-    $ImportLibrary = $true
-}
-#endregion Test whether the module had already been imported
-
-$libraryBase = (Resolve-Path -Path ($ExecutionContext.SessionState.Module.ModuleBase + "\bin"))
-
+$dll =
 if ($PSVersionTable.PSVersion.Major -ge 6) {
-    $dll = (Resolve-Path -Path "$libraryBase\netcoreapp2.1\dbatools.dll" -ErrorAction Ignore).ProviderPath
+    Join-Path $psModuleRoot "bin\netcoreapp2.1\dbatools.dll"
 } else {
-    $dll = (Resolve-Path -Path "$libraryBase\net452\dbatools.dll" -ErrorAction Ignore).ProviderPath
+    Join-Path $psModuleRoot "bin\net452\dbatools.dll"
 }
+
+$ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.
 
 if ($ImportLibrary) {
     #region Add Code
@@ -59,7 +49,7 @@ if ($ImportLibrary) {
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
             if (Test-Path -Path $dll) {
-                Add-Type -Path $dll -ErrorAction Stop
+                $dbaToolsAssembly = Import-Module "$dll"
             } else {
                 throw "Library not found, terminating"
             }
@@ -86,11 +76,11 @@ if ($ImportLibrary) {
 
                 try {
                     Write-Verbose -Message "Found library, trying to copy & import"
-                    Add-Type -Path (Resolve-Path -Path "$dll") -ErrorAction Stop
+                    $dbaToolsAssembly = Import-Module -Name "$dll"
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
                     $script:DllRoot = Resolve-Path -Path $script:DllRoot
-                    Add-Type -Path "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
+                    Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             } elseif ($hasProject) {
@@ -101,8 +91,8 @@ if ($ImportLibrary) {
         }
 
         #region PowerShell TypeData
-        Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
-        Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
     } catch {
         #region Warning
@@ -140,7 +130,15 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute").ConstructorArguments.Value)) {
+
+$dbaToolsVersion =
+@(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
+        if ($_ -is [Reflection.AssemblyFileVersionAttribute]) {
+            $_.ConstructorArguments.Value
+            break
+        }
+    }) -ne $null -as [Version]
+if ($currentLibraryVersion -ne $dbaToolsVersion) {
     Write-Verbose @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use

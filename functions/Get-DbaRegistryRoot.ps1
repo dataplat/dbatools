@@ -41,7 +41,6 @@ function Get-DbaRegistryRoot {
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -94,8 +93,5 @@ function Get-DbaRegistryRoot {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlRegistryRoot
     }
 }

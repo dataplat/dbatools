@@ -8,7 +8,6 @@ function Get-SqlDefaultPaths {
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]

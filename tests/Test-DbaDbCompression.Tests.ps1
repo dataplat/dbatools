@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','Schema','Table','ResultSize','Rank','FilterBy','EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Schema', 'Table', 'ResultSize', 'Rank', 'FilterBy', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command gets suggestions" {
         $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
-        It "Should get results for $dbaname" {
+        It "Should get results for $dbname" {
             $results | Should Not Be $null
         }
         $results.foreach{
@@ -48,10 +48,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command makes right suggestions" {
         $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
-        It "Should sugggest PAGE compression for a table with no updates or scans" {
+        It "Should suggest PAGE compression for a table with no updates or scans" {
             $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
         }
-        It "Should sugggest ROW compression for table with more updates" {
+        It "Should suggest ROW compression for table with more updates" {
             $($results | Where-Object { $_.TableName -eq "sysallparams"}).CompressionTypeRecommendation | Should Be "ROW"
         }
     }

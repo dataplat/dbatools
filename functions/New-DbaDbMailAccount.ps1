@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbMailAccount {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function New-DbaDbMailAccount {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The Name of the account to be created.
@@ -36,6 +39,9 @@ function New-DbaDbMailAccount {
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER Force
+        If this switch is enabled, the Mail Account will be created even if the mail server is not present.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,7 +68,6 @@ function New-DbaDbMailAccount {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -73,6 +78,7 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -80,13 +86,12 @@ function New-DbaDbMailAccount {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if (Test-Bound -ParameterName MailServer) {
-                if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer)) {
-                    # Perhaps we should add a force to auto create the mail server
-                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance" -ErrorRecord $_ -Target $instance -Continue
+                if (-not (Get-DbaDbMailServer -SqlInstance $server -Server $MailServer) -and -not (Test-Bound -ParameterName Force)) {
+                    Stop-Function -Message "The mail server '$MailServer' does not exist on $instance. Use -Force if you need to create it anyway." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
 

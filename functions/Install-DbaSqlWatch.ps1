@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaSqlWatch {
     <#
     .SYNOPSIS
@@ -12,7 +11,11 @@ function Install-DbaSqlWatch {
         SQL Server name or SMO object representing the SQL Server to connect to.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database to install SqlWatch into. Defaults to SQLWATCH.
@@ -23,6 +26,9 @@ function Install-DbaSqlWatch {
 
     .PARAMETER Force
         If this switch is enabled, SqlWatch will be downloaded from the internet even if previously cached.
+
+    .PARAMETER PreRelease
+        If specified, a pre-release (beta) will be downloaded rather than a stable release
 
     .PARAMETER Confirm
         Prompts to confirm actions
@@ -78,27 +84,32 @@ function Install-DbaSqlWatch {
         [PSCredential]$SqlCredential,
         [string]$Database = "SQLWATCH",
         [string]$LocalFile,
+        [switch]$PreRelease,
         [switch]$Force,
         [switch]$EnableException
     )
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+
         $stepCounter = 0
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$tempFolder\SqlWatch.zip"
 
+        $releasetxt = $(if ($PreRelease) { "pre-release" } else { "release" })
+
         if (-not $LocalFile) {
-            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
+            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest $releasetxt from GitHub")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
                 # query the releases to find the latest, check and see if its cached
                 $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
                 $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
 
-                Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
-                $LatestReleaseUrl = (Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
+                Write-Message -Level Verbose -Message "Checking GitHub for the latest $releasetxt."
+                $LatestReleaseUrl = ((Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json) | Where-Object { $_.prerelease -eq $PreRelease })[0].assets[0].browser_download_url
 
-                Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
+                Write-Message -Level VeryVerbose -Message "Latest $releasetxt is available at $LatestReleaseUrl"
                 $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
 
                 # if local cached copy exists, use it, otherwise download a new one
@@ -148,24 +159,19 @@ function Install-DbaSqlWatch {
             $LocalCacheFolder = Split-Path $LocallyCachedZip -Parent
 
             Write-Message -Level Verbose "Extracting $LocallyCachedZip to $LocalCacheFolder"
-            if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-                try {
-                    Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
-                } catch {
-                    Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
-                    return
-                }
-            } else {
-                # Keep it backwards compatible
-                $shell = New-Object -ComObject Shell.Application
-                $zipPackage = $shell.NameSpace($LocallyCachedZip)
-                $destinationFolder = $shell.NameSpace($LocalCacheFolder)
-                Get-ChildItem "$LocalCacheFolder\SqlWatch.zip" | Remove-Item
-                $destinationFolder.CopyHere($zipPackage.Items())
+            try {
+                Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
+            } catch {
+                Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
+                return
             }
 
             Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
             Remove-Item -Path $LocallyCachedZip
+        }
+        if ($Database -eq 'tempdb') {
+            Stop-Function -Message "Installation to tempdb not supported"
+            return
         }
     }
     process {

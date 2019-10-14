@@ -14,7 +14,11 @@ function Get-DbaSsisEnvironmentVariable {
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Environment
         The SSIS Environments names that we want to get variables from
@@ -108,14 +112,12 @@ function Get-DbaSsisEnvironmentVariable {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Environment,
         [object[]]$EnvironmentExclude,
         [object[]]$Folder,
         [object[]]$FolderExclude,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -124,7 +126,7 @@ function Get-DbaSsisEnvironmentVariable {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {

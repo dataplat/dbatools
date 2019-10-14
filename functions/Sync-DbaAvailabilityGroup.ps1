@@ -1,11 +1,10 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Sync-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
-        Syncs depdendent objects such as jobs, logins and custom errors for availability groups
+        Syncs dependent objects such as jobs, logins and custom errors for availability groups
 
     .DESCRIPTION
-        Syncs depdendent objects for availability groups. Such objects include:
+        Syncs dependent objects for availability groups. Such objects include:
 
         SpConfigure
         CustomErrors
@@ -31,13 +30,21 @@ function Sync-DbaAvailabilityGroup {
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER PrimarySqlCredential
-        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Secondary
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
         The name of the Availability Group.
@@ -71,7 +78,7 @@ function Sync-DbaAvailabilityGroup {
         Specific jobs to sync. If unspecified, all jobs will be processed.
 
     .PARAMETER ExcludeJob
-         Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
+        Specific jobs to exclude when performing the sync. If unspecified, all jobs will be processed.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
@@ -91,7 +98,7 @@ function Sync-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HA
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -143,6 +150,8 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+
         $allcombos = @()
     }
     process {
@@ -157,7 +166,7 @@ function Sync-DbaAvailabilityGroup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
             }
         }
@@ -177,7 +186,7 @@ function Sync-DbaAvailabilityGroup {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                    Stop-Function -Message "Error occurred while establishing connection to $computer" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
             }
@@ -188,7 +197,7 @@ function Sync-DbaAvailabilityGroup {
             SecondaryServer = $secondaries
         }
 
-        # In the event that someone pipes in an availability group, this will keep the syncer from running a bunch of times
+        # In the event that someone pipes in an availability group, this will keep the sync from running a bunch of times
         $dupe = $false
 
         foreach ($ag in $allcombos) {
@@ -276,7 +285,7 @@ function Sync-DbaAvailabilityGroup {
             if ($Exclude -notcontains "SystemTriggers") {
                 if ($PSCmdlet.ShouldProcess("Syncing System Triggers from $primaryserver to $secondaryservers")) {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
-                    Copy-DbaServerTrigger -Source $server -Destination $secondaries -Force:$Force
+                    Copy-DbaInstanceTrigger -Source $server -Destination $secondaries -Force:$Force
                 }
             }
 

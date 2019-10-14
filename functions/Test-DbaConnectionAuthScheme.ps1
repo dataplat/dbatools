@@ -19,11 +19,12 @@ function Test-DbaConnectionAuthScheme {
     .PARAMETER Ntlm
         If this switch is enabled, checks will be made for NTLM authentication.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -60,20 +61,15 @@ function Test-DbaConnectionAuthScheme {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
         [PSCredential]$SqlCredential,
         [switch]$Kerberos,
         [switch]$Ntlm,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                             SERVERPROPERTY('ServerName') AS SqlInstance,
@@ -93,14 +89,14 @@ function Test-DbaConnectionAuthScheme {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Getting results for the following query: $sql."
             try {
                 $results = $server.Query($sql)
             } catch {
-                Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
+                Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
             }
 
             # sorry, standards!

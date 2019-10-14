@@ -28,7 +28,11 @@ function Get-DbaEstimatedCompletionTime {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object used to connect to the SQL Server as a different user.
+        SqlLogin to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -58,7 +62,7 @@ function Get-DbaEstimatedCompletionTime {
         Gets estimated completion times for queries performed against the entire server
 
     .EXAMPLE
-        PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select *
+        PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016 | Select-Object *
 
         Gets estimated completion times for queries performed against the entire server PLUS the SQL query text of each command
 
@@ -76,13 +80,10 @@ function Get-DbaEstimatedCompletionTime {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -121,7 +122,7 @@ function Get-DbaEstimatedCompletionTime {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {

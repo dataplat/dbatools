@@ -10,7 +10,11 @@ function Start-DbaAgentJob {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
@@ -84,7 +88,6 @@ function Start-DbaAgentJob {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
@@ -95,7 +98,6 @@ function Start-DbaAgentJob {
         [switch]$Wait,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -108,7 +110,7 @@ function Start-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if all the jobs need to included
@@ -165,7 +167,14 @@ function Start-DbaAgentJob {
                 # Wait for the job
                 if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        $currentRunStatus = $currentjob.CurrentRunStatus
+                        $currentStep = $currentjob.CurrentRunStep
+                        $jobStepsCount = $currentjob.JobSteps.Count
+                        $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
+                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
+                        $currentStepRetries = $currentjob.RetryAttempts
+                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
+                        Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
                         Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }

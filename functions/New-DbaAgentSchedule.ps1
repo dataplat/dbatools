@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentSchedule {
     <#
     .SYNOPSIS
@@ -12,7 +11,11 @@ function New-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job that has the schedule.
@@ -82,9 +85,6 @@ function New-DbaAgentSchedule {
 
         If force is used the start time will be '23:59:59'
 
-    .PARAMETER Owner
-        The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -126,7 +126,6 @@ function New-DbaAgentSchedule {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -148,11 +147,12 @@ function New-DbaAgentSchedule {
         [string]$StartTime,
         [string]$EndTime,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+
         # if a Schedule is not provided there is no much point
         if (!$Schedule) {
             Stop-Function -Message "A schedule was not provided! Please provide a schedule name."
@@ -188,7 +188,7 @@ function New-DbaAgentSchedule {
             }
         }
 
-        # Check of the relative FrequencyInterval value is of type string and set the integer value
+        # Check if the relative FrequencyInterval value is of type string and set the integer value
         [int]$FrequencyRelativeInterval =
         switch ($FrequencyRelativeInterval) {
             "First" { 1 }
@@ -197,7 +197,7 @@ function New-DbaAgentSchedule {
             "Fourth" { 8 }
             "Last" { 16 }
             "Unused" { 0 }
-            default {0}
+            default { 0 }
         }
 
         # Check if the interval is valid
@@ -233,8 +233,8 @@ function New-DbaAgentSchedule {
 
             # Create the interval to hold the value(s)
             switch ($FrequencyInterval) {
-                "EveryDay" { $Interval = 1}
-                default {$Interval = 1 }
+                "EveryDay" { $Interval = 1 }
+                default { $Interval = 1 }
             }
 
         }
@@ -257,7 +257,7 @@ function New-DbaAgentSchedule {
                     "Saturday" { $Interval += 64 }
                     "Weekdays" { $Interval = 62 }
                     "Weekend" { $Interval = 65 }
-                    "EveryDay" {$Interval = 127 }
+                    "EveryDay" { $Interval = 127 }
                     1 { $Interval += 1 }
                     2 { $Interval += 2 }
                     4 { $Interval += 4 }
@@ -267,7 +267,7 @@ function New-DbaAgentSchedule {
                     64 { $Interval += 64 }
                     62 { $Interval = 62 }
                     65 { $Interval = 65 }
-                    127 {$Interval = 127 }
+                    127 { $Interval = 127 }
                     default { $Interval = 0 }
                 }
             }
@@ -282,7 +282,7 @@ function New-DbaAgentSchedule {
             foreach ($Item in $FrequencyInterval) {
                 $FrequencyInterval
                 switch ($Item) {
-                    {[int]$_ -ge 1 -and [int]$_ -le 31} { $Interval = [int]$Item }
+                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $Interval = [int]$Item }
                 }
             }
 
@@ -423,7 +423,7 @@ function New-DbaAgentSchedule {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if the jobs parameter is set

@@ -15,7 +15,11 @@ function Set-DbaAgentJobOwner {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
@@ -80,7 +84,6 @@ function Set-DbaAgentJobOwner {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Jobs")]
@@ -90,18 +93,14 @@ function Set-DbaAgentJobOwner {
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias("TargetLogin")]
         [string]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Set-DbaJobOwner
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             #Get job list. If value for -Job is passed, massage to make it a string array.
@@ -109,7 +108,7 @@ function Set-DbaAgentJobOwner {
             Write-Message -Level Verbose -Message "Gathering jobs to update."
 
             if ($Job) {
-                $jobcollection = $server.JobServer.Jobs | Where-Object {$Job -contains $_.Name}
+                $jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
             } else {
                 $jobcollection = $server.JobServer.Jobs
             }
