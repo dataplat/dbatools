@@ -1,12 +1,12 @@
 function Disable-DbaHideInstance {
     <#
     .SYNOPSIS
-        Disables Hide Instance of SQL Engine.
+        Disables the Hide Instance setting of the SQL Server network configuration.
 
     .DESCRIPTION
-        Disables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
+        Disables the Hide Instance setting of the SQL Server network configuration.
 
-        This setting is found in Configuration Manager.
+        This requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -53,15 +53,17 @@ function Disable-DbaHideInstance {
     param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
-            $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            if ($instance.IsLocalHost) {
+                $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            }
 
             try {
                 Write-Message -Level Verbose -Message "Resolving hostname."
