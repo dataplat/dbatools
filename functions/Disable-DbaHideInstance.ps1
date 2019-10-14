@@ -61,7 +61,9 @@ function Disable-DbaHideInstance {
 
         foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
-            $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            if ($instance.IsLocalHost) {
+                $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            }
 
             Write-Message -Level Verbose -Message "Resolving hostname."
             $resolved = $null
