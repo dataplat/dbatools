@@ -6,7 +6,7 @@ function Disable-DbaHideInstance {
     .DESCRIPTION
         Disables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
 
-        This setting is found in Configuration Manager.
+        This requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
