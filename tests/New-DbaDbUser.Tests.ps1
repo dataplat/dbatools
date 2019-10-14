@@ -33,12 +33,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $script:instance3 -Login $userName -Password $securePassword
+        $null = New-DbaLogin -SqlInstance $script:instance3 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbname
     }
     AfterAll {
-        $null = Remove-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -User $userNameWithoutLogin -Confirm:$false
-        $null = Remove-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -User $userName -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance3 -Login $userName -Confirm:$false
     }
@@ -49,11 +47,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Should create the user without login" {
-        It -Skip "Creates the user and get it. Login property is empty" {
+        It "Creates the user and get it. Login property is empty" {
             New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] -User $userNameWithoutLogin
             $results = Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
-            $results.Login | Should Be ""
+            $results.Login | Should -BeNullOrEmpty
         }
     }
 }
