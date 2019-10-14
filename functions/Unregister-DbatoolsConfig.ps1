@@ -7,7 +7,7 @@ function Unregister-DbatoolsConfig {
         Removes registered configuration settings.
         This function can be used to remove settings that have been persisted for either user or computer.
 
-        Note: This command has no effect on configuration setings currently in memory.
+        Note: This command has no effect on configuration settings currently in memory.
 
     .PARAMETER ConfigurationItem
         A configuration object as returned by Get-DbatoolsConfig.
