@@ -1,7 +1,7 @@
 function Enable-DbaHideInstance {
     <#
     .SYNOPSIS
-        Enables Hide Instance of SQL Engine.
+        Enables the Hide Instance setting of the SQL Server network configuration.
 
     .DESCRIPTION
         Enables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
