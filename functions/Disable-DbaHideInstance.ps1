@@ -4,7 +4,7 @@ function Disable-DbaHideInstance {
         Disables the Hide Instance setting of the SQL Server network configuration.
 
     .DESCRIPTION
-        Disables Hide Instance of SQL Engine. Note that this requires access to the Windows Server, not the SQL instance itself.
+        Disables the Hide Instance setting of the SQL Server network configuration.
 
         This requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
 
