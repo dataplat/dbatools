@@ -27,7 +27,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $dbname = "dbatoolscidb_$(Get-Random)", "dbatoolscidb2_$(Get-Random)"
+        $dbname = "dbatoolscidb_$(Get-Random)"
         $userName = "dbatoolscidb_UserWithLogin"
         $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
@@ -42,16 +42,35 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Should create the user with login" {
         It "Creates the user and get it" {
-            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] -Login $userName
-            (Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] | Where-Object Name -eq $userName).Name | Should Be $userName
+            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -Login $userName
+            (Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
         }
     }
     Context "Should create the user without login" {
         It "Creates the user and get it. Login property is empty" {
-            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] -User $userNameWithoutLogin
-            $results = Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname[0] | Where-Object Name -eq $userNameWithoutLogin
+            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -User $userNameWithoutLogin
+            $results = Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
             $results.Login | Should -BeNullOrEmpty
+        }
+    }
+    Context "Should run with multiple databases" {
+        BeforeAll {
+            $dbs = "dbatoolscidb0_$(Get-Random)", "dbatoolscidb1_$(Get-Random)", "dbatoolscidb3_$(Get-Random)"
+            $loginName = "dbatoolscidb_Login$(Get-Random)"
+
+            $password = 'MyV3ry$ecur3P@ssw0rd'
+            $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $script:instance3 -Login $loginName -Password $securePassword -Force
+            $null = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbs
+        }
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbs -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $script:instance3 -Login $loginName -Confirm:$false
+        }
+        It "Should add login to all databases provided" {
+            $results = New-DbaDbUser -SqlInstance $script:instance3 -Login $loginName -Database $dbs -Force -EnableException
+            $results.Count | Should -Be 3
         }
     }
 }
