@@ -97,7 +97,7 @@ function Export-DbaDbRole {
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sql2005 -Path C:\temp
 
-        Exports the Database Roles for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
+        Exports all the Database Roles for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -ExcludeRole realcajun -SqlCredential $scred -Path C:\temp\roles.sql -Append
@@ -120,19 +120,20 @@ function Export-DbaDbRole {
         Exports ONLY roles FROM sqlserver2014a with permissions on databases HR and Accounting
 
     .EXAMPLE
+        PS C:\> Set-DbatoolsConfig -FullName formatting.batchseparator -Value $null
         PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\temp\roles.sql
 
-        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file.
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file and stripping out the batch separator.
 
     .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun -Path C:\temp\roles.sql
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\temp\roles.sql -BatchSeparator $null
 
-        Exports role realcajun from sqlserver2008 to the file C:\temp\roles.sql
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file and stripping out the batch separator.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 | Export-DbaDbRole -Role realcajun
 
-        Exports login realcajun from sqlserver2008
+        Exports role realcajun from sqlserver2008
 
     .EXAMPLE
         PS C:\> Get-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole
