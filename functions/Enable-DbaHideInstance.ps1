@@ -67,9 +67,9 @@ function Enable-DbaHideInstance {
             try {
                 Write-Message -Level Verbose -Message "Resolving hostname."
                 $resolved = $null
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -ErrorAction Stop
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
             } catch {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
             }
 
 
@@ -78,7 +78,7 @@ function Enable-DbaHideInstance {
             }
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -EnableException | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
