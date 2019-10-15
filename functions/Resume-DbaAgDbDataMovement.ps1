@@ -20,7 +20,7 @@ function Resume-DbaAgDbDataMovement {
         The database or databases to resume movement upon.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the database movement will be resumeed.
+        The availability group where the database movement will be resumed.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaAgDatabase
