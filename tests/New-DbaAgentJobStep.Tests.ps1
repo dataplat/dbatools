@@ -69,5 +69,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newresults.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "New Step One"
             $newresults.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "Step One"
         }
+
+        It "Insert should insert jobstep between steps and update IDs" {
+            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci Job One" -StepName "New Step Three" -StepId 2 -Insert
+            $results.Name | Should -Be "New Step Three"
+            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One"
+            $newresults.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "New Step One"
+            $newresults.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "New Step Three"
+            $newresults.JobSteps | Where-Object Id -eq 3 | Select-Object -ExpandProperty Name | Should -Be "Step One"
+        }
     }
 }
