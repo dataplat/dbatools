@@ -266,14 +266,14 @@ function New-DbaAgentJobStep {
                             $JobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepID) -and $Insert) {
                             Write-Message -Message "Inserting step as step $StepID" -Level Verbose
-                            foreach ($tStep in $Server.JobServer.Jobs[$j].JobSteps){
-                               if ($tStep.Id -ge $Stepid) {
-                                   $tStep.Id = ($tStep.ID)+1
-                               }
-                               if ($tStep.OnFailureStepID -ge $StepId -and $tStep.OnFailureStepId -ne 0) {
-                                $tStep.OnFailureStepID = ($tStep.OnFailureStepID)+1
-                               }
-                               $tStep.Alter()
+                            foreach ($tStep in $Server.JobServer.Jobs[$j].JobSteps) {
+                                if ($tStep.Id -ge $Stepid) {
+                                    $tStep.Id = ($tStep.ID) + 1
+                                }
+                                if ($tStep.OnFailureStepID -ge $StepId -and $tStep.OnFailureStepId -ne 0) {
+                                    $tStep.OnFailureStepID = ($tStep.OnFailureStepID) + 1
+                                }
+                                $tStep.Alter()
                             }
                             $JobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
