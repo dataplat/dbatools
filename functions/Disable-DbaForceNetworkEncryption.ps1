@@ -68,7 +68,7 @@ function Disable-DbaForceNetworkEncryption {
                 $resolved = $null
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
             } catch {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
             }
 
             if ($null -eq $resolved) {
