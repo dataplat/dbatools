@@ -69,7 +69,7 @@ function Remove-DbaNetworkCertificate {
             try {
                 Write-Message -Level Verbose -Message "Resolving hostname."
                 $resolved = $null
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -ErrorAction Stop
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
             } catch {
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
             }
