@@ -52,8 +52,7 @@ function Enable-DbaHideInstance {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
