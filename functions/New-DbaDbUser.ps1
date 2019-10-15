@@ -198,7 +198,6 @@ function New-DbaDbUser {
                             Write-Message -Level Verbose -Message "Using LoginName: $Name"
                         }
 
-                        $Login = $smoLogin
                         $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
                     }
 
