@@ -57,9 +57,9 @@ function Copy-DbaSysDbUserObject {
         https://dbatools.io/Copy-DbaSysDbUserObject
 
     .EXAMPLE
-        PS C:\> Copy-DbaSysDbUserObject -Source $sourceServer -Destination $destserver
+        PS C:\> Copy-DbaSysDbUserObject -Source sqlserver2014a -Destination sqlcluster
 
-        Copies user objects from source to destination
+        Copies user objects found in system databases master, msdb and model from sqlserver2014a instance to the sqlcluster instance.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
