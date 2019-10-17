@@ -603,8 +603,7 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-                                }
-                                $verifiedResult | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
+                                } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
                                     $Verified = $true
