@@ -63,11 +63,11 @@ function Invoke-DbaAgFailover {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory)]
+        [parameter(ParameterSetName = "NoPipe", Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
-        [parameter(ValueFromPipeline)]
+        [parameter(ParameterSetName = "Pipe", ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$Force,
         [switch]$EnableException
