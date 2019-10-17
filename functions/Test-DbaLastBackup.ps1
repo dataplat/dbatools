@@ -64,7 +64,10 @@ function Test-DbaLastBackup {
 
     .PARAMETER MaxSize
         Max size in MB. Databases larger than this value will not be restored.
-
+        
+    .PARAMETER IncludeDiskDeviceOnly
+        If this switch is enabled, only backups to a disk device will be included
+        
     .PARAMETER AzureCredential
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
@@ -166,6 +169,7 @@ function Test-DbaLastBackup {
         [switch]$CopyFile,
         [string]$CopyPath,
         [int]$MaxSize,
+        [switch]$IncludeDiskDeviceOnly,        
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
         [string]$AzureCredential,
@@ -274,19 +278,31 @@ function Test-DbaLastBackup {
                 $CopyFile = $false
             }
 
-            Write-Message -Level Verbose -Message "Getting recent backup 
-            for $($db.Name) on $instance."
+            Write-Message -Level Verbose -Message "Getting recent backup for $($db.Name) on $instance."
 
+            if (IncludeDiskDeviceOnly) {
+                $lastbackup += $diff
+            }
+                
             if (Test-Bound "IgnoreLogBackup") {
                 Write-Message -Level Verbose -Message "Skipping Log backups as requested."
-                $lastbackup = @()
-                $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull -DeviceType Disk -WarningAction SilentlyContinue
-                $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType Disk -WarningAction SilentlyContinue
+                $lastbackup = @()   
+                if (IncludeDiskDeviceOnly) {
+                    $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull -DeviceType Disk -WarningAction SilentlyContinue
+                    $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType Disk -WarningAction SilentlyContinue
+                } else {
+                    $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull -WarningAction SilentlyContinue
+                    $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -WarningAction SilentlyContinue
+                }
                 if ($full.start -le $diff.start) {
                     $lastbackup += $diff
                 }
             } else {
-                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType Disk -WarningAction SilentlyContinue
+                if (IncludeDiskDeviceOnly) {            
+                    $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType Disk -WarningAction SilentlyContinue
+                } else {
+                    $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last -WarningAction SilentlyContinue
+                }
             }
 
             if (-not $lastbackup) {
