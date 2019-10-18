@@ -48090,7 +48090,7 @@
                            "",
                            false,
                            "false",
-                           "Credssp"
+                           "@(\u0027CredSSP\u0027, \u0027Default\u0027)[$null -eq $Credential]"
                        ],
                        [
                            "ExtractPath",
