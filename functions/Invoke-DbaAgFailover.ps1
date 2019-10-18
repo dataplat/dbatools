@@ -76,7 +76,7 @@ function Invoke-DbaAgFailover {
     }
     process {
         if (-not $SqlInstance -and -not $InputObject) {
-            Stop-Function -Message "You must either specify the SqlInstnace parameter or pass in at least one AvailabilityGroup object."
+            Stop-Function -Message "You must either specify the SqlInstance parameter or pass in at least one AvailabilityGroup object."
             return
         }
 
