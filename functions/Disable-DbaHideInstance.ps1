@@ -65,15 +65,13 @@ function Disable-DbaHideInstance {
             }
 
             try {
-                Write-Message -Level Verbose -Message "Resolving hostname."
-                $resolved = $null
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
             } catch {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
-            }
-
-            if ($null -eq $resolved) {
-                Stop-Function -Message "Can't resolve $instance." -Target $instance -Continue -Category InvalidArgument
+                try {
+                    $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo -EnableException
+                } catch {
+                    Stop-Function -Message "Issue resolving $instance" -Target $instance -Category InvalidArgument -Continue
+                }
             }
 
             try {
