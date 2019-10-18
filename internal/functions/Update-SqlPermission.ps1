@@ -35,6 +35,7 @@ function Update-SqlPermission {
     $destination = $DestServer.DomainInstanceName
     $source = $SourceServer.DomainInstanceName
     $userName = $SourceLogin.Name
+    $newUserName = $DestLogin.Name
 
     $saname = Get-SaLoginName -SqlInstance $DestServer
 
@@ -63,13 +64,13 @@ function Update-SqlPermission {
 
         if ($roleMembers -contains $userName) {
             if ($null -ne $destRole) {
-                if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
+                if ($Pscmdlet.ShouldProcess($destination, "Adding $newUserName to $roleName server role.")) {
                     if ($userName -ne $saname) {
                         try {
-                            $destRole.AddMember($userName)
-                            Write-Message -Level Verbose -Message "Adding $userName to $roleName server role on $destination successfully performed."
+                            $destRole.AddMember($newUserName)
+                            Write-Message -Level Verbose -Message "Adding $newUserName to $roleName server role on $destination successfully performed."
                         } catch {
-                            Stop-Function -Message "Failed to add $userName to $roleName server role on $destination." -Target $role -ErrorRecord $_
+                            Stop-Function -Message "Failed to add $newUserName to $roleName server role on $destination." -Target $role -ErrorRecord $_
                         }
                     }
                 }
@@ -77,13 +78,13 @@ function Update-SqlPermission {
         }
 
         # Remove for Syncs
-        if ($roleMembers -notcontains $userName -and $destRoleMembers -contains $userName -and $null -ne $destRole) {
+        if ($roleMembers -notcontains $userName -and $destRoleMembers -contains $newUserName -and $null -ne $destRole) {
             if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
                 try {
                     $destRole.DropMember($userName)
-                    Write-Message -Level Verbose -Message "Removing $userName from $destRoleName server role on $destination successfully performed."
+                    Write-Message -Level Verbose -Message "Removing $newUserName from $destRoleName server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $userName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to remove $newUserName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
                 }
             }
         }
@@ -92,14 +93,14 @@ function Update-SqlPermission {
     $ownedJobs = $SourceServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $userName
     foreach ($ownedJob in $ownedJobs) {
         if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
-            if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $userName for $($ownedJob.Name).")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $newUserName for $($ownedJob.Name).")) {
                 try {
                     $destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJob.Name }
-                    $destOwnedJob.Set_OwnerLoginName($userName)
+                    $destOwnedJob.Set_OwnerLoginName($newUserName)
                     $destOwnedJob.Alter()
-                    Write-Message -Level Verbose -Message "Changing job owner to $userName for $($ownedJob.Name) on $destination successfully performed."
+                    Write-Message -Level Verbose -Message "Changing job owner to $newUserName for $($ownedJob.Name) on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to change job owner for $($ownedJob.Name) on $destination." -Target $ownedJob -ErrorRecord $_
+                    Stop-Function -Message "Failed to change job owner for $($ownedJob.Name) to $newUserName on $destination." -Target $ownedJob -ErrorRecord $_
                 }
             }
         }
@@ -125,23 +126,23 @@ function Update-SqlPermission {
             }
 
             $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
-            if ($Pscmdlet.ShouldProcess($destination, "$permState on $($perm.PermissionType) for $userName.")) {
+            if ($Pscmdlet.ShouldProcess($destination, "$permState on $($perm.PermissionType) for $newUserName.")) {
                 try {
-                    $DestServer.PSObject.Methods[$permState].Invoke($permSet, $userName, $grantWithGrant)
-                    Write-Message -Level Verbose -Message "$permState $($perm.PermissionType) to $userName on $destination successfully performed."
+                    $DestServer.PSObject.Methods[$permState].Invoke($permSet, $newUserName, $grantWithGrant)
+                    Write-Message -Level Verbose -Message "$permState $($perm.PermissionType) to $newUserName on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $userName on $destination." -Target $perm -ErrorRecord $_
+                    Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $newUserName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
 
             # for Syncs
-            $destPerms = $DestServer.EnumServerPermissions($userName)
+            $destPerms = $DestServer.EnumServerPermissions($newUserName)
             foreach ($perm in $destPerms) {
                 $permState = $perm.PermissionState
                 $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
                 if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $userName.")) {
+                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newUserName.")) {
                         try {
                             $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
 
@@ -152,10 +153,10 @@ function Update-SqlPermission {
                                 $grantWithGrant = $false
                             }
 
-                            $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $userName on $destination successfully performed."
+                            $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newUserName, $false, $grantWithGrant)
+                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newUserName on $destination successfully performed."
                         } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $userName on $destination." -Target $perm -ErrorRecord $_
+                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newUserName on $destination." -Target $perm -ErrorRecord $_
                         }
                     }
                 }
@@ -166,14 +167,14 @@ function Update-SqlPermission {
         $loginCredentials = $SourceServer.Credentials | Where-Object { $_.Identity -eq $SourceLogin.Name }
         foreach ($credential in $loginCredentials) {
             if ($null -eq $DestServer.Credentials[$credential.Name]) {
-                if ($Pscmdlet.ShouldProcess($destination, "Creating credential $($credential.Name) for $userName.")) {
+                if ($Pscmdlet.ShouldProcess($destination, "Creating credential $($credential.Name) for $newUserName.")) {
                     try {
                         $newCred = New-Object Microsoft.SqlServer.Management.Smo.Credential($DestServer, $credential.Name)
-                        $newCred.Identity = $SourceLogin.Name
+                        $newCred.Identity = $newUserName
                         $newCred.Create()
-                        Write-Message -Level Verbose -Message "Creating credential $($credential.Name) for $userName on $destination successfully performed."
+                        Write-Message -Level Verbose -Message "Creating credential $($credential.Name) for $newUserName on $destination successfully performed."
                     } catch {
-                        Stop-Function -Message "Failed to create credential $($credential.Name) for $userName on $destination." -Target $credential -ErrorRecord $_
+                        Stop-Function -Message "Failed to create credential $($credential.Name) for $newUserName on $destination." -Target $credential -ErrorRecord $_
                     }
                 }
             }
@@ -190,7 +191,9 @@ function Update-SqlPermission {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
         $sourceDb = $SourceServer.Databases[$dbName]
-        $dbUsername = $db.Username;
+        $newDbUsername = $db.Username;
+        # Adjust renamed database usernames for old server
+        if ($newDbUsername -eq $newUserName) { $dbUsername = $userName } else { $dbUsername = $newDbUsername }
         $dbLogin = $db.LoginName
 
         if ($null -ne $sourceDb) {
@@ -206,14 +209,14 @@ function Update-SqlPermission {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
-            if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$dbUsername]) {
+            if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$newDbUsername]) {
                 if ($Pscmdlet.ShouldProcess($destination, "Dropping user $dbUsername from $dbName.")) {
                     try {
-                        $destDb.Users[$dbUsername].Drop()
-                        Write-Message -Level Verbose -Message "Dropping user $dbUsername (login: $dbLogin) from $dbName on destination successfully performed."
-                        Write-Message -Level Verbose -Message "Any schema in $dbaName owned by $dbUsername may still exist."
+                        $destDb.Users[$newDbUsername].Drop()
+                        Write-Message -Level Verbose -Message "Dropping user $newDbUsername (login: $dbLogin) from $dbName on destination successfully performed."
+                        Write-Message -Level Verbose -Message "Any schema in $dbaName owned by $newDbUsername may still exist."
                     } catch {
-                        Stop-Function -Message "Failed to drop $dbUsername (login: $dbLogin) from $dbName on destination." -Target $db -ErrorRecord $_
+                        Stop-Function -Message "Failed to drop $newDbUsername (login: $dbLogin) from $dbName on destination." -Target $db -ErrorRecord $_
                     }
                 }
             }
@@ -224,15 +227,15 @@ function Update-SqlPermission {
                 $destRoleName = $destRole.Name
                 $sourceRole = $sourceDb.Roles[$destRoleName]
                 if ($null -eq $sourceRole) {
-                    if ($destRole.EnumMembers() -contains $dbUsername) {
-                        if ($dbUsername -ne "dbo") {
-                            if ($Pscmdlet.ShouldProcess($destination, "Dropping user $userName from $destRoleName database role in $dbName.")) {
+                    if ($destRole.EnumMembers() -contains $newDbUsername) {
+                        if ($newDbUsername -ne "dbo") {
+                            if ($Pscmdlet.ShouldProcess($destination, "Dropping user $newDbUsername from $destRoleName database role in $dbName.")) {
                                 try {
-                                    $destRole.DropMember($dbUsername)
+                                    $destRole.DropMember($newDbUsername)
                                     $destDb.Alter()
-                                    Write-Message -Level Verbose -Message "Dropping user $dbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination successfully performed."
+                                    Write-Message -Level Verbose -Message "Dropping user $newDbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination successfully performed."
                                 } catch {
-                                    Stop-Function -Message "Failed to remove $dbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination." -Target $destRole -ErrorRecord $_
+                                    Stop-Function -Message "Failed to remove $newDbUsername (login: $dbLogin) from $destRoleName database role in $dbName on $destination." -Target $destRole -ErrorRecord $_
                                 }
                             }
                         }
@@ -243,14 +246,14 @@ function Update-SqlPermission {
             $null = $sourceDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             $null = $destDb.Parent.ConnectionContext.SqlConnectionObject.Close()
             # Remove Connect, Alter Any Assembly, etc
-            $destPerms = $destDb.EnumDatabasePermissions($userName)
+            $destPerms = $destDb.EnumDatabasePermissions($newUserName)
             $perms = $sourceDb.EnumDatabasePermissions($userName)
             # for Syncs
             foreach ($perm in $destPerms) {
                 $permState = $perm.PermissionState
                 $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
                 if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) from $userName in $dbName.")) {
+                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) from $newUserName in $dbName.")) {
                         try {
                             $permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
 
@@ -261,10 +264,10 @@ function Update-SqlPermission {
                                 $grantWithGrant = $false
                             }
 
-                            $destDb.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $userName in $dbName on $destination successfully performed."
+                            $destDb.PSObject.Methods["Revoke"].Invoke($permSet, $newUserName, $false, $grantWithGrant)
+                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $newUserName in $dbName on $destination successfully performed."
                         } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $userName in $dbName on $destination." -Target $perm -ErrorRecord $_
+                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newUserName in $dbName on $destination." -Target $perm -ErrorRecord $_
                         }
                     }
                 }
@@ -281,7 +284,8 @@ function Update-SqlPermission {
         $destDb = $DestServer.Databases[$dbName]
         $sourceDb = $SourceServer.Databases[$dbName]
         $dbUsername = $db.Username;
-        $dbLogin = $db.LoginName
+        # Adjust renamed database usernames for new server
+        if ($dbUsername -eq $userName) { $newDbUsername = $newUserName } else { $newDbUsername = $dbUsername }
 
         if ($null -ne $destDb) {
             if (-not $destDb.IsAccessible) {
@@ -293,32 +297,32 @@ function Update-SqlPermission {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }
-            if ($null -eq $destDb.Users[$dbUsername]) {
-                if ($Pscmdlet.ShouldProcess($destination, "Adding $dbUsername to $dbName.")) {
+            if ($null -eq $destDb.Users[$newDbUsername]) {
+                if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $dbName.")) {
                     $sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
                     try {
-                        $destDb.ExecuteNonQuery($sql)
-                        Write-Message -Level Verbose -Message "Adding user $dbUsername (login: $dbLogin) to $dbName successfully performed."
+                        $destDb.ExecuteNonQuery($sql.Replace("[$dbUsername]", "[$newDbUsername]"))
+                        Write-Message -Level Verbose -Message "Adding user $newDbUsername (login: $newUserName) to $dbName successfully performed."
                     } catch {
-                        Stop-Function -Message "Failed to add $dbUsername (login: $dbLogin) to $dbName on $destination." -Target $db -ErrorRecord $_
+                        Stop-Function -Message "Failed to add $newDbUsername (login: $newUserName) to $dbName on $destination." -Target $db -ErrorRecord $_
                     }
                 }
             }
 
             # Db owner
             if ($sourceDb.Owner -eq $userName) {
-                if ($Pscmdlet.ShouldProcess($destination, "Changing $dbName dbowner to $userName.")) {
+                if ($Pscmdlet.ShouldProcess($destination, "Changing $dbName dbowner to $newUserName.")) {
                     try {
                         if ($dbName -notin 'master', 'msdb', 'tempdb', 'model') {
-                            $result = Update-SqlDbOwner $SourceServer $DestServer -DbName $dbName
-                            if ($result -eq $true) {
-                                Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $($sourceDb.owner)."
+                            $result = Set-DbaDbOwner -SqlInstance $DestServer -Database $dbName -TargetLogin $newUserName -EnableException:$EnableException
+                            if ($result.Owner -eq $newUserName) {
+                                Write-Message -Level Verbose -Message "Changed $($destDb.Name) owner to $newUserName."
                             } else {
-                                Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)."
+                                Write-Message -Level Warning -Message "Failed to update $($destDb.Name) owner to $newUserName."
                             }
                         }
                     } catch {
-                        Stop-Function -Message "Failed to update $($destDb.Name) owner to $($sourceDb.owner)." -ErrorRecord $_
+                        Stop-Function -Message "Failed to update $($destDb.Name) owner to $newUserName." -ErrorRecord $_
                     }
                 }
             }
@@ -331,14 +335,14 @@ function Update-SqlPermission {
                     $roleName = $role.Name
                     $destDbRole = $destDb.Roles[$roleName]
 
-                    if ($null -ne $destDbRole -and $dbUsername -ne "dbo" -and $destDbRole.EnumMembers() -notcontains $userName) {
-                        if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName database role in $dbName.")) {
+                    if ($null -ne $destDbRole -and $dbUsername -ne "dbo" -and $destDbRole.EnumMembers() -notcontains $newDbUsername) {
+                        if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $roleName database role in $dbName.")) {
                             try {
-                                $destDbRole.AddMember($userName)
+                                $destDbRole.AddMember($newDbUsername)
                                 $destDb.Alter()
-                                Write-Message -Level Verbose -Message "Adding $userName to $roleName database role in $dbName on $destination successfully performed."
+                                Write-Message -Level Verbose -Message "Adding $newDbUsername to $roleName database role in $dbName on $destination successfully performed."
                             } catch {
-                                Stop-Function -Message "Failed to add $userName to $roleName database role in $dbName on $destination." -Target $role -ErrorRecord $_
+                                Stop-Function -Message "Failed to add $newDbUsername to $roleName database role in $dbName on $destination." -Target $role -ErrorRecord $_
                             }
                         }
                     }
@@ -358,12 +362,12 @@ function Update-SqlPermission {
                 }
                 $permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
 
-                if ($Pscmdlet.ShouldProcess($destination, "$permState on $($perm.PermissionType) for $userName on $dbName")) {
+                if ($Pscmdlet.ShouldProcess($destination, "$permState on $($perm.PermissionType) for $newDbUsername on $dbName")) {
                     try {
-                        $destDb.PSObject.Methods[$permState].Invoke($permSet, $userName, $grantWithGrant)
-                        Write-Message -Level Verbose -Message "$permState on $($perm.PermissionType) to $userName on $dbName on $destination successfully performed."
+                        $destDb.PSObject.Methods[$permState].Invoke($permSet, $newDbUsername, $grantWithGrant)
+                        Write-Message -Level Verbose -Message "$permState on $($perm.PermissionType) to $newDbUsername on $dbName on $destination successfully performed."
                     } catch {
-                        Stop-Function -Message "Failed to perform $permState on $($perm.PermissionType) to $userName on $dbName on $destination." -Target $perm -ErrorRecord $_
+                        Stop-Function -Message "Failed to perform $permState on $($perm.PermissionType) to $newDbUsername on $dbName on $destination." -Target $perm -ErrorRecord $_
                     }
                 }
             }

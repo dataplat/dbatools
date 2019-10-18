@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'NewSid', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -84,5 +84,51 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Name | Should be "tester"
             $results.Status | Should Be "Successful"
         }
+    }
+
+    Context "Supports cloning" {
+        It "clones the one tester login" {
+            $results = Copy-DbaLogin -Source $script:instance1 -Login tester -Destination $script:instance1 -Force -LoginRenameHashtable @{ tester = 'tester_new' } -NewSid
+            $results.Name | Should be "tester_new"
+            $results.Status | Should Be "Successful"
+            Get-DbaLogin -SqlInstance $script:instance1 -Login tester_new | Should -Not -BeNullOrEmpty
+        }
+        It "clones the one tester login using pipe" {
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance1 -Force -LoginRenameHashtable @{ tester = 'tester_new' } -NewSid
+            $results.Name | Should be "tester_new"
+            $results.Status | Should Be "Successful"
+            Get-DbaLogin -SqlInstance $script:instance1 -Login tester_new | Should -Not -BeNullOrEmpty
+        }
+        It "clones the one tester login to a different server with a new name" {
+            'tester', 'tester_new' | ForEach-Object {
+                $login = (Connect-DbaInstance -SqlInstance $script:instance2).Logins[$_]
+                if ($login) { $login | Remove-DbaLogin -Force }
+            }
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -LoginRenameHashtable @{ tester = 'tester_new' }
+            $results.Name | Should be "tester_new"
+            $results.Status | Should Be "Successful"
+            $login = (Connect-DbaInstance -SqlInstance $script:instance2).Logins['tester_new']
+            $login | Should -Not -BeNullOrEmpty
+            $login | Remove-DbaLogin -Force
+        }
+    }
+
+    Context "Supports db object permissions" {
+        It "clones the one tester login with db permissions" {
+            'tester', 'tester_new' | ForEach-Object {
+                $login = (Connect-DbaInstance -SqlInstance $script:instance2).Logins[$_]
+                if ($login) { $login | Remove-DbaLogin -Force }
+            }
+            $results = Copy-DbaLogin -Source $script:instance1 -Login tester -Destination $script:instance2 -LoginRenameHashtable @{ tester = 'tester_new' }
+            $results.Name | Should be "tester_new"
+            $results.Status | Should Be "Successful"
+            $i2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $login = $i2.Logins['tester_new']
+            $login | Should -Not -BeNullOrEmpty
+            $role = $i2.Roles['sysadmin']
+            $role.EnumMemberNames() | Should -Contain $results.Name
+            $login | Remove-DbaLogin -Force
+        }
+
     }
 }
