@@ -11723,7 +11723,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaCmObject -ClassName \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaCmObject [-ClassName] \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaComputerCertificate",
@@ -46915,6 +46915,14 @@
                            "0"
                        ],
                        [
+                           "DeviceType",
+                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IncludeCopyOnly",
                            "If this switch is enabled, copy only backups will be counted as a last backup.",
                            "",
@@ -46971,7 +46979,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",
