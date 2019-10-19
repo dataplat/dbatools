@@ -761,6 +761,8 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
+    'Update-Dbatools',
+    'Install-DbaWhoIsActive',
     'Get-DbaRepServer'
 )
 $script:windowsonly = @(
@@ -779,8 +781,6 @@ $script:windowsonly = @(
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
     'Export-DbaSpConfigure',
-    'Update-Dbatools',
-    'Install-DbaWhoIsActive',
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
