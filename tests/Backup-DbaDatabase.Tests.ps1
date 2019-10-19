@@ -193,12 +193,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test backup  verification" {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "CREATE DATABASE [backuptest]"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "ALTER DATABASE [backuptest] SET RECOVERY FULL WITH NO_WAIT"
-        It -Skip "Should perform a full backup and verify it" {
-            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type full -Verify
+        It "Should perform a full backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -Type full -Verify
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
+            $b.count | Should -Be 1
         }
         It -Skip "Should perform a diff backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
@@ -210,7 +209,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
         }
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "DROP DATABASE [backuptest]"
     }
 
     Context "Backup can pipe to restore" {

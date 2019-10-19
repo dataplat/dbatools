@@ -5560,7 +5560,7 @@
         "CommandName":  "Copy-DbaSysDbUserObject",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaSysDbUserObject",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaSysDbUserObject -Source $sourceServer -Destination $destserver\nCopies user objects from source to destination",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaSysDbUserObject -Source sqlserver2014a -Destination sqlcluster\nCopies user objects found in system databases master, msdb and model from sqlserver2014a instance to the sqlcluster instance.",
         "Params":  [
                        [
                            "Source",
@@ -5972,6 +5972,64 @@
                        ]
                    ],
         "Syntax":  "Disable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Disable-DbaHideInstance",
+        "Description":  "Disables the Hide Instance setting of the SQL Server network configuration.\n\nThis requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "HideInstance",
+                     "Security"
+                 ],
+        "Synopsis":  "Disables the Hide Instance setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "Gareth Newman (@gazeranco), ifexists.blog",
+        "CommandName":  "Disable-DbaHideInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance\nDisables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2\nDisables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were executed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Disable-DbaHideInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Disable-DbaStartupProcedure",
@@ -6397,6 +6455,64 @@
                        ]
                    ],
         "Syntax":  "Enable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Enable-DbaHideInstance",
+        "Description":  "Enables the Hide Instance setting of the SQL Server network configuration.\n\nThis setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "HideInstance",
+                     "Security"
+                 ],
+        "Synopsis":  "Enables the Hide Instance setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "Gareth Newman (@gazeranco), ifexists.blog",
+        "CommandName":  "Enable-DbaHideInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance\nEnables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2\nEnables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were executed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Enable-DbaHideInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Enable-DbaStartupProcedure",
@@ -6876,7 +6992,7 @@
         "CommandName":  "Export-DbaDbRole",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaDbRole",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sql2005 -Path C:\\temp\nExports the Database Roles for all  for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaDbRole\nExports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaDbRole\nExports login realcajun from sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole\nExports all roles from all databases on sqlserver2008, excludes all roles marked as as FixedRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sql2005 -Path C:\\temp\nExports all the Database Roles for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -ExcludeRole realcajun -SqlCredential $scred -Path C:\\temp\\roles.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all roles except for realcajun to C:\\temp\\roles.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Role realcajun,netnerds -Path C:\\temp\\roles.sql\nExports ONLY roles netnerds and realcajun FROM sqlserver2014a to the file C:\\temp\\roles.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2014a -Role realcajun,netnerds -Database HR, Accounting\nExports ONLY roles netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaDbRole\nExports ONLY roles FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig -FullName formatting.batchseparator -Value $null\nPS C:\\\u003e Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\\temp\\roles.sql\nSets the BatchSeparator configuration to null, removing the default \"GO\" value.\r\nExports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\roles.sql file, without the \"GO\" batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\\temp\\roles.sql -BatchSeparator $null\nExports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\roles.sql file, without the \"GO\" batch separator.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 | Export-DbaDbRole -Role realcajun\nExports role realcajun for all databases on sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole\nExports all roles from all databases on sqlserver2008, excludes all roles marked as as FixedRole",
         "Params":  [
                        [
                            "SqlInstance",
@@ -7544,7 +7660,7 @@
         "CommandName":  "Export-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaLogin\nExports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql -ExcludeGoBatchSeparator\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaLogin\nExports login realcajun from sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sqlserver2008, sqlserver2012  | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin\nExports all enabled logins from sqlserver2008 and sqlserver2008",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -Path C:\\temp\\sql2005-logins.sql\nExports the logins for SQL Server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\\temp\\logins.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\\temp\\logins.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\\temp\\logins.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\nExports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaLogin\nExports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbatoolsConfig -FullName formatting.batchseparator -Value $null\nPS C:\\\u003e Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\\temp\\login.sql\nExports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\\temp\\login.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports login realcajun from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaLogin\nExports login realcajun from sqlserver2008\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sqlserver2008, sqlserver2012  | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin\nExports all enabled logins from sqlserver2008 and sqlserver2008",
         "Params":  [
                        [
                            "SqlInstance",
@@ -11723,7 +11839,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaCmObject -ClassName \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaCmObject [-ClassName] \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaComputerCertificate",
@@ -29200,7 +29316,7 @@
         "CommandName":  "New-DbaAgentJobStep",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAgentJobStep",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipeline",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipeline\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sq1 -Job Job1 -StepName StepA -Datavase msdb -StepId 2 -Insert\nAssuming Job1 already has steps Step1 and Step2, will create a new step Step A and set the step order as Step1, StepA, Step2\r\nInternal StepIds will be updated, and any specific OnSuccess/OnFailure step references will also be updated",
         "Params":  [
                        [
                            "SqlInstance",
@@ -29347,6 +29463,14 @@
                            ""
                        ],
                        [
+                           "Insert",
+                           "This switch indicates the new step is inserted at the specified stepid.\r\nAll following steps will have their IDs incremented by, and success/failure next steps incremented accordingly",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Flag",
                            "Sets the flag(s) for the job step.\nFlag                                    Description\r\n----------------------------------------------------------------------------\r\nAppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.\r\nAppendToJobHistory                      Job history is appended to the job history file.\r\nAppendToLogFile                         Job history is appended to the SQL Server log file.\r\nAppendToTableLog                        Job history is appended to a log table.\r\nLogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.\r\nNone                                    Job history is not appended to a file.\r\nProvideStopProcessEvent                 Job processing is stopped.",
                            "",
@@ -29395,7 +29519,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [[-StepId] \u003cInt32\u003e] [-StepName] \u003cString\u003e [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cObject\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [-Insert] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaAgentProxy",
@@ -38346,7 +38470,7 @@
         "CommandName":  "Resolve-DbaNetworkName",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Resolve-DbaNetworkName",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress, sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress and sql2014\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2014\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName sql2016, sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2016 and sql2014\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for all SQL Servers returned by Get-DbaRegServer\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2014, sql2016\\sqlexpress | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for all SQL Servers returned by Get-DbaRegServer",
         "Params":  [
                        [
                            "ComputerName",
@@ -39147,7 +39271,7 @@
                        ],
                        [
                            "AvailabilityGroup",
-                           "The availability group where the database movement will be resumeed.",
+                           "The availability group where the database movement will be resumed.",
                            "",
                            false,
                            "false",
@@ -40365,7 +40489,7 @@
                        ],
                        [
                            "FrequencyInterval",
-                           "The days that a job is executed\r\nAllowed values are 1, \"Sunday\", 2, \"Monday\", 4, \"Tuesday\", 8, \"Wednesday\", 16, \"Thursday\", 32, \"Friday\", 64, \"Saturday\", 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\".\r\nIf 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\" is used it overwwrites any other value that has been passed before.",
+                           "The days that a job is executed\r\nAllowed values are 1, \"Sunday\", 2, \"Monday\", 4, \"Tuesday\", 8, \"Wednesday\", 16, \"Thursday\", 32, \"Friday\", 64, \"Saturday\", 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\".\r\nIf 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\" is used it overwrites any other value that has been passed before.",
                            "",
                            false,
                            "false",
@@ -46907,6 +47031,14 @@
                            "0"
                        ],
                        [
+                           "DeviceType",
+                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IncludeCopyOnly",
                            "If this switch is enabled, copy only backups will be counted as a last backup.",
                            "",
@@ -46963,7 +47095,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",
@@ -47803,7 +47935,7 @@
     },
     {
         "Name":  "Unregister-DbatoolsConfig",
-        "Description":  "Removes registered configuration settings.\nThis function can be used to remove settings that have been persisted for either user or computer.\n\nNote: This command has no effect on configuration setings currently in memory.",
+        "Description":  "Removes registered configuration settings.\nThis function can be used to remove settings that have been persisted for either user or computer.\n\nNote: This command has no effect on configuration settings currently in memory.",
         "Synopsis":  "Removes registered configuration settings.",
         "Alias":  "",
         "CommandName":  "Unregister-DbatoolsConfig",
@@ -47958,7 +48090,7 @@
                            "",
                            false,
                            "false",
-                           "Credssp"
+                           "@(\u0027CredSSP\u0027, \u0027Default\u0027)[$null -eq $Credential]"
                        ],
                        [
                            "ExtractPath",
@@ -48320,7 +48452,7 @@
         "CommandName":  "Write-DbaDbTableData",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Write-DbaDbTableData",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$tableName = \"MyTestData\"\nPS C:\\\u003e $query = \"SELECT name, create_date, owner_sid FROM sys.databases\"\r\nPS C:\\\u003e $dataset = Invoke-DbaQuery -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database master -Query $query\r\nPS C:\\\u003e $dataset | Select-Object name, create_date, @{L=\"owner_sid\";E={$_.\"owner_sid\"}} | Write-DbaDbTableData -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database tempdb -Table \r\nmyTestData -Schema dbo -AutoCreateTable\nPulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\nPrompts for confirmation before a variety of steps.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv\r\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process\nPS C:\\\u003e Write-DbaDbTableData -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, \r\nthe import will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$tableName = \"MyTestData\"\nPS C:\\\u003e $query = \"SELECT name, create_date, owner_sid FROM sys.databases\"\r\nPS C:\\\u003e $dataset = Invoke-DbaQuery -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database master -Query $query\r\nPS C:\\\u003e $dataset | Select-Object name, create_date, @{L=\"owner_sid\";E={$_.\"owner_sid\"}} | Write-DbaDbTableData -SqlInstance \u0027localhost,1417\u0027 -SqlCredential $containerCred -Database tempdb -Table \r\nmyTestData -Schema dbo -AutoCreateTable\nPulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable -Confirm\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.\nPrompts for confirmation before a variety of steps.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is \r\nprompted again to perform the import.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\nPS C:\\\u003e $AzureCredential = New-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\nPS C:\\\u003e $DataTable = Import-Csv C:\\temp\\customers.csv\r\nPS C:\\\u003e Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$process = Get-Process\nPS C:\\\u003e Write-DbaDbTableData -InputObject $process -SqlInstance sql2014 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -AutoCreateTable\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process \r\ninformation into the table\r\nWrites the results of Get-Process to a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial characters like \" must be escaped by a ` character.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.\nThis is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts \r\nthanks to ConvertTo-DbaDataTable.",
         "Params":  [
                        [
                            "SqlInstance",
