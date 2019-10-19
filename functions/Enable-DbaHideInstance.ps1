@@ -1,12 +1,12 @@
-function Enable-DbaForceNetworkEncryption {
+function Enable-DbaHideInstance {
     <#
     .SYNOPSIS
-        Enables Force Encryption for a SQL Server instance.
+        Enables the Hide Instance setting of the SQL Server network configuration.
 
     .DESCRIPTION
-        Enables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
+        Enables the Hide Instance setting of the SQL Server network configuration.
 
-        This setting is found in Configuration Manager.
+        This setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration > Protocols for "InstanceName".
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -26,25 +26,25 @@ function Enable-DbaForceNetworkEncryption {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Certificate, Encryption
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Tags: HideInstance, Security
+        Author: Gareth Newman (@gazeranco), ifexists.blog
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2019 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        PS C:\> Enable-DbaForceNetworkEncryption
+        PS C:\> Enable-DbaHideInstance
 
-        Enables Force Encryption on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
-
-    .EXAMPLE
-        PS C:\> Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
-
-        Enables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
+        Enables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
 
     .EXAMPLE
-        PS C:\> Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+        PS C:\> Enable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2
+
+        Enables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
+
+    .EXAMPLE
+        PS C:\> Enable-DbaHideInstance -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
         Shows what would happen if the command were executed.
 
@@ -52,8 +52,7 @@ function Enable-DbaForceNetworkEncryption {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
-        [DbaInstanceParameter[]]
-        $SqlInstance = $env:COMPUTERNAME,
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
@@ -61,22 +60,22 @@ function Enable-DbaForceNetworkEncryption {
 
         foreach ($instance in $sqlinstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
-            $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            if ($instance.IsLocalHost) {
+                $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            }
 
             try {
-                Write-Message -Level Verbose -Message "Resolving hostname."
-                $resolved = $null
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
             } catch {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
-            }
-
-            if ($null -eq $resolved) {
-                Stop-Function -Message "Can't resolve $instance." -Target $instance -Continue -Category InvalidArgument
+                try {
+                    $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo -EnableException
+                } catch {
+                    Stop-Function -Message "Issue resolving $instance" -Target $instance -Category InvalidArgument -Continue
+                }
             }
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -EnableException | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
@@ -84,10 +83,8 @@ function Enable-DbaForceNetworkEncryption {
             $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
-                # Probably because the instance name has been aliased or does not exist or something
-                # here to avoid an empty catch
                 $null = 1
             }
             $serviceaccount = $sqlwmi.ServiceAccount
@@ -113,25 +110,21 @@ function Enable-DbaForceNetworkEncryption {
 
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-                #Variable marked as unused by PSScriptAnalyzer
-                #$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
-                Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $true
-                $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+                Set-ItemProperty -Path $regpath -Name HideInstance -Value $true
+                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
-                    ComputerName          = $env:COMPUTERNAME
-                    InstanceName          = $args[2]
-                    SqlInstance           = $args[1]
-                    ForceEncryption       = ($forceencryption -eq $true)
-                    CertificateThumbprint = $cert
+                    ComputerName = $env:COMPUTERNAME
+                    InstanceName = $args[2]
+                    SqlInstance  = $args[1]
+                    HideInstance = ($HideInstance -eq $true)
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regroot for $($instance.InstanceName)")) {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
+                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }

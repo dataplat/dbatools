@@ -2,7 +2,7 @@
 param(
     [Collections.IDictionary]
     [Alias('Options')]
-    $Option = @{}
+    $Option = @{ }
 )
 
 
@@ -120,7 +120,7 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
     $regType = 'Microsoft.Win32.Registry' -as [Type]
     $hkcuNode = $regType::CurrentUser.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
-        $userValues = @{}
+        $userValues = @{ }
         foreach ($v in $hkcuNode.GetValueNames()) {
             $userValues[$v] = $hkcuNode.GetValue($v)
         }
@@ -128,15 +128,15 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
     }
     $hklmNode = $regType::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
-        $systemValues = @{}
+        $systemValues = @{ }
         foreach ($v in $hklmNode.GetValueNames()) {
             $systemValues[$v] = $hklmNode.GetValue($v)
         }
         $dbatoolsSystemSystemNode = $systemValues
     }
 } else {
-    $dbatoolsSystemUserNode = @{}
-    $dbatoolsSystemSystemNode = @{}
+    $dbatoolsSystemUserNode = @{ }
+    $dbatoolsSystemSystemNode = @{ }
 }
 
 #region Dot Sourcing
@@ -738,6 +738,7 @@ $script:xplat = @(
     'Get-DbaDbLogSpace',
     'Export-DbaDbRole',
     'Export-DbaServerRole',
+    'Get-DbaBuildReference',
     'Add-DbaServerRoleMember'
 )
 
@@ -773,12 +774,11 @@ $script:windowsonly = @(
     'Export-DbaScript',
     'Get-DbaAgentJobOutputFile',
     'Set-DbaAgentJobOutputFile',
-    'Get-DbaBuildReference',
-    'New-DbaDacProfile'
+    'New-DbaDacProfile',
     'Import-DbaXESessionTemplate',
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure'
+    'Export-DbaSpConfigure',
     'Update-Dbatools',
     'Install-DbaWhoIsActive',
     'Install-DbaFirstResponderKit',
@@ -846,6 +846,8 @@ $script:windowsonly = @(
     'Enable-DbaForceNetworkEncryption',
     'Disable-DbaForceNetworkEncryption',
     'Get-DbaForceNetworkEncryption',
+    'Disable-DbaHideInstance',
+    'Enable-DbaHideInstance',
     'Remove-DbaComputerCertificate',
     'New-DbaComputerCertificate',
     'Get-DbaComputerCertificate',
