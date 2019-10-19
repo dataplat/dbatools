@@ -738,6 +738,7 @@ $script:xplat = @(
     'Get-DbaDbLogSpace',
     'Export-DbaDbRole',
     'Export-DbaServerRole',
+    'Get-DbaBuildReference',
     'Add-DbaServerRoleMember'
 )
 
@@ -773,12 +774,11 @@ $script:windowsonly = @(
     'Export-DbaScript',
     'Get-DbaAgentJobOutputFile',
     'Set-DbaAgentJobOutputFile',
-    'Get-DbaBuildReference',
-    'New-DbaDacProfile'
+    'New-DbaDacProfile',
     'Import-DbaXESessionTemplate',
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure'
+    'Export-DbaSpConfigure',
     'Update-Dbatools',
     'Install-DbaWhoIsActive',
     'Install-DbaFirstResponderKit',
