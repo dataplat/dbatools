@@ -136,7 +136,7 @@ function Install-DbaWhoIsActive {
             # Unpack
             # Unblock if there's a block
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-                if (Test-Windows) {
+                if (Test-Windows -NoWarn) {
                     Unblock-File $zipfile -ErrorAction SilentlyContinue
                 }
                 try {
