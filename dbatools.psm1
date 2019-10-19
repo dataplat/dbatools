@@ -739,6 +739,7 @@ $script:xplat = @(
     'Export-DbaDbRole',
     'Export-DbaServerRole',
     'Get-DbaBuildReference',
+    'Install-DbaWhoIsActive',
     'Add-DbaServerRoleMember'
 )
 
@@ -780,7 +781,6 @@ $script:windowsonly = @(
     'Import-DbaSpConfigure',
     'Export-DbaSpConfigure',
     'Update-Dbatools',
-    'Install-DbaWhoIsActive',
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
