@@ -762,6 +762,7 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
+    'Install-DbaWhoIsActive',
     'Get-DbaRepServer'
 )
 $script:windowsonly = @(
