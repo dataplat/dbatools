@@ -35,16 +35,24 @@ $availableTls | ForEach-Object {
 
 $dbatools_copydllmode = $true
 
-foreach ($modpath in $env:PSModulePath) {
+foreach ($modpath in $($env:PSModulePath -split [IO.Path]::PathSeparator)) {
+    #Grab the user's default home directory module path for later
+    if ($modpath -like "*$([Environment]::UserName)*") {
+        $userpath = $modpath
+    }
     try {
-        $localpath = (Get-ChildItem "$modpath\dbatools" -ErrorAction Stop).FullName
+        $temppath = Join-Path -Path $modpath -ChildPath "dbatools"
+        $localpath = (Get-ChildItem $temppath -ErrorAction Stop).FullName
     } catch {
         $localpath = $null
     }
 }
 
 if ($null -eq $localpath) {
-    $localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
+    # In case dbatools is not currently installed in any PSModulePath put it in the $userpath
+    if (Test-Path -Path $userpath) {
+        $localpath = Join-Path -Path $userpath -ChildPath "dbatools"
+    }
 } else {
     Write-LocalMessage -Message "Updating current install"
 }
@@ -70,7 +78,8 @@ if (-not $path -or (Test-Path -Path "$path\.git")) {
 }
 
 If ($lib = [appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "dbatools, *") {
-    if ($lib.Location -like "$Path\*") {
+    $wildcardpath = Join-Path -Path $Path -ChildPath *
+    if ($lib.Location -like "$wildcardpath") {
         Write-LocalMessage @"
 We have detected dbatools to be already imported from
 $path
@@ -105,8 +114,8 @@ if ($beta) {
     $branch = "master"
 }
 
-$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-$zipfile = "$temp\dbatools.zip"
+$temp = ([System.IO.Path]::GetTempPath())
+$zipfile = Join-Path -Path $temp -ChildPath "dbatools.zip"
 
 Write-LocalMessage -Message "Downloading archive from github"
 try {
@@ -125,25 +134,39 @@ try {
 }
 
 # Unblock if there's a block
-Unblock-File $zipfile -ErrorAction SilentlyContinue
+if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
+    Write-LocalMessage -Message "Unblocking"
+    Unblock-File $zipfile -ErrorAction SilentlyContinue
+}
 
 Write-LocalMessage -Message "Unzipping"
 
-# Keep it backwards compatible
-Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-$branch" -Recurse -Force
-Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-old" -Recurse -Force
-$null = New-Item "$temp\dbatools-old" -ItemType Directory
-$shell = New-Object -ComObject Shell.Application
-$zipPackage = $shell.NameSpace($zipfile)
-$destinationFolder = $shell.NameSpace($temp)
-$destinationFolder.CopyHere($zipPackage.Items())
+
+$branchpath = Join-Path -Path $temp -ChildPath "dbatools-$branch"
+$oldpath = Join-Path -Path $temp -ChildPath "dbatools-old"
+$wildcardoldpath = Join-Path -Path $oldpath -ChildPath *
+$wildcardbranchpath = Join-Path -Path $branchpath -ChildPath *
+
+Remove-Item -ErrorAction SilentlyContinue $branchpath -Recurse -Force
+Remove-Item -ErrorAction SilentlyContinue $oldpath -Recurse -Force
+$null = New-Item $oldpath -ItemType Directory
+if (($PSVersionTable.Keys -contains "Platform") -and $psversiontable.Platform -ne "Win32NT") {
+    $destinationFolder = $temp
+    Expand-Archive -Path $zipfile -DestinationPath $destinationFolder -Force
+} else {
+    # Keep it backwards compatible
+    $shell = New-Object -ComObject Shell.Application
+    $zipPackage = $shell.NameSpace($zipfile)
+    $destinationFolder = $shell.NameSpace($temp)
+    $destinationFolder.CopyHere($zipPackage.Items())
+}
 
 Write-LocalMessage -Message "Applying Update"
 Write-LocalMessage -Message "1) Backing up previous installation"
-Copy-Item -Path "$Path\*" -Destination "$temp\dbatools-old" -ErrorAction Stop
+Copy-Item -Path $wildcardpath -Destination $oldpath -ErrorAction Stop
 try {
     Write-LocalMessage -Message "2) Cleaning up installation directory"
-    Remove-Item "$Path\*" -Recurse -Force -ErrorAction Stop
+    Remove-Item $wildcardpath -Recurse -Force -ErrorAction Stop
 } catch {
     Write-LocalMessage -Message @"
 Failed to clean up installation directory, rolling back update.
@@ -158,14 +181,14 @@ But it increases the time needed to import the module, so we only recommend usin
 Exception:
 $_
 "@
-    Copy-Item -Path "$temp\dbatools-old\*" -Destination $path -ErrorAction Ignore -Recurse
-    Remove-Item "$temp\dbatools-old" -Recurse -Force
+    Copy-Item -Path $wildcardoldpath -Destination $path -ErrorAction Ignore -Recurse
+    Remove-Item $oldpath -Recurse -Force
     return
 }
 Write-LocalMessage -Message "3) Setting up current version"
-Move-Item -Path "$temp\dbatools-$branch\*" -Destination $path -ErrorAction SilentlyContinue -Force
-Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
-Remove-Item "$temp\dbatools-old" -Recurse -Force
+Move-Item -Path $wildcardbranchpath -Destination $path -ErrorAction SilentlyContinue -Force
+Remove-Item -Path $branchpath -Recurse -Force
+Remove-Item $oldpath -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
 Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues"
@@ -175,7 +198,8 @@ if (Get-Module dbatools) {
 Please restart PowerShell before working with dbatools.
 "@
 } else {
-    Import-Module "$path\dbatools.psd1" -Force
+    $psd1 = Join-Path -Path $path -ChildPath "dbatools.psd1"
+    Import-Module $psd1 -Force
     Write-LocalMessage @"
 
 dbatools v $((Get-Module dbatools).Version)
