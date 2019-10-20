@@ -11552,7 +11552,7 @@
         "Alias":  "",
         "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbaBuildReference",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
         "Params":  [
@@ -24434,7 +24434,7 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Install-DbaWhoIsActive",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\whoisactive_install.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$instances = Get-DbaRegServer sqlserver\nPS C:\\\u003e Install-DbaWhoIsActive -SqlInstance $instances -Database master\nInstalls sp_WhoisActive to all servers within CMS",
         "Params":  [
@@ -24922,7 +24922,7 @@
                            "SqlInstance",
                            "The SQL Server instance. Server version must be SQL Server version 2012 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -24983,7 +24983,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAgFailover [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAgFailover [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaBalanceDataFiles",
