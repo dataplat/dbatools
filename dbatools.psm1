@@ -740,6 +740,7 @@ $script:xplat = @(
     'Export-DbaServerRole',
     'Get-DbaBuildReference',
     'Install-DbaWhoIsActive',
+    'Update-Dbatools',
     'Add-DbaServerRoleMember'
 )
 
@@ -762,7 +763,6 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Install-DbaWhoIsActive',
     'Get-DbaRepServer'
 )
 $script:windowsonly = @(
@@ -781,7 +781,6 @@ $script:windowsonly = @(
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
     'Export-DbaSpConfigure',
-    'Update-Dbatools',
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
