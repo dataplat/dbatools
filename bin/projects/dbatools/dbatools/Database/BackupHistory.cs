@@ -152,7 +152,7 @@ namespace Sqlcollaborative.Dbatools.Database
         /// <summary>
         /// Thumbprint of the certificate or key used to encrypt the backup
         /// </summary>
-        public string EncryptorThumbpring;
+        public string EncryptorThumbprint;
 
         /// <summary>
         /// Type of encryptor used to encrypt backup (Key or Certificate)
