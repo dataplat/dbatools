@@ -48243,7 +48243,7 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Update-Dbatools",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Update-DbaTools",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-Dbatools\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-Dbatools -dev\nUpdates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.",
         "Params":  [
