@@ -182,7 +182,7 @@ function Invoke-DbaQuery {
                         $files += $item.FullName
                     }
                     "System.String" {
-                        $uri = [uri]$item
+                        $uri = [uri]::New($item)
 
                         switch -regex ($uri.Scheme) {
                             "http" {
@@ -212,7 +212,7 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (([uri]$path.FullName).Scheme -ne 'file') {
+                                        if ([uri]::New($path).Scheme -ne 'file') {
                                             Stop-Function -Message "Could not resolve path $path as filesystem object"
                                             return
                                         }
