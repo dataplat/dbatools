@@ -19753,7 +19753,7 @@ function Get-DbaBuildReference {
                 $EnableException
             )
 
-            $orig_idxfile = "$Moduledirectory\bin\dbatools-buildref-index.json"
+            $orig_idxfile = Resolve-Path "$Moduledirectory\bin\dbatools-buildref-index.json"
             $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
@@ -40007,8 +40007,8 @@ function Install-DbaWhoIsActive {
         if ($Force) { $ConfirmPreference = 'none' }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\spwhoisactive.zip"
+        $temp = ([System.IO.Path]::GetTempPath())
+        $zipfile = Join-Path -Path $temp -ChildPath "spwhoisactive.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
             $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
@@ -40054,8 +40054,9 @@ function Install-DbaWhoIsActive {
             # Unpack
             # Unblock if there's a block
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-
-                Unblock-File $zipfile -ErrorAction SilentlyContinue
+                if (Test-Windows -NoWarn) {
+                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                }
                 try {
                     Expand-Archive -Path $zipfile -DestinationPath $temp -Force
                 } catch {
@@ -40064,7 +40065,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$($temp)who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
@@ -40153,12 +40154,8 @@ function Install-DbaWhoIsActive {
             }
         }
     }
-    end {
-        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
-            Get-Item $sqlfile | Remove-Item
-        }
-    }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaAdvancedInstall {
@@ -40841,7 +40838,6 @@ function Invoke-DbaAgFailover {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
@@ -40854,6 +40850,11 @@ function Invoke-DbaAgFailover {
         if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
+        if (-not $SqlInstance -and -not $InputObject) {
+            Stop-Function -Message "You must either specify the SqlInstance parameter or pass in at least one AvailabilityGroup object."
+            return
+        }
+
         if ($SqlInstance -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using SqlInstance."
             return
