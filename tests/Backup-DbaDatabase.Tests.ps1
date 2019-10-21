@@ -305,14 +305,14 @@ go
     }
 
     Context "Test Backup Encryption" {
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCert -Subject BackupCert
-        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCert
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
+        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt
         It "Should encrypt the backup" {
-            $encBackupResults.EncryptorType | Should -Be "CERTIFICATE"
-            $encBackupResults.KeyAlgorithm | Should -Be "aes_128"
+            $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
+            $encBackupResults.KeyAlgorithm | Should Be "aes_128"
         }
+        remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
     }
-
 
     if ($env:azurepasswd) {
         Context "Azure works" {
