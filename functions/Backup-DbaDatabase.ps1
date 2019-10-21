@@ -120,6 +120,19 @@ function Backup-DbaDatabase {
     .PARAMETER OutputScriptOnly
         Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
 
+    .PARAMETER EncryptionAlgorithm
+        Specified the Encryption Algorithm to used. Must be one of 'AES128','AES192','AES256' or 'TRIPLEDES'
+        Must specify one of EncryptionCertificate or EncryptionKey as well.
+
+    .PARAMETER EncryptionCertificate
+        The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
+        Is mutually exclusive with the EncryptionKey option
+
+    .PARAMETER EncrytptionKey
+        The name of the Asymmetric key to be used to encrypt the backup
+        Is mutually exclusive with the EncryptionCertificate option
+        Due to the use of an EKM to hold the keys we cannot check if it exists before attempting to use it.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -178,6 +191,11 @@ function Backup-DbaDatabase {
         PS C:\> Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
 
         Performs a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert
+
+        Backs up the master database using the BackupCert certificate and the AES256 algorithm.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
