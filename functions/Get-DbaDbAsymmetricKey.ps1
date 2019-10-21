@@ -34,8 +34,8 @@ function Get-DbaDbAsymmetricKey {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Certificate
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Tags: AsymmetricKey
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
