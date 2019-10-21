@@ -639,7 +639,7 @@ function Backup-DbaDatabase {
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
                                     EncryptorName        = $encryptionOptions.encryptorType
                                     EncryptionAlgorithm  = $encryptionOptions.Algorithm
-                                    EncrptorType        = $encryptionOptions.encryptorType
+                                    EncrptorType         = $encryptionOptions.encryptorType
                                 }
                                 $verifiedresult | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {

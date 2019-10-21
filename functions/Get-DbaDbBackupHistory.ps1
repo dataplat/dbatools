@@ -218,17 +218,34 @@ function Get-DbaDbBackupHistory {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.VersionMajor -ge 10) {
+            if ($server.VersionMajor -ge 12) {
+                $compressedFlag = $true
+                $encryptedFlag = $true
+                # 2014 introducted encryption
+                $backupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize,
+                encryptor_thumbprint as EncryptorThumbprint,
+                encryptor_type as EncryptorType,
+                key_algorithm AS KeyAlgorithm"
+
+            } elseif ($server.VersionMajor -ge 10 -and $server.VersionMajor -lt 12) {
                 $compressedFlag = $true
                 # 2008 introduced compressed_backup_size
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                backupset.compressed_backup_size as CompressedBackupSize"
+                backupset.compressed_backup_size as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                NULL as CompressedBackupSize"
+                NULL as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             }
 
             $databases = @()
@@ -660,6 +677,9 @@ function Get-DbaDbBackupHistory {
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
                     $historyObject.RecoveryModel = $commonFields.recovery_model
+                    $historyObject.EncryptorType = $commonFields.EncryptorType
+                    $historyObject.EncryptorThumbprint = $commonFields.EncryptorThumbprint
+                    $historyObject.KeyAlgorithm = $commonFields.KeyAlgorithm
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
