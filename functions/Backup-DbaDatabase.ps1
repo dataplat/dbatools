@@ -215,6 +215,10 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
+        [ValidateSet('AES128','AES192','AES256','TRIPLEDES')]
+        [String]$EncryptionAlgorithm,
+        [String]$EncryptionCertificate,
+        [String]$EncrytptionKey,
         [switch]$EnableException
     )
 
@@ -308,6 +312,32 @@ function Backup-DbaDatabase {
                 $Path = $AzureBaseUrl
             }
 
+            if (Test-Bound 'EncryptionAlgorithm') {
+                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))){
+                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                    return
+                } else {
+                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                    if (Test-Bound 'EncryptionCertificate'){
+                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                        if ($null -eq $tCertCheck) {
+                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                            $encryptionOptions.encryptorName = $EncryptionCertificate
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                    if (Test-Bound 'EncryptionKey'){
+                        Write-Message -Level Warning -Message "You have selected to use an asymmetric key to backup. As this involves using an EKM we can't check it exists"
+                        $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                        $encryptionOptions.encryptorName = $EncryptionKey
+                        $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                    }
+                }
+            }
+
             if ($OutputScriptOnly) {
                 $IgnoreFileChecks = $true
             }
@@ -384,6 +414,10 @@ function Backup-DbaDatabase {
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             $Suffix = "bak"
+
+            if ($null -ne $encryptionOptions) {
+                $backup.EncryptionOption = $encryptionOptions
+            }
 
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
