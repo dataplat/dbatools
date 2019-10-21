@@ -429,7 +429,10 @@ function Get-DbaDbBackupHistory {
                         a.DeviceType,
                         a.is_copy_only,
                         a.last_recovery_fork_guid,
-                        a.recovery_model
+                        a.recovery_model,
+                        a.EncryptorThumbprint,
+                        a.EncryptorType,
+                        a.KeyAlgorithm
                     FROM (
                         SELECT
                         RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
