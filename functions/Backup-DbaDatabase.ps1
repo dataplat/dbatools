@@ -637,9 +637,9 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-                                    EncryptorName        = $encryptionOptions.encryptorType
-                                    EncryptionAlgorithm  = $encryptionOptions.Algorithm
-                                    EncrptorType         = $encryptionOptions.encryptorType
+                                    EncryptorName        = $encryptionOptions.EncryptorName
+                                    KeyAlgorithm         = $encryptionOptions.Algorithm
+                                    EncruptorType        = $encryptionOptions.encryptorType
                                 }
                                 $verifiedresult | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
@@ -679,9 +679,11 @@ function Backup-DbaDatabase {
                 }
             }
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+
             if ($failures.Count -eq 0) {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
+
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
             $FilePath = $null
         }
