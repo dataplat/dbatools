@@ -12393,7 +12393,7 @@
         "CommandName":  "Get-DbaDbAssembly",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12412,6 +12412,22 @@
                            ""
                        ],
                        [
+                           "Database",
+                           "Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Specify an Assembly to be fetched. If not specified all Assemblys will be returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -12420,7 +12436,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Name] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbBackupHistory",
@@ -48243,7 +48259,7 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Update-Dbatools",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Update-DbaTools",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-Dbatools\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-Dbatools -dev\nUpdates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.",
         "Params":  [
