@@ -21436,6 +21436,8 @@ function Get-DbaDbAssembly {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Object[]]$Database,
+        [string[]]$Name,
         [switch]$EnableException
     )
 
@@ -21446,16 +21448,25 @@ function Get-DbaDbAssembly {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($database in ($server.Databases | Where-Object IsAccessible)) {
+            $databases = $server.Databases | Where-Object IsAccessible
+            if (Test-Bound 'Database') {
+                $databases = $databases | Where-Object Name -in $Database
+            }
+            foreach ($db in $databases) {
                 try {
-                    foreach ($assembly in $database.assemblies) {
+                    if (Test-Bound 'Name') {
+                        $assemblies = $assemblies | Where-Object Name -in  $Name
+                    } else {
+                        $assemblies = $db.assemblies
+                    }
+                    foreach ($assembly in $assemblies) {
 
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.ComputerName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+                        Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name Database -value $db.name
 
-                        Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
+                        Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, Database, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
                     }
                 } catch {
                     Stop-Function -Message "Issue pulling assembly information" -Target $assembly -ErrorRecord $_ -Continue
