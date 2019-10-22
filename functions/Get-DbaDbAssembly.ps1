@@ -20,7 +20,7 @@ function Get-DbaDbAssembly {
     .PARAMETER Database
         Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked
 
-    .PARAMETER AssemblyName
+    .PARAMETER Name
         Specify an Assembly to be fetched. If not specified all Assemblys will be returned
 
     .PARAMETER EnableException
