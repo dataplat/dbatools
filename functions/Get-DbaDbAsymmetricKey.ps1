@@ -25,7 +25,7 @@ function Get-DbaDbAsymmetricKey {
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
-    .PARAMETER KeyName
+    .PARAMETER Name
         Get specific Asymmetric Key by name
 
     .PARAMETER EnableException
@@ -52,7 +52,7 @@ function Get-DbaDbAsymmetricKey {
         Gets the Asymmetric Keys for the db1 database
 
     .EXAMPLE
-        PS C:\> Get-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -KeyName key1
+        PS C:\> Get-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -Name key1
 
         Gets the key1 Asymmetric Key within the db1 database
 
@@ -63,7 +63,7 @@ function Get-DbaDbAsymmetricKey {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [string[]]$KeyName,
+        [string[]]$Name,
         [switch]$EnableException
     )
     process {
@@ -84,8 +84,8 @@ function Get-DbaDbAsymmetricKey {
                 continue
             }
 
-            if ($KeyName) {
-                $akeys = $akeys| Where-Object Name -in $KeyName
+            if ($Name) {
+                $akeys = $akeys| Where-Object Name -in $Name
             }
 
             foreach ($akey in $akeys) {

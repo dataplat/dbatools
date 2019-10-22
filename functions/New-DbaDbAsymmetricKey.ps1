@@ -28,6 +28,12 @@ function New-DbaDbAsymmetricKey {
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
+    .PARAMETER KeySourceType
+
+    .PARAMETER KeySource
+
+    .PARAMETER Algorithm
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -67,20 +73,29 @@ function New-DbaDbAsymmetricKey {
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
         [String]$Owner,
-        [String]$FilePath,
+        [String]$KeySource,
+        [ValidateSet('Executable', 'File', 'SqlAssembly')]
+        [String]$KeySourceType,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Rsa4096', 'Rsa3072', 'Rsa2048', 'Rsa1024', 'Rsa512')]
         [string]$Algorithm = 'Rsa2048',
         [switch]$EnableException
     )
+    begin {
+        if (((Test-Bound 'KeySource') -xor (Test-Bound 'KeySourceType'))) {
+            write-message -level verbose -message 'ks check'
+            Stop-Function -Message 'Both Keysource and KeySourceType must both be provided' -Continue
+            break
+        }
+    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
         foreach ($db in $InputObject) {
-            if ((Test-Bound -Not -ParameterName Name)) {
+            if (!($null -ne $name)) {
                 Write-Message -Level Verbose -Message "Name of asymmetric key not specified, setting it to '$db'"
                 $Name = $db.Name
             }
@@ -97,12 +112,44 @@ function New-DbaDbAsymmetricKey {
                     $ErrorActionPreference = 'Stop'
                     try {
                         $smokey = New-Object -TypeName Microsoft.SqlServer.Management.Smo.AsymmetricKey $db, $askey
-                        $smokey = $Name
+                        if ($owner -ne '') {
+                            if ((Get-DbaDbUser -SqlInstance $db.Parent -Database $db.name | Where-Object name -eq $owner).count -eq 1) {
+                                Write-Message -Level Verbose -Message "Setting key owner to $owner"
+                                $smokey.owner = $owner
+                            } else {
+                                Stop-Function -Message "$owner is unkown or ambiguous in $($db.name)" -Target $db -Continue
+                            }
+                        }
+                        if ($Pscmdlet.ParameterSetName -eq 'Keysource') {
+                            switch ($KeySourceType) {
+                                'Executable' {
+                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -Path $KeySource)) {
+                                        Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
+                                    }
+                                }
+                                'File' {
+                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -Path $KeySource)) {
+                                        Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
+                                    }
+                                }
+                                'SqlAssembly' {
+                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $sqlInstance -Database $db -Name $KeySource)) {
+                                        Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
+                                    }
+                                }
+                            }
+                            if ($SecurePassword) {
+                                $smokey.Create($KeySource, [Microsoft.SqlServer.Management.Smo.AsymmetricKeySourceType ]::$KeySourceType, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
+                            } else {
+                                $smokey.Create($Keysource, [Microsoft.SqlServer.Management.Smo.AsymmetricKeySourceType]::$KeySourceType)
+                            }
 
-                        if ($SecurePassword) {
-                            $smokey.Create([Microsoft.SqlServer.Management.Smo.AsymmetricKeyEncryptionAlgorithm]::$Algorithm, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
                         } else {
-                            $smokey.Create([Microsoft.SqlServer.Management.Smo.AsymmetricKeyEncryptionAlgorithm]::$Algorithm)
+                            if ($SecurePassword) {
+                                $smokey.Create([Microsoft.SqlServer.Management.Smo.AsymmetricKeyEncryptionAlgorithm]::$Algorithm, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
+                            } else {
+                                $smokey.Create([Microsoft.SqlServer.Management.Smo.AsymmetricKeyEncryptionAlgorithm]::$Algorithm)
+                            }
                         }
 
                         Add-Member -Force -InputObject $smokey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
