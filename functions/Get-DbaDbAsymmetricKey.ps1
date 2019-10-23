@@ -64,6 +64,8 @@ function Get-DbaDbAsymmetricKey {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$Name,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     process {
@@ -85,7 +87,7 @@ function Get-DbaDbAsymmetricKey {
             }
 
             if ($Name) {
-                $akeys = $akeys| Where-Object Name -in $Name
+                $akeys = $akeys | Where-Object Name -in $Name
             }
 
             foreach ($akey in $akeys) {
