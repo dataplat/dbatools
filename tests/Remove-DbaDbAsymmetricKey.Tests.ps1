@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -confirm:$false
         $getResults = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master
         It  "Should create new key in master called $keyname" {
-            ($warnvar -eq $null) | Should -Be $True
+            $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be 'master'
             $results.name | Should -Be $keyname
             $results.KeyEncryptionAlgorithm | Should -Be 'Rsa2048'
@@ -38,9 +38,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $key2 = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname2
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -WarningVariable warnvar
         $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -confirm:$false
-        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master
-        It  "Should new keys in master " {
-            ($warnvar -eq $null) | Should -Be $True
+        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master
+        It  "Should creatd new keys in master " {
+            $warnvar | Should -BeNullOrEmpty
             $results | Should -HaveCount 2
         }
         It "Should Remove a specific certificate" {

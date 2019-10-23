@@ -81,7 +81,7 @@ function Remove-DbaDbAsymmetricKey {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.Name
-                        Name  = $askey.Name
+                        Name         = $askey.Name
                         Status       = "Success"
                     }
                 } catch {

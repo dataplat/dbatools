@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $algorithm = 'Rsa4096'
         $dbuser = 'keyowner'
         $database = 'GetAsKey'
-        New-DbaDbDatabase -SqlInstance $sciprt:instance2 -Name $database
+        New-DbaDatabase -SqlInstance $sciprt:instance2 -Name $database
         New-DbaDbUser -SqlInstance $script:instance2 -Database $database -UserName $dbuser
         $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master
