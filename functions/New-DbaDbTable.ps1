@@ -43,6 +43,19 @@ function New-DbaDbTable {
             Type      = 'int'
             Nullable  = $false
         }
+        $cols += @{
+            Name      = 'test3'
+            Type      = 'decimal'
+            MaxLength = 9
+            Nullable  = $true
+        }
+        $cols += @{
+            Name      = 'test4'
+            Type      = 'decimal'
+            Precision = 8
+            Scale = 2
+            Nullable  = $false
+        }
 
     .PARAMETER ColumnObject
         If you want to get fancy, you can build your own column objects and pass them in
@@ -341,6 +354,15 @@ function New-DbaDbTable {
                         if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
                             if ($column.MaxLength -gt 0) {
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
+                            } else {
+                                $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
+                            }
+                        } elseif ($sqlDbType -eq 'Decimal') {
+                            if ($column.MaxLength -gt 0) {
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
+                            } elseif ($column.Precision -gt 0) {
+                                $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.Precision, $column.Scale
                             } else {
                                 $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
