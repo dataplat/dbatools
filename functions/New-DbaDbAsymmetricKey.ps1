@@ -29,13 +29,21 @@ function New-DbaDbAsymmetricKey {
         Enables piping from Get-DbaDatabase
 
     .PARAMETER KeySourceType
+        The source of external keys loaded in, can be one of Executable, File or Assemnly
+        We do not currently support Provider
 
     .PARAMETER KeySource
+        The path to the Executable, File or Assembly to be passed in.
+        The path is parsed by the SQL Server instance, so needs to visiable to the instance
 
     .PARAMETER Algorithm
+        The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Owner
+        User within the database who will own the key. Defaults to the user creating the key if not specified. User must exist withing the database already
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
@@ -63,6 +71,10 @@ function New-DbaDbAsymmetricKey {
 
         Suppresses all prompts to install but prompts to securely enter your password and creates an asymmetric key in the 'db1' database
 
+    .EXAMPLE
+        PS C:\> New-DbaDbAsymmetrickKey -SqlInstance Server1 -Database enctest -KeySourceType File -KeySource c:\keys\NewKey.snk -Name BackupKey -Owner KeyOwner
+
+        Installs the key pair held in NewKey.snk into the enctest database creating an AsymmetricKey called BackupKey, which will be owned by KeyOwner
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
