@@ -16,7 +16,7 @@ function Set-DbaPrivilege {
 
     .PARAMETER Type
         Use this to choose the privilege(s) to which you want to add the SQL Service account.
-        Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
+        Accepts 'IFI', 'LPIM', 'BatchLogon', and/or 'SecAudit' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch', and 'Generate Security Audits'.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -58,7 +58,7 @@ function Set-DbaPrivilege {
         [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
-        [ValidateSet('IFI', 'LPIM', 'BatchLogon')]
+        [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit')]
         [string[]]$Type,
         [switch]$EnableException
     )
@@ -139,6 +139,21 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
+                                        }
+                                    }
+                                }
+                                if ('SecAudit' -in $Type) {
+                                    $Line = Get-Content $tempfile | Where-Object { $_ -match "SeAuditPrivilege" }
+                                    ForEach ($acc in $SQLServiceAccounts) {
+                                        $SID = Convert-UserNameToSID -Acc $acc;
+                                        if ($Line -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "SeAuditPrivilege = ", "SeAuditPrivilege = *$SID," |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Write to Security Log Privileges on $env:ComputerName"
+                                        } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Warning "$acc already has Write To Security Audit Privilege on $env:ComputerName"
                                         }
                                     }
                                 }
