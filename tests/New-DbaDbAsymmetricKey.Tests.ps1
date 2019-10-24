@@ -14,6 +14,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database enctest -Confirm:$false
+    }
+
     Context "commands work as expected" {
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         if (!(Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master )) {
@@ -94,20 +98,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
     }
 
-    Context "Loaded from a keyfile" {
-        $keyname = 'test5'
-        $algorithm = 'Rsa4096'
+    Context "Create new key in $database Loaded from a keyfile" {
+        $keyname = 'filekey'
         $dbuser = 'keyowner'
         $database = 'enctest'
-        $path = "$($script:appveyorlabrepo)\keytest\keypair.snk"
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar -KeySourceType File -KeySource $path
+        $path = "$($script:appveyorlabrepo)\keytests\keypair.snk"
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
         It "Should Create new key in master called $keyname" {
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
-            $results.KeyLength | Should -Be '4096'
             $results.Owner | Should -Be $dbuser
+        }
+        $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
+    }
+
+    Context "Failed key creation from a missing keyfile" {
+        $keyname = 'filekeybad'
+        $dbuser = 'keyowner'
+        $database = 'enctest'
+        $path = "$($script:appveyorlabrepo)\keytests\keypair.bad"
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
+        $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
+        It "Should not Create new key in $database called $keyname" {
+            $warnvar | Should -Not -BeNullOrEmpty
+            $results | Should -BeNullorEmpty
         }
         $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
 

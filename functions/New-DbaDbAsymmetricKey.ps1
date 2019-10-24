@@ -38,6 +38,7 @@ function New-DbaDbAsymmetricKey {
 
     .PARAMETER Algorithm
         The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default
+        This value will be ignored when KeySource is supplied, as the algorithm is embedded in the KeySource
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -96,8 +97,8 @@ function New-DbaDbAsymmetricKey {
     )
     begin {
         if (((Test-Bound 'KeySource') -xor (Test-Bound 'KeySourceType'))) {
-            write-message -level verbose -message 'ks check'
-            Stop-Function -Message 'Both Keysource and KeySourceType must both be provided' -Continue
+            write-message -level verbose -message 'keysource paramter check'
+            Stop-Function -Message 'Both Keysource and KeySourceType must be provided' -Continue
             break
         }
     }
@@ -132,31 +133,36 @@ function New-DbaDbAsymmetricKey {
                                 Stop-Function -Message "$owner is unkown or ambiguous in $($db.name)" -Target $db -Continue
                             }
                         }
-                        if ($Pscmdlet.ParameterSetName -eq 'Keysource') {
+                        if ('' -ne $Keysource) {
+                            if ($slo)
                             switch ($KeySourceType) {
                                 'Executable' {
-                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -Path $KeySource)) {
+                                    Write-Message -Level Verbose -Message 'Executable passed in as key source'
+                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $KeySource)) {
                                         Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
                                     }
                                 }
                                 'File' {
-                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -Path $KeySource)) {
+                                    Write-Message -Level Verbose -Message 'File passed in as key source'
+                                    if (!(Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $KeySource)) {
                                         Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
                                     }
                                 }
                                 'SqlAssembly' {
-                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $sqlInstance -Database $db -Name $KeySource)) {
+                                    Write-Message -Level Verbose -Message 'SqlAssembly passed in as key source'
+                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $sqlInstance -SqlCredential $SqlCredential -Database $db -Name $KeySource)) {
                                         Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
                                     }
                                 }
                             }
                             if ($SecurePassword) {
-                                $smokey.Create($KeySource, [Microsoft.SqlServer.Management.Smo.AsymmetricKeySourceType ]::$KeySourceType, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
+                                $smokey.Create($KeySource, [Microsoft.SqlServer.Management.Smo.AsymmetricKeySourceType]::$KeySourceType, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
                             } else {
                                 $smokey.Create($Keysource, [Microsoft.SqlServer.Management.Smo.AsymmetricKeySourceType]::$KeySourceType)
                             }
 
                         } else {
+                            Write-Message -Level Verbose -Message 'Creating normal key without source'
                             if ($SecurePassword) {
                                 $smokey.Create([Microsoft.SqlServer.Management.Smo.AsymmetricKeyEncryptionAlgorithm]::$Algorithm, ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
                             } else {
