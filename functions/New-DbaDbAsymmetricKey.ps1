@@ -134,7 +134,6 @@ function New-DbaDbAsymmetricKey {
                             }
                         }
                         if ('' -ne $Keysource) {
-                            if ($slo)
                             switch ($KeySourceType) {
                                 'Executable' {
                                     Write-Message -Level Verbose -Message 'Executable passed in as key source'
