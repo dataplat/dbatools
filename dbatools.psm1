@@ -2,7 +2,7 @@
 param(
     [Collections.IDictionary]
     [Alias('Options')]
-    $Option = @{}
+    $Option = @{ }
 )
 
 
@@ -120,7 +120,7 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
     $regType = 'Microsoft.Win32.Registry' -as [Type]
     $hkcuNode = $regType::CurrentUser.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
-        $userValues = @{}
+        $userValues = @{ }
         foreach ($v in $hkcuNode.GetValueNames()) {
             $userValues[$v] = $hkcuNode.GetValue($v)
         }
@@ -128,15 +128,15 @@ if ($psVersionTable.Platform -ne 'Unix' -and 'Microsoft.Win32.Registry' -as [Typ
     }
     $hklmNode = $regType::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")
     if ($dbaToolsSystemNode) {
-        $systemValues = @{}
+        $systemValues = @{ }
         foreach ($v in $hklmNode.GetValueNames()) {
             $systemValues[$v] = $hklmNode.GetValue($v)
         }
         $dbatoolsSystemSystemNode = $systemValues
     }
 } else {
-    $dbatoolsSystemUserNode = @{}
-    $dbatoolsSystemSystemNode = @{}
+    $dbatoolsSystemUserNode = @{ }
+    $dbatoolsSystemSystemNode = @{ }
 }
 
 #region Dot Sourcing
@@ -383,6 +383,9 @@ $script:xplat = @(
     'Remove-DbaDbSnapshot',
     'Get-DbaDbRoleMember',
     'Get-DbaServerRoleMember',
+    'Get-DbaDbAsymmetricKey',
+    'New-DbaDbAsymmetricKey',
+    'Remove-DbaDbAsymmetricKey',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
     'Write-DbaDbTableData',
@@ -738,6 +741,9 @@ $script:xplat = @(
     'Get-DbaDbLogSpace',
     'Export-DbaDbRole',
     'Export-DbaServerRole',
+    'Get-DbaBuildReference',
+    'Install-DbaWhoIsActive',
+    'Update-Dbatools',
     'Add-DbaServerRoleMember'
 )
 
@@ -773,14 +779,11 @@ $script:windowsonly = @(
     'Export-DbaScript',
     'Get-DbaAgentJobOutputFile',
     'Set-DbaAgentJobOutputFile',
-    'Get-DbaBuildReference',
-    'New-DbaDacProfile'
+    'New-DbaDacProfile',
     'Import-DbaXESessionTemplate',
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure'
-    'Update-Dbatools',
-    'Install-DbaWhoIsActive',
+    'Export-DbaSpConfigure',
     'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
@@ -846,6 +849,8 @@ $script:windowsonly = @(
     'Enable-DbaForceNetworkEncryption',
     'Disable-DbaForceNetworkEncryption',
     'Get-DbaForceNetworkEncryption',
+    'Disable-DbaHideInstance',
+    'Enable-DbaHideInstance',
     'Remove-DbaComputerCertificate',
     'New-DbaComputerCertificate',
     'Get-DbaComputerCertificate',

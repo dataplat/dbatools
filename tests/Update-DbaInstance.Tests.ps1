@@ -27,6 +27,70 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
+    Context "testing proper Authorization" {
+        BeforeAll {
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    InstanceName = 'LAB'
+                    Version      = [pscustomobject]@{
+                        "SqlInstance" = $null
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
+                    }
+                }
+            }
+            #Mock Get-Item and Get-ChildItem with a dummy file
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+            # mock Find-SqlInstanceUpdate
+            Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\path'
+                }
+            }
+            # Mock name resolution
+            Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullComputerName = 'mock'
+                }
+            }
+            # Mock CredSSP initialization
+            Mock -CommandName Initialize-CredSSP -ModuleName dbatools -MockWith { }
+            # Mock CmObject
+            Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{ SystemType = 'x64' } }
+        }
+        It "should call internal functions using CredSSP" {
+            $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
+            $cred = [pscredential]::new('usr', $password)
+            $null = Update-DbaInstance -ComputerName 'mocked' -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'CredSSP' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'CredSSP' } -Exactly 2 -Scope It -ModuleName dbatools
+        }
+        It "should call internal functions using Default" {
+            $null = Update-DbaInstance -ComputerName 'mocked' -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Default' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Default' } -Exactly 2 -Scope It -ModuleName dbatools
+        }
+        It "should call internal functions using Kerberos" {
+            $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
+            $cred = [pscredential]::new('usr', $password)
+            $null = Update-DbaInstance -ComputerName 'mocked' -Authentication Kerberos -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Kerberos' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Kerberos' } -Exactly 2 -Scope It -ModuleName dbatools
+        }
+    }
     Context "Validate upgrades to a latest version" {
         BeforeAll {
             #this is our 'currently installed' versions

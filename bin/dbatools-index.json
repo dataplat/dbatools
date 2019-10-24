@@ -5974,6 +5974,64 @@
         "Syntax":  "Disable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Disable-DbaHideInstance",
+        "Description":  "Disables the Hide Instance setting of the SQL Server network configuration.\n\nThis requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "HideInstance",
+                     "Security"
+                 ],
+        "Synopsis":  "Disables the Hide Instance setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "Gareth Newman (@gazeranco), ifexists.blog",
+        "CommandName":  "Disable-DbaHideInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance\nDisables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2\nDisables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eDisable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were executed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Disable-DbaHideInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Disable-DbaStartupProcedure",
         "Description":  "Used to revoke the designation of one or more stored procedures to automatically execute when the SQL Server service is started.\nEquivalent to running the system stored procedure sp_procoption with @OptionValue = off\nReturns the SMO StoredProcedure object for procedures affected.",
         "Tags":  [
@@ -6397,6 +6455,64 @@
                        ]
                    ],
         "Syntax":  "Enable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Enable-DbaHideInstance",
+        "Description":  "Enables the Hide Instance setting of the SQL Server network configuration.\n\nThis setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "HideInstance",
+                     "Security"
+                 ],
+        "Synopsis":  "Enables the Hide Instance setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "Gareth Newman (@gazeranco), ifexists.blog",
+        "CommandName":  "Enable-DbaHideInstance",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance\nEnables Hide Instance of SQL Engine on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2\nEnables Hide Instance of SQL Engine for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eEnable-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were executed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Enable-DbaHideInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Enable-DbaStartupProcedure",
@@ -11436,7 +11552,7 @@
         "Alias":  "",
         "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Get-DbaBuildReference",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
         "Params":  [
@@ -11723,7 +11839,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaCmObject -ClassName \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaCmObject [-ClassName] \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject -Query \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaComputerCertificate",
@@ -12277,7 +12393,7 @@
         "CommandName":  "Get-DbaDbAssembly",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12296,6 +12412,22 @@
                            ""
                        ],
                        [
+                           "Database",
+                           "Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Specify an Assembly to be fetched. If not specified all Assemblys will be returned",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -12304,7 +12436,78 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Name] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbAsymmetricKey",
+        "Description":  "Gets database Asymmetric Key",
+        "Tags":  "AsymmetricKey",
+        "Synopsis":  "Gets database Asymmetric Key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "Get-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance sql2016\nGets all Asymmetric Keys\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1\nGets the Asymmetric Keys for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -Name key1\nGets the key1 Asymmetric Key within the db1 database",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Get Asymmetric Keys from specific database",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Database(s) to ignore when retrieving Asymmetric Keys",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Get specific Asymmetric Key by name",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbBackupHistory",
@@ -24318,7 +24521,7 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Install-DbaWhoIsActive",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\whoisactive_install.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$instances = Get-DbaRegServer sqlserver\nPS C:\\\u003e Install-DbaWhoIsActive -SqlInstance $instances -Database master\nInstalls sp_WhoisActive to all servers within CMS",
         "Params":  [
@@ -24806,7 +25009,7 @@
                            "SqlInstance",
                            "The SQL Server instance. Server version must be SQL Server version 2012 or higher.",
                            "",
-                           true,
+                           false,
                            "false",
                            ""
                        ],
@@ -24867,7 +25070,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAgFailover [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAgFailover [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaBalanceDataFiles",
@@ -31225,6 +31428,125 @@
         "Syntax":  "New-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Collation] \u003cString\u003e] [[-Recoverymodel] \u003cString\u003e] [[-Owner] \u003cString\u003e] [[-DataFilePath] \u003cString\u003e] [[-LogFilePath] \u003cString\u003e] [[-PrimaryFilesize] \u003cInt32\u003e] [[-PrimaryFileGrowth] \u003cInt32\u003e] [[-PrimaryFileMaxSize] \u003cInt32\u003e] [[-LogSize] \u003cInt32\u003e] [[-LogGrowth] \u003cInt32\u003e] [[-SecondaryFilesize] \u003cInt32\u003e] [[-SecondaryFileGrowth] \u003cInt32\u003e] [[-SecondaryFileMaxSize] \u003cInt32\u003e] [[-SecondaryFileCount] \u003cInt32\u003e] [[-DefaultFileGroup] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaDbAsymmetricKey",
+        "Description":  "Creates a new database asymmetric key. If no database is specified, the asymmetric key will be created in master.",
+        "Tags":  "asymmetrickey",
+        "Synopsis":  "Creates a new database asymmetric key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "New-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetricKey -SqlInstance Server1\nYou will be prompted to securely enter your password, then an asymmetric key will be created in the master database on server1 if it does not exist.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -Confirm:$false\nSuppresses all prompts to install but prompts to securely enter your password and creates an asymmetric key in the \u0027db1\u0027 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetrickKey -SqlInstance Server1 -Database enctest -KeySourceType File -KeySource c:\\keys\\NewKey.snk -Name BackupKey -Owner KeyOwner\nInstalls the key pair held in NewKey.snk into the enctest database creating an AsymmetricKey called BackupKey, which will be owned by KeyOwner",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Optional name to create the asymmetric key. Defaults to database name.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database where the asymmetric key will be created. Defaults to master.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "SecurePassword",
+                           "Optional password - if no password is supplied, the password will be protected by the master key",
+                           "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "User within the database who will own the key. Defaults to the user creating the key if not specified. User must exist withing the database already",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeySource",
+                           "The path to the Executable, File or Assembly to be passed in.\r\nThe path is parsed by the SQL Server instance, so needs to visiable to the instance",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeySourceType",
+                           "The source of external keys loaded in, can be one of Executable, File or Assemnly\r\nWe do not currently support Provider",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Algorithm",
+                           "The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default\r\nThis value will be ignored when KeySource is supplied, as the algorithm is embedded in the KeySource",
+                           "",
+                           false,
+                           "false",
+                           "Rsa2048"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-SecurePassword] \u003cSecureString\u003e] [[-Owner] \u003cString\u003e] [[-KeySource] \u003cString\u003e] [[-KeySourceType] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-Algorithm] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaDbCertificate",
         "Description":  "Creates a new database certificate. If no database is specified, the certificate will be created in master.",
         "Tags":  "Certificate",
@@ -32180,7 +32502,7 @@
                        ],
                        [
                            "ColumnMap",
-                           "Hashtable for easy column creation. Looks like this:\n# Create collection\r\n$cols = @()\n# Add columns to collection\r\n$cols += @{\r\n    Name      = \u0027test\u0027\r\n    Type      = \u0027varchar\u0027\r\n    MaxLength = 20\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test2\u0027\r\n    Type      = \u0027int\u0027\r\n    Nullable  = $false\r\n}",
+                           "Hashtable for easy column creation. Looks like this:\n# Create collection\r\n$cols = @()\n# Add columns to collection\r\n$cols += @{\r\n    Name      = \u0027test\u0027\r\n    Type      = \u0027varchar\u0027\r\n    MaxLength = 20\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test2\u0027\r\n    Type      = \u0027int\u0027\r\n    Nullable  = $false\r\n}\r\n$cols += @{\r\n    Name      = \u0027test3\u0027\r\n    Type      = \u0027decimal\u0027\r\n    MaxLength = 9\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test4\u0027\r\n    Type      = \u0027decimal\u0027\r\n    Precision = 8\r\n    Scale = 2\r\n    Nullable  = $false\r\n}",
                            "",
                            false,
                            "false",
@@ -35956,6 +36278,85 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaDatabaseSafely [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cPSCredential\u003e] [-NoDbccCheckDb] [-BackupFolder] \u003cString\u003e [[-CategoryName] \u003cString\u003e] [[-JobOwner] \u003cString\u003e] [-AllDatabases] [[-BackupCompression] \u003cString\u003e] [-ReuseSourceFolderStructure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbAsymmetricKey",
+        "Description":  "Deletes specified asymmetric key",
+        "Tags":  "asymmetrickey",
+        "Synopsis":  "Deletes specified asymmetric key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "Remove-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbAsymmetricKey -SqlInstance Server1 -Database Enctest -Name AsCert1\nThe Asymmetric Key AsCert1 will be removed from the Enctest database on Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database Enctest  | Remove-DbaDbAsymmetricKey\nWill remove all the asymmetric keys found in the Enctrst databae on the Server1 instance",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Name of the asymmetric key to be removed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database from which the asymmetric key will be deleted.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "InputObject",
+                           "Allows passing in of AsymmetricKey objects from Get-DbaDbAsymmetricKey",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAsymmetricKey[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbBackupRestoreHistory",
@@ -42909,7 +43310,7 @@
                        ],
                        [
                            "Type",
-                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027 and/or \u0027BatchLogon\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027 and \u0027Logon as Batch\u0027.",
+                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027, \u0027BatchLogon\u0027, and/or \u0027SecAudit\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027, \u0027Logon as Batch\u0027, and \u0027Generate Security Audits\u0027.",
                            "",
                            true,
                            "false",
@@ -46915,6 +47316,14 @@
                            "0"
                        ],
                        [
+                           "DeviceType",
+                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "IncludeCopyOnly",
                            "If this switch is enabled, copy only backups will be counted as a last backup.",
                            "",
@@ -46971,7 +47380,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",
@@ -47966,7 +48375,7 @@
                            "",
                            false,
                            "false",
-                           "Credssp"
+                           "@(\u0027CredSSP\u0027, \u0027Default\u0027)[$null -eq $Credential]"
                        ],
                        [
                            "ExtractPath",
@@ -48119,7 +48528,7 @@
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Update-Dbatools",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Update-DbaTools",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-Dbatools\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-Dbatools -dev\nUpdates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.",
         "Params":  [
