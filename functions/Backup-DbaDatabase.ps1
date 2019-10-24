@@ -128,11 +128,6 @@ function Backup-DbaDatabase {
         The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
         Is mutually exclusive with the EncryptionKey option
 
-    .PARAMETER EncrytptionKey
-        The name of the Asymmetric key to be used to encrypt the backup
-        Is mutually exclusive with the EncryptionCertificate option
-        Due to the use of an EKM to hold the keys we cannot check if it exists before attempting to use it.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -236,11 +231,13 @@ function Backup-DbaDatabase {
         [ValidateSet('AES128', 'AES192', 'AES256', 'TRIPLEDES')]
         [String]$EncryptionAlgorithm,
         [String]$EncryptionCertificate,
-        [String]$EncrytptionKey,
         [switch]$EnableException
     )
 
     begin {
+        # This is here ready to go when get EKM working so we can do encrption with asymmetric encryption.
+        $EncryptionKey = $null
+
         if (-not (Test-Bound 'TimeStampFormat')) {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
@@ -348,10 +345,16 @@ function Backup-DbaDatabase {
                         }
                     }
                     if (Test-Bound 'EncryptionKey') {
-                        Write-Message -Level Warning -Message "You have selected to use an asymmetric key to backup. As this involves using an EKM we can't check it exists"
-                        $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
-                        $encryptionOptions.encryptorName = $EncryptionKey
-                        $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        # Should not end up here until Key encryption in implemented
+                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                        if ($null -eq $tKeyCheck) {
+                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                            $encryptionOptions.encryptorName = $EncryptionKey
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
                     }
                 }
             }
