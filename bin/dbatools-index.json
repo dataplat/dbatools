@@ -12439,6 +12439,77 @@
         "Syntax":  "Get-DbaDbAssembly [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Name] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaDbAsymmetricKey",
+        "Description":  "Gets database Asymmetric Key",
+        "Tags":  "AsymmetricKey",
+        "Synopsis":  "Gets database Asymmetric Key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "Get-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance sql2016\nGets all Asymmetric Keys\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1\nGets the Asymmetric Keys for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -Name key1\nGets the key1 Asymmetric Key within the db1 database",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Get Asymmetric Keys from specific database",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Database(s) to ignore when retrieving Asymmetric Keys",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Get specific Asymmetric Key by name",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaDbBackupHistory",
         "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
         "Tags":  [
@@ -31357,6 +31428,125 @@
         "Syntax":  "New-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Collation] \u003cString\u003e] [[-Recoverymodel] \u003cString\u003e] [[-Owner] \u003cString\u003e] [[-DataFilePath] \u003cString\u003e] [[-LogFilePath] \u003cString\u003e] [[-PrimaryFilesize] \u003cInt32\u003e] [[-PrimaryFileGrowth] \u003cInt32\u003e] [[-PrimaryFileMaxSize] \u003cInt32\u003e] [[-LogSize] \u003cInt32\u003e] [[-LogGrowth] \u003cInt32\u003e] [[-SecondaryFilesize] \u003cInt32\u003e] [[-SecondaryFileGrowth] \u003cInt32\u003e] [[-SecondaryFileMaxSize] \u003cInt32\u003e] [[-SecondaryFileCount] \u003cInt32\u003e] [[-DefaultFileGroup] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaDbAsymmetricKey",
+        "Description":  "Creates a new database asymmetric key. If no database is specified, the asymmetric key will be created in master.",
+        "Tags":  "asymmetrickey",
+        "Synopsis":  "Creates a new database asymmetric key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "New-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetricKey -SqlInstance Server1\nYou will be prompted to securely enter your password, then an asymmetric key will be created in the master database on server1 if it does not exist.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetricKey -SqlInstance Server1 -Database db1 -Confirm:$false\nSuppresses all prompts to install but prompts to securely enter your password and creates an asymmetric key in the \u0027db1\u0027 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbAsymmetrickKey -SqlInstance Server1 -Database enctest -KeySourceType File -KeySource c:\\keys\\NewKey.snk -Name BackupKey -Owner KeyOwner\nInstalls the key pair held in NewKey.snk into the enctest database creating an AsymmetricKey called BackupKey, which will be owned by KeyOwner",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Optional name to create the asymmetric key. Defaults to database name.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database where the asymmetric key will be created. Defaults to master.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "SecurePassword",
+                           "Optional password - if no password is supplied, the password will be protected by the master key",
+                           "Password",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Owner",
+                           "User within the database who will own the key. Defaults to the user creating the key if not specified. User must exist withing the database already",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeySource",
+                           "The path to the Executable, File or Assembly to be passed in.\r\nThe path is parsed by the SQL Server instance, so needs to visiable to the instance",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "KeySourceType",
+                           "The source of external keys loaded in, can be one of Executable, File or Assemnly\r\nWe do not currently support Provider",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Algorithm",
+                           "The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default\r\nThis value will be ignored when KeySource is supplied, as the algorithm is embedded in the KeySource",
+                           "",
+                           false,
+                           "false",
+                           "Rsa2048"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-SecurePassword] \u003cSecureString\u003e] [[-Owner] \u003cString\u003e] [[-KeySource] \u003cString\u003e] [[-KeySourceType] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-Algorithm] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaDbCertificate",
         "Description":  "Creates a new database certificate. If no database is specified, the certificate will be created in master.",
         "Tags":  "Certificate",
@@ -32312,7 +32502,7 @@
                        ],
                        [
                            "ColumnMap",
-                           "Hashtable for easy column creation. Looks like this:\n# Create collection\r\n$cols = @()\n# Add columns to collection\r\n$cols += @{\r\n    Name      = \u0027test\u0027\r\n    Type      = \u0027varchar\u0027\r\n    MaxLength = 20\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test2\u0027\r\n    Type      = \u0027int\u0027\r\n    Nullable  = $false\r\n}",
+                           "Hashtable for easy column creation. Looks like this:\n# Create collection\r\n$cols = @()\n# Add columns to collection\r\n$cols += @{\r\n    Name      = \u0027test\u0027\r\n    Type      = \u0027varchar\u0027\r\n    MaxLength = 20\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test2\u0027\r\n    Type      = \u0027int\u0027\r\n    Nullable  = $false\r\n}\r\n$cols += @{\r\n    Name      = \u0027test3\u0027\r\n    Type      = \u0027decimal\u0027\r\n    MaxLength = 9\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test4\u0027\r\n    Type      = \u0027decimal\u0027\r\n    Precision = 8\r\n    Scale = 2\r\n    Nullable  = $false\r\n}",
                            "",
                            false,
                            "false",
@@ -36088,6 +36278,85 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaDatabaseSafely [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cPSCredential\u003e] [-NoDbccCheckDb] [-BackupFolder] \u003cString\u003e [[-CategoryName] \u003cString\u003e] [[-JobOwner] \u003cString\u003e] [-AllDatabases] [[-BackupCompression] \u003cString\u003e] [-ReuseSourceFolderStructure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbAsymmetricKey",
+        "Description":  "Deletes specified asymmetric key",
+        "Tags":  "asymmetrickey",
+        "Synopsis":  "Deletes specified asymmetric key",
+        "Alias":  "",
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "CommandName":  "Remove-DbaDbAsymmetricKey",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbAsymmetricKey -SqlInstance Server1 -Database Enctest -Name AsCert1\nThe Asymmetric Key AsCert1 will be removed from the Enctest database on Instance Server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAsymmetricKey -SqlInstance Server1 -Database Enctest  | Remove-DbaDbAsymmetricKey\nWill remove all the asymmetric keys found in the Enctrst databae on the Server1 instance",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "Name of the asymmetric key to be removed",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database from which the asymmetric key will be deleted.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "InputObject",
+                           "Allows passing in of AsymmetricKey objects from Get-DbaDbAsymmetricKey",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbAsymmetricKey [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cAsymmetricKey[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbBackupRestoreHistory",
@@ -43041,7 +43310,7 @@
                        ],
                        [
                            "Type",
-                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027 and/or \u0027BatchLogon\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027 and \u0027Logon as Batch\u0027.",
+                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027, \u0027BatchLogon\u0027, and/or \u0027SecAudit\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027, \u0027Logon as Batch\u0027, and \u0027Generate Security Audits\u0027.",
                            "",
                            true,
                            "false",
