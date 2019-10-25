@@ -47,11 +47,13 @@ if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVers
     } else {
         $processes = Get-Process $process -ErrorAction SilentlyContinue | Where-Object Id -NE $PID
     }
-    if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Killing $($processes.Count) processes of powershell running")) {
-        Write-Output "Death to the following process(es): $(($processes.Id) -join ",")"
-        $processes | Stop-Process -ErrorVariable dangit -ErrorAction SilentlyContinue -Force
-        if ($dangit) {
-            Write-Warning "Not able to kill following processes: $((Get-Process $process | Where-Object Id -NE $pid).Id -join ",")"
+    if ($processes.Count -gt 0) {
+        if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Killing $($processes.Count) processes of powershell running")) {
+            Write-Output "Death to the following process(es): $(($processes.Id) -join ",")"
+            $processes | Stop-Process -ErrorVariable dangit -ErrorAction SilentlyContinue -Force
+            if ($dangit) {
+                Write-Warning "Not able to kill following processes: $((Get-Process $process | Where-Object Id -NE $pid).Id -join ",")"
+            }
         }
     }
     if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Removing old versions of $module.")) {
