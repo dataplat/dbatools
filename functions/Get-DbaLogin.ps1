@@ -260,7 +260,7 @@ function Get-DbaLogin {
 
                 if ($Detailed) {
                     $loginName = $serverLogin.name
-                    $query = $loginProperty.Replace('<#LoginName#>', "$loginName")
+                    $query = $loginProperty.Replace("''", "$loginName")
                     $loginProperties = $server.ConnectionContext.ExecuteWithResults($query).Tables[0]
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordCount -Value $loginProperties.BadPasswordCount
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordTime -Value $loginProperties.BadPasswordTime
