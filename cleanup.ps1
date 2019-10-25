@@ -6,7 +6,7 @@ param(
 $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 # Which process should we be looking for?
-if ($PSVersionTable.Version.Major -gt 6) {
+if ($psedition -eq 'Core') {
     $process = "pwsh"
 } else {
     $process = "powershell"
@@ -43,9 +43,9 @@ if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVers
     Write-Output "Latest version of $module found on $env:COMPUTERNAME."
     Write-Output "Older versions of $module also found. These will be uninstalled now."
     if ($isElevated) {
-        $processes = Get-Process $process -IncludeUserName | Where-Object Id -NE $pid
+        $processes = Get-Process $process -IncludeUserName -ErrorAction SilentlyContinue | Where-Object Id -NE $pid
     } else {
-        $processes = Get-Process $process | Where-Object Id -NE $PID
+        $processes = Get-Process $process -ErrorAction SilentlyContinue | Where-Object Id -NE $PID
     }
     if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Killing $($processes.Count) processes of powershell running")) {
         Write-Output "Death to the following process(es): $(($processes.Id) -join ",")"
@@ -71,15 +71,17 @@ if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVers
     Write-Output "Update of $module is available"
     Write-Output "Older versions of $module found. These will be uninstalled now."
     if ($isElevated) {
-        $processes = Get-Process $process -IncludeUserName | Where-Object Id -NE $pid
+        $processes = Get-Process $process -ErrorAction SilentlyContinue -IncludeUserName | Where-Object Id -NE $pid
     } else {
-        $processes = Get-Process $process | Where-Object Id -NE $PID
+        $processes = Get-Process $process -ErrorAction SilentlyContinue | Where-Object Id -NE $PID
     }
-    if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Killing $($processes.Count) processes of powershell running")) {
-        Write-Output "Death to the following process(es): $(($processes.Id) -join ",")"
-        $processes | Stop-Process -ErrorVariable dangit -ErrorAction SilentlyContinue -Force
-        if ($dangit) {
-            Write-Warning "Not able to kill following processes: $((Get-Process $process | Where-Object Id -NE $pid).Id -join ",")"
+    if ($processes.Count -gt 0) {
+        if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Killing $($processes.Count) processes of powershell running")) {
+            Write-Output "Death to the following process(es): $(($processes.Id) -join ",")"
+            $processes | Stop-Process -ErrorVariable dangit -ErrorAction SilentlyContinue -Force
+            if ($dangit) {
+                Write-Warning "Not able to kill following processes: $((Get-Process $process | Where-Object Id -NE $pid).Id -join ",")"
+            }
         }
     }
     if ($Pscmdlet.ShouldProcess("$env:COMPUTERNAME", "Removing old versions of $module.")) {
@@ -96,6 +98,7 @@ if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVers
     }
     Write-Output "Continuing to install latest release of $module"
     Install-Module $module -Force
+    Write-Output "The End"
 } else {
     Write-Output "No update/actions required."
 }
