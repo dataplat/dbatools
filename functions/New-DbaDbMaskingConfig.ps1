@@ -437,7 +437,7 @@ function New-DbaDbMaskingConfig {
                             if ($patterns.Count -ge 1) {
                                 if ($null -eq $result) {
                                     # Setup the query
-                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                     # Get the data
                                     $dataset = @()

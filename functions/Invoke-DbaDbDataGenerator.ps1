@@ -105,7 +105,7 @@ function Invoke-DbaDbDataGenerator {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Create the faker objects
         try {

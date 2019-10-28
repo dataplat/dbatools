@@ -125,10 +125,12 @@ function Copy-DbaLogin {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
+        [parameter(ParameterSetName = "File", Mandatory)]
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(ParameterSetName = "SqlInstance", Mandatory)]
+        [parameter(ParameterSetName = "InputObject", Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
@@ -149,7 +151,7 @@ function Copy-DbaLogin {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
@@ -501,7 +503,7 @@ function Copy-DbaLogin {
             try {
                 $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
             }
         }
@@ -516,7 +518,7 @@ function Copy-DbaLogin {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             $destVersionMajor = $destServer.VersionMajor

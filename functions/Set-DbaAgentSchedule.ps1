@@ -38,7 +38,7 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencyInterval
         The days that a job is executed
         Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwrites any other value that has been passed before.
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
@@ -156,7 +156,7 @@ function Set-DbaAgentSchedule {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {

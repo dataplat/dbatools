@@ -110,7 +110,7 @@ function Copy-DbaSsisCatalog {
     begin {
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Get-RemoteIntegrationService {
             param (
@@ -148,8 +148,8 @@ function Copy-DbaSsisCatalog {
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
                 $cmd.CommandText = "SSISDB.Catalog.get_project"
-                $cmd.Parameters.Add("@folder_name", $Folder) | out-null;
-                $cmd.Parameters.Add("@project_name", $Project) | out-null;
+                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
+                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
                     $destFolder = $destinationFolders | Where-Object {
@@ -264,7 +264,7 @@ function Copy-DbaSsisCatalog {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -292,7 +292,7 @@ function Copy-DbaSsisCatalog {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             try {

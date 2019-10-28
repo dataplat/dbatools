@@ -63,13 +63,9 @@ function Read-DbaAuditFile {
             $columns = @("name", "timestamp")
 
             if ($file -is [System.String]) {
-                $currentfile = $file
-                #Variable marked as unused by PSScriptAnalyzer
-                #$manualadd = $true
+                $currentFile = $file
             } elseif ($file -is [System.IO.FileInfo]) {
-                $currentfile = $file.FullName
-                #Variable marked as unused by PSScriptAnalyzer
-                #$manualadd = $true
+                $currentFile = $file.FullName
             } else {
                 if ($file -isnot [Microsoft.SqlServer.Management.Smo.Audit]) {
                     Stop-Function -Message "Unsupported file type."
@@ -81,48 +77,48 @@ function Read-DbaAuditFile {
                     return
                 }
 
-                $instance = [dbainstance]$file.ComputerName
+                $instance = [DbaInstanceParameter]$file.ComputerName
 
                 if ($instance.IsLocalHost) {
-                    $currentfile = $file.FullName
+                    $currentFile = $file.FullName
                 } else {
-                    $currentfile = $file.RemoteFullName
+                    $currentFile = $file.RemoteFullName
                 }
             }
 
             if (-not $Exact) {
-                $currentfile = $currentfile.Replace('.sqlaudit', '*.sqlaudit')
+                $currentFile = $currentFile.Replace('.sqlaudit', '*.sqlaudit')
 
-                if ($currentfile -notmatch "sqlaudit") {
-                    $currentfile = "$currentfile*.sqlaudit"
+                if ($currentFile -notmatch "sqlaudit") {
+                    $currentFile = "$currentFile*.sqlaudit"
                 }
             }
 
-            $accessible = Test-Path -Path $currentfile
+            $accessible = Test-Path -Path $currentFile
             $whoami = whoami
 
             if (-not $accessible) {
                 if ($file.Status -eq "Stopped") { continue }
-                Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+                Stop-Function -Continue -Message "$currentFile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
             if ($raw) {
-                return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+                return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile)
             }
 
-            $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
-            $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
+            $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile)
+            $newColumns = ($enum.Fields.Name | Select-Object -Unique)
 
             $actions = ($enum.Actions.Name | Select-Object -Unique)
             foreach ($action in $actions) {
-                $newcolumns += ($action -Split '\.')[-1]
+                $newColumns += ($action -Split '\.')[-1]
             }
 
-            $newcolumns = $newcolumns | Sort-Object
-            $columns = ($columns += $newcolumns) | Select-Object -Unique
+            $newColumns = $newColumns | Sort-Object
+            $columns = ($columns += $newColumns) | Select-Object -Unique
 
             # Make it selectable, otherwise it's a weird enumeration
-            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile))) {
                 $hash = [ordered]@{ }
 
                 foreach ($column in $columns) {

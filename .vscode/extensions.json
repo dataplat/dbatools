@@ -3,6 +3,7 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "ms-vscode.PowerShell",
-        "dbatools.search"
+        "dbatools.search",
+        "ms-azuretools.vscode-docker"
     ]
 }

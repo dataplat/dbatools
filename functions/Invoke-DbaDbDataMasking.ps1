@@ -65,6 +65,20 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
 
+    .PARAMETER ConnectionTimeout
+        Timeout for the database connection in seconds. Default is 0
+
+    .PARAMETER CommandTimeout
+        Timeout for the database connection in seconds. Default is 300.
+
+    .PARAMETER DictionaryFilePath
+        Import the dictionary to be used in in the database masking
+
+    .PARAMETER DictionaryExportPath
+        Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv
+
+        Be carefull with this feature, this export is the key to get the original values which is a security risk!
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -130,6 +144,10 @@ function Invoke-DbaDbDataMasking {
         [int]$MaxValue,
         [int]$ModulusFactor = 10,
         [switch]$ExactLength,
+        [int]$ConnectionTimeout = 0,
+        [int]$CommandTimeout = 300,
+        [string[]]$DictionaryFilePath,
+        [string]$DictionaryExportPath,
         [switch]$EnableException
     )
     begin {
@@ -142,6 +160,39 @@ function Invoke-DbaDbDataMasking {
         $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -ExpandProperty Subtype -Unique
 
         $supportedFakerSubTypes += "Date"
+
+        # Import the dictionary files
+        if ($DictionaryFilePath.Count -ge 1) {
+            $dictionary = @{ }
+
+            foreach ($file in $DictionaryFilePath) {
+                Write-Message -Level Verbose -Message "Importing dictionary file '$file'"
+                if (Test-Path -Path $file) {
+                    try {
+                        # Import the keys and values
+                        $items = Import-Csv -Path $file
+
+                        # Loop through the items and define the types
+                        foreach ($item in $items) {
+                            if ($item.Type) {
+                                $type = [type]"$($item.type)"
+                            } else {
+                                $type = [type]"string"
+                            }
+
+                            # Add the item to the hash array
+                            if ($dictionary.Keys -notcontains $item.Key) {
+                                $dictionary.Add($item.Key, ($($item.Value) -as $type))
+                            }
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
+                    }
+                } else {
+                    Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
+                }
+            }
+        }
     }
 
     process {
@@ -173,14 +224,13 @@ function Invoke-DbaDbDataMasking {
             if ($Table -and $tabletest.Name -notin $Table) {
                 continue
             }
+
             foreach ($columntest in $tabletest.Columns) {
                 if ($columntest.ColumnType -in 'hierarchyid', 'geography', 'xml', 'geometry' -and $columntest.Name -notin $Column) {
                     Stop-Function -Message "$($columntest.ColumnType) is not supported, please remove the column $($columntest.Name) from the $($tabletest.Name) table" -Target $tables -Continue
                 }
             }
         }
-
-        $dictionary = @{ }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -194,12 +244,16 @@ function Invoke-DbaDbDataMasking {
             }
 
             foreach ($dbname in $Database) {
+                if (-not $DictionaryFilePath) {
+                    $dictionary = @{ }
+                }
+
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
                 }
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false -ConnectTimeout $ConnectionTimeout
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $transaction = $sqlconn.BeginTransaction()
@@ -225,7 +279,8 @@ function Invoke-DbaDbDataMasking {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        $data = $db.Query($query) | ConvertTo-DbaDataTable
+                        $data = $db.Query($query)
+
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -236,7 +291,7 @@ function Invoke-DbaDbDataMasking {
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
 
-                        for ($i = 0; $i -lt $data.Rows.Count; $i++) {
+                        for ($i = 0; $i -lt $data.Count; $i++) {
 
                             $rowValue = New-Object PSCustomObject
 
@@ -335,10 +390,10 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         $rowNumber = $stepcounter = 0
-                        $rowItems = $data.Rows[0] | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
-                        foreach ($row in $data.Rows) {
+                        $rowItems = $data | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+                        foreach ($row in $data) {
                             if ((($stepcounter++) % 100) -eq 0) {
-                                Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Rows.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Count -Activity "Masking data" -Message "Preparing update statements for $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             }
 
                             $updates = $wheres = @()
@@ -369,8 +424,8 @@ function Invoke-DbaDbDataMasking {
 
                                     $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
 
-                                } elseif ($columnobject.Deterministic -and ($row.$($columnobject.Name) -in $dictionary.Keys)) {
-                                    $newValue = $dictionary.Keys[$row.$($columnobject.Name)]
+                                } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
+                                    $newValue = $dictionary.Item($row.$($columnobject.Name))
                                 } else {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
@@ -482,7 +537,7 @@ function Invoke-DbaDbDataMasking {
                                     $updates += "[$($columnobject.Name)] = '$newValue'"
                                 }
 
-                                if ($columnobject.Deterministic -and ($row.$($columnobject.Name) -notin $dictionary.Keys)) {
+                                if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                     $dictionary.Add($row.$($columnobject.Name), $newValue)
                                 }
                             }
@@ -529,12 +584,12 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         try {
-                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Rows.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                            $sqlcmd.CommandTimeout = $CommandTimeout
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
-                            $stringbuilder.ToString()
-                            Write-Message -Level VeryVerbose -Message "$updatequery"
+                            Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
                             $errormessage = $_.Exception.Message.ToString()
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
@@ -550,7 +605,7 @@ function Invoke-DbaDbDataMasking {
 
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
-                                        $compositeItems += $columnComposite.Value
+                                        $compositeItems += "[$($columnComposite.Value)]"
                                     } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
@@ -587,15 +642,15 @@ function Invoke-DbaDbDataMasking {
 
                                 $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
-                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($columnObject.Name) = $($compositeItems -join ' + ')")
+                                $null = $stringbuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
                             }
 
                             try {
                                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
+                                $sqlcmd.CommandTimeout = $CommandTimeout
                                 $null = $sqlcmd.ExecuteNonQuery()
                             } catch {
-                                $stringbuilder.ToString()
-                                Write-Message -Level VeryVerbose -Message "$updatequery"
+                                Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
                                 $errormessage = $_.Exception.Message.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                             }
@@ -623,13 +678,38 @@ function Invoke-DbaDbDataMasking {
                     $uniqueValues = $null
                 }
 
+                # Commit the transaction and close it
                 try {
                     $null = $transaction.Commit()
                     $sqlconn.Close()
                 } catch {
                     Stop-Function -Message "Failure" -Continue -ErrorRecord $_
                 }
-            }
-        }
-    }
-}
+
+                # Export the dictionary when needed
+                if ($DictionaryExportPath) {
+                    try {
+                        if (-not (Test-Path -Path $DictionaryExportPath)) {
+                            New-Item -Path $DictionaryExportPath -ItemType Directory
+                        }
+
+                        Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
+
+                        $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                        $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
+
+                        if (-not $script:isWindows) {
+                            $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
+                        }
+
+                        $dictionary.GetEnumerator() | Sort-Object Key | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+
+                        Get-ChildItem -Path $dictionaryFileName
+                    } catch {
+                        Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
+                    }
+                }
+            } # End foreach database
+        } # End foreach instance
+    } # End process block
+} # End

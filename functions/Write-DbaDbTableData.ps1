@@ -149,7 +149,7 @@ function Write-DbaDbTableData {
         Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table
         Writes the results of Get-Process to a table named: "[Process]" in schema named: Schema.With.Dots in database named: [DbName]
         The Table name, Schema name and Database name must be wrapped in square brackets [ ]
-        Special charcters like " must be escaped by a ` charcter.
+        Special characters like " must be escaped by a ` character.
         In addition any actual instance of the ] character must be escaped by being duplicated.
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
@@ -444,7 +444,7 @@ function Write-DbaDbTableData {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
 

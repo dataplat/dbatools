@@ -50,7 +50,7 @@ function Export-DbaSysDbUserObject {
 
     .NOTES
     General notes
-#>
+    #>
 
     [CmdletBinding()]
     param (

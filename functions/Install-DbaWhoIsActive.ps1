@@ -86,15 +86,15 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\spwhoisactive.zip"
+        $temp = ([System.IO.Path]::GetTempPath())
+        $zipfile = Join-Path -Path $temp -ChildPath "spwhoisactive.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
             $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
-            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | where-object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
+            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | Where-Object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -136,8 +136,9 @@ function Install-DbaWhoIsActive {
             # Unpack
             # Unblock if there's a block
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-
-                Unblock-File $zipfile -ErrorAction SilentlyContinue
+                if (Test-Windows -NoWarn) {
+                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                }
                 try {
                     Expand-Archive -Path $zipfile -DestinationPath $temp -Force
                 } catch {
@@ -146,7 +147,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$($temp)who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
@@ -233,11 +234,6 @@ function Install-DbaWhoIsActive {
                 }
 
             }
-        }
-    }
-    end {
-        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
-            Get-Item $sqlfile | Remove-Item
         }
     }
 }

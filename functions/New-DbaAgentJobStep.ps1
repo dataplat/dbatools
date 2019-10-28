@@ -70,6 +70,10 @@ function New-DbaAgentJobStep {
     .PARAMETER OutputFileName
         The name of the file in which the output of this step is saved.
 
+    .PARAMETER Insert
+        This switch indicates the new step is inserted at the specified stepid.
+        All following steps will have their IDs incremented by, and success/failure next steps incremented accordingly
+
     .PARAMETER Flag
         Sets the flag(s) for the job step.
 
@@ -136,6 +140,12 @@ function New-DbaAgentJobStep {
 
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
 
+    .EXAMPLE
+        PS C:\> New-DbaAgentJobStep -SqlInstance sq1 -Job Job1 -StepName StepA -Datavase msdb -StepId 2 -Insert
+
+        Assuming Job1 already has steps Step1 and Step2, will create a new step Step A and set the step order as Step1, StepA, Step2
+        Internal StepIds will be updated, and any specific OnSuccess/OnFailure step references will also be updated
+
     #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -166,6 +176,7 @@ function New-DbaAgentJobStep {
         [int]$RetryAttempts,
         [int]$RetryInterval,
         [string]$OutputFileName,
+        [switch]$Insert,
         [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
         [string]$ProxyName,
@@ -174,7 +185,7 @@ function New-DbaAgentJobStep {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
@@ -253,11 +264,23 @@ function New-DbaAgentJobStep {
                         if ($Job.JobSteps.ID -notcontains $StepId) {
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
                             $JobStep.ID = $StepId
+                        } elseif (($Job.JobSteps.ID -contains $StepID) -and $Insert) {
+                            Write-Message -Message "Inserting step as step $StepID" -Level Verbose
+                            foreach ($tStep in $Server.JobServer.Jobs[$j].JobSteps) {
+                                if ($tStep.Id -ge $Stepid) {
+                                    $tStep.Id = ($tStep.ID) + 1
+                                }
+                                if ($tStep.OnFailureStepID -ge $StepId -and $tStep.OnFailureStepId -ne 0) {
+                                    $tStep.OnFailureStepID = ($tStep.OnFailureStepID) + 1
+                                }
+                                $tStep.Alter()
+                            }
+                            $JobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
                             Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the existing job step
-                            $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object {$_.ID -eq 1}).Name
+                            $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object { $_.ID -eq 1 }).Name
                             Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the ID job step object

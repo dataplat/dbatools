@@ -100,7 +100,7 @@ function Enable-DbaFilestream {
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ($ShareName -and $level -lt 2) {

@@ -4,7 +4,7 @@ function Invoke-DbaDbPiiScan {
         Command to return any columns that could potentially contain PII (Personal Identifiable Information)
 
     .DESCRIPTION
-        This command will go through the tables in your database and asses each column.
+        This command will go through the tables in your database and assess each column.
         It will first check the columns names if it was named in such a way that it would indicate PII.
         The next thing that it will do is pattern recognition by looking into the data from the table.
 
@@ -333,7 +333,7 @@ function Invoke-DbaDbPiiScan {
                                 #if ($null -eq ($results | Where-Object { $_.Database -eq $dbName -and $_.Schema -eq $tableobject.Schema -and $_.Table -eq $tableobject.Name -and $_.Column -eq $columnobject.Name })) {
                                 if (-not $candidateFound) {
                                     # Setup the query
-                                    $query = "SELECT TOP($SampleCount) $($columnobject.Name) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                     # Get the data
                                     $dataset = @()

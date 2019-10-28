@@ -109,11 +109,11 @@ function Copy-DbaAgentJob {
             try {
                 $InputObject = Get-DbaAgentJob -SqlInstance $Source -SqlCredential $SourceSqlCredential -Job $Job -ExcludeJob $ExcludeJob
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
             }
         }
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -121,7 +121,7 @@ function Copy-DbaAgentJob {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destJobs = $destServer.JobServer.Jobs
 
@@ -165,7 +165,7 @@ function Copy-DbaAgentJob {
                     continue
                 }
 
-                $dbNames = ($serverJob.JobSteps | where-object {$_.SubSystem -ne 'ActiveScripting'}).DatabaseName | Where-Object { $_.Length -gt 0 }
+                $dbNames = ($serverJob.JobSteps | Where-Object { $_.SubSystem -ne 'ActiveScripting' }).DatabaseName | Where-Object { $_.Length -gt 0 }
                 $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
 
                 if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {

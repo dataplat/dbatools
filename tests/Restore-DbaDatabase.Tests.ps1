@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -815,6 +815,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\RestoreTimeClean2016\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
+        }
+    }
+    Context "Checking that WITH KEEP_REPLICATION gets properly added" {
+        $DatabaseName = 'reptestSO'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepReplication
+        It "Should output a script with keep replication clause" {
+            $results -match 'RESTORE DATABASE.*WITH.*KEEP_REPLICATION' | Should be $True
         }
     }
 

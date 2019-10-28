@@ -106,7 +106,7 @@ function Repair-DbaDbOrphanUser {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
@@ -131,13 +131,6 @@ function Repair-DbaDbOrphanUser {
             if ($DatabaseCollection.Count -gt 0) {
                 foreach ($db in $DatabaseCollection) {
                     try {
-                        #if SQL 2012 or higher only validate databases with ContainmentType = NONE
-                        if ($server.versionMajor -gt 10) {
-                            if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
-                                Write-Message -Level Warning -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
-                                Continue
-                            }
-                        }
 
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
 

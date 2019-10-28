@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'Build', 'Kb', 'MajorVersion', 'ServicePack', 'CumulativeUpdate', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -34,7 +34,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
         It "LastUpdated is updated regularly (keeps everybody on their toes)" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
-            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-90)
+            $lastupdate | Should BeGreaterThan (Get-Date).AddDays(-45)
         }
         It "LastUpdated is not in the future" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
@@ -57,10 +57,14 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 $splitted = $ver.split('.')
                 $dots = $ver.split('.').Length - 1
                 if ($dots -ne 2) {
-                    $dots | Should Be 2
+                    if ($dots[0] -le 15) {
+                        $dots | Should Be 3
+                    } else {
+                        $dots | Should Be 4
+                    }
                 }
                 try {
-                    $splitted | Foreach-Object { [convert]::ToInt32($_) }
+                    $splitted | ForEach-Object { [convert]::ToInt32($_) }
                 } catch {
                     # I know. But someone can find a method to output a custom message ?
                     $splitted -join '.' | Should Be "Composed by integers"
@@ -69,8 +73,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
         It "Versions are ordered, the way versions are ordered" {
             $Versions = $IdxRef.Data.Version | Where-Object { $_ }
-            $Naturalized = $Versions | Foreach-Object {
-                $splitted = $_.split('.') | Foreach-Object { [convert]::ToInt32($_) }
+            $Naturalized = $Versions | ForEach-Object {
+                $splitted = $_.split('.') | ForEach-Object { [convert]::ToInt32($_) }
                 "$($splitted[0].toString('00'))$($splitted[1].toString('00'))$($splitted[2].toString('0000'))"
             }
             $SortedVersions = $Naturalized | Sort-Object
@@ -106,7 +110,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 ($Versions.SP -eq 'RTM').Count | Should Be 1
             }
             It "SP Property is formatted correctly" {
-                $Versions.SP | Where-Object { $_ } | Should Match '^RTM$|^SP[\d]+$'
+                $Versions.SP | Where-Object { $_ } | Should Match '^RTM$|^SP[\d]+$|^RC'
             }
             It "CU Property is formatted correctly" {
                 $CUMatch = $Versions.CU | Where-Object { $_ }
@@ -116,7 +120,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             }
             It "SPs are ordered correctly" {
                 $SPs = $Versions.SP | Where-Object { $_ }
-                ($SPs | Select-Object -First 1) | Should Be 'RTM'
+                ($SPs | Select-Object -First 1) | Should BeIn 'RTM', 'RC'
                 $ActualSPs = $SPs | Where-Object { $_ -match '^SP[\d]+$' }
                 $OrderedActualSPs = $ActualSPs | Sort-Object
                 ($ActualSPs -join ',') | Should Be ($OrderedActualSPs -join ',')

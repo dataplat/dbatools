@@ -86,7 +86,7 @@ function Test-DbaBackupInformation {
         try {
             $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         $InternalHistory = @()
@@ -104,7 +104,7 @@ function Test-DbaBackupInformation {
             $VerificationErrors = 0
             Write-Message -Message "Testing restore for $Database" -Level Verbose
             #Test we're only restoring backups from one database, or hilarity will ensure
-            $DbHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
+            $DbHistory = $InternalHistory | Where-Object { $_.Database -eq $Database }
             if (( $DbHistory | Select-Object -Property OriginalDatabase -Unique ).Count -gt 1) {
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
@@ -188,7 +188,7 @@ function Test-DbaBackupInformation {
 
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object {$_.Database -eq $Database} | Foreach-Object {$_.IsVerified = $True}
+                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { $_.IsVerified = $True }
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }

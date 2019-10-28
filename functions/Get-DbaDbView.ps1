@@ -103,7 +103,7 @@ function Get-DbaDbView {
                     $views = $views | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
-                $views | Foreach-Object {
+                $views | ForEach-Object {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

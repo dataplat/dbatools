@@ -63,7 +63,6 @@ function Invoke-DbaAgFailover {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
@@ -73,9 +72,14 @@ function Invoke-DbaAgFailover {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
+        if (-not $SqlInstance -and -not $InputObject) {
+            Stop-Function -Message "You must either specify the SqlInstance parameter or pass in at least one AvailabilityGroup object."
+            return
+        }
+
         if ($SqlInstance -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify at least one availability group when using SqlInstance."
             return

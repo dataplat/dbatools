@@ -22,7 +22,7 @@ function Get-BackupAncientHistory {
        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-       #>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory)]
@@ -45,7 +45,7 @@ function Get-BackupAncientHistory {
         $databases = @()
         if ($null -ne $Database) {
             ForEach ($db in $Database) {
-                $databases += [PScustomObject]@{name = $db}
+                $databases += [PScustomObject]@{name = $db }
             }
         } else {
             $databases = $server.Databases
@@ -177,5 +177,5 @@ function Get-BackupAncientHistory {
 
     }
 
-    END {}
+    END { }
 }

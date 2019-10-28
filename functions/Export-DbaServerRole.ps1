@@ -114,7 +114,7 @@ function Export-DbaServerRole {
     .EXAMPLE
         PS C:\> Export-DbaServerRole -SqlInstance sqlserver2008 -ExcludeFixedRole -ExcludeServerRole Public -IncludeRoleMember -FilePath C:\temp\ServerRoles.sql -Append -BatchSeparator ''
 
-        Exports server roles from sqlserver2008, exludes all roles marked as as FixedRole and Public role. Includes RoleMembers and writes to file C:\temp\ServerRoles.sql, appending to file if it exits. Does not include a BatchSeparator
+        Exports server roles from sqlserver2008, excludes all roles marked as as FixedRole and Public role. Includes RoleMembers and writes to file C:\temp\ServerRoles.sql, appending to file if it exits. Does not include a BatchSeparator
 
     .EXAMPLE
         PS C:\> Get-DbaServerRole -SqlInstance sqlserver2012, sqlserver2014  | Export-DbaServerRole
@@ -124,7 +124,7 @@ function Export-DbaServerRole {
     .EXAMPLE
         PS C:\> Get-DbaServerRole -SqlInstance sqlserver2016 -ExcludeFixedRole -ExcludeServerRole Public | Export-DbaServerRole -IncludeRoleMember
 
-        Exports server roles from sqlserver2016, exludes all roles marked as as FixedRole and Public role. Includes RoleMembers
+        Exports server roles from sqlserver2016, excludes all roles marked as as FixedRole and Public role. Includes RoleMembers
 
     #>
     [CmdletBinding()]
@@ -204,7 +204,7 @@ function Export-DbaServerRole {
                     ON ag.replica_metadata_id = SPerm.major_id
                     AND SPerm.class = 108
                 where sp.type='R'
-                and sp.name=N'<#RoleName#>'"
+                and sp.name=N'/*RoleName*/'"
 
         if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
             $ScriptingOptionsObject = New-DbaScriptingOption
@@ -269,7 +269,7 @@ function Export-DbaServerRole {
                     if ($server.VersionMajor -ge 11) {
                         $outsql += $role.Script($ScriptingOptionsObject)
 
-                        $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
+                        $query = $roleSQL.Replace('/*RoleName*/', "$($role.Name)")
                         $rolePermissions = $server.Query($query)
 
                         foreach ($rolePermission in $rolePermissions) {

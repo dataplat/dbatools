@@ -213,7 +213,7 @@ function Find-DbaInstance {
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
-        Using this method reguarly is not recommended. Use Get-DbaService or Get-DbaRegServer instead.
+        Using this method regularly is not recommended. Use Get-DbaService or Get-DbaRegServer instead.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
@@ -866,8 +866,8 @@ function Find-DbaInstance {
             }
             if ($IPAddress) {
                 $ipaddr = [Net.IPAddress]::Parse($IPAddress)
-                $networkaddr = new-object net.ipaddress ($maskaddr.address -band $ipaddr.address)
-                $broadcastaddr = new-object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
+                $networkaddr = New-Object net.ipaddress ($maskaddr.address -band $ipaddr.address)
+                $broadcastaddr = New-Object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
                 $startaddr = IP-toINT64 -ip $networkaddr.ipaddresstostring
                 $endaddr = IP-toINT64 -ip $broadcastaddr.ipaddresstostring
             } else {

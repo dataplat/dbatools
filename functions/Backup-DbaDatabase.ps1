@@ -100,7 +100,7 @@ function Backup-DbaDatabase {
     .PARAMETER AzureBaseUrl
         The URL(s) to the base container of an Azure Storage account to write backups to.
         If specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs
-        If useing Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
+        If using Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
         If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
@@ -160,12 +160,12 @@ function Backup-DbaDatabase {
         Performs a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql credential "https://dbatoolsaz.blob.core.windows.net/azbackups" registered on the sql2016 instance.
 
     .EXAMPLE
-        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
+        PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
 
     .EXAMPLE
-        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
+        PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
 
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
@@ -175,9 +175,9 @@ function Backup-DbaDatabase {
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 
     .EXAMPLE
-        PS C:\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
 
-        Performs a backup of the database striptest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
+        Performs a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -257,14 +257,14 @@ function Backup-DbaDatabase {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ($null -eq $Path -and $FilePath -ne 'NUL') {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
+            if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
+                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
             if ($Path.Count -gt 1) {
                 Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
-                $Filecount = $Path.Count
+                $FileCount = $Path.Count
             }
 
             if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInFile) {
@@ -290,9 +290,14 @@ function Backup-DbaDatabase {
                     $FileCount = 1
                 } else {
                     foreach ($baseUrl in $AzureBaseUrl) {
+                        $base = $baseUrl -split "/"
+                        if ( $base.Count -gt 4) {
+                            Write-Message "AzureURL contains a folder"
+                            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                        }
                         Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                        if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
-                            Write-Message -Message "Found a SAS backup credental" -Level Verbose
+                        if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
+                            Write-Message -Message "Found a SAS backup credential" -Level Verbose
                         } else {
                             Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
                             return
@@ -332,7 +337,7 @@ function Backup-DbaDatabase {
             $server = $db.Parent
 
             if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
+                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
@@ -420,7 +425,7 @@ function Backup-DbaDatabase {
                 $gbhSwitch = @{'LastFull' = $true }
             }
 
-            $backup.CopyOnly = $copyonly
+            $backup.CopyOnly = $CopyOnly
             $backup.Action = $SMOBackupType
             if ($null -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
                 $backup.CredentialName = $AzureCredential
@@ -452,8 +457,8 @@ function Backup-DbaDatabase {
                 $FinalBackupPath += $Path
             }
 
-            if ($Path.Count -eq 1 -and $Filecount -gt 1) {
-                for ($i = 0; $i -lt ($Filecount - 1); $i++) {
+            if ($Path.Count -eq 1 -and $FileCount -gt 1) {
+                for ($i = 0; $i -lt ($FileCount - 1); $i++) {
                     $FinalBackupPath += $FinalBackupPath[0]
                 }
             }
@@ -515,7 +520,7 @@ function Backup-DbaDatabase {
             $backupComplete = $false
 
             if (!$failures) {
-                $Filecount = $FinalBackupPath.Count
+                $FileCount = $FinalBackupPath.Count
 
                 foreach ($backupfile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
@@ -540,7 +545,7 @@ function Backup-DbaDatabase {
                 $humanBackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -556,7 +561,7 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
