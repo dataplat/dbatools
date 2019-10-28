@@ -826,8 +826,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring a Backup encrypted with Certificate" {
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name RestoreTestCert -Subject RestoreTestCert
-        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database reptestSO -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert
+        New-DbaDatabase -SqlInstance $script:instance2 -Name enctest -Confirm:$false
+        $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
+        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database enctest -SecurePassword $securePass -confirm:$false
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database enctest -Name RestoreTestCert -Subject RestoreTestCert
+        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database enctest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert
         It "Should encrypt the backup" {
             $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
             $encBackupResults.KeyAlgorithm | Should Be "aes_128"
@@ -836,7 +839,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored the backup" {
             $results.RestoreComplete | Should Be $True
         }
-        remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate RestoreTestCert -Confirm:$false
+        Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database enctest -Certificate RestoreTestCert -Confirm:$false
+        Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database enctest -confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database enctest
     }
 
     if ($env:azurepasswd) {

@@ -661,8 +661,7 @@ function Backup-DbaDatabase {
                                     EncryptorName        = $encryptionOptions.EncryptorName
                                     KeyAlgorithm         = $encryptionOptions.Algorithm
                                     EncruptorType        = $encryptionOptions.encryptorType
-                                }
-                                $verifiedresult | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
+                                } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
                                     $Verified = $true
