@@ -742,6 +742,7 @@ $script:xplat = @(
     'Export-DbaDbRole',
     'Export-DbaServerRole',
     'Get-DbaBuildReference',
+    'Install-DbaFirstResponderKit',
     'Install-DbaWhoIsActive',
     'Update-Dbatools',
     'Add-DbaServerRoleMember'
@@ -784,7 +785,6 @@ $script:windowsonly = @(
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
     'Export-DbaSpConfigure',
-    'Install-DbaFirstResponderKit',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
     'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
