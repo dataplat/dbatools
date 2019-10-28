@@ -115,6 +115,9 @@ function Set-DbaStartupParameter {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Set-DbaStartupParameter
+
     .EXAMPLE
         PS C:\> Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
 
