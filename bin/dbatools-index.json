@@ -23879,7 +23879,7 @@
         "Alias":  "",
         "Author":  "Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)",
         "CommandName":  "Install-DbaFirstResponderKit",
-        "Availability":  "Windows only",
+        "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Install-DbaFirstResponderKit",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaFirstResponderKit -SqlInstance server1 -Database master\nLogs into server1 with Windows authentication and then installs the FRK in the master database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaFirstResponderKit -SqlInstance server1\\instance1 -Database DBA\nLogs into server1\\instance1 with Windows authentication and then installs the FRK in the DBA database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaFirstResponderKit -SqlInstance server1\\instance1 -Database master -SqlCredential $cred\nLogs into server1\\instance1 with SQL authentication and then installs the FRK in the master database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaFirstResponderKit -SqlInstance sql2016\\standardrtm, sql2016\\sqlexpress, sql2014\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers = \"sql2016\\standardrtm\", \"sql2016\\sqlexpress\", \"sql2014\"\nPS C:\\\u003e $servers | Install-DbaFirstResponderKit\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInstall-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev\nInstalls the dev branch version of the FRK in the master database on sql2016 instance.",
         "Params":  [
@@ -23917,7 +23917,7 @@
                        ],
                        [
                            "LocalFile",
-                           "Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
+                           "Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
                            "",
                            false,
                            "false",
