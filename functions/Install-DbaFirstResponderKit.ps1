@@ -107,14 +107,14 @@ function Install-DbaFirstResponderKit {
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         if (-not $DbatoolsData) {
-            $DbatoolsData = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+            $DbatoolsData = [System.IO.Path]::GetTempPath()
         }
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
-        $zipfolder = "$temp\SQL-Server-First-Responder-Kit-$Branch\"
+        $temp = [System.IO.Path]::GetTempPath()
+        $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
+        $zipfolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
         $FRKLocation = "FRK_$Branch"
         $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
         if ($LocalFile) {
@@ -139,7 +139,9 @@ function Install-DbaFirstResponderKit {
 
             $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
-                Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                if (Test-Windows -NoWarn) {
+                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                }
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
@@ -156,10 +158,11 @@ function Install-DbaFirstResponderKit {
 
 
                     # Unblock if there's a block
-                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                    if (Test-Windows -NoWarn) {
+                        Unblock-File $zipfile -ErrorAction SilentlyContinue
+                    }
 
                     Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
-
                     Remove-Item -Path $zipfile
                 } catch {
                     Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
