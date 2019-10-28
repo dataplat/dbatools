@@ -28,7 +28,7 @@ function Install-DbaFirstResponderKit {
         Specifies an alternate branch of the First Responder Kit to install. (master or dev)
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.
+        Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
     .PARAMETER Force
@@ -100,7 +100,6 @@ function Install-DbaFirstResponderKit {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
@@ -156,7 +155,6 @@ function Install-DbaFirstResponderKit {
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                     }
 
-
                     # Unblock if there's a block
                     if (Test-Windows -NoWarn) {
                         Unblock-File $zipfile -ErrorAction SilentlyContinue
@@ -188,9 +186,9 @@ function Install-DbaFirstResponderKit {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
