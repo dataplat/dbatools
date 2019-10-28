@@ -835,13 +835,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
             $encBackupResults.KeyAlgorithm | Should Be "aes_128"
         }
-        $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $script:instance2 -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert
+        $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $script:instance2 -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert -confirm:$false
         It "Should have restored the backup" {
             $results.RestoreComplete | Should Be $True
         }
         Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database enctest -Certificate RestoreTestCert -Confirm:$false
         Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database enctest -confirm:$false
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database enctest
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database enctest -confirm:$false
     }
 
     if ($env:azurepasswd) {
