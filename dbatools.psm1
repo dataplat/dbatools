@@ -851,6 +851,7 @@ $script:windowsonly = @(
     'Get-DbaForceNetworkEncryption',
     'Disable-DbaHideInstance',
     'Enable-DbaHideInstance',
+    'New-DbaComputerCertificateSigningRequest',
     'Remove-DbaComputerCertificate',
     'New-DbaComputerCertificate',
     'Get-DbaComputerCertificate',

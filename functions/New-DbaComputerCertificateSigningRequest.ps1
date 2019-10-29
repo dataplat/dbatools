@@ -141,7 +141,11 @@ function New-DbaComputerCertificateSigningRequest {
     }
 
     process {
-        if (Test-FunctionInterrupt -or -not (Test-ElevationRequirement -ComputerName $env:COMPUTERNAME)) {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        if (-not (Test-ElevationRequirement -ComputerName $env:COMPUTERNAME)) {
             return
         }
 
