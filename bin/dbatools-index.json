@@ -30635,6 +30635,101 @@
         "Syntax":  "New-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CaServer] \u003cString\u003e] [[-CaName] \u003cString\u003e] [[-ClusterInstanceName] \u003cString\u003e] [[-SecurePassword] \u003cSecureString\u003e] [[-FriendlyName] \u003cString\u003e] [[-CertificateTemplate] \u003cString\u003e] [[-KeyLength] \u003cInt32\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Dns] \u003cString[]\u003e] [-SelfSigned] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaComputerCertificateSigningRequest",
+        "Description":  "Creates a new computer certificate signing request that is compatible with SQL Server.\n\nBy default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.",
+        "Tags":  "Certificate",
+        "Synopsis":  "Creates a new computer certificate signing request. Useful for offline servers and Forcing Encryption.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "New-DbaComputerCertificateSigningRequest",
+        "Availability":  "Windows only",
+        "Links":  null,
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaComputerCertificate\nCreates a computer certificate signing request for the local machine with the keylength of 1024.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaComputerCertificate -ComputerName Server1\nCreates a computer certificate signing request for server1 with the keylength of 1024.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaComputerCertificate -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096\nCreates a computer certificate signing request for sqlcluster with the keylength of 4096.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaComputerCertificate -ComputerName Server1 -WhatIf\nShows what would happen if the command were run",
+        "Params":  [
+                       [
+                           "ComputerName",
+                           "The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to $ComputerName using alternative credentials.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ClusterInstanceName",
+                           "When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "The folder to export to.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FriendlyName",
+                           "The FriendlyName listed in the certificate. This defaults to the FQDN of the $ComputerName",
+                           "",
+                           false,
+                           "false",
+                           "SQL Server"
+                       ],
+                       [
+                           "KeyLength",
+                           "The length of the key - defaults to 1024",
+                           "",
+                           false,
+                           "false",
+                           "1024"
+                       ],
+                       [
+                           "Dns",
+                           "Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaComputerCertificateSigningRequest [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ClusterInstanceName] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FriendlyName] \u003cString\u003e] [[-KeyLength] \u003cInt32\u003e] [[-Dns] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaConnectionString",
         "Description":  "Builds or extracts a SQL Server Connection String. Note that dbatools-style syntax is used.\n\nSo you do not need to specify \"Data Source\", you can just specify -SqlInstance and -SqlCredential and we\u0027ll handle it for you.\n\nThis is the simplified PowerShell approach to connection string building. See examples for more info.\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx",
         "Tags":  [
@@ -43506,7 +43601,7 @@
         "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
         "CommandName":  "Set-DbaStartupParameter",
         "Availability":  "Windows only",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Set-DbaStartupParameter",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser\nWill configure the SQL Instance server1\\instance1 to startup up in Single User mode at next startup\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents\nWill configure the SQL Instance sql2016 to IncreasedExtents = True (-E)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf\nShows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -TraceFlag 8032,8048\nThis will append Trace Flags 8032 and 8048 to the startup parameters\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride\nThis will remove all trace flags and set SingleUser to false\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -TraceFlag 8032,8048 -TraceFlagOverride\nThis will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagOverride -Offline\nThis will remove all trace flags and set SingleUser to false from an offline instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline\nThis will attempt to change the ErrorLog path to c:\\sql\\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:\nSet-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\\Sql\\ -Offline -Force\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\\instance1\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -SingleUser -NoLoggingToWinEvents\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice\r\nPS C:\\\u003e #Do Some work\r\nPS C:\\\u003e Set-DbaStartupParameter -SqlInstance server1\\instance1 -StartupConfig $StartupConfig\r\nPS C:\\\u003e #Restart your SQL instance with the tool of choice and you\u0027re back to normal\nIn this example we take a copy of the existing startup configuration of server1\\instance1\nWe then change the startup parameters ahead of some work\nAfter the work has been completed, we can push the original startup parameters back to server1\\instance1 and resume normal operation",
         "Params":  [
                        [
