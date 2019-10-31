@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Gets the users with local privileges on one or more computers.
 
     .DESCRIPTION
-        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', or 'Generate Security Audits' on one or more computers.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -79,11 +79,14 @@ function Get-DbaPrivilege {
                 $Priv = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                     Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                        $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege'
+                        $_ -match "SeBatchLogonRight" -or
+                        $_ -match 'SeManageVolumePrivilege' -or
+                        $_ -match 'SeLockMemoryPrivilege' -or
+                        $_ -match 'SeAuditPrivilege'
                     }
                 }
                 if ($Priv.count -eq 0) {
-                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, or Lock Pages in Memory Rights on $computer"
+                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, Lock Pages in Memory Rights, or Generate Security Audits on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
@@ -145,7 +148,27 @@ function Get-DbaPrivilege {
                 if ($lpim.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                 }
-                $users = @() + $BL + $ifi + $lpim | Select-Object -Unique
+
+                Write-Message -Level Verbose -Message "Getting Generate Security Audits Privileges on $Computer"
+                $gsa = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
+                    param ($ResolveSID)
+                    . ([ScriptBlock]::Create($ResolveSID))
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
+                    $gsaEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
+                            $_ -like 'SeAuditPrivilege*'
+                        })
+
+                    if ($null -ne $gsaEntries) {
+                        $gsaEntries.substring(19).split(",").replace("`*", "") | ForEach-Object {
+                            Convert-SIDToUserName -SID $_
+                        }
+                    }
+                } -ErrorAction SilentlyContinue
+
+                if ($gsa.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Generate Security Audits Rights on $computer"
+                }
+                $users = @() + $BL + $ifi + $lpim + $gsa | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
@@ -153,6 +176,7 @@ function Get-DbaPrivilege {
                         LogonAsBatch              = $BL -contains $_
                         InstantFileInitialization = $ifi -contains $_
                         LockPagesInMemory         = $lpim -contains $_
+                        GenerateSecurityAudit     = $gsa -contains $_
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
