@@ -31500,11 +31500,14 @@ function Get-DbaPrivilege {
                 $Priv = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                     Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                        $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege'
+                        $_ -match "SeBatchLogonRight" -or
+                        $_ -match 'SeManageVolumePrivilege' -or
+                        $_ -match 'SeLockMemoryPrivilege' -or
+                        $_ -match 'SeAuditPrivilege'
                     }
                 }
                 if ($Priv.count -eq 0) {
-                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, or Lock Pages in Memory Rights on $computer"
+                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, Lock Pages in Memory Rights, or Generate Security Audits on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
@@ -31566,7 +31569,27 @@ function Get-DbaPrivilege {
                 if ($lpim.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                 }
-                $users = @() + $BL + $ifi + $lpim | Select-Object -Unique
+
+                Write-Message -Level Verbose -Message "Getting Generate Security Audits Privileges on $Computer"
+                $gsa = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
+                    param ($ResolveSID)
+                    . ([ScriptBlock]::Create($ResolveSID))
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
+                    $gsaEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
+                            $_ -like 'SeAuditPrivilege*'
+                        })
+
+                    if ($null -ne $gsaEntries) {
+                        $gsaEntries.substring(19).split(",").replace("`*", "") | ForEach-Object {
+                            Convert-SIDToUserName -SID $_
+                        }
+                    }
+                } -ErrorAction SilentlyContinue
+
+                if ($gsa.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Generate Security Audits Rights on $computer"
+                }
+                $users = @() + $BL + $ifi + $lpim + $gsa | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
@@ -31574,6 +31597,7 @@ function Get-DbaPrivilege {
                         LogonAsBatch              = $BL -contains $_
                         InstantFileInitialization = $ifi -contains $_
                         LockPagesInMemory         = $lpim -contains $_
+                        GenerateSecurityAudit     = $gsa -contains $_
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
@@ -31586,6 +31610,7 @@ function Get-DbaPrivilege {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaProcess {
@@ -45725,16 +45750,16 @@ function Invoke-DbaDiagnosticQuery {
         Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 
         if (!$Path) {
-            $Path = "$script:PSModuleRoot\bin\diagnosticquery"
+            $Path = Join-Path -Path "$script:PSModuleRoot" -ChildPath "bin\diagnosticquery"
         }
 
         $scriptversions = @()
-        $scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
+        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*_*.sql"
 
         if (!$scriptfiles) {
             Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
 
-            $Path = "$base\bin\diagnosticquery"
+            $Path = Join-Path -Path $base -ChildPath "\bin\diagnosticquery"
 
             $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
             if (!$scriptfiles) {
@@ -60812,16 +60837,17 @@ function Save-DbaDiagnosticQueryScript {
     $glenberrysql = @()
     $RssPostFilter = "SQL Server Diagnostic Information Queries for*"
     $DropboxLinkFilter = "*dropbox.com*"
-    $LinkTitleFilter = "*Diagnostic*"
+    $LinkTitleFilter = "*Diagnostic Information Queries*"
+    $ExcludeSpreadsheet = "*BlankResutsSpreadsheet*"
 
     foreach ($post in $Feed.item) {
         if ($post.title -like $RssPostFilter) {
             # We found the first post that matches it, lets go visit and scrape.
             $page = Get-WebData -uri $post.link
-            $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.innerText -like $LinkTitleFilter } | ForEach-Object {
+            $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet } | ForEach-Object {
                     [pscustomobject]@{
                         URL        = $_.href
-                        SQLVersion = $_.innerText -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
+                        SQLVersion = $_.outerHTML -replace "<.+`">", "" -replace "</a>", "" -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
                         FileYear   = ($post.title -split " ")[-1]
                         FileMonth  = "{0:00}" -f [int]([CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf(($post.title -split " ")[-2]))
                     }
@@ -60835,7 +60861,7 @@ function Save-DbaDiagnosticQueryScript {
             $link = $doc.URL.ToString().Replace('dl=0', 'dl=1')
             Write-Message -Level Verbose -Message "Downloading $link)"
             Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
-            $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
+            $filename = Join-Path -Path $Path  -ChildPath "SQLServerDiagnosticQueries_$($doc.SQLVersion)_$("$($doc.FileYear)$($doc.FileMonth)").sql"
             Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
             Get-ChildItem -Path $filename
         } catch {
