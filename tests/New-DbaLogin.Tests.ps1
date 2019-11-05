@@ -7,11 +7,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'InputObject', 'LoginRenameHashtable', 'SecurePassword', 'HashedPassword', 'MapToCertificate', 'MapToAsymmetricKey', 'MapToCredential', 'Sid', 'DefaultDatabase', 'Language', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Disabled', 'NewSid', 'Force', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'InputObject', 'LoginRenameHashtable', 'SecurePassword', 'HashedPassword', 'MapToCertificate', 'MapToAsymmetricKey', 'MapToCredential', 'Sid', 'DefaultDatabase', 'Language', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Disabled', 'DenyWindowsLogin', 'NewSid', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-    } catch {<#nbd#> }
+    } catch { <#nbd#> }
 
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
@@ -55,7 +55,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($user.Name -eq $credLogin) {
             $computer.Delete('User', $credLogin)
         }
-    } catch {<#User does not exist#>}
+    } catch { <#User does not exist#> }
 
     $user = $computer.Create("user", $credLogin)
     $user.SetPassword($password)
@@ -74,7 +74,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
             $crt.Drop()
         }
-    } catch {<#nbd#> }
+    } catch { <#nbd#> }
     $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
 
     Context "Create new logins" {
@@ -128,10 +128,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -Disabled:$false -Force
             $results.Name | Should Be "tester"
 
-            $results = Get-DbaLogin -SqlInstance $server1 -Login claudio, port | New-DbaLogin -SqlInstance $server2 -Force -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -NewSid -LoginRenameHashtable @{claudio = 'port'; port = 'claudio'} -MapToCredential $null
+            $results = Get-DbaLogin -SqlInstance $server1 -Login claudio, port | New-DbaLogin -SqlInstance $server2 -Force -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -NewSid -LoginRenameHashtable @{claudio = 'port'; port = 'claudio' } -MapToCredential $null
             $results.Name | Should Be @("port", "claudio")
 
-            $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server1 -LoginRenameHashtable @{tester = 'port'} -Force -NewSid
+            $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server1 -LoginRenameHashtable @{tester = 'port' } -Force -NewSid
             $results.Name | Should Be "port"
         }
 
@@ -168,6 +168,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $login1.PasswordExpirationEnabled | Should Not be $login2.PasswordExpirationEnabled
             $login1.PasswordPolicyEnforced | Should Not be $login2.PasswordPolicyEnforced
             $login1.Sid | Should Not be $login2.Sid
+        }
+        It "Should create a disabled account with deny Windows login" {
+            $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin -Disabled -DenyWindowsLogin
+            $results.Name | Should Be "$winLogin"
+            $results.DefaultDatabase | Should be 'master'
+            $results.IsDisabled | Should be $true
+            $results.DenyWindowsLogin | Should be $true
+            $results.LoginType | Should be 'WindowsUser'
         }
     }
 
@@ -211,5 +219,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if (!$mkey) {
             $null = Remove-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
         }
-    } catch {<#nbd#> }
+    } catch { <#nbd#> }
 }
