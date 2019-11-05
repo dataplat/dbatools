@@ -39,14 +39,14 @@ function Invoke-DbaAsync {
 
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-       #>
+    #>
 
     param (
         [Alias('Connection', 'Conn')]
         [ValidateNotNullOrEmpty()]
         [Microsoft.SqlServer.Management.Common.ServerConnection]$SQLConnection,
 
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]
         $Query,
 
@@ -65,8 +65,7 @@ function Invoke-DbaAsync {
         [switch]
         $MessagesToOutput,
 
-        [switch]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -81,7 +80,7 @@ function Invoke-DbaAsync {
                         Write-Message -Level Verbose -Message "SQL Error:  $Err"
                     } #Shiyang, add the verbose output of exception
                     switch ($ErrorActionPreference.ToString()) {
-                        { 'SilentlyContinue', 'Ignore' -contains $_ } {   }
+                        { 'SilentlyContinue', 'Ignore' -contains $_ } { }
                         'Stop' { throw $Err }
                         'Continue' { throw $Err }
                         Default { Throw $Err }
@@ -136,7 +135,12 @@ function Invoke-DbaAsync {
 '@
 
             try {
-                Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
+                if ($PSEdition -eq 'Core') {
+                    $assemblies = @('System.Management.Automation', 'System.Data.Common', 'System.ComponentModel.TypeConverter')
+                } else {
+                    $assemblies = @('System.Data', 'System.Xml')
+                }
+                Add-Type -TypeDefinition $cSharp -ReferencedAssemblies $assemblies -ErrorAction stop
             } catch {
                 if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
                     Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
@@ -164,12 +168,12 @@ function Invoke-DbaAsync {
             if ($null -ne $SqlParameters) {
                 $SqlParameters.GetEnumerator() |
                     ForEach-Object {
-                    if ($null -ne $_.Value) {
-                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                    } else {
-                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
-                    }
-                } > $null
+                        if ($null -ne $_.Value) {
+                            $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                        } else {
+                            $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                        }
+                    } > $null
             }
 
             $ds = New-Object system.Data.DataSet

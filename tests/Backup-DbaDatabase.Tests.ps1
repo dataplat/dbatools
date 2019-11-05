@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 29
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Backup-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'BackupDirectory', 'BackupFileName', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -76,6 +72,26 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have backed up to the path with the correct name" {
             Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
+        }
+    }
+
+    Context "Database parameter works when using pipes (fixes #5044)" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak -BackupDirectory $DestBackupDir
+        It "Should report it has backed up to the path with the correct name" {
+            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+        }
+        It "Should have backed up to the path with the correct name" {
+            Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
+        }
+    }
+
+    Context "ExcludeDatabase parameter works when using pipes (fixes #5044)" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model
+        It "Should report it has backed up to the path with the correct name" {
+            $results.DatabaseName | Should -Not -Contain master
+            $results.DatabaseName | Should -Not -Contain tempdb
+            $results.DatabaseName | Should -Not -Contain msdb
+            $results.DatabaseName | Should -Not -Contain model
         }
     }
 
@@ -157,9 +173,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "Should have 1 period in file extension" {
-        foreach ($path in $results.BackupFile) {
-            [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+    Context "Should build filenames properly" {
+        It "Should have 1 period in file extension" {
+            foreach ($path in $results.BackupFile) {
+                [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+            }
         }
     }
 
@@ -174,8 +192,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Test backup  verification" {
+        It "Should perform a full backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -Type full -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+            $b.count | Should -Be 1
+        }
+        It -Skip "Should perform a diff backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+        It -Skip "Should perform a log backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type log -Verify
+            $b.BackupComplete | Should -Be $True
+            $b.Verified | Should -Be $True
+        }
+    }
+
     Context "Backup can pipe to restore" {
-        $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
         It "Should return successful restore" {
             $results.RestoreComplete | Should -Be $true

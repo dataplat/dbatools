@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartEmail {
     <#
     .SYNOPSIS
@@ -62,7 +61,7 @@ function New-DbaXESmartEmail {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ExtendedEvent, XE, XEvent
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -113,7 +112,7 @@ function New-DbaXESmartEmail {
     )
     begin {
         try {
-            Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
         } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll." -ErrorRecord $_ -Target "XESmartTarget"
             return

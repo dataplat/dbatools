@@ -15,7 +15,11 @@ function Get-DbaIoLatency {
         The SQL Server instance. Server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -39,7 +43,7 @@ function Get-DbaIoLatency {
         Get IO subsystem latency statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all IO subsystem latency statistics on server sql2008 into a Data Table.
 
@@ -57,10 +61,8 @@ function Get-DbaIoLatency {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -131,13 +133,13 @@ function Get-DbaIoLatency {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName         = $server.NetName
+                    ComputerName         = $server.ComputerName
                     InstanceName         = $server.ServiceName
                     SqlInstance          = $server.DomainInstanceName
                     DatabaseId           = $row.database_id
@@ -152,7 +154,7 @@ function Get-DbaIoLatency {
                     NumberOfBytesRead    = $row.num_of_bytes_read
                     NumberOfBytesWritten = $row.num_of_bytes_written
                     SampleMilliseconds   = $row.sample_ms
-                    SizeOnDiskBytes      = $row.num_of_bytes_written
+                    SizeOnDiskBytes      = $row.size_on_disk_bytes
                     FileHandle           = $row.file_handle
                     ReadLatency          = $row.ReadLatency
                     WriteLatency         = $row.WriteLatency

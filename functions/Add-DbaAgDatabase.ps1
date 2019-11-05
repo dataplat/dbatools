@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
@@ -7,7 +6,7 @@ function Add-DbaAgDatabase {
     .DESCRIPTION
         Adds a database to an availability group on a SQL Server instance.
 
-        Before joining the replica databases to the availablity group, the databases will be initialized with automatic seeding or full/log backup.
+        Before joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -15,7 +14,11 @@ function Add-DbaAgDatabase {
         This should be the primary replica.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database or databases to add.
@@ -27,7 +30,11 @@ function Add-DbaAgDatabase {
         Not required - the command will figure this out. But if you'd like to be explicit about replicas, this will help.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
@@ -129,14 +136,31 @@ function Add-DbaAgDatabase {
             # check primary, should be run against primary
             $ag = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
 
+            if (-not $ag.Parent) {
+                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($db.Parent.Name)" -Continue
+            }
+
             if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
 
             if (-not $Secondary) {
-                $secondaryReplicas = $ag.AvailabilityReplicas | Where-Object Role -eq Secondary
+                try {
+                    $secondarynames = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name
+                    if ($secondarynames) {
+                        $secondaryInstances = $secondarynames | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
+                    }
+                } catch {
+                    Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
+                }
             } else {
-                $secondaryReplicas = Get-DbaAgReplica -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -AvailabilityGroup $ag.Name | Where-Object Role -eq Secondary
+                $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
+            }
+
+            if ($SeedingMode -ne "Automatic") {
+                if (((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup).Year -eq 1) {
+                    Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
+                }
             }
 
             if ($SeedingMode -eq "Automatic") {
@@ -157,15 +181,38 @@ function Add-DbaAgDatabase {
                 }
             }
 
-            foreach ($replica in $secondaryReplicas) {
+            foreach ($secondaryInstance in $secondaryInstances) {
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $replica.Name
+                try {
+                    $secondaryInstanceReplicaName = $secondaryInstance.NetName
+                } catch {
+                    $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
+                }
+
+                if ($secondaryInstance.InstanceName) {
+                    $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
+                }
+
+                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
+
+                if (-not $agreplica) {
+                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($Primary.Name)"
+                }
+
+                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
+                    Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
+
+                    if (-not $SharedPath -and -not $UseLastBackup) {
+                        Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
+                    }
+                }
+
 
                 if ($SeedingMode) {
                     $agreplica.SeedingMode = $SeedingMode
-                    $agreplica.alter()
+                    $agreplica.Alter()
                 }
-                $agreplica.refresh()
+                $agreplica.Refresh()
                 $SeedingModeReplica = $agreplica.SeedingMode
 
                 $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
@@ -174,7 +221,7 @@ function Add-DbaAgDatabase {
                     try {
                         if (-not $allbackups[$db]) {
                             if ($UseLastBackup) {
-                                $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
+                                $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
                             } else {
                                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
                                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
@@ -184,34 +231,36 @@ function Add-DbaAgDatabase {
                         }
                         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
-                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $replica.Parent.Parent -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
 
-                $replicadb = Get-DbaAgDatabase -SqlInstance $replica.Parent.Parent -Database $db.Name -AvailabilityGroup $ag.Name   #credential of secondary !!
-
-                if ($replicadb -and -not ($SeedingModeReplica -eq 'Automatic')) {
+                $replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance -Database $db.Name -AvailabilityGroup $ag.Name
+                if (-not $replicadb.IsJoined) {
                     if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
                         $timeout = 1
                         do {
                             try {
-                                Write-Message -Level Verbose -Message "Trying to add $($replicadb.Name) to $($replica.Name)"
+                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
                                 $timeout++
-                                $replicadb.JoinAvailablityGroup()
+                                if ($timeout -ne 1) {
+                                    Start-Sleep -Seconds 3
+                                }
                                 $replicadb.Refresh()
-                                Start-Sleep -Seconds 1
+                                $replicadb.JoinAvailablityGroup()
                             } catch {
-                                Stop-Function -Message "Error joining database to availability group" -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
                             }
                         } while (-not $replicadb.IsJoined -and $timeout -lt 10)
+                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
 
                         if ($replicadb.IsJoined) {
                             $replicadb
                         } else {
-                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($replica.Name)"
+                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
                         }
                     }
                 } else {

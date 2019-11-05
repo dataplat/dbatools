@@ -10,22 +10,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 #>
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
-        $paramCount = 6
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbStoredProcedure).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemSp', 'EnableException'
-        it "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        it "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemSp', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }

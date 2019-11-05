@@ -11,7 +11,11 @@ function Measure-DbaDiskSpaceRequirement {
         Source SQL Server.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database to copy. It MUST exist.
@@ -20,7 +24,11 @@ function Measure-DbaDiskSpaceRequirement {
         Destination SQL Server instance.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationDatabase
         The database name at destination.
@@ -73,26 +81,25 @@ function Measure-DbaDiskSpaceRequirement {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param(
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter]$Source,
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Database,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter]$Destination,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]$DestinationDatabase,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$DestinationSqlCredential,
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        $local:cacheMP = @{}
-        $local:cacheDP = @{}
+        $local:cacheMP = @{ }
+        $local:cacheDP = @{ }
         function Get-MountPoint {
             [CmdletBinding()]
             param(
@@ -101,7 +108,7 @@ function Measure-DbaDiskSpaceRequirement {
                 [PSCredential]$credential
             )
             Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n = 'Mountpoint'; e = {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
+                Select-Object @{n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -186,13 +193,13 @@ function Measure-DbaDiskSpaceRequirement {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
         }
 
         try {
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Destination
         }
 
         if (Test-Bound 'DestinationDatabase' -not) {
@@ -204,12 +211,12 @@ function Measure-DbaDiskSpaceRequirement {
         if (Test-Bound 'Database' -not) {
             Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
-        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-        $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
+        $sourceFiles += @($sourceDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })
 
         if ($destDb = Get-DbaDatabase -SqlInstance $destServer -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-            $destFiles += @($destDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
+            $destFiles += @($destDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })
             $computerName = $destDb.ComputerName
         } else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination."

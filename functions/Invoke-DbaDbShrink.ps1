@@ -25,7 +25,11 @@ function Invoke-DbaDbShrink {
         The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -118,17 +122,14 @@ function Invoke-DbaDbShrink {
     .EXAMPLE
         PS C:\> Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
 
-        Shrinks all databases on SQL2012 (not ideal for production)
+        Shrinks all user databases on SQL2012 (not ideal for production)
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
@@ -138,32 +139,26 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
-        [int]$StepSize,
+        [int64]$StepSize,
         [int]$StatementTimeout = 0,
-        [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        if ($LogsOnly) {
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
-            $FileType = 'Log'
-        }
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
             return
         }
 
-        if ((Test-Bound -ParameterName StepSize) -and $stepsize -lt 1024) {
+        if ((Test-Bound -ParameterName StepSize) -and $StepSize -lt 1024) {
             Stop-Function -Message "StepSize is measured in bits. Did you mean $StepSize bits? If so, please use 1024 or above. If not, then use the PowerShell bit notation like $($StepSize)MB or $($StepSize)GB"
             return
         }
 
-        if ($stepsize) {
-            $StepSizeKB = ([dbasize]($StepSize)).Kilobyte
+        if ($StepSize) {
+            $stepSizeKB = ([dbasize]($StepSize)).Kilobyte
         }
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
@@ -182,13 +177,17 @@ function Invoke-DbaDbShrink {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
             Write-Message -Level Verbose -Message "Connection timeout set to $StatementTimeout"
 
-            $dbs = $server.Databases | Where-Object {$_.IsAccessible}
+            $dbs = $server.Databases | Where-Object { $_.IsAccessible }
+
+            if ($AllUserDatabases) {
+                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+            }
 
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
@@ -248,12 +247,12 @@ function Invoke-DbaDbShrink {
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
-                                Write-Message -Level Verbose -Message "Step Size: $(([dbasize]$StepSize).Megabyte) MB"
+                                Write-Message -Level Verbose -Message "Step Size: $($stepSizeKB) KB"
 
-                                if ($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
+                                if ($stepSizeKB -and ($shrinkGap -ge $stepSizeKB)) {
                                     for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
-                                        Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - (($StepSizeKB * 1024 * 1024) * $i)
+                                        Write-Message -Level Verbose -Message "Step: $i / $([int](($shrinkGap) / $stepSizeKB))"
+                                        $shrinkSize = $startingSize - ($stepSizeKB * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
@@ -327,8 +326,5 @@ function Invoke-DbaDbShrink {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }

@@ -11,7 +11,11 @@ function Get-DbaLinkedServer {
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
         The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
@@ -41,19 +45,17 @@ function Get-DbaLinkedServer {
         Returns all linked servers for the SQL Server instance DEV01
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
+        PS C:\> Get-DbaRegServer -SqlInstance DEV01 -Group SQLDEV | Get-DbaLinkedServer | Out-GridView
 
         Returns all linked servers for a group of servers from SQL Server Central Management Server (CMS). Send output to GridView.
     #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -61,7 +63,7 @@ function Get-DbaLinkedServer {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $lservers = $server.LinkedServers

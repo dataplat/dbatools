@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgDatabase {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Remove-DbaAgDatabase {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database or databases to remove.
@@ -34,7 +37,7 @@ function Remove-DbaAgDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG
+        Tags: AvailabilityGroup, HA, AG, Database
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

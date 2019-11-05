@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
     <#
     .SYNOPSIS
@@ -13,13 +12,21 @@ function Copy-DbaSsisCatalog {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2012 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
         If this switch is enabled, the SSIS Catalog will be dropped and recreated on Destination if it already exists.
@@ -54,7 +61,7 @@ function Copy-DbaSsisCatalog {
         Tags: Migration, SSIS
         Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -82,8 +89,8 @@ function Copy-DbaSsisCatalog {
 
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
 
-       #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -97,11 +104,14 @@ function Copy-DbaSsisCatalog {
         [System.Security.SecureString]$CreateCatalogPassword,
         [Switch]$EnableSqlClr,
         [Switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     <# Developer note: The throw calls must stay in this command #>
     begin {
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+        if ($Force) { $ConfirmPreference = 'none' }
+
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
@@ -138,8 +148,8 @@ function Copy-DbaSsisCatalog {
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
                 $cmd.CommandText = "SSISDB.Catalog.get_project"
-                $cmd.Parameters.Add("@folder_name", $Folder) | out-null;
-                $cmd.Parameters.Add("@project_name", $Project) | out-null;
+                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
+                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
                     $destFolder = $destinationFolders | Where-Object {
@@ -254,7 +264,7 @@ function Copy-DbaSsisCatalog {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -282,7 +292,7 @@ function Copy-DbaSsisCatalog {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             try {
@@ -532,8 +542,5 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }

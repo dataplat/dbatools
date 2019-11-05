@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Test-DbaLastBackup).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException'
-        $paramCount = $knownParameters.Count
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException', 'DeviceType'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -44,15 +40,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Backup-DbaDatabase -Type Database
-        $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-        $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')")
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-        $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')")
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')"
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-        $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')")
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')"
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-        $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')")
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')"
     }
 
     Context "Test a single database" {
@@ -88,7 +84,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Backup-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest
 
         $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
-        $fileresult = Get-ChildItem c:\temp | Where-Object {$_.name -like '*bigtestrest'}
+        $fileresult = Get-ChildItem c:\temp | Where-Object { $_.name -like '*bigtestrest' }
         It "Should have skipped bigtestrest and tested smalltestrest" {
             $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
             $results[0].DbccResult | Should -Be 'Skipped'

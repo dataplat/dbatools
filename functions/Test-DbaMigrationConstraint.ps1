@@ -24,13 +24,21 @@ function Test-DbaMigrationConstraint {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -78,10 +86,8 @@ function Test-DbaMigrationConstraint {
         [parameter(Mandatory)]
         [DbaInstance]$Destination,
         [PSCredential]$DestinationSqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -113,13 +119,13 @@ function Test-DbaMigrationConstraint {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
         }
 
         try {
             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
         }
 
         if (-Not $Database) {
@@ -291,8 +297,5 @@ function Test-DbaMigrationConstraint {
         } else {
             Write-Message -Level Output -Message "There are no databases to validate."
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
     }
 }

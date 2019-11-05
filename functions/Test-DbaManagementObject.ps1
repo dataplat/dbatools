@@ -40,12 +40,10 @@ function Test-DbaManagementObject {
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
         [int[]]$VersionNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -78,8 +76,5 @@ function Test-DbaManagementObject {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaSqlManagementObject
     }
 }

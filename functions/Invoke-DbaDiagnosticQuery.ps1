@@ -16,7 +16,11 @@ function Invoke-DbaDiagnosticQuery {
         The target SQL Server instance or instances. Can be either a string or SMO server
 
     .PARAMETER SqlCredential
-        Allows alternative Windows or SQL login credentials to be used
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Alternate path for the diagnostic scripts
@@ -93,27 +97,27 @@ function Invoke-DbaDiagnosticQuery {
         Then it will export the results to Export-DbaDiagnosticQuery.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export All Queries to Disk
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries for all User Dbs
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries"
 
         Export Database Specific Queries For One Target Database
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
 
         Export Database Specific Queries For One Target Database and One Specific Query
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper
 
         Choose Queries To Export
 
@@ -133,7 +137,6 @@ function Invoke-DbaDiagnosticQuery {
     [outputtype([pscustomobject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Alias('DatabaseName')]
@@ -157,7 +160,7 @@ function Invoke-DbaDiagnosticQuery {
         [string]$OutputPath,
         [switch]$ExportQueries,
 
-        [switch][Alias('Silent')]
+        [switch]
         [switch]$EnableException
     )
 
@@ -177,20 +180,17 @@ function Invoke-DbaDiagnosticQuery {
 
         Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 
-        $module = Get-Module -Name dbatools
-        $base = $module.ModuleBase
-
         if (!$Path) {
-            $Path = "$base\bin\diagnosticquery"
+            $Path = Join-Path -Path "$script:PSModuleRoot" -ChildPath "bin\diagnosticquery"
         }
 
         $scriptversions = @()
-        $scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
+        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*_*.sql"
 
         if (!$scriptfiles) {
             Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
 
-            $Path = "$base\bin\diagnosticquery"
+            $Path = Join-Path -Path $base -ChildPath "\bin\diagnosticquery"
 
             $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
             if (!$scriptfiles) {
@@ -228,7 +228,7 @@ function Invoke-DbaDiagnosticQuery {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
@@ -287,8 +287,8 @@ function Invoke-DbaDiagnosticQuery {
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
-                $countDBSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).Count
-                $countInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).Count
+                $countDBSpecific = @($parsedscript | Where-Object { $_.QueryName -in $QueryName -and $_.DBSpecific -eq $true }).Count
+                $countInstanceSpecific = @($parsedscript | Where-Object { $_.QueryName -in $QueryName -and $_.DBSpecific -eq $false }).Count
             } else {
                 #if narrowing queries to database specific, calculate total to process based on instance queries count + (db specific count * databases to run each against)
                 $countDBSpecific = @($parsedscript | Where-Object DBSpecific).Count
@@ -306,7 +306,7 @@ function Invoke-DbaDiagnosticQuery {
 
 
             }
-            
+
             foreach ($scriptpart in $parsedscript) {
                 # ensure results are null with each part, otherwise duplicated information may be returned
                 $result = $null
@@ -317,7 +317,7 @@ function Invoke-DbaDiagnosticQuery {
                         $FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
                         $FullName = Join-Path $OutputPath $FileName
                         Write-Message -Level Verbose -Message  "Creating file: $FullName"
-                        $scriptPart.Text | out-file -FilePath $FullName -Encoding UTF8 -force
+                        $scriptPart.Text | Out-File -FilePath $FullName -Encoding UTF8 -force
                         continue
                     }
 
@@ -347,7 +347,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
                             }
                         } catch {
-                            Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
+                            Write-Message -Level Verbose -Message ('Some error has occurred on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
                         }
                         if ($result) {
                             [pscustomobject]@{
@@ -391,7 +391,7 @@ function Invoke-DbaDiagnosticQuery {
                             $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentDb, $Scriptpart.QueryName)
                             $FullName = Join-Path $OutputPath $FileName
                             Write-Message -Level Verbose -Message  "Creating file: $FullName"
-                            $scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
+                            $scriptPart.Text | Out-File -FilePath $FullName -encoding UTF8 -force
                             continue
                         }
 
@@ -422,7 +422,7 @@ function Invoke-DbaDiagnosticQuery {
                                     Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
                                 }
                             } catch {
-                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
+                                Write-Message -Level Verbose -Message ('Some error has occurred on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
                             if ($result) {

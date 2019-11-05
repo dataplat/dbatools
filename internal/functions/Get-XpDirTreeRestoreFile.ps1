@@ -30,10 +30,8 @@ function Get-XpDirTreeRestoreFile {
         [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
         [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$NoRecurse
     )
@@ -49,10 +47,10 @@ function Get-XpDirTreeRestoreFile {
     }
 
     if (!(Test-DbaPath -SqlInstance $server -path $path)) {
-        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path"
     }
     if (!(Test-DbaPath -SqlInstance $server -path $Path)) {
-        Stop-Function -Message "SqlInstance $SqlInstance cannot access $Path" -EnableException $true
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $Path"
     }
     if ($server.VersionMajor -ge 14) {
         # this is all kinds of cool, api could be expanded sooo much here

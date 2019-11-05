@@ -6,11 +6,12 @@ function Write-ProgressHelper {
         [string]$Activity,
         [string]$Message,
         [int]$TotalSteps,
+        [Alias("NoProgress")]
         [switch]$ExcludePercent
     )
-    
+
     $caller = (Get-PSCallStack)[1].Command
-    
+
     if (-not $Activity) {
         $Activity = switch ($caller) {
             "Export-DbaInstance" {
@@ -42,13 +43,18 @@ function Write-ProgressHelper {
             }
         }
     }
-    
-    if (-not $TotalSteps) {
-        $TotalSteps = ([regex]::Matches((Get-Command -Module dbatools -Name $caller).Definition, "Write-ProgressHelper")).Count
-    }
+
     if ($ExcludePercent) {
         Write-Progress -Activity $Activity -Status $Message
     } else {
-        Write-Progress -Activity $Activity -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
+        if (-not $TotalSteps -and $caller -ne '<ScriptBlock>') {
+            $TotalSteps = ([regex]::Matches((Get-Command -Module dbatools -Name $caller).Definition, "Write-ProgressHelper")).Count
+        }
+        if (-not $TotalSteps) {
+            $percentComplete = 0
+        } else {
+            $percentComplete = ($StepNumber / $TotalSteps) * 100
+        }
+        Write-Progress -Activity $Activity -Status $Message -PercentComplete $percentComplete
     }
 }

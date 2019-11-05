@@ -16,7 +16,11 @@ function Read-DbaTransactionLog {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        A credential to use to connect to the SQL Instance rather than using Windows Authentication
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Database to read the transaction log of
@@ -53,22 +57,20 @@ function Read-DbaTransactionLog {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Position = 0, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [object]$Database,
         [Switch]$IgnoreLimit,
         [int]$RowLimit = 0,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         return
     }
 

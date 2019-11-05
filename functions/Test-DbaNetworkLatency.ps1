@@ -14,7 +14,11 @@ function Test-DbaNetworkLatency {
         The SQL Server you want to run the test on.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Query
         Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified object names.
@@ -64,12 +68,10 @@ function Test-DbaNetworkLatency {
     [OutputType([System.Object[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
         [int]$Count = 3,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -80,7 +82,7 @@ function Test-DbaNetworkLatency {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 do {
@@ -120,8 +122,5 @@ function Test-DbaNetworkLatency {
                 Stop-Function -Message "Error occurred testing dba network latency: $_" -ErrorRecord $_ -Continue -Target $instance
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlNetworkLatency
     }
 }

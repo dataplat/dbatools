@@ -6,15 +6,11 @@ $PSDefaultParameterValues.Remove('*:WarningAction')
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 14
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Stop-Function).Parameters.Keys
-        $knownParameters = 'Message', 'Category', 'ErrorRecord', 'Tag', 'FunctionName', 'File', 'Line', 'Target', 'Exception', 'OverrideExceptionMessage', 'Continue', 'SilentlyContinue', 'ContinueLabel', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Message', 'Category', 'ErrorRecord', 'Tag', 'FunctionName', 'File', 'Line', 'Target', 'Exception', 'OverrideExceptionMessage', 'Continue', 'SilentlyContinue', 'ContinueLabel', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 
@@ -28,7 +24,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -67,7 +63,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -95,7 +91,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             try {
                 $ExceptionName = $record.Exception.InnerException.GetType().FullName
             } catch {
-                $ExceptionName = "Meeep!"
+                $ExceptionName = "Meeep."
             }
 
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
@@ -141,11 +137,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 
@@ -175,7 +171,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -210,7 +206,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -270,11 +266,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 

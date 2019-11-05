@@ -1,8 +1,7 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
+        Set-DbaAgentAlert updates the status of a SQL Agent Alert.
 
     .DESCRIPTION
         Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
@@ -11,7 +10,11 @@ function Set-DbaAgentAlert {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
         The name of the alert.
@@ -76,7 +79,6 @@ function Set-DbaAgentAlert {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Alert,
@@ -86,11 +88,10 @@ function Set-DbaAgentAlert {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Alert[]]$InputObject,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
-
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
@@ -106,7 +107,7 @@ function Set-DbaAgentAlert {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             foreach ($a in $Alert) {
                 # Check if the alert exists

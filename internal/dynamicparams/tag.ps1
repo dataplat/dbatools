@@ -13,7 +13,7 @@ $ScriptBlock = {
 
     # Hack till we get this working
     function New-CompletionResult {
-        param ([Parameter(Position = 0, ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
+        param ([Parameter(ValueFromPipelineByPropertyName, Mandatory, ValueFromPipeline)]
             [ValidateNotNullOrEmpty()]
             [string]
             $CompletionText,
@@ -64,7 +64,7 @@ $ScriptBlock = {
 
     }
 
-    $moduledirectory = (Get-Module -Name dbatools).ModuleBase
+    $moduledirectory = $env:PSModuleRoot
     $idxfile = "$moduledirectory\bin\dbatools-index.json"
     $json = Get-Content $idxfile | ConvertFrom-Json
     $cleantags = @()

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
     <#
     .SYNOPSIS
@@ -17,7 +16,11 @@ function Export-DbaExecutionPlan {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -40,7 +43,7 @@ function Export-DbaExecutionPlan {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER PipedObject
+    .PARAMETER InputObject
         Internal parameter
 
     .PARAMETER EnableException
@@ -83,23 +86,21 @@ function Export-DbaExecutionPlan {
     [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'NotPiped')]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ParameterSetName = 'Piped', Mandatory)]
-        [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [string]$Path,
+        [parameter(ParameterSetName = 'Piped')]
+        [parameter(ParameterSetName = 'NotPiped')]
+        # No file path because this needs a directory
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceCreation,
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
-        [object[]]$PipedObject,
-        [Alias('Silent')]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -148,12 +149,18 @@ function Export-DbaExecutionPlan {
     }
 
     process {
-        if (!(Test-Path $Path)) {
-            $null = New-Item -ItemType Directory -Path $Path
+
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
+            }
         }
 
-        if ($PipedObject) {
-            foreach ($object in $pipedobject) {
+        if ($InputObject) {
+            foreach ($object in $InputObject) {
                 Export-Plan $object
                 return
             }
@@ -163,7 +170,7 @@ function Export-DbaExecutionPlan {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,

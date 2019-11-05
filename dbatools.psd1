@@ -11,19 +11,19 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.709'
+    ModuleVersion          = '1.0.66'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     # Author of this module
-    Author                 = 'Chrissy LeMaire'
+    Author                 = 'the dbatools team'
 
     # Company or vendor of this module
     CompanyName            = 'dbatools.io'
 
     # Copyright statement for this module
-    Copyright              = 'Copyright (c) 2018 by dbatools, licensed under MIT'
+    Copyright              = 'Copyright (c) 2019 by dbatools, licensed under MIT'
 
     # Description of the functionality provided by this module
     Description            = "The community module that enables SQL Server Pros to automate database development and server administration"
@@ -80,20 +80,20 @@
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentJob',
         'Copy-DbaCustomError',
-        'Copy-DbaServerAuditSpecification',
+        'Copy-DbaInstanceAuditSpecification',
         'Copy-DbaEndpoint',
-        'Copy-DbaServerAudit',
+        'Copy-DbaInstanceAudit',
         'Copy-DbaServerRole',
         'Copy-DbaResourceGovernor',
         'Copy-DbaXESession',
         'Copy-DbaBackupDevice',
-        'Copy-DbaServerTrigger',
-        'Copy-DbaCmsRegServer',
+        'Copy-DbaInstanceTrigger',
+        'Copy-DbaRegServer',
         'Copy-DbaSysDbUserObject',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
-        'Get-DbaDetachedDatabaseInfo',
-        'Restore-DbaBackupFromDirectory',
+        'Copy-DbaStartupProcedure',
+        'Get-DbaDbDetachedFileInfo',
         'Copy-DbaAgentJobCategory',
         'Test-DbaPath',
         'Export-DbaLogin',
@@ -101,26 +101,26 @@
         'Expand-DbaDbLogFile',
         'Test-DbaMigrationConstraint',
         'Test-DbaNetworkLatency',
-        'Find-DbaDuplicateIndex',
+        'Find-DbaDbDuplicateIndex',
         'Remove-DbaDatabaseSafely',
         'Set-DbaTempdbConfig',
         'Test-DbaTempdbConfig',
-        'Repair-DbaOrphanUser',
-        'Remove-DbaOrphanUser',
+        'Repair-DbaDbOrphanUser',
+        'Remove-DbaDbOrphanUser',
         'Find-DbaDbUnusedIndex',
         'Get-DbaDbSpace',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
-        'Test-DbaJobOwner',
-        'Set-DbaJobOwner',
-        'Test-DbaDbVirtualLogFile',
+        'Test-DbaAgentJobOwner',
+        'Set-DbaAgentJobOwner',
+        'Measure-DbaDbVirtualLogFile',
         'Get-DbaDbRestoreHistory',
         'Get-DbaTcpPort',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
         'Test-DbaConnectionAuthScheme',
-        'Test-DbaServerName',
-        'Repair-DbaServerName',
+        'Test-DbaInstanceName',
+        'Repair-DbaInstanceName',
         'Stop-DbaProcess',
         'Find-DbaOrphanedFile',
         'Get-DbaAvailabilityGroup',
@@ -134,7 +134,7 @@
         'Get-DbaPermission',
         'Get-DbaLastBackup',
         'Connect-DbaInstance',
-        'Get-DbaBackupHistory',
+        'Get-DbaDbBackupHistory',
         'Read-DbaBackupHeader',
         'Test-DbaLastBackup',
         'Get-DbaMaxMemory',
@@ -145,10 +145,10 @@
         'Get-DbaServerRoleMember',
         'Resolve-DbaNetworkName',
         'Export-DbaAvailabilityGroup',
-        'Write-DbaDataTable',
+        'Write-DbaDbTableData',
         'New-DbaDbSnapshot',
         'Restore-DbaDbSnapshot',
-        'Get-DbaServerTrigger',
+        'Get-DbaInstanceTrigger',
         'Get-DbaDbTrigger',
         'Get-DbaDbState',
         'Set-DbaDbState',
@@ -160,6 +160,7 @@
         'Find-DbaAgentJob',
         'Find-DbaDatabase',
         'Get-DbaXESession',
+        'Export-DbaXESession',
         'Test-DbaOptimizeForAdHoc',
         'Find-DbaStoredProcedure',
         'Measure-DbaBackupThroughput',
@@ -215,8 +216,8 @@
         'Get-DbaEndpoint',
         'Get-DbaDbMasterKey',
         'Get-DbaSchemaChangeHistory',
-        'Get-DbaServerAudit',
-        'Get-DbaServerAuditSpecification',
+        'Get-DbaInstanceAudit',
+        'Get-DbaInstanceAuditSpecification',
         'Get-DbaProductKey',
         'Get-DbatoolsLog',
         'Restore-DbaDbCertificate',
@@ -231,7 +232,7 @@
         'New-DbaConnectionString',
         'Get-DbaAgentSchedule',
         'Read-DbaTraceFile',
-        'Get-DbaServerInstallDate',
+        'Get-DbaInstanceInstallDate',
         'Backup-DbaDbMasterKey',
         'Get-DbaAgentJobHistory',
         'Get-DbaMaintenanceSolutionLog',
@@ -302,10 +303,8 @@
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
         'Get-DbaAgentJobCategory',
-        'New-DbaAgentJobCategory',
         'Remove-DbaAgentJobCategory',
         'Set-DbaAgentJobCategory',
-        'Get-DbaDbRole',
         'Get-DbaServerRole',
         'Find-DbaBackup',
         'Remove-DbaXESession',
@@ -316,7 +315,7 @@
         'New-DbaXESmartEmail',
         'New-DbaXESmartQueryExec',
         'Start-DbaXESmartTarget',
-        'Get-DbaOrphanUser',
+        'Get-DbaDbOrphanUser',
         'Get-DbaOpenTransaction',
         'Get-DbaDbLogShipError',
         'Test-DbaBuild',
@@ -329,11 +328,11 @@
         'Copy-DbaXESessionTemplate',
         'Get-DbaXEObject',
         'ConvertTo-DbaDataTable',
-        'Find-DbaDisabledIndex',
+        'Find-DbaDbDisabledIndex',
         'Get-DbaXESmartTarget',
         'Remove-DbaXESmartTarget',
         'Stop-DbaXESmartTarget',
-        'Get-DbaCmsRegServerGroup',
+        'Get-DbaRegServerGroup',
         'New-DbaDbUser',
         'Measure-DbaDiskSpaceRequirement',
         'New-DbaXESmartCsvWriter',
@@ -361,6 +360,9 @@
         'Get-DbaDbMailProfile',
         'Get-DbaDbMailConfig',
         'Get-DbaDbMailServer',
+        'New-DbaDbMailServer',
+        'New-DbaDbMailAccount',
+        'New-DbaDbMailProfile',
         'Get-DbaResourceGovernor',
         'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
@@ -431,15 +433,75 @@
         'Unregister-DbatoolsConfig',
         'Join-DbaPath',
         'Resolve-DbaPath',
+        'Invoke-DbaDbDataMasking',
+        'New-DbaDbMaskingConfig',
+        'Get-DbaDbccSessionBuffer',
+        'Get-DbaDbccStatistic',
+        'Get-DbaDbDbccOpenTran',
+        'Invoke-DbaDbccDropCleanBuffer',
+        'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCleanTable',
+        'Invoke-DbaDbDbccUpdateUsage',
+        'Get-DbaDbIdentity',
+        'Set-DbaDbIdentity',
+        'Get-DbaRegServerStore',
+        'Get-DbaRegServer',
+        'Add-DbaRegServer',
+        'Add-DbaRegServerGroup',
+        'Export-DbaRegServer',
+        'Import-DbaRegServer',
+        'Move-DbaRegServer',
+        'Move-DbaRegServerGroup',
+        'Remove-DbaRegServer',
+        'Remove-DbaRegServerGroup',
+        'New-DbaDbDataGeneratorConfig',
+        'Invoke-DbaDbDataGenerator',
+        'Get-DbaRandomizedValue',
+        'Get-DbaRandomizedDatasetTemplate',
+        'Get-DbaRandomizedDataset',
+        'Get-DbaRandomizedType',
+        'Export-DbaDbTableData',
+        'Backup-DbaServiceMasterKey',
+        'Invoke-DbaDbPiiScan',
+        'New-DbaAzAccessToken',
+        'Disable-DbaStartupProcedure',
+        'Enable-DbaStartupProcedure',
+        'Get-DbaStartupProcedure',
+        'Get-DbatoolsChangeLog',
+        'Get-DbaXESessionTargetFile',
+        'Add-DbaDbRoleMember',
+        'Get-DbaDbFilegroup',
+        'Get-DbaDbObjectTrigger',
+        'Get-DbaDbRole',
+        'New-DbaDbRole',
+        'New-DbaDbTable',
+        'New-DbaDiagnosticAdsNotebook',
+        'New-DbaServerRole',
+        'Remove-DbaDbRole',
+        'Remove-DbaDbRoleMember',
+        'Remove-DbaServerRole',
+        'Test-DbaDbDataGeneratorConfig',
+        'Test-DbaDbDataMaskingConfig',
+        'Get-DbaAgentAlertCategory',
+        'New-DbaAgentAlertCategory',
+        'New-DbaAgentJobCategory',
+        'Remove-DbaAgentAlertCategory',
+        'Save-DbaKbUpdate',
+        'Get-DbaKbUpdate',
+        'Get-DbaDbLogSpace',
+        'Export-DbaDbRole',
+        'Export-DbaServerRole',
+        'Add-DbaServerRoleMember',
+        'Get-DbaDbAsymmetricKey',
+        'New-DbaDbAsymmetricKey',
+        'Remove-DbaDbAsymmetricKey',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
         'Get-DbaSsisExecutionHistory',
         'Get-DbaRepDistributor',
-        'Get-DbaCmsRegServerStore',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
-        'Get-DbaCmsRegServer',
         'Copy-DbaSsisCatalog',
         'New-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
@@ -449,14 +511,6 @@
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
-        'Add-DbaCmsRegServer',
-        'Add-DbaCmsRegServerGroup',
-        'Export-DbaCmsRegServer',
-        'Import-DbaCmsRegServer',
-        'Move-DbaCmsRegServer',
-        'Move-DbaCmsRegServerGroup',
-        'Remove-DbaCmsRegServer',
-        'Remove-DbaCmsRegServerGroup',
         'Get-DbaRepPublication',
         'Test-DbaRepLatency',
         'Export-DbaRepServerSetting',
@@ -483,9 +537,12 @@
         'Read-DbaXEFile',
         'Watch-DbaXESession',
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
-        'Rename-DbaDatabase',# can maybebe fixed by not remoting when linux is detected
+        'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
+        'Install-DbaInstance',
+        'Invoke-DbaAdvancedInstall',
         'Update-DbaInstance',
+        'Invoke-DbaAdvancedUpdate',
         'Invoke-DbaPfRelog',
         'Get-DbaPfDataCollectorCounter',
         'Get-DbaPfDataCollectorCounterSample',
@@ -541,10 +598,14 @@
         'Enable-DbaForceNetworkEncryption',
         'Disable-DbaForceNetworkEncryption',
         'Get-DbaForceNetworkEncryption',
+        'Disable-DbaHideInstance',
+        'Enable-DbaHideInstance',
+        'New-DbaComputerCertificateSigningRequest',
         'Remove-DbaComputerCertificate',
         'New-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
         'Add-DbaComputerCertificate',
+        'Backup-DbaComputerCertificate',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Invoke-DbaDbLogShipping',
@@ -555,10 +616,10 @@
         'Get-DbaCmObject',
         'Set-DbaStartupParameter',
         'Get-DbaNetworkActivity',
-        'Get-DbaServerProtocol'
-        'Watch-DbaUpdate',
-        'Uninstall-DbaWatchUpdate',
-        'Install-DbaWatchUpdate',
+        'Get-DbaInstanceProtocol'
+        'Install-DbatoolsWatchUpdate',
+        'Uninstall-DbatoolsWatchUpdate',
+        'Watch-DbatoolsUpdate',
         'Get-DbaPrivilege',
         'Get-DbaMsdtc',
         'Get-DbaPageFileSetting',
@@ -580,7 +641,7 @@
         'Get-DbaClientProtocol',
         'Get-DbaWindowsLog',
         # WPF
-        'Show-DbaServerFileSystem',
+        'Show-DbaInstanceFileSystem',
         'Show-DbaDbList',
         # AD?
         'Test-DbaWindowsLogin',
@@ -602,15 +663,22 @@
     CmdletsToExport        = @(
         'Select-DbaObject',
         'Set-DbatoolsConfig'
-        )
+    )
 
     # Variables to export from this module
     VariablesToExport      = ''
 
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
-    # KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
-    AliasesToExport        = '*'
+    # The five listed below are intentional
+    AliasesToExport        = @(
+        'Get-DbaRegisteredServer',
+        'Attach-DbaDatabase',
+        'Detach-DbaDatabase',
+        'Start-SqlMigration',
+        'Write-DbaDataTable',
+        'Get-DbaDbModule'
+    )
 
     # List of all modules packaged with this module
     ModuleList             = @()
@@ -628,7 +696,7 @@
             Category     = "Databases"
 
             # Keyword tags to help users find this module via navigations and search.
-            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
             IconUri      = "https://dbatools.io/logo.png"

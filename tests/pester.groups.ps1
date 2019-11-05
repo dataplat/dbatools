@@ -23,6 +23,7 @@ $TestsRunGroups = @{
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
+        'Get-DbaExecutionPlan',
         # weird too often
         'Add-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
@@ -35,21 +36,35 @@ $TestsRunGroups = @{
         # these work but fail too often on appveyor
         # will revisit once they get their new data center
         'Remove-DbaAvailabilityGroup',
-        'Test-DbaLastBackup',
+        'Get-DbaSuspectPage',
         'Reset-DbaAdmin',
         'Remove-DbaAgDatabase',
-        'New-DbaAvailabilityGroup',
         'Export-DbaDacPackage',
         'Set-DbaAgReplica',
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Test-DbaDeprecatedFeature',
-        'Test-DbaServerName',
+        'Test-DbaInstanceName',
         'Test-DbaTempDbConfig',
-        'Test-DbaDbVirtualLogFile',
-        'Test-DbaJobOwner',
-        'Resume-DbaAgDbDataMovement'
+        'Measure-DbaDbVirtualLogFile',
+        'Test-DbaAgentJobOwner',
+        'Resume-DbaAgDbDataMovement',
+        'Get-DbaDbMasterKey',
+        'Test-DbaAgentJobOwner',
+        'Stop-DbaXESession',
+        'Get-DbaPrivilege',
+        'Find-DbaAgentJob', # strange pester issue
+        'Remove-DbaDatabaseSafely', # strange pester issue
+        'Set-DbaDbOwner',
+        'Test-DbaManagementObject',
+        'Test-DbaMaxDop',
+        'New-DbaLogin',
+        'New-DbaDbUser',
+        'Get-DbaLastGoodCheckDb',
+        # doesn't work on appveyor but so works locally D:
+        'Read-DbaXeFile',
+        'Find-DbaCommand'
     )
     # do not run everywhere
     "disabled"          = @()

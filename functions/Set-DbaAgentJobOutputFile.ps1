@@ -10,7 +10,11 @@ function Set-DbaAgentJobOutputFile {
         The target SQL Server instance or instances.
 
     .PARAMETER SQLCredential
-        Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Job
         The job to process - this list is auto-populated from the server.
@@ -50,33 +54,31 @@ function Set-DbaAgentJobOutputFile {
     param (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false,
             Position = 0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(HelpMessage = 'SQL Credential',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [Parameter(HelpMessage = 'The Job Step name',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [object[]]$Step,
         [Parameter(Mandatory, HelpMessage = 'The Full Output File Path',
             ValueFromPipeline,
-            ValueFromPipelineByPropertyName = $true,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

@@ -41,7 +41,7 @@ function Resolve-DbaPath
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]
         $Path,
         
@@ -77,7 +77,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($parentPath | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($parentPath.Provider.Name -ne $Provider))
@@ -97,7 +97,7 @@ function Resolve-DbaPath
                 
                 if ($SingleItem -and (($resolvedPaths | Measure-Object).Count -gt 1))
                 {
-                    Stop-Function -Message "Could not resolve to a single parent path!" -EnableException $true
+                    Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
                 
                 if ($Provider -and ($resolvedPaths.Provider.Name -ne $Provider))

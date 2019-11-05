@@ -19,9 +19,6 @@ function Test-DbaPowerPlan {
     .PARAMETER CustomPowerPlan
         If your organization uses a custom power plan that's considered best practice, specify it here.
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
-
     .PARAMETER InputObject
         Enables piping from Get-DbaPowerPlan
 
@@ -51,22 +48,18 @@ function Test-DbaPowerPlan {
 
         Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
 
-       #>
+    #>
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
         [pscustomobject]$InputObject,
-        [switch]$Detailed,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $bpPowerPlan = [PSCustomObject]@{
             InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
             ElementName = $null

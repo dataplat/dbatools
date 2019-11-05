@@ -10,7 +10,11 @@ function Get-DbaDbPartitionFunction {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         To get users from specific database(s)
@@ -55,12 +59,10 @@ function Get-DbaDbPartitionFunction {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -69,7 +71,7 @@ function Get-DbaDbPartitionFunction {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $databases = $server.Databases | Where-Object IsAccessible
@@ -105,8 +107,5 @@ function Get-DbaDbPartitionFunction {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabasePartitionFunction
     }
 }

@@ -20,7 +20,11 @@ function Get-DbaCpuUsage {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to the SQL instance using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Allows you to login to the Windows Server using alternative credentials.
@@ -64,7 +68,6 @@ function Get-DbaCpuUsage {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
@@ -113,7 +116,7 @@ function Get-DbaCpuUsage {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $processes = Get-DbaProcess -SqlInstance $server

@@ -4,20 +4,22 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 10
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\New-DbaXESmartTableWriter).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'AutoCreateTargetTable', 'UploadIntervalSeconds', 'Event', 'OutputColumn', 'Filter', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'AutoCreateTargetTable', 'UploadIntervalSeconds', 'Event', 'OutputColumn', 'Filter', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Creates a smart object" {
+        It "returns the object with all of the correct properties" {
+            $results = New-DbaXESmartReplay -SqlInstance $script:instance2 -Database planning
+            $results.ServerName | Should -Be $script:instance2
+            $results.DatabaseName | Should -be 'planning'
+            $results.Password | Should -Be $null
+            $results.DelaySeconds | Should -Be 0
+        }
+    }
+}

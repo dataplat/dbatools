@@ -65,7 +65,7 @@ function Restart-DbaService {
         Gets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.
 
     .EXAMPLE
-        PS C:\> Restart-DbaService -ComputerName sql1,sql2 -Instance MSSQLSERVER
+        PS C:\> Restart-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
 
         Restarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 
@@ -95,7 +95,6 @@ function Restart-DbaService {
         [int]$Timeout = 60,
         [PSCredential]$Credential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -132,10 +131,10 @@ function Restart-DbaService {
         if ($processArray) {
             if ($PSCmdlet.ShouldProcess("$ProcessArray", "Restarting Service")) {
                 $services = Update-ServiceStatus -InputObject $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
-                foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
+                foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed' })) {
                     $service
                 }
-                $services = $services | Where-Object { $_.Status -eq 'Successful'}
+                $services = $services | Where-Object { $_.Status -eq 'Successful' }
                 if ($services) {
                     Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
                 }
@@ -143,7 +142,5 @@ function Restart-DbaService {
         } else {
             Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters."
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Restart-DbaSqlService
     }
 }

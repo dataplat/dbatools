@@ -12,7 +12,11 @@ function Get-DbaDbSpace {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -20,8 +24,11 @@ function Get-DbaDbSpace {
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
+    .PARAMETER InputObject
+        A piped collection of database objects from Get-DbaDatabase
+
     .PARAMETER IncludeSystemDBs
-        If this switch is enabled, system databases will be processed. By default, only user databases are processed.
+        Deprecated - if filtering is needed, please pipe filtered results from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -66,20 +73,17 @@ function Get-DbaDbSpace {
 
     #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
+    param ([parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [Alias("Databases")]
+        [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
-        Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")."
-
         $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
                                    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                                    SERVERPROPERTY('ServerName') AS SqlInstance,
@@ -133,99 +137,77 @@ function Get-DbaDbSpace {
     }
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failed to process Instance $Instance." -ErrorRecord $_ -Target $instance -Continue
-            }
+        if ($IncludeSystemDBs) {
+            Stop-Function -Message "IncludeSystemDBs will be removed. Please pipe in filtered results from Get-DbaDatabase instead."
+            return
+        }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
 
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
             if ($server.VersionMajor -lt 9) {
-                Write-Message -Level Warning -Message "SQL Server 2000 not supported. $server skipped."
-                continue
+                Stop-Function -Message "SQL Server 2000 not supported. $server skipped." -Continue
             }
 
-            #If IncludeSystemDBs is true, include systemdbs
-            #look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
             try {
-                if (Test-Bound "Database") {
-                    $dbs = $server.Databases | Where-Object Name -In $Database
-                } elseif ($IncludeSystemDBs) {
-                    $dbs = $server.Databases | Where-Object IsAccessible
-                } else {
-                    $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
+                Write-Message -Level Verbose -Message "Querying $instance - $db."
+                If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "$db is not accessible." -Target $db
+                    continue
                 }
+                #Execute query against individual database and add to output
+                foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
+                    if ($row.UsedSpaceMB -is [System.DBNull]) {
+                        $UsedMB = 0
+                    } else {
+                        $UsedMB = [Math]::Round($row.UsedSpaceMB)
+                    }
+                    if ($row.FreeSpaceMB -is [System.DBNull]) {
+                        $FreeMB = 0
+                    } else {
+                        $FreeMB = [Math]::Round($row.FreeSpaceMB)
+                    }
+                    if ($row.PercentUsed -is [System.DBNull]) {
+                        $PercentUsed = 0
+                    } else {
+                        $PercentUsed = [Math]::Round($row.PercentUsed)
+                    }
+                    if ($row.SpaceBeforeMax -is [System.DBNull]) {
+                        $SpaceUntilMax = 0
+                    } else {
+                        $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax)
+                    }
+                    if ($row.UnusableSpaceMB -is [System.DBNull]) {
+                        $UnusableSpace = 0
+                    } else {
+                        $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
+                    }
 
-                if (Test-Bound "ExcludeDatabase") {
-                    $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+                    [pscustomobject]@{
+                        ComputerName       = $server.ComputerName
+                        InstanceName       = $server.ServiceName
+                        SqlInstance        = $server.DomainInstanceName
+                        Database           = $row.DBName
+                        FileName           = $row.FileName
+                        FileGroup          = $row.FileGroup
+                        PhysicalName       = $row.PhysicalName
+                        FileType           = $row.FileType
+                        UsedSpace          = [dbasize]($UsedMB * 1024 * 1024)
+                        FreeSpace          = [dbasize]($FreeMB * 1024 * 1024)
+                        FileSize           = [dbasize]($row.FileSizeMB * 1024 * 1024)
+                        PercentUsed        = $PercentUsed
+                        AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
+                        AutoGrowType       = $row.GrowthType
+                        SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
+                        AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
+                        UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
+                    }
                 }
             } catch {
-                Stop-Function -Message "Unable to gather databases for $instance." -ErrorRecord $_ -Continue
-            }
-
-            foreach ($db in $dbs) {
-                try {
-                    Write-Message -Level Verbose -Message "Querying $instance - $db."
-                    If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
-                        Write-Message -Level Warning -Message "$db is not accessible." -Target $db
-                        continue
-                    }
-                    #Execute query against individual database and add to output
-                    foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
-                        if ($row.UsedSpaceMB -is [System.DBNull]) {
-                            $UsedMB = 0
-                        } else {
-                            $UsedMB = [Math]::Round($row.UsedSpaceMB)
-                        }
-                        if ($row.FreeSpaceMB -is [System.DBNull]) {
-                            $FreeMB = 0
-                        } else {
-                            $FreeMB = [Math]::Round($row.FreeSpaceMB)
-                        }
-                        if ($row.PercentUsed -is [System.DBNull]) {
-                            $PercentUsed = 0
-                        } else {
-                            $PercentUsed = [Math]::Round($row.PercentUsed)
-                        }
-                        if ($row.SpaceBeforeMax -is [System.DBNull]) {
-                            $SpaceUntilMax = 0
-                        } else {
-                            $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax)
-                        }
-                        if ($row.UnusableSpaceMB -is [System.DBNull]) {
-                            $UnusableSpace = 0
-                        } else {
-                            $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
-                        }
-
-                        [pscustomobject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $row.DBName
-                            FileName           = $row.FileName
-                            FileGroup          = $row.FileGroup
-                            PhysicalName       = $row.PhysicalName
-                            FileType           = $row.FileType
-                            UsedSpace          = [dbasize]($UsedMB * 1024 * 1024)
-                            FreeSpace          = [dbasize]($FreeMB * 1024 * 1024)
-                            FileSize           = [dbasize]($row.FileSizeMB * 1024 * 1024)
-                            PercentUsed        = $PercentUsed
-                            AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
-                            AutoGrowType       = $row.GrowthType
-                            SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
-                            AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
-                            UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
-                        }
-                    }
-                } catch {
-                    Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
-                }
+                Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseFreeSpace
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
     }
 }

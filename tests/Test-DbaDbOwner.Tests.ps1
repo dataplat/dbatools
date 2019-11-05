@@ -2,44 +2,13 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $dbname = "dbatoolsci_testdbowner"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $null = $server.Query("Create Database [$dbname]")
-    }
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-    }
-
-    It "return the correct information including database, currentowner and targetowner" {
-        $whoami = whoami
-        $results = Test-DbaDbOwner -SqlInstance $script:instance1 -Database $dbname
-        $results.Database -eq $dbname
-        $results.CurrentOwner -eq $whoami
-        $results.TargetOwner -eq 'sa'
-    }
-}
-
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-               #>
-        $paramCount = 7
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDbOwner).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'TargetLogin', 'EnableException', 'Detailed'
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'TargetLogin', 'InputObject', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     InModuleScope 'dbatools' {
@@ -62,9 +31,11 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
-                { Test-DbaDbOwner -SqlInstance 'SQLServerName' } | Should Not throw
+                {
+                    Test-DbaDbOwner -SqlInstance 'SQLServerName'
+                } | Should Not throw
             } #It
             It -Skip "Should not return if no wrong owner for default" {
                 Mock Connect-SQLInstance -MockWith {
@@ -84,9 +55,11 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
-                { Test-DbaDbOwner -SqlInstance 'SQLServerName' } | Should Not throw
+                {
+                    Test-DbaDbOwner -SqlInstance 'SQLServerName'
+                } | Should Not throw
             } #It
             It -Skip "Should return wrong owner information for one database with no owner specified" {
                 Mock Connect-SQLInstance -MockWith {
@@ -106,7 +79,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -134,7 +107,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result.SqlInstance | Should Be 'SQLServerName'
@@ -167,7 +140,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -200,7 +173,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -240,8 +213,9 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
-                Mock Stop-Function { }
+                } #mock connect-SqlInstance
+                Mock Stop-Function {
+                }
 
                 $null = Test-DbaDbOwner -SqlInstance 'SQLServerName' -TargetLogin 'WrongLogin'
                 $assertMockParams = @{
@@ -274,7 +248,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                             }
                         ) #logins
                     } #object
-                } #mock connect-sqlserver
+                } #mock connect-SqlInstance
 
                 $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
@@ -293,3 +267,24 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         } # Context
     } #modulescope
 } #describe
+
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $dbname = "dbatoolsci_testdbowner"
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $null = $server.Query("Create Database [$dbname]")
+    }
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+    }
+
+    It "return the correct information including database, currentowner and targetowner" {
+        $whoami = whoami
+        $results = Test-DbaDbOwner -SqlInstance $script:instance1 -Database $dbname
+        $results.Database -eq $dbname
+        $results.CurrentOwner -eq $whoami
+        $results.TargetOwner -eq 'sa'
+    }
+}

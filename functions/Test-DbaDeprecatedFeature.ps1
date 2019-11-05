@@ -10,7 +10,11 @@ function Test-DbaDeprecatedFeature {
         The target SQL Server instance
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -43,7 +47,7 @@ function Test-DbaDeprecatedFeature {
         Check deprecated features on server sql2008 for only the testdb and db2 databases
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select *
+        PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select-Object *
 
         See the object definition in the output as well
 
@@ -60,7 +64,6 @@ function Test-DbaDeprecatedFeature {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -96,12 +99,12 @@ function Test-DbaDeprecatedFeature {
                     $matchedep = $results | Where-Object Definition -match $escaped
                     if ($matchedep) {
                         $matchedep | Add-Member -NotePropertyName DeprecatedFeature -NotePropertyValue $dep.dep.ToString().Trim() -PassThru -Force |
-                            Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
-                    }
+                        Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
+        } catch {
+            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
     }
+}
 }

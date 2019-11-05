@@ -10,7 +10,14 @@ function Export-DbaLogin {
         The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
 
     .PARAMETER Login
         The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
@@ -21,8 +28,32 @@ function Export-DbaLogin {
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
+    .PARAMETER ExcludeJobs
+        If this switch is enabled, Agent job ownership will not be exported.
+
+    .PARAMETER ExcludeDatabase
+        If this switch is enabled, mappings for databases will not be exported.
+
+    .PARAMETER ExcludePassword
+        If this switch is enabled, hashed passwords will not be exported.
+
+   .PARAMETER DefaultDatabase
+        If this switch is enabled, all logins will be scripted with specified default database,
+        that could help to successfully import logins on server that is missing default database for login.
+
     .PARAMETER Path
-        The file to write to.
+        Specifies the directory where the file or files will be exported.
+        Will default to Path.DbatoolsExport Configuration entry
+
+    .PARAMETER FilePath
+        Specifies the full file path of the output file. If left blank then filename based on Instance name and date is created.
+        If more than one instance is input then this parameter should be blank.
+
+    .PARAMETER Passthru
+        Output script to console
+
+    .PARAMETER BatchSeparator
+        Batch separator for scripting output. Uses the value from configuration Formatting.BatchSeparator by default. This is normally "GO"
 
     .PARAMETER NoClobber
         If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
@@ -30,22 +61,29 @@ function Export-DbaLogin {
     .PARAMETER Append
         If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
 
-    .PARAMETER ExcludeJobs
-        If this switch is enabled, Agent job ownership will not be exported.
+    .PARAMETER DestinationVersion
+        To say to which version the script should be generated. If not specified will use instance major version.
 
-    .PARAMETER ExcludeDatabases
-        If this switch is enabled, mappings for databases will not be exported.
+    .PARAMETER NoPrefix
+        Do not include a Prefix
+
+    .PARAMETER Encoding
+        Specifies the file encoding. The default is UTF8.
+
+        Valid values are:
+        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
+        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+        -- Byte: Encodes a set of characters into a sequence of bytes.
+        -- String: Uses the encoding type for a string.
+        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
+        -- UTF7: Encodes in UTF-7 format.
+        -- UTF8: Encodes in UTF-8 format.
+        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER ExcludeGoBatchSeparator
-        If specified, will NOT script the 'GO' batch separator.
-
-    .PARAMETER DestinationVersion
-        To say to which version the script should be generated. If not specified will use instance major version.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -85,7 +123,13 @@ function Export-DbaLogin {
         Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
     .EXAMPLE
-        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaLogin
+
+        Exports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting
+
+    .EXAMPLE
+        PS C:\> Set-DbatoolsConfig -FullName formatting.batchseparator -Value $null
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql
 
         Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
@@ -94,283 +138,287 @@ function Export-DbaLogin {
 
         Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaLogin
+
+        Exports login realcajun from sqlserver2008
+
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance sqlserver2008, sqlserver2012  | Where-Object { $_.IsDisabled -eq $false } | Export-DbaLogin
+
+        Exports all enabled logins from sqlserver2008 and sqlserver2008
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
+        [parameter()]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [Alias("Databases")]
         [object[]]$Database,
-        [Alias("OutFile", "FilePath", "FileName")]
-        [string]$Path,
+        [switch]$ExcludeJobs,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
+        [switch]$ExcludePassword,
+        [string]$DefaultDatabase,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
-        [switch]$ExcludeDatabases,
-        [switch]$ExcludeJobs,
-        [Alias('Silent')]
-        [switch]$EnableException,
-        [switch]$ExcludeGoBatchSeparator,
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
-        [string]$DestinationVersion
+        [string]$DestinationVersion,
+        [switch]$NoPrefix,
+        [switch]$Passthru,
+        [switch]$EnableException
     )
 
     begin {
-
-        if ($Path) {
-            if ($Path -notlike "*\*") {
-                $Path = ".\$Path"
-            }
-            $directory = Split-Path $Path
-            $exists = Test-Path $directory
-
-            if ($exists -eq $false) {
-                Write-Message -Level Warning -Message "Parent directory $directory does not exist"
-            }
-        }
-
+        $null = Test-ExportDirectory -Path $Path
         $outsql = @()
+        $instanceArray = @()
+        $logonCollection = New-Object System.Collections.ArrayList
+        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        $commandName = $MyInvocation.MyCommand.Name
 
     }
     process {
-        if (Test-FunctionInterrupt) {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a login, database, or server or specify a SqlInstance"
             return
         }
 
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-
-        if ($ExcludeDatabases -eq $false -or $Database) {
-            # if we got a database or a list of databases passed
-            # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
-            # the cool thing though is that database.enumloginmappings() is fast. A lot.
-            # if we get a list of databases passed (or even the default list of all the databases)
-            # we save outself a call to enumloginmappings if there is no map at all
-            $DbMapping = @()
-            $DbsToMap = $server.Databases
-            if ($Database) {
-                $DbsToMap = $DbsToMap | Where-Object Name -in $Database
-            }
-            foreach ($db in $DbsToMap) {
-                if ($db.IsAccessible -eq $false) {
-                    continue
-                }
-                $dbmap = $db.EnumLoginMappings()
-                foreach ($el in $dbmap) {
-                    $DbMapping += [pscustomobject]@{
-                        Database  = $db.Name
-                        UserName  = $el.Username
-                        LoginName = $el.LoginName
-                    }
-                }
-            }
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
         }
 
-        foreach ($sourceLogin in $server.Logins) {
-            $userName = $sourceLogin.name
-
-            if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) {
-                continue
-            }
-
-            if ($userName.StartsWith("##") -or $userName -eq 'sa') {
-                Write-Message -Level Warning -Message "Skipping $userName"
-                continue
-            }
-
-            $serverName = $server
-
-            $userBase = ($userName.Split("\")[0]).ToLower()
-            if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
-                if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name")) {
-                    Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name"
-                    continue
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $sqlcredential
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $sqlcredential
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $server = $input.Parent
+                    $Database = $input
+                }
+                'Microsoft.SqlServer.Management.Smo.Login' {
+                    Write-Message -Level Verbose -Message "Processing Login through InputObject"
+                    $server = $input.Parent
+                    $Login = $input
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server, database, or login."
+                    return
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
-                if ($Path) {
-                    Write-Message -Level Verbose -Message "Exporting $userName"
-                }
-
-                $outsql += "`r`nUSE master`n"
-                # Getting some attributes
-                $defaultDb = $sourceLogin.DefaultDatabase
-                $language = $sourceLogin.Language
-
-                if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
-                    $checkPolicy = "OFF"
-                } else {
-                    $checkPolicy = "ON"
-                }
-
-                if (!$sourceLogin.PasswordExpirationEnabled) {
-                    $checkExpiration = "OFF"
-                } else {
-                    $checkExpiration = "ON"
-                }
-
-                # Attempt to script out SQL Login
-                if ($sourceLogin.LoginType -eq "SqlLogin") {
-                    $sourceLoginName = $sourceLogin.name
-
-                    switch ($server.versionMajor) {
-                        0 {
-                            $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
-                        }
-                        8 {
-                            $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
-                        }
-                        9 {
-                            $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
-                        }
-                        default {
-                            $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
-                        }
-                    }
-
-                    try {
-                        $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
-                    } catch {
-                        $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
-                        $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
-                    }
-
-                    if ($hashedPass.GetType().Name -ne "String") {
-                        $passString = "0x"; $hashedPass | ForEach-Object {
-                            $passString += ("{0:X}" -f $_).PadLeft(2, "0")
-                        }
-                        $hashedPass = $passString
-                    }
-
-                    $sid = "0x"; $sourceLogin.sid | ForEach-Object {
-                        $sid += ("{0:X}" -f $_).PadLeft(2, "0")
-                    }
-                    $outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkPolicy, CHECK_EXPIRATION = $checkExpiration, DEFAULT_LANGUAGE = [$language]"
-                }
-                # Attempt to script out Windows User
-                elseif ($sourceLogin.LoginType -eq "WindowsUser" -or $sourceLogin.LoginType -eq "WindowsGroup") {
-                    $outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultDb], DEFAULT_LANGUAGE = [$language]"
-                }
-                # This script does not currently support certificate mapped or asymmetric key users.
-                else {
-                    Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.Name) skipped"
-                    continue
-                }
-
-                if ($sourceLogin.IsDisabled) {
-                    $outsql += "ALTER LOGIN [$userName] DISABLE"
-                }
-
-                if ($sourceLogin.DenyWindowsLogin) {
-                    $outsql += "DENY CONNECT SQL TO [$userName]"
-                }
-            }
-
-            # Server Roles: sysadmin, bulklogin, etc
-            foreach ($role in $server.Roles) {
-                $roleName = $role.Name
-
-                # SMO changed over time
-                try {
-                    $roleMembers = $role.EnumMemberNames()
-                } catch {
-                    $roleMembers = $role.EnumServerRoleMembers()
-                }
-
-                if ($roleMembers -contains $userName) {
-                    if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                        $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
-                    } else {
-                        $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
-                    }
-                }
-            }
-
-            if ($ExcludeJobs -eq $false) {
-                $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
-
-                foreach ($ownedJob in $ownedJobs) {
-                    $outsql += "`n`rUSE msdb`n"
-                    $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
-                }
-            }
-
-            if ($server.VersionMajor -ge 9) {
-                # These operations are only supported by SQL Server 2005 and above.
-                # Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
-
-                $perms = $server.EnumServerPermissions($userName)
-                $outsql += "`n`rUSE master`n"
-                foreach ($perm in $perms) {
-                    $permState = $perm.permissionstate
-                    $permType = $perm.PermissionType
-                    $grantor = $perm.grantor
-
-                    if ($permState -eq "GrantWithGrant") {
-                        $grantWithGrant = "WITH GRANT OPTION"
-                        $permState = "GRANT"
-                    } else {
-                        $grantWithGrant = $null
-                    }
-
-                    $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
-                }
-
-                # Credential mapping. Credential removal not currently supported for Syncs.
-                $loginCredentials = $server.Credentials | Where-Object { $_.Identity -eq $sourceLogin.Name }
-                foreach ($credential in $loginCredentials) {
-                    $credentialName = $credential.Name
-                    $outsql += "PRINT '$userName is associated with the $credentialName credential'"
-                }
-            }
-
-            if ($ExcludeDatabases -eq $false) {
-                $dbs = $sourceLogin.EnumDatabaseMappings()
-
+            if ($ExcludeDatabase -eq $false -or $Database) {
+                # if we got a database or a list of databases passed
+                # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
+                # the cool thing though is that database.enumloginmappings() is fast. A lot.
+                # if we get a list of databases passed (or even the default list of all the databases)
+                # we save ourself a call to enumloginmappings if there is no map at all
+                $DbMapping = @()
+                $DbsToMap = $server.Databases
                 if ($Database) {
-                    $dbs = $dbs | Where-Object { $_.DBName -in $Database }
-                }
-
-                # Adding database mappings and securables
-                foreach ($db in $dbs) {
-                    $dbName = $db.dbname
-                    $sourceDb = $server.Databases[$dbName]
-                    $dbUserName = $db.username
-
-                    $outsql += "`r`nUSE [$dbName]`n"
-                    try {
-                        $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
-                        $outsql += $sql
-                    } catch {
-                        Write-Message -Level Warning -Message "User cannot be found in selected database"
+                    if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
+                        $DbsToMap = $DbsToMap | Where-Object Name -in $Database.Name
+                    } else {
+                        $DbsToMap = $DbsToMap | Where-Object Name -in $Database
                     }
-
-                    # Skipping updating dbowner
-
-                    # Database Roles: db_owner, db_datareader, etc
-                    foreach ($role in $sourceDb.Roles) {
-                        if ($role.EnumMembers() -contains $dbUserName) {
-                            $roleName = $role.Name
-                            if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                            } else {
-                                $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
-                            }
+                }
+                foreach ($db in $DbsToMap) {
+                    if ($db.IsAccessible -eq $false) {
+                        continue
+                    }
+                    $dbmap = $db.EnumLoginMappings()
+                    foreach ($el in $dbmap) {
+                        $DbMapping += [pscustomobject]@{
+                            Database  = $db.Name
+                            UserName  = $el.Username
+                            LoginName = $el.LoginName
                         }
                     }
+                }
+            }
 
-                    # Connect, Alter Any Assembly, etc
-                    $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
+            $serverLogins = $server.Logins
+
+            if ($Login) {
+                if ($Login[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Login') {
+                    $serverLogins = $serverLogins | Where-Object { $_ -in $Login }
+                } else {
+                    $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login }
+                }
+            }
+
+            foreach ($sourceLogin in $serverLogins) {
+                Write-Message -Level Verbose -Message "Processing login $sourceLogin"
+                $userName = $sourceLogin.name
+
+                if ($ExcludeLogin -contains $userName) {
+                    Write-Message -Level Warning -Message "Skipping $userName"
+                    continue
+                }
+
+                if ($userName.StartsWith("##") -or $userName -eq 'sa') {
+                    Write-Message -Level Warning -Message "Skipping $userName"
+                    continue
+                }
+
+                $serverName = $server
+
+                $userBase = ($userName.Split("\")[0]).ToLowerInvariant()
+                if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
+                    if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name")) {
+                        Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name"
+                        continue
+                    }
+                }
+
+                if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
+                    if ($Path -or $FilePath) {
+                        Write-Message -Level Verbose -Message "Exporting $userName"
+                    }
+
+                    $outsql += "`r`nUSE master`n"
+                    # Getting some attributes
+                    if ($DefaultDatabase) {
+                        $defaultDb = $DefaultDatabase
+                    } else {
+                        $defaultDb = $sourceLogin.DefaultDatabase
+                    }
+                    $language = $sourceLogin.Language
+
+                    if ($sourceLogin.PasswordPolicyEnforced -eq $false) {
+                        $checkPolicy = "OFF"
+                    } else {
+                        $checkPolicy = "ON"
+                    }
+
+                    if (!$sourceLogin.PasswordExpirationEnabled) {
+                        $checkExpiration = "OFF"
+                    } else {
+                        $checkExpiration = "ON"
+                    }
+
+                    # Attempt to script out SQL Login
+                    if ($sourceLogin.LoginType -eq "SqlLogin") {
+                        if (!$ExcludePassword) {
+                            $sourceLoginName = $sourceLogin.name
+
+                            switch ($server.versionMajor) {
+                                0 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+                                }
+                                8 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
+                                }
+                                9 {
+                                    $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+                                }
+                                default {
+                                    $sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
+                                }
+                            }
+
+                            try {
+                                $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
+                            } catch {
+                                $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
+                                $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
+                            }
+
+                            if ($hashedPass.GetType().Name -ne "String") {
+                                $passString = "0x"; $hashedPass | ForEach-Object {
+                                    $passString += ("{0:X}" -f $_).PadLeft(2, "0")
+                                }
+                                $hashedPass = $passString
+                            }
+                        } else {
+                            $hashedPass = '#######'
+                        }
+
+                        $sid = "0x"; $sourceLogin.sid | ForEach-Object {
+                            $sid += ("{0:X}" -f $_).PadLeft(2, "0")
+                        }
+                        $outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkPolicy, CHECK_EXPIRATION = $checkExpiration, DEFAULT_LANGUAGE = [$language]"
+                    }
+                    # Attempt to script out Windows User
+                    elseif ($sourceLogin.LoginType -eq "WindowsUser" -or $sourceLogin.LoginType -eq "WindowsGroup") {
+                        $outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] FROM WINDOWS WITH DEFAULT_DATABASE = [$defaultDb], DEFAULT_LANGUAGE = [$language]"
+                    }
+                    # This script does not currently support certificate mapped or asymmetric key users.
+                    else {
+                        Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.Name) skipped"
+                        continue
+                    }
+
+                    if ($sourceLogin.IsDisabled) {
+                        $outsql += "ALTER LOGIN [$userName] DISABLE"
+                    }
+
+                    if ($sourceLogin.DenyWindowsLogin) {
+                        $outsql += "DENY CONNECT SQL TO [$userName]"
+                    }
+                }
+
+                # Server Roles: sysadmin, bulklogin, etc
+                foreach ($role in $server.Roles) {
+                    $roleName = $role.Name
+
+                    # SMO changed over time
+                    try {
+                        $roleMembers = $role.EnumMemberNames()
+                    } catch {
+                        $roleMembers = $role.EnumServerRoleMembers()
+                    }
+
+                    if ($roleMembers -contains $userName) {
+                        if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                            $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
+                        } else {
+                            $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
+                        }
+                    }
+                }
+
+                if ($ExcludeJobs -eq $false) {
+                    $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
+
+                    foreach ($ownedJob in $ownedJobs) {
+                        $ownedJob = $ownedJob -replace ("'", "''")
+                        $outsql += "`n`rUSE msdb`n"
+                        $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
+                    }
+                }
+
+                if ($server.VersionMajor -ge 9) {
+                    # These operations are only supported by SQL Server 2005 and above.
+                    # Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
+
+                    $perms = $server.EnumServerPermissions($userName)
+                    $outsql += "`n`rUSE master`n"
                     foreach ($perm in $perms) {
-                        $permState = $perm.PermissionState
+                        $permState = $perm.permissionstate
                         $permType = $perm.PermissionType
-                        $grantor = $perm.Grantor
+                        $grantor = $perm.grantor
 
                         if ($permState -eq "GrantWithGrant") {
                             $grantWithGrant = "WITH GRANT OPTION"
@@ -381,27 +429,120 @@ function Export-DbaLogin {
 
                         $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
                     }
+
+                    # Credential mapping. Credential removal not currently supported for Syncs.
+                    $loginCredentials = $server.Credentials | Where-Object { $_.Identity -eq $sourceLogin.Name }
+                    foreach ($credential in $loginCredentials) {
+                        $credentialName = $credential.Name
+                        $outsql += "PRINT '$userName is associated with the $credentialName credential'"
+                    }
                 }
+
+                if ($ExcludeDatabase -eq $false) {
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
+
+                    if ($Database) {
+                        if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
+                            $dbs = $dbs | Where-Object { $_.DBName -in $Database.Name }
+                        } else {
+                            $dbs = $dbs | Where-Object { $_.DBName -in $Database }
+                        }
+                    }
+
+                    # Adding database mappings and securables
+                    foreach ($db in $dbs) {
+                        $dbName = $db.dbname
+                        $sourceDb = $server.Databases[$dbName]
+                        $dbUserName = $db.username
+
+                        $outsql += "`r`nUSE [$dbName]`n"
+                        try {
+                            $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
+                            $outsql += $sql
+                        } catch {
+                            Write-Message -Level Warning -Message "User cannot be found in selected database"
+                        }
+
+                        # Skipping updating dbowner
+
+                        # Database Roles: db_owner, db_datareader, etc
+                        foreach ($role in $sourceDb.Roles) {
+                            if ($role.EnumMembers() -contains $dbUserName) {
+                                $roleName = $role.Name
+                                if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                    $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
+                                } else {
+                                    $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                                }
+                            }
+                        }
+
+                        # Connect, Alter Any Assembly, etc
+                        $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
+                        foreach ($perm in $perms) {
+                            $permState = $perm.PermissionState
+                            $permType = $perm.PermissionType
+                            $grantor = $perm.Grantor
+
+                            if ($permState -eq "GrantWithGrant") {
+                                $grantWithGrant = "WITH GRANT OPTION"
+                                $permState = "GRANT"
+                            } else {
+                                $grantWithGrant = $null
+                            }
+
+                            $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
+                        }
+                    }
+                }
+                $loginObject = [PSCustomObject]@{
+                    Name     = $userName
+                    Instance = $server.Name
+                    Sql      = $outsql
+                }
+                $logonCollection.Add($loginObject) | Out-Null
+                $outsql = @()
             }
         }
     }
     end {
-        $sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
+        foreach ($login in $logonCollection) {
+            if ($NoPrefix) {
+                $prefix = $null
+            } else {
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
+            }
 
-        if ($ExcludeGoBatchSeparator) {
-            $sql = $outsql
-        } else {
-            $sql = $outsql -join "`r`nGO`r`n"
-            #add the final GO
-            $sql += "`r`nGO"
-        }
+            if ($BatchSeparator) {
+                $sql = $login.SQL -join "`r`n$BatchSeparator`r`n"
+                #add the final GO
+                $sql += "`r`n$BatchSeparator"
+            } else {
+                $sql = $login.SQL
+            }
 
-        if ($Path) {
-            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
-            Get-ChildItem $Path
-        } else {
-            $sql
+
+
+            if ($Passthru) {
+                if ($null -ne $prefix) {
+                    $sql = $prefix + $sql
+                }
+                $sql
+            } elseif ($Path -Or $FilePath) {
+                if ($instanceArray -notcontains $($login.Instance)) {
+                    if ($null -ne $prefix) {
+                        $sql = $prefix + $sql
+                    }
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $login.Instance
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append:$Append -NoClobber:$NoClobber
+                    $instanceArray += $login.Instance
+                    Get-ChildItem $scriptPath
+                } else {
+                    $sql | Out-File -Encoding $Encoding -FilePath $scriptPath -Append
+                }
+            } else {
+                $sql
+            }
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }

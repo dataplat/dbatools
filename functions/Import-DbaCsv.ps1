@@ -8,7 +8,9 @@ function Import-DbaCsv {
 
         The entire import is performed within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
 
-        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table or view specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
+
+        This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
 
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
@@ -30,24 +32,28 @@ function Import-DbaCsv {
         The SQL Server Instance to import data into.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
 
     .PARAMETER Schema
-        Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo
+        Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo.
 
-        If a schema name is not specified, and a CSV name with multiple dots is specified (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something].
+        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
 
-        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
+        This parameter overrides -UseFileNameForSchema.
 
     .PARAMETER Table
         Specifies the SQL table or view where CSV will be imported into.
 
         If a table name is not specified, the table name will be automatically determined from the filename.
 
-        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and efficient but accomodating data types.
+        If the table specified does not exist and -AutoCreateTable, it will be automatically created using slow and inefficient but accommodating data types.
 
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
@@ -58,6 +64,9 @@ function Import-DbaCsv {
 
     .PARAMETER ColumnMap
         By default, the bulk copy tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+
+    .PARAMETER KeepOrdinalOrder
+        By default, the importer will attempt to map exact-match columns names from the source document to the target table. Using this parameter will keep the ordinal order instead.
 
     .PARAMETER AutoCreateTable
         Creates a table if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
@@ -70,6 +79,20 @@ function Import-DbaCsv {
 
     .PARAMETER BatchSize
         Specifies the batch size for the import. Defaults to 50000.
+
+    .PARAMETER UseFileNameForSchema
+        If this switch is enabled, the script will try to find the schema name in the input file by looking for a period (.) in the file name.
+
+        If used with the -Table parameter you may still specify the target table name. If -Table is not used the file name after the first period will
+        be used for the table name.
+
+        For example test.data.csv will import the csv contents to a table in the test schema.
+
+        If it finds one it will use the file name up to the first period as the schema. If there is no period in the filename it will default to dbo.
+
+        If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default.
+
+        This behaviour will be overridden if the -Schema parameter is specified.
 
     .PARAMETER TableLock
         If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
@@ -99,6 +122,51 @@ function Import-DbaCsv {
 
     .PARAMETER NoProgress
         The progress bar is pretty but can slow down imports. Use this parameter to quietly import.
+
+    .PARAMETER Quote
+        Defines the default quote character wrapping every field.
+
+    .PARAMETER Escape
+        Defines the default escape character letting insert quotation characters inside a quoted field.
+
+        The escape character can be the same as the quote character.
+
+    .PARAMETER Comment
+        Defines the default comment character indicating that a line is commented out. Default is #.
+
+    .PARAMETER TrimmingOption
+        Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.
+
+    .PARAMETER BufferSize
+        Defines the default buffer size. The default BufferSize is 4096.
+
+    .PARAMETER ParseErrorAction
+        By default, the parse error action throws an exception and ends the import.
+
+        You can also choose AdvanceToNextLine which basically ignores parse errors.
+
+    .PARAMETER Encoding
+        By default, set to UTF-8.
+
+        The encoding of the file.
+
+    .PARAMETER NullValue
+        The value which denotes a DbNull-value.
+
+    .PARAMETER MaxQuotedFieldLength
+        The maxmimum length (in bytes) for any quoted field.
+
+    .PARAMETER SkipEmptyLine
+        Skip empty lines.
+
+    .PARAMETER SupportsMultiline
+        Indicates if the importer should support multiline fields.
+
+    .PARAMETER UseColumnDefault
+        Use the column default values if the field is not in the record.
+
+    .PARAMETER NoTransaction
+        Do not use a transaction when performing the import.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -132,7 +200,7 @@ function Import-DbaCsv {
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -NoHeaderRow
 
-        Imports the entire comma-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
+        Imports the entire tab-delimited housing.csv, including the first row which is not used for colum names, to the SQL markets database, into the housing table, on a SQL Server named sql001.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|"
@@ -160,6 +228,16 @@ function Import-DbaCsv {
         Import only Name, Address and Mobile even if other columns exist. All other columns are ignored and therefore null or default values.
 
     .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\schema.data.csv -SqlInstance sql2016 -database tempdb -UseFileNameForSchema
+
+        Will import the contents of C:\temp\schema.data.csv to table 'data' in schema 'schema'.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\schema.data.csv -SqlInstance sql2016 -database tempdb -UseFileNameForSchema -Table testtable
+
+        Will import the contents of C:\temp\schema.data.csv to table 'testtable' in schema 'schema'.
+
+    .EXAMPLE
         PS C:\> $columns = @{
         >> Text = 'FirstName'
         >> Number = 'PhoneNumber'
@@ -169,7 +247,6 @@ function Import-DbaCsv {
         The CSV column 'Text' is inserted into SQL column 'FirstName' and CSV column Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "line", Justification = "Variable line is used, False Positive on line 330")]
     param (
         [parameter(ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -181,9 +258,9 @@ function Import-DbaCsv {
         [Parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [string]$Schema = "dbo",
+        [string]$Schema,
         [switch]$Truncate,
-        [string]$Delimiter = ",",
+        [char]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 50000,
@@ -194,14 +271,36 @@ function Import-DbaCsv {
         [switch]$KeepNulls,
         [string[]]$Column,
         [hashtable[]]$ColumnMap,
+        [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
+        [switch]$UseFileNameForSchema,
+        [char]$Quote = '"',
+        [char]$Escape = '"',
+        [char]$Comment = '#',
+        [ValidateSet('All', 'None', 'UnquotedOnly', 'QuotedOnly')]
+        [string]$TrimmingOption = "None",
+        [int]$BufferSize = 4096,
+        [ValidateSet('AdvanceToNextLine', 'ThrowException')]
+        [string]$ParseErrorAction = 'ThrowException',
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
+        [string]$NullValue,
+        [int]$MaxQuotedFieldLength,
+        [switch]$SkipEmptyLine,
+        [switch]$SupportsMultiline,
+        [switch]$UseColumnDefault,
+        [switch]$NoTransaction,
         [switch]$EnableException
     )
     begin {
         $FirstRowHeader = $NoHeaderRow -eq $false
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
+
+        if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
+            Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
+        }
 
         try {
             # SilentContinue isn't enough
@@ -235,13 +334,23 @@ function Import-DbaCsv {
                 [System.Data.SqlClient.SqlConnection]$sqlconn,
                 [System.Data.SqlClient.SqlTransaction]$transaction
             )
-            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($Path)), $FirstRowHeader, $Delimiter, 1)
+            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
+                (New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::$Encoding)),
+                $FirstRowHeader,
+                $Delimiter,
+                $Quote,
+                $Escape,
+                $Comment,
+                [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                $BufferSize,
+                $NullValue
+            )
             $columns = $reader.GetFieldHeaders()
             $reader.Close()
             $reader.Dispose()
 
             # Get SQL datatypes by best guess on first data row
-            $sqldatatypes = @(); $index = 0
+            $sqldatatypes = @();
 
             foreach ($column in $Columns) {
                 $sqldatatypes += "[$column] varchar(MAX)"
@@ -319,10 +428,36 @@ function Import-DbaCsv {
                 }
             }
 
-            # Automatically generate Table name if not specified, then prompt user to confirm
-            if (-not (Test-Bound -ParameterName Table)) {
-                $table = [IO.Path]::GetFileNameWithoutExtension($file)
-                Write-Message -Level Verbose -Message "Table name not specified, using $table"
+            # Automatically generate Table name if not specified
+            if (-not $PSBoundParameters.Table) {
+                $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+
+                if ($filename.IndexOf('.') -ne -1) { $periodFound = $true }
+
+                if ($UseFileNameForSchema -and $periodFound -and -not $PSBoundParameters.Schema) {
+                    $table = $filename.Remove(0, $filename.IndexOf('.') + 1)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table from file name"
+                } else {
+                    $table = [IO.Path]::GetFileNameWithoutExtension($file)
+                    Write-Message -Level Verbose -Message "Table name not specified, using $table"
+                }
+            }
+
+            # Use dbo as schema name if not specified in parms, or as first string before a period in filename
+            if (-not ($PSBoundParameters.Schema)) {
+                if ($UseFileNameForSchema) {
+                    $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+                    if ($filename.IndexOf('.') -eq -1) {
+                        $schema = "dbo"
+                        Write-Message -Level Verbose -Message "Schema not specified, and not found in file name, using dbo"
+                    } else {
+                        $schema = $filename.SubString(0, $filename.IndexOf('.'))
+                        Write-Message -Level Verbose -Message "Schema detected in filename, using $schema"
+                    }
+                } else {
+                    $schema = 'dbo'
+                    Write-Message -Level Verbose -Message "Schema not specified, using dbo"
+                }
             }
 
             foreach ($instance in $SqlInstance) {
@@ -333,13 +468,15 @@ function Import-DbaCsv {
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     $sqlconn.Open()
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
-                    # Everything will be contained within 1 transaction, even creating a new table if required
-                    # and truncating the table, if specified.
-                    $transaction = $sqlconn.BeginTransaction()
+                if (-not $NoTransaction) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Starting transaction in $Database")) {
+                        # Everything will be contained within 1 transaction, even creating a new table if required
+                        # and truncating the table, if specified.
+                        $transaction = $sqlconn.BeginTransaction()
+                    }
                 }
 
                 # Ensure database exists
@@ -352,7 +489,7 @@ function Import-DbaCsv {
                 $sqlconn.ChangeDatabase($Database)
 
                 # Ensure Schema exists
-                $sql = "select count(*) from $Database.sys.schemas where name='$schema'"
+                $sql = "select count(*) from [$Database].sys.schemas where name='$schema'"
                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
                 # If Schema doesn't exist create it
@@ -373,10 +510,10 @@ function Import-DbaCsv {
                 }
 
                 # Ensure table or view exists
-                $sql = "select count(*) from $Database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
+                $sql = "select count(*) from [$Database].sys.tables where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
-                $sql2 = "select count(*) from $Database.sys.views where name = '$table' and schema_id=schema_id('$schema')"
+                $sql2 = "select count(*) from [$Database].sys.views where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd2 = New-Object System.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
@@ -387,7 +524,11 @@ function Import-DbaCsv {
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        try {
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                        } catch {
+                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                        }
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Table exists"
@@ -411,23 +552,22 @@ function Import-DbaCsv {
                 Write-Message -Level Verbose -Message "Starting bulk copy for $(Split-Path $file -Leaf)"
 
                 # Setup bulk copy options
-                $bulkCopyOptions = @()
-                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
+                [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
+                $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions += "$option"
+                        $bulkCopyOptions += $([System.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
                     }
                 }
-                $bulkCopyOptions = $bulkCopyOptions -join " & "
 
                 if ($PSCmdlet.ShouldProcess($instance, "Performing import from $file")) {
                     try {
                         # Create SqlBulkCopy using default options, or options specified in command line.
                         if ($bulkCopyOptions) {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
                         } else {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
+                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, ([System.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
                         }
 
                         $bulkcopy.DestinationTableName = "[$schema].[$table]"
@@ -435,6 +575,21 @@ function Import-DbaCsv {
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
+
+                        if (-not $KeepOrdinalOrder -and -not $AutoCreateTable) {
+                            if ($ColumnMap) {
+                                Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
+                            } else {
+                                try {
+                                    $firstline -split $Delimiter | ForEach-Object {
+                                        $ColumnMap.Add($PSItem, $PSItem)
+                                    }
+                                } catch {
+                                    # oh well, we tried
+                                    $ColumnMap = $null
+                                }
+                            }
+                        }
 
                         if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
@@ -455,10 +610,33 @@ function Import-DbaCsv {
 
                     # Write to server :D
                     try {
-                        # Open the text file from disk
-                        # // or using (CsvReader csv = new CsvReader(File.OpenRead(path), false, Encoding.UTF8, addMark))
-                        # When addMark is true, consecutive null bytes will be replaced by [removed x null bytes] to indicate the removal
-                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader((New-Object System.IO.StreamReader($file)), $FirstRowHeader, $Delimiter, 1)
+                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
+                            (New-Object System.IO.StreamReader($file, [System.Text.Encoding]::$Encoding)),
+                            $FirstRowHeader,
+                            $Delimiter,
+                            $Quote,
+                            $Escape,
+                            $Comment,
+                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                            $BufferSize,
+                            $NullValue
+                        )
+
+                        if ($PSBoundParameters.MaxQuotedFieldLength) {
+                            $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
+                        }
+                        if ($PSBoundParameters.SkipEmptyLine) {
+                            $reader.SkipEmptyLines = $SkipEmptyLine
+                        }
+                        if ($PSBoundParameters.SupportsMultiline) {
+                            $reader.SupportsMultiline = $SupportsMultiline
+                        }
+                        if ($PSBoundParameters.UseColumnDefault) {
+                            $reader.UseColumnDefaults = $UseColumnDefault
+                        }
+                        if ($PSBoundParameters.ParseErrorAction) {
+                            $reader.DefaultParseErrorAction = $ParseErrorAction
+                        }
 
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
@@ -487,28 +665,33 @@ function Import-DbaCsv {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
                 }
-                if ($PSCmdlet.ShouldProcess($instance, "Committing transaction")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        $null = $transaction.Commit()
+                        if (-not $NoTransaction) {
+                            $null = $transaction.Commit()
+                        }
                         if ($script:core) {
                             $rowscopied = "Unsupported in Core"
+                            $rps = $null
                         } else {
                             $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
                         }
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
                         [pscustomobject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Table        = $table
-                            Schema       = $schema
-                            RowsCopied   = $rowscopied
-                            Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Path         = $file
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.ServiceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $Database
+                            Table         = $table
+                            Schema        = $schema
+                            RowsCopied    = $rowscopied
+                            Elapsed       = [prettytimespan]$elapsed.Elapsed
+                            RowsPerSecond = $rps
+                            Path          = $file
                         }
                     } else {
                         Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
@@ -542,8 +725,5 @@ function Import-DbaCsv {
         # Script is finished. Show elapsed time.
         $totaltime = [math]::Round($scriptelapsed.Elapsed.TotalSeconds, 2)
         Write-Message -Level Verbose -Message "Total Elapsed Time for everything: $totaltime seconds"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaCsvtoSql
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-CsvToSql
     }
 }

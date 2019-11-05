@@ -10,7 +10,11 @@ function Get-DbaDbMailHistory {
         TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Since
         Datetime object used to narrow the results to the send request date
@@ -40,7 +44,7 @@ function Get-DbaDbMailHistory {
         Returns the entire DBMail history on sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMailHistory -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailHistory -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the entire DBMail history on sql01\sharepoint then return a bunch more columns
 
@@ -54,15 +58,12 @@ function Get-DbaDbMailHistory {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,
         [ValidateSet('Unsent', 'Sent', 'Failed', 'Retrying')]
         [string]$Status,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

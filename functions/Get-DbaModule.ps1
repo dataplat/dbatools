@@ -11,7 +11,11 @@ function Get-DbaModule {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. If unspecified, all databases will be processed.
@@ -30,6 +34,9 @@ function Get-DbaModule {
 
     .PARAMETER ExcludeSystemObjects
         Allows you to suppress output on system objects
+
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -53,7 +60,7 @@ function Get-DbaModule {
         Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
 
     .EXAMPLE
-        PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012 | Select *
+        PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012 | Select-Object *
 
         Shows hidden definition column (informative wall of text).
 
@@ -67,15 +74,26 @@ function Get-DbaModule {
 
         Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 
+    .EXAMPLE
+        PS C:\> 'sql2008' | Get-DbaModule -Database TestDB -Type View, StoredProcedure, ScalarFunction
+
+        Return all modules on server sql2008 for only the TestDB database that are stored procedures, views or scalar functions. Input via Pipeline
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2008 -ExcludeSystem | Get-DbaModule -Type View, Trigger, ScalarFunction
+
+        Return all modules on server sql2008 for all user databases that are triggers, views or scalar functions.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2008, sqlserver2012 -ExcludeUser | Get-DbaModule -Type StoredProcedure -ExcludeSystemObjects
+
+        Return all user created stored procedures in the system databases for servers sql2008 and sqlserver2012.
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$ModifiedSince = "1900-01-01",
@@ -83,7 +101,8 @@ function Get-DbaModule {
         [string[]]$Type,
         [switch]$ExcludeSystemDatabases,
         [switch]$ExcludeSystemObjects,
-        [Alias('Silent')]
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -129,52 +148,42 @@ function Get-DbaModule {
     }
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a database or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            Write-Message -Level Verbose -Message "Creating InputObject from $SqlInstance"
+            $InputObject += Get-DbaDatabase -SqlInstance $PSBoundParameters.SqlInstance -SqlCredential $PSBoundParameters.SqlCredential -Database $PSBoundParameters.Database -ExcludeDatabase $PSBoundParameters.ExcludeDatabase -ExcludeSystem:$PSBoundParameters.ExcludeSystemDatabases
+        }
+
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
             }
 
-            $databases = Get-DbaDatabase -SqlInstance $server
+            $server = $db.Parent
+            Write-Message -Level Verbose -Message "Processing $db on $($server.DomainInstanceName)"
 
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-
-            foreach ($db in $databases) {
-
-                Write-Message -Level Verbose -Message "Processing $db on $instance"
-
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
-                }
-
-                foreach ($row in $server.Query($sql, $db.name)) {
-                    [PSCustomObject]@{
-                        ComputerName  = $server.ComputerName
-                        InstanceName  = $server.ServiceName
-                        SqlInstance   = $server.DomainInstanceName
-                        Database      = $row.DatabaseName
-                        Name          = $row.ModuleName
-                        ObjectID      = $row.object_id
-                        SchemaName    = $row.SchemaName
-                        Type          = $row.type_desc
-                        CreateDate    = $row.create_date
-                        ModifyDate    = $row.modify_date
-                        IsMsShipped   = $row.is_ms_shipped
-                        ExecIsStartUp = $row.startup
-                        Definition    = $row.definition
-                    } | Select-DefaultView -ExcludeProperty Definition
-                }
+            foreach ($row in $server.Query($sql, $db.name)) {
+                [PSCustomObject]@{
+                    ComputerName  = $server.ComputerName
+                    InstanceName  = $server.ServiceName
+                    SqlInstance   = $server.DomainInstanceName
+                    Database      = $row.DatabaseName
+                    Name          = $row.ModuleName
+                    ObjectID      = $row.object_id
+                    SchemaName    = $row.SchemaName
+                    Type          = $row.type_desc
+                    CreateDate    = $row.create_date
+                    ModifyDate    = $row.modify_date
+                    IsMsShipped   = $row.is_ms_shipped
+                    ExecIsStartUp = $row.startup
+                    Definition    = $row.definition
+                } | Select-DefaultView -ExcludeProperty Definition
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlModule
     }
 }

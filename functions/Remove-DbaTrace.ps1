@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaTrace {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Remove-DbaTrace {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
         A list of trace ids.
@@ -56,7 +59,6 @@ function Remove-DbaTrace {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int[]]$Id,
@@ -86,7 +88,7 @@ function Remove-DbaTrace {
             $stopsql = "sp_trace_setstatus $traceid, 0"
             $removesql = "sp_trace_setstatus $traceid, 2"
 
-            if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace flag")) {
+            if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace")) {
                 try {
                     $server.Query($stopsql)
                     if (Get-DbaTrace -SqlInstance $server -Id $traceid) {

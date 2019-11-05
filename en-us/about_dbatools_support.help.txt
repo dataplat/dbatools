@@ -93,7 +93,7 @@ LONG DESCRIPTION
 	most valuable piece of information for troubleshooting. Generally, you can
 	see that exception content by running the following line:
 	
-	  $error[0] | Select *
+	  $error[0] | Select-Object *
 	
 	Directly after the command failed. Screenshot it.
 	

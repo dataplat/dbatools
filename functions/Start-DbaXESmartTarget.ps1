@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESmartTarget {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Start-DbaXESmartTarget {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
         Name of the Extended Events session to attach to.
@@ -47,7 +50,7 @@ function Start-DbaXESmartTarget {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ExtendedEvent, XE, XEvent
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -90,7 +93,6 @@ function Start-DbaXESmartTarget {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Database,
@@ -121,7 +123,7 @@ function Start-DbaXESmartTarget {
             )
             begin {
                 try {
-                    Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                    Add-Type -Path "$script:PSModuleRoot\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
                     return
@@ -134,7 +136,7 @@ function Start-DbaXESmartTarget {
                     try {
                         $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
                     } catch {
-                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
 
                     $target = New-Object -TypeName XESmartTarget.Core.Target
@@ -190,7 +192,7 @@ function Start-DbaXESmartTarget {
                         $ModulePath
                     )
                     Import-Module "$ModulePath\dbatools.psd1"
-                    Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                    Add-Type -Path "$ModulePath\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
                     $params = @{
                         SqlInstance = $Parameters.SqlInstance.InputObject
                         Database    = $Parameters.Database

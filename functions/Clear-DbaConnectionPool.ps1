@@ -49,8 +49,7 @@ function Clear-DbaConnectionPool {
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -77,8 +76,5 @@ function Clear-DbaConnectionPool {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Clear-DbaSqlConnectionPool
     }
 }

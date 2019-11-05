@@ -12,13 +12,21 @@ function Copy-DbaXESession {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER XeSession
         The Extended Event Session(s) to process. This list is auto-populated from the server. If unspecified, all Extended Event Sessions will be processed.
@@ -74,7 +82,7 @@ function Copy-DbaXESession {
         Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -87,15 +95,13 @@ function Copy-DbaXESession {
         [object[]]$XeSession,
         [object[]]$ExcludeXeSession,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaExtendedEvent
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
@@ -108,6 +114,8 @@ function Copy-DbaXESession {
         if ($ExcludeXeSession) {
             $storeSessions = $storeSessions | Where-Object Name -NotIn $ExcludeXeSession
         }
+
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -115,7 +123,7 @@ function Copy-DbaXESession {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
@@ -188,8 +196,5 @@ function Copy-DbaXESession {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlExtendedEvent
     }
 }

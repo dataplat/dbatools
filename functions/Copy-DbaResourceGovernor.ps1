@@ -12,13 +12,21 @@ function Copy-DbaResourceGovernor {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2008 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ResourcePool
         Specifies the resource pool(s) to process. Options for this list are auto-populated from the server. If unspecified, all resource pools will be processed.
@@ -69,7 +77,7 @@ function Copy-DbaResourceGovernor {
         Shows what would happen if the command were executed.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -80,14 +88,16 @@ function Copy-DbaResourceGovernor {
         [object[]]$ResourcePool,
         [object[]]$ExcludeResourcePool,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
+    begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
     process {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $sourceServer
@@ -96,7 +106,7 @@ function Copy-DbaResourceGovernor {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $destServer
 
@@ -359,8 +369,5 @@ function Copy-DbaResourceGovernor {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlResourceGovernor
     }
 }

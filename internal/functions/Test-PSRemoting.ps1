@@ -8,10 +8,9 @@ function Test-PSRemoting {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "")]
     [Cmdletbinding()]
     param(
-        [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance]$ComputerName,
         $Credential = [System.Management.Automation.PSCredential]::Empty,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -22,7 +21,7 @@ function Test-PSRemoting {
             $true
         } catch {
             $false
-            Stop-Function -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_
+            Stop-Function -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_ -EnableException:$EnableException
         }
 
     } #process

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaLastBackup {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Get-DbaLastBackup {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -46,12 +49,12 @@ function Get-DbaLastBackup {
         Returns a custom object with Server name, Database name, and the date the last time backups were performed.
 
     .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object *
 
         Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
 
     .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object * | Out-Gridview
 
         Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
@@ -59,15 +62,11 @@ function Get-DbaLastBackup {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -84,7 +83,7 @@ function Get-DbaLastBackup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
@@ -96,10 +95,10 @@ function Get-DbaLastBackup {
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-            # Get-DbaBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
-            $FullHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
-            $DiffHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
-            $IncrHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
+            # Get-DbaDbBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
+            $FullHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
+            $DiffHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
+            $IncrHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 

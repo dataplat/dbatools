@@ -4,7 +4,11 @@ function New-DbaConnectionString {
         Builds or extracts a SQL Server Connection String
 
     .DESCRIPTION
-        Builds or extracts a SQL Server Connection String
+        Builds or extracts a SQL Server Connection String. Note that dbatools-style syntax is used.
+
+        So you do not need to specify "Data Source", you can just specify -SqlInstance and -SqlCredential and we'll handle it for you.
+
+        This is the simplified PowerShell approach to connection string building. See examples for more info.
 
         See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
@@ -14,10 +18,14 @@ function New-DbaConnectionString {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER AccessToken
-        Gets or sets the access token for the connection.
+        Basically tells the connection string to ignore authentication. Does not include the AccessToken in the resulting connecstring.
 
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and, optionally, -SqlCredential to set authentication information.
@@ -30,6 +38,9 @@ function New-DbaConnectionString {
 
     .PARAMETER ClientName
         By default, this command sets the client to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client.
+
+    .PARAMETER Database
+        Database name
 
     .PARAMETER ConnectTimeout
         The length of time (in seconds) to wait for a connection to the server before terminating the attempt and generating an error.
@@ -140,6 +151,12 @@ function New-DbaConnectionString {
         Login to sql2014 as SQL login sqladmin.
 
     .EXAMPLE
+        PS C:\> $connstring = New-DbaConnectionString -SqlInstance mydb.database.windows.net -SqlCredential me@myad.onmicrosoft.com -Database db
+
+        Creates a connection string for an Azure Active Directory login to Azure SQL db. Output looks like this:
+        Data Source=TCP:mydb.database.windows.net,1433;Initial Catalog=db;User ID=me@myad.onmicrosoft.com;Password=fakepass;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;Application Name="dbatools PowerShell module - dbatools.io";Authentication="Active Directory Password"
+
+    .EXAMPLE
         PS C:\> $server = New-DbaConnectionString -SqlInstance sql2014 -ClientName "mah connection"
 
         Creates a connection string that connects using Windows Authentication and uses the client name "mah connection". So when you open up profiler or use extended events, you can search for "mah connection".
@@ -163,7 +180,7 @@ function New-DbaConnectionString {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Alias("ServerInstance", "SqlServer", "Server", "DataSource")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
@@ -173,6 +190,7 @@ function New-DbaConnectionString {
         [string]$BatchSeparator,
         [string]$ClientName = "custom connection",
         [int]$ConnectTimeout,
+        [string]$Database,
         [switch]$EncryptConnection,
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,
@@ -195,8 +213,38 @@ function New-DbaConnectionString {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
+                if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
+                    if ($instance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+                        $connstring = $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Database) {
+                            $olddb = $connstring -split ';' | Where-Object { $_.StartsWith("Initial Catalog") }
+                            $newdb = "Initial Catalog=$Database"
+                            if ($olddb) {
+                                $connstring = $connstring.Replace("$olddb", "$newdb")
+                            } else {
+                                $connstring = "$connstring;$newdb;"
+                            }
+                        }
+                        $connstring
+                        continue
+                    } else {
+                        $isAzure = $true
+
+                        if (-not (Test-Bound -ParameterName ConnectTimeout)) {
+                            $ConnectTimeout = 30
+                        }
+
+                        if (-not (Test-Bound -ParameterName ClientName)) {
+                            $ClientName = "dbatools PowerShell module - dbatools.io"
+
+                        }
+                        $EncryptConnection = $true
+                        $instance = [DbaInstanceParameter]"tcp:$($instance.ComputerName),$($instance.Port)"
+                    }
+                }
+
                 if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                     return $instance.ConnectionContext.ConnectionString
                 } else {
@@ -209,9 +257,7 @@ function New-DbaConnectionString {
                         $server.ConnectionContext.ConnectionString
                     } else {
 
-                        $server.ConnectionContext.ApplicationName = $clientname
-
-                        if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
+                        $server.ConnectionContext.ApplicationName = $ClientName
                         if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
                         if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
                         if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
@@ -230,41 +276,53 @@ function New-DbaConnectionString {
                         if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
                         if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
 
-                        $connstring = $server.ConnectionContext.ConnectionString
-                        if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-                        if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-                        if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
-
-                        if ($connstring -ne $server.ConnectionContext.ConnectionString) {
-                            $server.ConnectionContext.ConnectionString = $connstring
-                        }
                         if ($null -ne $Credential.username) {
                             $username = ($Credential.username).TrimStart("\")
 
                             if ($username -like "*\*") {
                                 $username = $username.Split("\")[1]
-                                #Variable marked as unused by PSScriptAnalyzer
-                                #$authtype = "Windows Authentication with Credential"
                                 $server.ConnectionContext.LoginSecure = $true
                                 $server.ConnectionContext.ConnectAsUser = $true
                                 $server.ConnectionContext.ConnectAsUserName = $username
                                 $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
                             } else {
-                                #Variable marked as unused by PSScriptAnalyzer
-                                #$authtype = "SQL Authentication"
                                 $server.ConnectionContext.LoginSecure = $false
                                 $server.ConnectionContext.set_Login($username)
                                 $server.ConnectionContext.set_SecurePassword($Credential.Password)
                             }
                         }
 
-                        ($server.ConnectionContext.ConnectionString).Replace($guid, $SqlInstance)
+                        $connstring = $server.ConnectionContext.ConnectionString
+                        if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+                        if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+                        if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
+
+                        if ($isAzure) {
+                            if ($Credential) {
+                                if ($Credential.UserName -like "*\*" -or $Credential.UserName -like "*@*") {
+                                    $connstring = "$connstring;Authentication=`"Active Directory Password`""
+                                } else {
+                                    $username = ($Credential.username).TrimStart("\")
+                                    $server.ConnectionContext.LoginSecure = $false
+                                    $server.ConnectionContext.set_Login($username)
+                                    $server.ConnectionContext.set_SecurePassword($Credential.Password)
+                                }
+                            } else {
+                                $connstring = $connstring.Replace("Integrated Security=True;", "Persist Security Info=True;")
+                                if (-not $AccessToken) {
+                                    $connstring = "$connstring;Authentication=`"Active Directory Integrated`""
+                                }
+                            }
+                        }
+
+                        if ($connstring -ne $server.ConnectionContext.ConnectionString) {
+                            $server.ConnectionContext.ConnectionString = $connstring
+                        }
+
+                        ($server.ConnectionContext.ConnectionString).Replace($guid, $instance)
                     }
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlConnectionString
     }
 }

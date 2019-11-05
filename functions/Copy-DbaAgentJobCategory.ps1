@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Copy-DbaAgentJobCategory {
     <#
     .SYNOPSIS
@@ -19,13 +18,21 @@ function Copy-DbaAgentJobCategory {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER CategoryType
         Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
@@ -82,7 +89,7 @@ function Copy-DbaAgentJobCategory {
         Shows what would happen if the command were executed using force.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -97,12 +104,10 @@ function Copy-DbaAgentJobCategory {
         [string[]]$AgentCategory,
         [string[]]$OperatorCategory,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Copy-DbaAgentCategory
         function Copy-JobCategory {
             <#
                 .SYNOPSIS
@@ -345,9 +350,11 @@ function Copy-DbaAgentJobCategory {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
+
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -355,7 +362,7 @@ function Copy-DbaAgentJobCategory {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             if ($CategoryType.count -gt 0) {
@@ -395,8 +402,5 @@ function Copy-DbaAgentJobCategory {
             Copy-AlertCategory
             Copy-JobCategory
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
     }
 }

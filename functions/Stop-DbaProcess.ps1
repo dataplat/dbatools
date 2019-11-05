@@ -12,7 +12,11 @@ function Stop-DbaProcess {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
         Specifies one or more spids to be killed. Options for this parameter are auto-populated from the server.
@@ -95,9 +99,7 @@ function Stop-DbaProcess {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [int[]]$Spid,
         [int[]]$ExcludeSpid,
@@ -107,15 +109,17 @@ function Stop-DbaProcess {
         [string[]]$Program,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
         [object[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if (!$InputObject) {
-            $InputObject = Get-DbaProcess @PSBoundParameters
+        if (-not $InputObject) {
+            $bound = $PSBoundParameters
+            $null = $bound.Remove("WhatIf")
+            $null = $bound.Remove("Confirm")
+            $InputObject = Get-DbaProcess @bound
         }
 
         foreach ($session in $InputObject) {

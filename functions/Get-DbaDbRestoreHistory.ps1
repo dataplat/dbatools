@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbRestoreHistory {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Get-DbaDbRestoreHistory {
         Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -68,7 +71,7 @@ function Get-DbaDbRestoreHistory {
         Returns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaDbRestoreHistory
+        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Get-DbaDbRestoreHistory
 
         Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
 
@@ -76,23 +79,17 @@ function Get-DbaDbRestoreHistory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -EnableException:$false -Parameter 'Force'
-
         if ($Since -ne $null) {
             $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
         }

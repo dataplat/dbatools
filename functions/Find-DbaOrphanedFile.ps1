@@ -1,4 +1,3 @@
-#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
     <#
     .SYNOPSIS
@@ -15,7 +14,11 @@ function Find-DbaOrphanedFile {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Specifies one or more directories to search in addition to the default data and log directories.
@@ -83,14 +86,12 @@ function Find-DbaOrphanedFile {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [pscredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [switch]$LocalOnly,
         [switch]$RemoteOnly,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -169,7 +170,7 @@ function Find-DbaOrphanedFile {
         $FileType += "mdf", "ldf", "ndf"
         $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
 
-        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object | Get-Unique
+        $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
     }
 
     process {
@@ -177,7 +178,7 @@ function Find-DbaOrphanedFile {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             # Reset all the arrays
             $dirtreefiles = $valid = $paths = $matching = @()
@@ -218,14 +219,14 @@ function Find-DbaOrphanedFile {
 
             foreach ($file in $dirtreefiles.Comparison) {
                 foreach ($type in $FileTypeComparison) {
-                    if ($file.ToLower().EndsWith($type)) {
+                    if ($file.ToLowerInvariant().EndsWith($type)) {
                         $matching += $file
                         break
                     }
                 }
             }
 
-            $dirtreematcher = @{}
+            $dirtreematcher = @{ }
             foreach ($el in $dirtreefiles) {
                 $dirtreematcher[$el.Comparison] = $el.Fullpath
             }

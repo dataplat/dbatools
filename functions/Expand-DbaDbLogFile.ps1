@@ -77,7 +77,11 @@ function Expand-DbaDbLogFile {
         This can be useful when you know that you have enough space to grow your TLog but you don't have PowerShell Remoting enabled to validate it.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude. Options for this list are auto-populated from the server.
@@ -133,37 +137,31 @@ function Expand-DbaDbLogFile {
 
         Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
 
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
         [parameter(Position = 1, Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Position = 3)]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,
         [parameter(Position = 5, Mandatory)]
-        [Alias('TargetLogSizeMB')]
         [int]$TargetLogSize,
         [parameter(Position = 6)]
-        [Alias('IncrementSizeMB')]
         [int]$IncrementSize = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
         [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
         [switch]$ShrinkLogFile,
         [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory)]
-        [Alias('ShrinkSizeMB')]
         [int]$ShrinkSize,
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
         [switch]$ExcludeDiskSpaceValidation,
-        [switch][Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -251,7 +249,7 @@ function Expand-DbaDbLogFile {
                     $currentSizeMB = $currentSize / 1024
 
                     #Get the number of VLFs
-                    $initialVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
+                    $initialVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
@@ -384,7 +382,7 @@ function Expand-DbaDbLogFile {
                                             $backup.BackupSetName = $db + " Backup"
                                             $backup.Database = $db
                                             $backup.MediaDescription = "Disk"
-                                            $dt = get-date -format yyyyMMddHHmmssms
+                                            $dt = Get-Date -format yyyyMMddHHmmssms
                                             $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                             if ($DefaultCompression -eq $true) {
                                                 $backup.CompressionOption = 1
@@ -424,15 +422,8 @@ function Expand-DbaDbLogFile {
                         if ($IncrementSize -eq -1) {
                             $LogIncrementSize = $SuggestLogIncrementSize
                         } else {
-                            $title = "Choose increment value for database '$db':"
-                            $message = "The input value for increment size was $([System.Math]::Round($LogIncrementSize/1024, 0))MB. However the suggested value for increment is $($SuggestLogIncrementSize/1024)MB.`r`nDo you want to use the suggested value of $([System.Math]::Round($SuggestLogIncrementSize/1024, 0))MB insted of $([System.Math]::Round($LogIncrementSize/1024, 0))MB"
-                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses recomended size."
-                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will use parameter value."
-                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                            #yes
-                            if ($result -eq 0) {
-                                $LogIncrementSize = $SuggestLogIncrementSize
+                            if ($LogIncrementSize -lt $SuggestLogIncrementSize) {
+                                Write-Message -Level Warning -Message "The input value for increment size is $([System.Math]::Round($LogIncrementSize / 1024, 0))MB, which is less than the suggested value of $($SuggestLogIncrementSize / 1024)MB."
                             }
                         }
 
@@ -486,7 +477,7 @@ function Expand-DbaDbLogFile {
                 }
 
                 #Get the number of VLFs
-                $currentVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
+                $currentVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                 [pscustomobject]@{
                     ComputerName    = $server.ComputerName
@@ -509,10 +500,5 @@ function Expand-DbaDbLogFile {
 
     end {
         Write-Message -Level Verbose -Message "Process finished $((Get-Date) - ($initialTime))"
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter TargetLogSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter IncrementSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ShrinkSizeMB
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-DbaTLogResponsibly
     }
 }

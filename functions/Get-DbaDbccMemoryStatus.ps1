@@ -14,7 +14,11 @@ function Get-DbaDbccMemoryStatus {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,7 +42,7 @@ function Get-DbaDbccMemoryStatus {
         Get output of DBCC MEMORYSTATUS for instances "sqlcluster" and "sqlserver2012". Returns results in a single recordset.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus
+        PS C:\> Get-DbaRegServer -SqlInstance sqlcluster | Get-DbaDbccMemoryStatus
 
         Get output of DBCC MEMORYSTATUS for all servers in Server Central Management Server
 
@@ -59,24 +63,18 @@ function Get-DbaDbccMemoryStatus {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Collecting $query data from server: $instance"
             try {
-                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlconnection.Open()
-
-                $datatable = New-Object system.Data.DataSet
-                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($query, $sqlconnection)
-                $dataadapter.fill($datatable) | Out-Null
+                $datatable = $server.query($query, 'master', $true)
 
                 $recordset = 0
                 $rowId = 0
                 $recordsetId = 0
 
-                foreach ($dataset in $datatable.Tables) {
+                foreach ($dataset in $datatable) {
                     $dataSection = $dataset.Columns[0].ColumnName
                     $dataType = $dataset.Columns[1].ColumnName
                     $recordset = $recordset + 1

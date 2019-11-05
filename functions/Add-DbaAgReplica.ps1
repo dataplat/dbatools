@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -13,13 +12,14 @@ function Add-DbaAgReplica {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the replica. Defaults to the SQL Server instance name.
-
-    .PARAMETER AvailabilityGroup
-        The Availability Group to which a replica will be bestowed upon.
 
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
@@ -97,7 +97,6 @@ function Add-DbaAgReplica {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$AvailabilityGroup,
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
@@ -109,26 +108,21 @@ function Add-DbaAgReplica {
         [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode = 'Automatic',
+        [string]$SeedingMode,
         [string]$Endpoint,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, Mandatory)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
     )
     process {
-        if (-not $AvailabilityGroup -and -not $InputObject) {
-            Stop-Function -Message "You must specify either AvailabilityGroup or pipe in an availabilty group to continue."
-            return
-        }
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Certificate) {
@@ -136,10 +130,6 @@ function Add-DbaAgReplica {
                 if (-not $cert) {
                     Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
                 }
-            }
-
-            if ($AvailabilityGroup) {
-                $InputObject = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
             }
 
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
@@ -176,6 +166,33 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                        if ($SeedingMode -eq "Automatic") {
+                            $serviceaccount = $server.ServiceAccount.Trim()
+                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+
+                            if ($serviceaccount) {
+                                if ($serviceaccount.StartsWith("NT ")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith("$saname")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                                if ($serviceaccount.StartsWith(".")) {
+                                    $serviceaccount = "$saname`$"
+                                }
+                            }
+
+                            if (-not $serviceaccount) {
+                                $serviceaccount = "$saname`$"
+                            }
+
+                            if ($server.HostPlatform -ne "Linux") {
+                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
+                                }
+                            }
+                        }
                     }
 
                     if ($Passthru) {
@@ -183,9 +200,13 @@ function Add-DbaAgReplica {
                     }
 
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-
                     $InputObject.AvailabilityReplicas.Add($replica)
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
+                    if ($InputObject.State -eq 'Existing') {
+                        Invoke-Create -Object $replica
+                        $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
+                        $agreplica.Alter()
+                    }
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance

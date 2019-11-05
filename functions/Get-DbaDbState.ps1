@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline#
 function Get-DbaDbState {
     <#
     .SYNOPSIS
@@ -16,7 +15,11 @@ function Get-DbaDbState {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -65,15 +68,11 @@ function Get-DbaDbState {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -94,7 +93,7 @@ FROM sys.databases
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $dbStates = $server.Query($DbStatesQuery)
             $dbs = $dbStates | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
@@ -127,8 +126,5 @@ FROM sys.databases
                 } | Select-DefaultView -ExcludeProperty Database
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseState
     }
 }

@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaProductKey {
     <#
     .SYNOPSIS
@@ -167,7 +166,7 @@ function Get-DbaProductKey {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $registryroot = Get-DbaRegistryRoot -ComputerName $computer.ComputerName -EnableException
+                $registryroot = Get-DbaRegistryRoot -ComputerName $computer.ComputerName -Credential $Credential -EnableException
             } catch {
                 Stop-Function -Message "Can't access registry for $($computer.ComputerName). Is the Remote Registry service started?" -Continue
             }
@@ -181,7 +180,7 @@ function Get-DbaProductKey {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instanceReg.SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
 
                 $servicePack = $server.ProductLevel
@@ -204,9 +203,5 @@ function Get-DbaProductKey {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerKey
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlProductKey
     }
 }

@@ -52,12 +52,11 @@ function Get-DbaLocaleSetting {
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential] $Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
+        $ComputerName = $ComputerName | ForEach-Object { $_.split("\")[0] } | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
         $keyname = "Control Panel\International"
         $NS = 'root\cimv2'
@@ -66,8 +65,8 @@ function Get-DbaLocaleSetting {
     }
     process {
         # uses cim commands
-        
-        
+
+
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
@@ -81,11 +80,11 @@ function Get-DbaLocaleSetting {
                 }
                 if ( $CIMSession ) {
                     Write-Message -Level Verbose -Message "Getting properties from Registry Key"
-                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname} |
+                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname } |
                         Select-Object -ExpandProperty snames
 
                     foreach ($Name in $PropNames) {
-                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name} |
+                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } |
                             Select-Object -ExpandProperty svalue
                         $props.add($Name, $sValue)
                     }

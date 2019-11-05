@@ -4,18 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $defaultParamCount = 11
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ExcludeFixedRole', 'ServerRole', 'ExcludeServerRole', 'Login'
-        $paramCount = $knownParameters.Count
-
-        It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'Login', 'ExcludeFixedRole', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -25,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $instance = Connect-DbaInstance -SqlInstance $script:instance2
 
         $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
-        $testLogin = 'getDbaServerRoleMemberLogin'
+        $testLogin = 'getDbaInstanceRoleMemberLogin'
         $null = New-DbaLogin -SqlInstance $instance -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $instance -Login $testLogin -AddRole 'dbcreator'
     }

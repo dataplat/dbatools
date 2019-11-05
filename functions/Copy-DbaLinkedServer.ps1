@@ -12,13 +12,21 @@ function Copy-DbaLinkedServer {
         Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LinkedServer
         The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
@@ -68,7 +76,7 @@ function Copy-DbaLinkedServer {
         Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory)]
@@ -81,7 +89,6 @@ function Copy-DbaLinkedServer {
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -90,6 +97,9 @@ function Copy-DbaLinkedServer {
             return
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+
+        if ($Force) { $ConfirmPreference = 'none' }
+
         function Copy-DbaLinkedServers {
             param (
                 [string[]]$LinkedServer,
@@ -119,12 +129,14 @@ function Copy-DbaLinkedServer {
                 }
 
                 $linkedServerName = $currentLinkedServer.Name
+                $linkedServerProductName = $currentLinkedServer.ProductName
                 $linkedServerDataSource = $currentLinkedServer.DataSource
 
                 $copyLinkedServer = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $linkedServerName
+                    ProductName       = $linkedServerProductName
                     DataSource        = $linkedServerDataSource
                     Type              = "Linked Server"
                     Status            = $null
@@ -183,7 +195,7 @@ function Copy-DbaLinkedServer {
 
                         $destServer.Query($sql)
 
-                        if ($copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
+                        if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
                             $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
                             $destServer.Query($sql2)
                         }
@@ -239,7 +251,7 @@ function Copy-DbaLinkedServer {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             return
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
@@ -264,7 +276,7 @@ function Copy-DbaLinkedServer {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
@@ -273,8 +285,5 @@ function Copy-DbaLinkedServer {
             # Magic happens here
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
     }
 }

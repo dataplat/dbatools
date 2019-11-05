@@ -49,16 +49,14 @@ function Register-DbaRunspace {
         [String]
         $Name,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
-    if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLower())) {
-        Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLower())" -Target $Name.ToLower()
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()].SetScript($ScriptBlock)
+    if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLowerInvariant())) {
+        Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLowerInvariant())" -Target $Name.ToLowerInvariant()
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()].SetScript($ScriptBlock)
     } else {
-        Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLower())" -Target $Name.ToLower()
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLower(), $ScriptBlock)
+        Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLowerInvariant())" -Target $Name.ToLowerInvariant()
+        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLowerInvariant(), $ScriptBlock)
     }
 }

@@ -21,7 +21,11 @@ function Get-DbaLatchStatistic {
         The SQL Server instance. Server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
         Threshold, in percentage of all latch stats on the system. Default per Paul's post is 95%.
@@ -53,7 +57,7 @@ function Get-DbaLatchStatistic {
         Check latch statistics on server sql2008 for thresholds above 98%
 
     .EXAMPLE
-        PS C:\> $output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select-Object * | ConvertTo-DbaDataTable
 
         Collects all latch statistics on server sql2008 into a Data Table.
 
@@ -78,11 +82,9 @@ function Get-DbaLatchStatistic {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -120,14 +122,14 @@ function Get-DbaLatchStatistic {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 Return
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
             foreach ($row in $server.Query($sql)) {
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.DomainInstanceName
                     WaitType           = $row.LatchClass

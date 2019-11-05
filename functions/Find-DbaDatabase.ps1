@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaDatabase {
     <#
     .SYNOPSIS
@@ -13,7 +12,11 @@ function Find-DbaDatabase {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Property
         What you would like to search on. Either Database Name, Owner, or Service Broker GUID. Database name is the default.
@@ -23,9 +26,6 @@ function Find-DbaDatabase {
 
     .PARAMETER Exact
         Search for an exact match instead of a pattern
-
-    .PARAMETER Detailed
-        Output all properties, will be depreciated in 1.0.0 release.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,28 +62,21 @@ function Find-DbaDatabase {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
         [string]$Property = 'Name',
         [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$Exact,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($exact -eq $true) {

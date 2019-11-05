@@ -10,7 +10,11 @@ function Get-DbaDbMailAccount {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Account
         Specifies one or more account(s) to get. If unspecified, all accounts will be returned.
@@ -48,7 +52,7 @@ function Get-DbaDbMailAccount {
         Returns The DBA Team Database Mail account from sql01\sharepoint
 
     .EXAMPLE
-        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select-Object *
 
         Returns the Database Mail accounts on sql01\sharepoint then return a bunch more columns
 
@@ -61,9 +65,7 @@ function Get-DbaDbMailAccount {
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Account,
         [string[]]$ExcludeAccount,

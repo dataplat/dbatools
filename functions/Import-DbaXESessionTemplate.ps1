@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaXESessionTemplate {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Import-DbaXESessionTemplate {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The Name of the session to create.
@@ -61,10 +64,10 @@ function Import-DbaXESessionTemplate {
         Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
 
     .EXAMPLE
-        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session 'Database Health 2014' | Remove-DbaXESession
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template 'Database Health 2014' | Start-DbaXESession
 
-        Imports a session if it exists, then recreates it using a template.
+        Removes a session if it exists, then recreates it using a template.
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
@@ -75,7 +78,6 @@ function Import-DbaXESessionTemplate {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
@@ -95,15 +97,16 @@ function Import-DbaXESessionTemplate {
             Stop-Function -Message "You must specify Path or Template."
         }
 
-        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Name)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist."
+            return
         }
 
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
@@ -191,7 +194,7 @@ function Import-DbaXESessionTemplate {
                 }
 
                 try {
-                    Write-Message -Level Verbose -Message "Importing $file as $name "
+                    Write-Message -Level Verbose -Message "Importing $file as $Name "
                     $session = $store.CreateSessionFromTemplate($Name, $file)
                     $session.Create()
                     if ($file -eq $tempfile) {

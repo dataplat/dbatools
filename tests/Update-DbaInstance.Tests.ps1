@@ -7,7 +7,7 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
@@ -20,15 +20,75 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName Get-DbaDiskSpace -MockWith { [pscustomobject]@{ Name = 'C:\'; Free = 1 } } -ModuleName dbatools
     }
     Context "Validate parameters" {
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'Path', 'Restart', 'EnableException', 'Kb', 'InstanceName', 'Continue'
-        $paramCount = $knownParameters.Count
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'KB', 'InstanceName', 'Path', 'Restart', 'Continue', 'Throttle', 'Authentication', 'EnableException', 'ExtractPath'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+    }
+    Context "testing proper Authorization" {
+        BeforeAll {
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    InstanceName = 'LAB'
+                    Version      = [pscustomobject]@{
+                        "SqlInstance" = $null
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
+                    }
+                }
+            }
+            #Mock Get-Item and Get-ChildItem with a dummy file
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+            # mock Find-SqlInstanceUpdate
+            Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\path'
+                }
+            }
+            # Mock name resolution
+            Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullComputerName = 'mock'
+                }
+            }
+            # Mock CredSSP initialization
+            Mock -CommandName Initialize-CredSSP -ModuleName dbatools -MockWith { }
+            # Mock CmObject
+            Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{ SystemType = 'x64' } }
+        }
+        It "should call internal functions using CredSSP" {
+            $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
+            $cred = [pscredential]::new('usr', $password)
+            $null = Update-DbaInstance -ComputerName 'mocked' -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'CredSSP' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'CredSSP' } -Exactly 2 -Scope It -ModuleName dbatools
+        }
+        It "should call internal functions using Default" {
+            $null = Update-DbaInstance -ComputerName 'mocked' -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Default' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Default' } -Exactly 2 -Scope It -ModuleName dbatools
+        }
+        It "should call internal functions using Kerberos" {
+            $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
+            $cred = [pscredential]::new('usr', $password)
+            $null = Update-DbaInstance -ComputerName 'mocked' -Authentication Kerberos -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
+            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Kerberos' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Kerberos' } -Exactly 2 -Scope It -ModuleName dbatools
         }
     }
     Context "Validate upgrades to a latest version" {
@@ -36,6 +96,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
+                    [pscustomobject]@{InstanceName = 'LAB0'; Version = [pscustomobject]@{
+                            "SqlInstance" = $null
+                            "Build"       = "14.0.3038"
+                            "NameLevel"   = "2017"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = 'CU11'
+                            "KBLevel"     = "4462262"
+                            "BuildLevel"  = [version]'14.0.3038'
+                            "MatchType"   = "Exact"
+                        }
+                    }
                     [pscustomobject]@{InstanceName = 'LAB'; Version = [pscustomobject]@{
                             "SqlInstance" = $null
                             "Build"       = "11.0.5058"
@@ -60,6 +131,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                     }
                 )
             }
+            #Mock 2017 to think CU12 is the latest patch available
+            Mock -CommandName Test-DbaBuild -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    "Build"       = "14.0.3038"
+                    "BuildTarget" = [version]"14.0.3045"
+                    "Compliant"   = $false
+                    "NameLevel"   = "2017"
+                    "SPLevel"     = "RTM"
+                    "SPTarget"    = "RTM"
+                    "CULevel"     = 'CU11'
+                    "CUTarget"    = 'CU12'
+                    "KBLevel"     = "4462262"
+                    "BuildLevel"  = [version]'14.0.3038'
+                    "MatchType"   = "Exact"
+                }
+            } -ParameterFilter { $Build -eq [version]'14.0.3038' -and $MaxBehind -eq '0CU' }
             if (-Not(Test-Path $exeDir)) {
                 $null = New-Item -ItemType Directory -Path $exeDir
             }
@@ -67,6 +154,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $kbs = @(
                 'SQLServer2008SP4-KB2979596-x64-ENU.exe'
                 'SQLServer2012-KB4018073-x64-ENU.exe'
+                'SQLServer2017-KB4464082-x64-ENU.exe'
             )
             foreach ($kb in $kbs) {
                 $null = New-Item -ItemType File -Path (Join-Path $exeDir $kb) -Force
@@ -77,14 +165,29 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Remove-Item $exeDir -Force -Recurse
             }
         }
+        It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
+            $result = Update-DbaInstance -Version 2017 -Path $exeDir -Restart -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.MajorVersion | Should -Be 2017
+            $result.TargetLevel | Should -Be RTMCU12
+            $result.KB | Should -Be 4464082
+            $result.Successful | Should -Be $true
+            $result.Restarted | Should -Be $true
+            $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2017-KB4464082-x64-ENU.exe')
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+        }
         It "Should mock-upgrade SQL2008\LAB2 to latest SP" {
             $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -94,17 +197,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.InstanceName | Should -Be LAB2
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP4-KB2979596-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
-        It "Should mock-upgrade both versions to latest SPs" {
-            $results = Update-DbaInstance -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
+        It "Should mock-upgrade two versions to latest SPs" {
+            $results = Update-DbaInstance -Version 2008, 2012 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 2
 
@@ -117,8 +218,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP4-KB2979596-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
 
             #2012SP4
             $result = $results | Where-Object MajorVersion -eq 2012
@@ -129,8 +230,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2012-KB4018073-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
     Context "Validate upgrades to a specific KB" {
@@ -188,9 +289,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -199,17 +297,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP3-KB2546951-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
             $result = Update-DbaInstance -Kb 3182545, 4024305 -Path $exeDir -Restart -EnableException -Confirm:$false
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2016
@@ -218,17 +313,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016-KB4024305-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
         It "Should mock-upgrade both versions to different KBs" {
             $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -Path $exeDir -Restart -EnableException -Confirm:$false
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 4 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 
@@ -240,8 +332,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016-KB4040714-x64.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
 
             #2008SP3
             $result = $results | Select-Object -First 1 -Skip 1
@@ -251,8 +343,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP3-KB2546951-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
 
             #2008SP3CU7
             $result = $results | Select-Object -First 1 -Skip 2
@@ -262,8 +354,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008-KB2738350-x64-ENU.exe')
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
     Context "Validate upgrade to the same version when installation failed" {
@@ -282,7 +374,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                         "BuildLevel"  = [version]'11.0.5058'
                         "MatchType"   = "Exact"
                     }
-                    Resume = $true
+                    Resume       = $true
                 }
             }
             #Mock Get-Item and Get-ChildItem with a dummy file
@@ -298,9 +390,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
-            #no remote execution in tests
-            #Assert-MockCalled -CommandName Register-RemoteSessionConfiguration -Exactly 0 -Scope It -ModuleName dbatools
-            #Assert-MockCalled -CommandName Unregister-RemoteSessionConfiguration -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2012
@@ -310,8 +399,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.Restarted | Should -Be $true
             $result.InstanceName | Should -Be LAB
             $result.Installer | Should -Be 'c:\mocked\filename.exe'
-            $result.Message | Should -BeNullOrEmpty
-            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+            $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
     Context "Should mock-upgrade to a set of specific versions" {
@@ -484,7 +573,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                     }
                     It "$v to $cuLevel" {
                         $results = Update-DbaInstance -Version "$v$cuLevel" -Path 'mocked' -Restart -EnableException -Confirm:$false
-                        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly $steps -Scope It -ModuleName dbatools
+                        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Invoke-Program -Exactly ($steps * 2) -Scope It -ModuleName dbatools
                         Assert-MockCalled -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
                         for ($i = 0; $i -lt $steps; $i++) {
@@ -497,8 +586,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                             $result.Successful | Should -Be $true
                             $result.Restarted | Should -Be $true
                             $result.Installer | Should -Be 'c:\mocked\filename.exe'
-                            $result.Message | Should -BeNullOrEmpty
-                            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract'
+                            $result.Notes | Should -BeNullOrEmpty
+                            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
                         }
                     }
                 }
@@ -556,6 +645,31 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should throw 'Cannot find path'
             { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should throw 'Path to SQL Server updates folder is not set'
         }
+        It "fails when update execution has failed" {
+            #Mock Get-Item and Get-ChildItem with a dummy file
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
+            #override default mock
+            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            { Update-DbaInstance -Version 2008SP3 -EnableException -Path 'mocked' -Confirm:$false } | Should throw 'failed with exit code 12345'
+            $result = Update-DbaInstance -Version 2008SP3 -Path 'mocked' -Confirm:$false -WarningVariable warVar 3>$null
+            $result | Should -Not -BeNullOrEmpty
+            $result.MajorVersion | Should -Be 2008
+            $result.TargetLevel | Should -Be SP3
+            $result.KB | Should -Be 2546951
+            $result.Successful | Should -Be $false
+            $result.Restarted | Should -Be $false
+            $result.Installer | Should -Be 'c:\mocked\filename.exe'
+            $result.Notes | Should -BeLike '*failed with exit code 12345*'
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+            $warVar | Should -BeLike '*failed with exit code 12345*'
+            #revert default mock
+            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+        }
     }
 }
 
@@ -567,25 +681,23 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         #no restarts
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        #Mock Get-Item and Get-ChildItem with a dummy file
-        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+        # mock whole Find-SqlInstanceUpdate because it's executed remotely
+        Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
             [pscustomobject]@{
                 FullName = 'c:\mocked\filename.exe'
             }
         }
-        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { 'c:\mocked' }
     }
-    Context "WhatIf upgrade all local versions to latest SPCU" {
+    Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            $results = Update-DbaInstance -ComputerName $script:instance1 -Type ServicePack -Path $exeDir -Restart -EnableException -WhatIf 3>$null
-            foreach ($result in $results) {
-                $result.MajorVersion | Should -BeLike 20*
-                $result.TargetLevel | Should -BeLike 'SP*'
-                $result.KB | Should -Not -BeNullOrEmpty
-                $result.Successful | Should -Be $true
-                $result.Restarted | Should -Be $false
-                $result.Installer | Should -Be 'c:\mocked\filename.exe'
-                $result.Message | Should -Be 'The installation was not performed - running in WhatIf mode'
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $instance = $server.ServiceName
+            $null = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
+            Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
+            if ($testBuild.Compliant -eq $false) {
+                Assert-MockCalled -CommandName Find-SqlInstanceUpdate -Scope It -ModuleName dbatools
             }
         }
     }

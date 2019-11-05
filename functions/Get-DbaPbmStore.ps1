@@ -10,7 +10,11 @@ function Get-DbaPbmStore {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Policy
         Filters results to only show specific policy
@@ -51,9 +55,7 @@ function Get-DbaPbmStore {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
@@ -67,7 +69,7 @@ function Get-DbaPbmStore {
                 # DMF is the Declarative Management Framework, Policy Based Management's old name
                 $store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Add-Member -Force -InputObject $store -MemberType NoteProperty ComputerName -value $server.ComputerName

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Remove-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Schedule
         The name of the job schedule.
@@ -77,7 +80,6 @@ function Remove-DbaAgentSchedule {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory, ParameterSetName = "instance")]
@@ -86,11 +88,12 @@ function Remove-DbaAgentSchedule {
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )
-
+    begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
     process {
 
         foreach ($instance in $sqlinstance) {
@@ -98,7 +101,7 @@ function Remove-DbaAgentSchedule {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $InputObject += $server.JobServer.SharedSchedules

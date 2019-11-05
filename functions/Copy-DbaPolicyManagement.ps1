@@ -12,13 +12,21 @@ function Copy-DbaPolicyManagement {
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Policy
         The policy(ies) to process - this list is auto-populated from the server. If unspecified, all policies will be processed.
@@ -80,7 +88,7 @@ function Copy-DbaPolicyManagement {
         Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
@@ -95,15 +103,18 @@ function Copy-DbaPolicyManagement {
         [object[]]$Condition,
         [object[]]$ExcludeCondition,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
+        if (-not $script:isWindows) {
+            Stop-Function -Message "Copy-DbaPolicyManagement does not support Linux - we're still waiting for the Core SMOs from Microsoft"
+            return
+        }
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
@@ -111,6 +122,8 @@ function Copy-DbaPolicyManagement {
         $sourceStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $sourceSqlStoreConnection
         $storePolicies = $sourceStore.Policies | Where-Object { $_.IsSystemObject -eq $false }
         $storeConditions = $sourceStore.Conditions | Where-Object { $_.IsSystemObject -eq $false }
+
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -118,7 +131,7 @@ function Copy-DbaPolicyManagement {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
@@ -143,8 +156,57 @@ function Copy-DbaPolicyManagement {
             }
 
             <#
+                            Categories
+            #>
+
+            Write-Message -Level Verbose -Message "Migrating categories"
+            $uniquePolicyCategories = $storePolicies | Select-Object -ExpandProperty PolicyCategory -Unique
+            $storeCategories = $sourceStore.PolicyCategories | Where-Object { $_.Name -in $uniquePolicyCategories }
+            foreach ($category in $storeCategories) {
+                $categoryName = $category.Name
+
+                $copyCategoryStatus = [pscustomobject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $categoryName
+                    Type              = "Policy Category"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
+
+                if ($null -ne $destStore.PolicyCategories['Database']) {
+                    Write-Message -Level Verbose -Message "Policy category '$categoryName' was skipped because it already exists on $destination."
+
+                    $copyCategoryStatus.Status = "Skipped"
+                    $copyCategoryStatus.Notes = "Already exists on destination"
+                    $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    continue
+                }
+
+                if ($Pscmdlet.ShouldProcess($destination, "Migrating policy category $categoryName") -and $copyCategoryStatus.Status -ne 'Skipped') {
+                    try {
+                        $sql = $category.ScriptCreate().GetScript() | Out-String
+                        Write-Message -Level Debug -Message $sql
+                        Write-Message -Level Verbose -Message "Copying policy category $categoryName"
+                        $null = $destServer.Query($sql)
+                        $destStore.PolicyCategories.Refresh()
+
+                        $copyCategoryStatus.Status = "Successful"
+                        $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyCategoryStatus.Status = "Failed"
+                        $copyCategoryStatus.Notes = $_.Exception.Message
+                        $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+
+                        Stop-Function -Message "Issue creating policy category on $destination" -Target $categoryName -ErrorRecord $_
+                    }
+                }
+            }
+
+            <#
                         Conditions
-        #>
+            #>
 
             Write-Message -Level Verbose -Message "Migrating conditions"
             foreach ($condition in $storeConditions) {
@@ -211,7 +273,7 @@ function Copy-DbaPolicyManagement {
 
             <#
                         Policies
-        #>
+            #>
 
             Write-Message -Level Verbose -Message "Migrating policies"
             foreach ($policy in $storePolicies) {
@@ -257,7 +319,7 @@ function Copy-DbaPolicyManagement {
                     try {
                         $destStore.Conditions.Refresh()
                         $destStore.Policies.Refresh()
-                        $sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
+                        $sql = $policy.ScriptCreate().GetScript() | Out-String
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Copying policy $policyName"
                         $null = $destServer.Query($sql)
@@ -275,9 +337,5 @@ function Copy-DbaPolicyManagement {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlPolicyManagement
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlPolicyManagement
     }
 }

@@ -10,7 +10,11 @@ function Get-DbaServerRoleMember {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
         The role(s) to process. If unspecified, all roles will be processed.
@@ -79,16 +83,14 @@ function Get-DbaServerRoleMember {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias('ServerInstance', 'SqlServer')]
-        [DbaInstance[]]$SqlInstance,
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [string[]]$ServerRole,
         [string[]]$ExcludeServerRole,
         [object[]]$Login,
         [switch]$ExcludeFixedRole,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -105,9 +107,12 @@ function Get-DbaServerRoleMember {
             $roles = $server.Roles
 
             if (Test-Bound -ParameterName 'Login') {
-                $logins = Get-DbaLogin -SqlInstance $instance -Login $Login
+                try {
+                    $logins = Get-DbaLogin -SqlInstance $server -Login $Login -EnableException
+                } catch {
+                    Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
+                }
                 Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
-
                 foreach ($l in $logins) {
                     $loginRoles += $l.ListMembers()
                 }

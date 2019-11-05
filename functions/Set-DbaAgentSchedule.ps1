@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Set-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job that has the schedule.
@@ -35,7 +38,7 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencyInterval
         The days that a job is executed
         Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwrites any other value that has been passed before.
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
@@ -68,9 +71,6 @@ function Set-DbaAgentSchedule {
         The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
-
-    .PARAMETER Owner
-        The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -127,7 +127,6 @@ function Set-DbaAgentSchedule {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -141,7 +140,7 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [object[]]$FrequencyInterval,
+        [int]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
@@ -152,12 +151,12 @@ function Set-DbaAgentSchedule {
         [string]$EndDate,
         [string]$StartTime,
         [string]$EndTime,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
     )
 
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
@@ -166,11 +165,11 @@ function Set-DbaAgentSchedule {
 
         # Check of the FrequencySubdayType value is of type string and set the integer value
         if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default {0} }
+            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default { 0 } }
         }
 
         # Check if the interval is valid
-        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
+        if ($null -eq $FrequencyInterval -and ($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
             Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
             return
         }
@@ -214,7 +213,7 @@ function Set-DbaAgentSchedule {
                         "Saturday" { $Interval += 64 }
                         "Weekdays" { $Interval = 62 }
                         "Weekend" { $Interval = 65 }
-                        "EveryDay" {$Interval = 127 }
+                        "EveryDay" { $Interval = 127 }
                         1 { $Interval += 1 }
                         2 { $Interval += 2 }
                         4 { $Interval += 4 }
@@ -224,7 +223,7 @@ function Set-DbaAgentSchedule {
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
-                        127 {$Interval = 127 }
+                        127 { $Interval = 127 }
                     }
                 }
             }
@@ -261,14 +260,10 @@ function Set-DbaAgentSchedule {
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
         if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $null -ne $FrequencyRelativeInterval) {
-            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 }}
+            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 } }
         }
 
-        # Check if the interval is valid
-        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
-            return
-        }
+
 
         # Setup the regex
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
@@ -320,7 +315,7 @@ function Set-DbaAgentSchedule {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             foreach ($j in $Job) {
 
@@ -328,7 +323,7 @@ function Set-DbaAgentSchedule {
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # Check if the job exists
@@ -342,6 +337,11 @@ function Set-DbaAgentSchedule {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
                         $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
+
+                        # Set the frequency interval to make up for newly created schedules without an interval
+                        if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
+                            $Interval = 1
+                        }
 
                         #region job step options
                         # Setting the options for the job schedule
@@ -392,12 +392,12 @@ function Set-DbaAgentSchedule {
 
                         if ($StartDate) {
                             Write-Message -Message "Setting job schedule start date to $StartDate for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.StartDate = $StartDate
+                            $JobSchedule.ActiveStartDate = $StartDate
                         }
 
                         if ($EndDate) {
                             Write-Message -Message "Setting job schedule end date to $EndDate for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.EndDate = $EndDate
+                            $JobSchedule.ActiveEndDate = $EndDate
                         }
 
                         if ($StartTime) {
@@ -407,7 +407,7 @@ function Set-DbaAgentSchedule {
 
                         if ($EndTime) {
                             Write-Message -Message "Setting job schedule end time to $EndTime for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.ActiveStartTimeOfDay = $EndTime
+                            $JobSchedule.ActiveEndTimeOfDay = $EndTime
                         }
                         #endregion job step options
 

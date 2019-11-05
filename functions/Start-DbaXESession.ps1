@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESession {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Start-DbaXESession {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
         Only start specific Extended Events sessions.
@@ -73,7 +76,6 @@ function Start-DbaXESession {
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'Session')]
         [parameter(ParameterSetName = 'All')]
@@ -128,10 +130,10 @@ function Start-DbaXESession {
                 $name = "XE Session Stop - $session"
                 if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
                     # Setup the schedule time
-                    $time = $(($StopAt).ToString("HHmmss"))
+                    #$time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime $time -Force
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StopAt
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force

@@ -38,10 +38,9 @@ function Get-DbaPowerPlan {
 
         Gets the Power Plan settings for sql2017 using an alternative credential
 
-       #>
+    #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
         [switch]$EnableException
@@ -49,6 +48,8 @@ function Get-DbaPowerPlan {
 
     process {
         foreach ($computer in $ComputerName) {
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
+
             $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
 
             $computerResolved = $server.FullComputerName

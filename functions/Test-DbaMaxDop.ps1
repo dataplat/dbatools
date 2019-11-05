@@ -4,7 +4,7 @@ function Test-DbaMaxDop {
         Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
     .DESCRIPTION
-        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
+        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator/),
         this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
         For SQL Server 2016 shows:
@@ -21,10 +21,11 @@ function Test-DbaMaxDop {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-    .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -59,22 +60,17 @@ function Test-DbaMaxDop {
 
         Get Max DOP setting for servers sql2016 with the recommended value. Piping the output to Select-Object * will also show the 'NumaNodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 
-       #>
+    #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
         $notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
         $notesDopZero = "This is the default setting. Consider using the recommended value instead."
@@ -90,7 +86,7 @@ function Test-DbaMaxDop {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             #Get current configured value
@@ -173,7 +169,7 @@ function Test-DbaMaxDop {
                 #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
-                $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
+                $databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 
                 foreach ($database in $databases) {
                     if ($database.IsAccessible -eq $false) {
@@ -196,7 +192,7 @@ function Test-DbaMaxDop {
                         NumaNodes             = $NumaNodes
                         NumberOfCores         = $numberOfCores
                         Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
-                    }  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
                 }
             }
         }

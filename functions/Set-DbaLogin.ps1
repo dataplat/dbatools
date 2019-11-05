@@ -10,13 +10,20 @@ function Set-DbaLogin {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
         The login that needs to be changed
 
     .PARAMETER SecurePassword
         The new password for the login This can be either a credential or a secure string.
+
+    .PARAMETER DefaultDatabase
+        Default database for the login
 
     .PARAMETER Unlock
         Switch to unlock an account. This will only be used in conjunction with the -SecurePassword parameter.
@@ -141,17 +148,23 @@ function Set-DbaLogin {
 
         Disable the login from the pipeline
 
+    .EXAMPLE
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -DefaultDatabase master
+
+        Set the default database to master on a login
+
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
     param (
-        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
         [Alias("Password")]
         [object]$SecurePassword, #object so that it can accept credential or securestring
+        [Alias("DefaultDB")]
+        [string]$DefaultDatabase,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -166,7 +179,6 @@ function Set-DbaLogin {
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -202,7 +214,7 @@ function Set-DbaLogin {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $allLogins = @{}
+        $allLogins = @{ }
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
             try {
@@ -211,7 +223,7 @@ function Set-DbaLogin {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
-            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -eq $Login) -and ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
+            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
         }
 
         # Loop through all the logins
@@ -328,6 +340,15 @@ function Set-DbaLogin {
                             $notes += "Couldn't remove role $role"
                             Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
                         }
+                    }
+                }
+
+                # Set the default database
+                if (Test-Bound -ParameterName 'DefaultDatabase') {
+                    if ($l.DefaultDatabase -eq $DefaultDatabase) {
+                        Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
+                    } else {
+                        $l.DefaultDatabase = $DefaultDatabase
                     }
                 }
 

@@ -14,7 +14,11 @@ function Test-DbaDbOwner {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -25,8 +29,8 @@ function Test-DbaDbOwner {
     .PARAMETER TargetLogin
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-    .PARAMETER Detailed
-        Will be deprecated in 1.0.0 release.
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaDatabase.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -54,60 +58,46 @@ function Test-DbaDbOwner {
 
         Returns all databases where the owner does not match 'DOMAIN\account'.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance localhost -OnlyAccessible | Test-DbaDbOwner
+
+        Gets only accessible databases and checks where the owner does not match 'sa'.
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [string]$TargetLogin ,
-        [Switch]$Detailed,
-        [Alias('Silent')]
+        [string]$TargetLogin,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$EnableException
     )
-
-    begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
-    }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if (-not $InputObject -and -not $Sqlinstance) {
+            Stop-Function -Message 'You must specify a $SqlInstance parameter'
+        }
+
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        #for each database, create custom object for return set.
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
 
             # dynamic sa name for orgs who have changed their sa name
             if (Test-Bound -ParameterName TargetLogin -Not) {
-                $TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+                $TargetLogin = ($server.logins | Where-Object {
+                        $_.id -eq 1
+                    }).Name
             }
 
             #Validate login
             if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
                 Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
-            }
-        }
-        #use online/available dbs
-        $dbs = $server.Databases | Where-Object IsAccessible
-
-        #filter database collection based on parameters
-        if ($Database) {
-            $dbs = $dbs | Where-Object { $Database -contains $_.Name }
-        }
-
-        if ($ExcludeDatabase) {
-            $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-        }
-
-        #for each database, create custom object for return set.
-        foreach ($db in $dbs) {
-
-            if ($db.IsAccessible -eq $false) {
-                Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
             }
 
             Write-Message -Level Verbose -Message "Checking $db"
@@ -123,8 +113,5 @@ function Test-DbaDbOwner {
                 OwnerMatch   = ($db.owner -eq $TargetLogin)
             } | Select-DefaultView -ExcludeProperty Server
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaDatabaseOwner
     }
 }

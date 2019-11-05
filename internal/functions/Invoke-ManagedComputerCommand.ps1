@@ -24,7 +24,7 @@ function Invoke-ManagedComputerCommand {
 
         .PARAMETER EnableException
             Left in for legacy reasons. This command will throw no matter what
-       #>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -34,8 +34,7 @@ function Invoke-ManagedComputerCommand {
         [Parameter(Mandatory)]
         [scriptblock]$ScriptBlock,
         [string[]]$ArgumentList,
-        [switch][Alias('Silent')]
-        $EnableException # Left in for legacy but this command needs to throw
+        [switch]$EnableException # Left in for legacy but this command needs to throw
     )
 
     $computer = $ComputerName.ComputerName
@@ -69,6 +68,6 @@ function Invoke-ManagedComputerCommand {
         # For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
         $hostname = $resolved.FullComputerName
 
-        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
+        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -Credential $Credential -ErrorAction Stop
     }
 }

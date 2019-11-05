@@ -38,7 +38,6 @@ function Save-DbaDiagnosticQueryScript {
     [CmdletBinding()]
     param (
         [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-        [Alias('Silent')]
         [switch]$EnableException
     )
     function Get-WebData {
@@ -66,23 +65,24 @@ function Save-DbaDiagnosticQueryScript {
     $glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
     $glenberrysql = @()
 
-    Write-Message -Level Output -Message "Downloading RSS Feed"
+    Write-Message -Level Verbose -Message "Downloading RSS Feed"
     $rss = [xml](get-webdata -uri $glenberryrss)
     $Feed = $rss.rss.Channel
 
     $glenberrysql = @()
     $RssPostFilter = "SQL Server Diagnostic Information Queries for*"
     $DropboxLinkFilter = "*dropbox.com*"
-    $LinkTitleFilter = "*Diagnostic*"
+    $LinkTitleFilter = "*Diagnostic Information Queries*"
+    $ExcludeSpreadsheet = "*BlankResutsSpreadsheet*"
 
     foreach ($post in $Feed.item) {
         if ($post.title -like $RssPostFilter) {
             # We found the first post that matches it, lets go visit and scrape.
             $page = Get-WebData -uri $post.link
-            $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.innerText -like $LinkTitleFilter } | ForEach-Object {
+            $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet } | ForEach-Object {
                     [pscustomobject]@{
                         URL        = $_.href
-                        SQLVersion = $_.innerText -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
+                        SQLVersion = $_.outerHTML -replace "<.+`">", "" -replace "</a>", "" -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
                         FileYear   = ($post.title -split " ")[-1]
                         FileMonth  = "{0:00}" -f [int]([CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf(($post.title -split " ")[-2]))
                     }
@@ -90,12 +90,15 @@ function Save-DbaDiagnosticQueryScript {
             break
         }
     }
-    Write-Message -Level Output -Message "Found $($glenberrysql.Count) documents to download"
+    Write-Message -Level Verbose -Message "Found $($glenberrysql.Count) documents to download"
     foreach ($doc in $glenberrysql) {
         try {
-            Write-Message -Level Output -Message "Downloading $($doc.URL)"
-            $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            Invoke-TlsWebRequest -Uri $doc.URL -OutFile $filename -ErrorAction Stop
+            $link = $doc.URL.ToString().Replace('dl=0', 'dl=1')
+            Write-Message -Level Verbose -Message "Downloading $link)"
+            Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
+            $filename = Join-Path -Path $Path  -ChildPath "SQLServerDiagnosticQueries_$($doc.SQLVersion)_$("$($doc.FileYear)$($doc.FileMonth)").sql"
+            Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
+            Get-ChildItem -Path $filename
         } catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return

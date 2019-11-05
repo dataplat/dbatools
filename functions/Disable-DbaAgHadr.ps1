@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Disable-DbaAgHadr {
     <#
     .SYNOPSIS
@@ -29,7 +28,7 @@ function Disable-DbaAgHadr {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Hadr, AG, AvailabilityGroup
+        Tags: AvailabilityGroup, HA, AG,
         Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
 
         Website: https://dbatools.io
@@ -63,6 +62,9 @@ function Disable-DbaAgHadr {
         [switch]$Force,
         [switch]$EnableException
     )
+    begin {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             $computer = $computerFullName = $instance.ComputerName

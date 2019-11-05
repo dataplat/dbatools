@@ -1,4 +1,3 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
     <#
     .SYNOPSIS
@@ -30,7 +29,11 @@ function Get-DbaBuildReference {
         Target any number of instances, in order to return their build state.
 
     .PARAMETER SqlCredential
-        When connecting to an instance, use the credentials specified.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
         Looks online for the most up to date reference, replacing the local one.
@@ -67,7 +70,7 @@ function Get-DbaBuildReference {
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 
@@ -95,80 +98,20 @@ function Get-DbaBuildReference {
         $CumulativeUpdate,
 
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [Alias("Credential")]
         [PsCredential]
         $SqlCredential,
 
         [switch]
         $Update,
 
-        [switch]
-        [Alias('Silent')]
-        $EnableException
+        [switch]$EnableException
     )
 
     begin {
-        #region verifying parameters
-        $ComplianceSpec = @()
-        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
-        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
-            foreach ($exclParam in $exclParamGroup) {
-                if (Test-Bound -Parameter $exclParam) {
-                    $ComplianceSpec += $exclParam
-                    break
-                }
-            }
-        }
-        if ($ComplianceSpec.Length -gt 1) {
-            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
-            return
-        }
-        if ($ComplianceSpec.Length -eq 0) {
-            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
-            return
-        }
-        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
-            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
-            return
-        }
-        if ($MajorVersion) {
-            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
-                $MajorVersion = $Matches[2]
-            } else {
-                Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
-                return
-            }
-            if (!$ServicePack) {
-                $ServicePack = 'RTM'
-            }
-            if ($ServicePack -match '^(SP)?\s*(\d+)$') {
-                if ($Matches[2] -eq '0') {
-                    $ServicePack = 'RTM'
-                } else {
-                    $ServicePack = 'SP' + $Matches[2]
-                }
-            } elseif ($ServicePack -notmatch '^RTM$') {
-                Stop-Function -Message "Incorrect SQL Server service pack format: use SPX, X or RTM, where X is a service pack number"
-                return
-            }
-            if ($CumulativeUpdate) {
-                if ($CumulativeUpdate -match '^(CU)?\s*(\d+)$') {
-                    if ($Matches[2] -eq '0') {
-                        $CumulativeUpdate = ''
-                    } else {
-                        $CumulativeUpdate = 'CU' + $Matches[2]
-                    }
-                } else {
-                    Stop-Function -Message "Incorrect SQL Server cumulative update format: use CUX or X, where X is a cumulative update number"
-                    return
-                }
-            }
-        }
-        #endregion verifying parameters
+
         #region Helper functions
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
@@ -183,16 +126,16 @@ function Get-DbaBuildReference {
                 $EnableException
             )
 
-            $orig_idxfile = "$Moduledirectory\bin\dbatools-buildref-index.json"
+            $orig_idxfile = Resolve-Path "$Moduledirectory\bin\dbatools-buildref-index.json"
             $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
-                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Check your module integrity!"
+                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Please check your module integrity or reinstall dbatools."
             }
 
             if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
-                throw "Build reference file not found, check module health!"
+                throw "Build reference file not found, please check module health."
             }
 
             # If no writable copy exists, create one and return the module original
@@ -365,7 +308,7 @@ function Get-DbaBuildReference {
         }
         #endregion Helper functions
 
-        $moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
+        $moduledirectory = $script:PSModuleRoot
 
         try {
             $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
@@ -376,6 +319,65 @@ function Get-DbaBuildReference {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
+        #region verifying parameters
+        $ComplianceSpec = @()
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
+        foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
+            foreach ($exclParam in $exclParamGroup) {
+                if (Test-Bound -Parameter $exclParam) {
+                    $ComplianceSpec += $exclParam
+                    break
+                }
+            }
+        }
+        if ($ComplianceSpec.Length -gt 1) {
+            Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
+            return
+        }
+        if ($ComplianceSpec.Length -eq 0) {
+            Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
+            return
+        }
+        if (((Test-Bound -Parameter ServicePack) -or (Test-Bound -Parameter CumulativeUpdate)) -and (Test-Bound -Not -Parameter MajorVersion)) {
+            Stop-Function -Category InvalidArgument -Message "-MajorVersion is required when specifying SP or CU."
+            return
+        }
+        if ($MajorVersion) {
+            if ($MajorVersion -match '^(SQL)?(\d{4}(R2)?)$') {
+                $MajorVersion = $Matches[2]
+            } else {
+                Stop-Function -Message "Incorrect SQL Server version format: use SQL2XXX or just 2XXXX - SQL2012, SQL2008R2"
+                return
+            }
+            if (!$ServicePack) {
+                $ServicePack = 'RTM'
+            }
+            if ($ServicePack -match '^(SP)?\s*(\d+)$') {
+                if ($Matches[2] -eq '0') {
+                    $ServicePack = 'RTM'
+                } else {
+                    $ServicePack = 'SP' + $Matches[2]
+                }
+            } elseif ($ServicePack -notmatch '^RTM$') {
+                Stop-Function -Message "Incorrect SQL Server service pack format: use SPX, X or RTM, where X is a service pack number"
+                return
+            }
+            if ($CumulativeUpdate) {
+                if ($CumulativeUpdate -match '^(CU)?\s*(\d+)$') {
+                    if ($Matches[2] -eq '0') {
+                        $CumulativeUpdate = ''
+                    } else {
+                        $CumulativeUpdate = 'CU' + $Matches[2]
+                    }
+                } else {
+                    Stop-Function -Message "Incorrect SQL Server cumulative update format: use CUX or X, where X is a cumulative update number"
+                    return
+                }
+            }
+        }
+        #endregion verifying parameters
+
 
         foreach ($instance in $SqlInstance) {
             #region Ensure the connection is established
@@ -388,7 +390,7 @@ function Get-DbaBuildReference {
             try {
                 $null = $server.Version.ToString()
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             #endregion Ensure the connection is established
 
@@ -458,8 +460,5 @@ function Get-DbaBuildReference {
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
     }
 }

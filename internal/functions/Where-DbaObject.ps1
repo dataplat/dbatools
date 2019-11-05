@@ -46,7 +46,7 @@ function global:Where-DbaObject {
             "foo","bar" | Where-DbaObject -match "o"
 
             Filters out all strings that don't contain the letter "o"
-       #>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]

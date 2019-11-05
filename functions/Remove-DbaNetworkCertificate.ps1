@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Remove-DbaNetworkCertificate {
     <#
@@ -54,22 +53,26 @@ function Remove-DbaNetworkCertificate {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
     process {
         # Registry access
-        
-        
+
+
         foreach ($instance in $sqlinstance) {
+            $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
-            Write-Message -Level Verbose -Message "Resolving hostname"
-            $resolved = $null
-            $resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+            try {
+                Write-Message -Level Verbose -Message "Resolving hostname."
+                $resolved = $null
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
+            } catch {
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
+            }
 
             if ($null -eq $resolved) {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
@@ -100,10 +103,10 @@ function Remove-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-            Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regroot = $args[0]
@@ -128,7 +131,7 @@ function Remove-DbaNetworkCertificate {
                 try {
                     Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }

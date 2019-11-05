@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -11,7 +10,11 @@ function Remove-DbaAgReplica {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
         The specific availability group to query.
@@ -34,7 +37,7 @@ function Remove-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AG, HA, AvailabilityGroup, Replica
+        Tags: AvailabilityGroup, HA, AG, Replica
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -78,7 +81,7 @@ function Remove-DbaAgReplica {
         foreach ($agreplica in $InputObject) {
             if ($Pscmdlet.ShouldProcess($agreplica.Parent.Parent.Name, "Removing availability group replica $agreplica")) {
                 try {
-                    $agreplica.Parent.AvailabilityGroupReplicas[$agreplica.Name].Drop()
+                    $agreplica.Drop()
                     [pscustomobject]@{
                         ComputerName      = $agreplica.ComputerName
                         InstanceName      = $agreplica.InstanceName

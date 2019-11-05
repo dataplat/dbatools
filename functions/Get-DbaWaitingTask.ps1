@@ -11,7 +11,11 @@ function Get-DbaWaitingTask {
         The target SQL Server instance or instances. Server version must be SQL Server version XXXX or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
         Find the waiting task of one or more specific process ids
@@ -48,14 +52,12 @@ function Get-DbaWaitingTask {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [object[]]$Spid,
         [switch]$IncludeSystemSpid,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -103,7 +105,7 @@ function Get-DbaWaitingTask {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $results = $server.Query($sql)

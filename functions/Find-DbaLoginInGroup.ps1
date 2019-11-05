@@ -1,4 +1,3 @@
-#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
     <#
     .SYNOPSIS
@@ -52,11 +51,9 @@ function Find-DbaLoginInGroup {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -84,8 +81,8 @@ function Find-DbaLoginInGroup {
                     $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName);
                     $subgroups = @()
                     foreach ($member in $group.Members) {
-                        $memberDomain = $member.DistinguishedName -Split "," | Where-Object { $_ -like "DC=*" } | Select-Object -first 1 | ForEach-Object { $_.ToUpper() -replace "DC=", '' }
-                        if ($member.StructuralObjectClass -eq "group") {
+                        $memberDomain = $ads.Name
+                        if ($member.StructuralObjectClass -eq 'group') {
                             $fullName = $memberDomain + "\" + $member.SamAccountName
                             if ($fullName -in $discard) {
                                 Write-Message -Level Verbose -Message "skipping $fullName, already enumerated"
@@ -128,7 +125,7 @@ function Find-DbaLoginInGroup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }

@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaQuery {
     <#
     .SYNOPSIS
@@ -31,7 +30,7 @@ function Invoke-DbaQuery {
         Specifies the path to one or several files to be used as the query input.
 
     .PARAMETER SqlObject
-        Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
+        Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
     .PARAMETER As
         Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
@@ -55,6 +54,9 @@ function Invoke-DbaQuery {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER ReadOnly
+        Execute the query with ReadOnly application intent.
+
     .NOTES
         Tags: Database, Query
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -72,7 +74,7 @@ function Invoke-DbaQuery {
         Runs the sql query 'SELECT foo FROM bar' against the instance 'server\instance'
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
+        PS C:\> Get-DbaRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query 'SELECT foo FROM bar'
 
         Runs the sql query 'SELECT foo FROM bar' against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]
 
@@ -86,16 +88,26 @@ function Invoke-DbaQuery {
 
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
 
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameters @{ Name = "Maria" }
+
+        Executes a simple query against the users table using SQL Parameters.
+        This avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.
+        Keep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.
+        While it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.
+        The inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query "select something from readonlydb.dbo.atable"
+
+        Executes a query with ReadOnly application intent on aglistener1.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
         [string]$Database,
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
         [Int32]$QueryTimeout = 600,
         [Parameter(Mandatory, ParameterSetName = "File")]
@@ -110,6 +122,7 @@ function Invoke-DbaQuery {
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$ReadOnly,
         [switch]$EnableException
     )
 
@@ -154,7 +167,7 @@ function Invoke-DbaQuery {
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found" -Category ObjectNotFound
                             return
                         }
                         $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
@@ -162,14 +175,18 @@ function Invoke-DbaQuery {
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found." -Category ObjectNotFound
                             return
                         }
 
                         $files += $item.FullName
                     }
                     "System.String" {
-                        $uri = [uri]$item
+                        if (Test-PsVersion -Is 3) {
+                            $uri = [uri]$item
+                        } else {
+                            $uri = [uri]::New($item)
+                        }
 
                         switch -regex ($uri.Scheme) {
                             "http" {
@@ -199,9 +216,16 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (([uri]$path.FullName).Scheme -ne 'file') {
-                                            Stop-Function -Message "Could not resolve path $path as filesystem object"
-                                            return
+                                        if (Test-PsVersion -Is 3) {
+                                            if (([uri]$path.FullName).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
+                                        } else {
+                                            if ([uri]::New($path).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
                                         }
                                         $files += $path.FullName
                                     }
@@ -254,6 +278,10 @@ function Invoke-DbaQuery {
             Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
             return
         }
+        if (Test-Bound -ParameterName "SqlInstance", "InputObject" -Not) {
+            Stop-Function -Category InvalidArgument -Message "Please provide either SqlInstance or InputObject"
+            return
+        }
 
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
@@ -263,13 +291,14 @@ function Invoke-DbaQuery {
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
             if ($conncontext.DatabaseName -ne $db.Name) {
-                $conncontext = $server.ConnectionContext.Copy()
-                $conncontext.DatabaseName = $db.Name
+                #$conncontext = $server.ConnectionContext.Copy()
+                #$conncontext.DatabaseName = $db.Name
+                $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($db.Name)
             }
             try {
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
@@ -281,19 +310,28 @@ function Invoke-DbaQuery {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $connDbaInstanceParams = @{
+                    SqlInstance   = $instance
+                    SqlCredential = $SqlCredential
+                    Database      = $Database
+                }
+                if ($ReadOnly) {
+                    $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                }
+                $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
             $conncontext = $server.ConnectionContext
             try {
                 if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
+                    #$conncontext = $server.ConnectionContext.Copy()
+                    #$conncontext.DatabaseName = $Database
+                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
@@ -316,7 +354,5 @@ function Invoke-DbaQuery {
                 Remove-Item -Path $item -ErrorAction Ignore
             }
         }
-        Test-DbaDeprecation -DeprecatedOn '1.0.0' -Alias Invoke-DbaCmd
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }

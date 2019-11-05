@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaDbTableData {
     <#
     .SYNOPSIS
@@ -8,7 +7,7 @@ function Copy-DbaDbTableData {
         Copies data between SQL Server tables using SQL Bulk Copy.
         The same can be achieved also doing
         $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDataTable -SqlInstance ... -InputObject $sourcetable
+        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
         but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
 
@@ -16,13 +15,21 @@ function Copy-DbaDbTableData {
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database to copy the table from.
@@ -136,8 +143,8 @@ function Copy-DbaDbTableData {
 
     .EXAMPLE
         PS C:\> $params = @{
-        >> SourceSqlInstance = 'sql1'
-        >> DestinationSqlInstance = 'sql2'
+        >> SqlInstance = 'sql1'
+        >> Destination = 'sql2'
         >> Database = 'dbatools_from'
         >> DestinationDatabase = 'dbatools_dest'
         >> Table = '[Schema].[Table]'
@@ -153,10 +160,25 @@ function Copy-DbaDbTableData {
         Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
-       #>
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SqlInstance = 'server1'
+        >> Destination = 'server1'
+        >> Database = 'AdventureWorks2017'
+        >> DestinationDatabase = 'AdventureWorks2017'
+        >> Table = '[Person].[EmailPromotion]'
+        >> BatchSize = 10000
+        >> Query = "SELECT * FROM [Person].[Person] where EmailPromotion = 1"
+        >> }
+        >>
+        PS C:\> Copy-DbaDbTableData @params
+
+        Copies data returned from the query on server1 into the AdventureWorks2017 on server1.
+        Copy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.
+
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
-        [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [DbaInstanceParameter[]]$Destination,
@@ -200,7 +222,7 @@ function Copy-DbaDbTableData {
                 }
             }
         }'
-        
+
         Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
@@ -209,7 +231,7 @@ function Copy-DbaDbTableData {
                 $null = 1
             }
         }
-        
+
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -244,7 +266,7 @@ function Copy-DbaDbTableData {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
@@ -276,7 +298,7 @@ function Copy-DbaDbTableData {
                 $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
             }
 
-            $newTableParts = Get-TableNameParts $DestinationTable
+            $newTableParts = Get-ObjectNameParts -ObjectName $DestinationTable
             #using FQTN to determine database name
             if ($newTableParts.Database) {
                 $DestinationDatabase = $newTableParts.Database
@@ -292,7 +314,7 @@ function Copy-DbaDbTableData {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
 
@@ -306,13 +328,13 @@ function Copy-DbaDbTableData {
                     try {
                         $tablescript = $sqltable | Export-DbaScript -Passthru | Out-String
                         #replacing table name
-                        if ($newTableParts.Table) {
+                        if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($sqltable.Schema))\]\.\[)$([regex]::Escape($sqltable.Name))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Table)`$2"
+                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Name)`$2"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Schema))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqltable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
@@ -347,7 +369,7 @@ function Copy-DbaDbTableData {
                     $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
                 }
 
-                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
+                if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name -and (Test-Bound -ParameterName Query -Not)) {
                     Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                     return
                 }
@@ -355,6 +377,9 @@ function Copy-DbaDbTableData {
 
                 if (Test-Bound -ParameterName Query -Not) {
                     $Query = "SELECT * FROM $fqtnfrom"
+                    $sourceLabel = $fqtnfrom
+                } else {
+                    $sourceLabel = "Query"
                 }
                 try {
                     if ($Truncate -eq $true) {
@@ -362,7 +387,7 @@ function Copy-DbaDbTableData {
                             $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                         }
                     }
-                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $fqtnfrom")) {
+                    if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
@@ -397,6 +422,7 @@ function Copy-DbaDbTableData {
                             Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                         }
 
+                        $server.ConnectionContext.SqlConnectionObject.Close()
                         $bulkCopy.Close()
                         $bulkCopy.Dispose()
                         $reader.Close()
@@ -404,9 +430,11 @@ function Copy-DbaDbTableData {
                         [pscustomobject]@{
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
+                            SourceSchema        = $sqltable.Schema
                             SourceTable         = $sqltable.Name
-                            DestinationInstance = $destServer.name
+                            DestinationInstance = $destServer.Name
                             DestinationDatabase = $DestinationDatabase
+                            DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed
@@ -417,8 +445,5 @@ function Copy-DbaDbTableData {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaTableData
     }
 }

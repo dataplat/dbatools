@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Disable-DbaForceNetworkEncryption {
     <#
@@ -54,10 +53,8 @@ function Disable-DbaForceNetworkEncryption {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
@@ -66,9 +63,13 @@ function Disable-DbaForceNetworkEncryption {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
-            Write-Message -Level Verbose -Message "Resolving hostname."
-            $resolved = $null
-            $resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+            try {
+                Write-Message -Level Verbose -Message "Resolving hostname."
+                $resolved = $null
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
+            } catch {
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
+            }
 
             if ($null -eq $resolved) {
                 Stop-Function -Message "Can't resolve $instance." -Target $instance -Continue -Category InvalidArgument
@@ -105,10 +106,10 @@ function Disable-DbaForceNetworkEncryption {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-            Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
@@ -132,7 +133,7 @@ function Disable-DbaForceNetworkEncryption {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
                     Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }

@@ -10,16 +10,24 @@ function Copy-DbaDbMail {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        Specifies the object type to migrate. Valid options are "Job", "Alert" and "Operator". When Type is specified, all categories from the selected type will be migrated.
+        Specifies the object type to migrate. Valid options are 'ConfigurationValues', 'Profiles', 'Accounts', and 'MailServers'. When Type is specified, all categories from the selected type will be migrated.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -69,22 +77,22 @@ function Copy-DbaDbMail {
         Performs execution of function, and will throw a terminating exception if something breaks
 
     #>
-    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [Parameter(ParameterSetName = 'SpecificTypes')]
-        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
+        [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
         [string[]]$Type,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
+        if ($Force) { $ConfirmPreference = 'none' }
         function Copy-DbaDbMailConfig {
             [cmdletbinding(SupportsShouldProcess)]
             param ()
@@ -124,6 +132,8 @@ function Copy-DbaDbMail {
             Write-Message -Message "Migrating accounts." -Level Verbose
             foreach ($account in $sourceAccounts) {
                 $accountName = $account.name
+                $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
+                Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
                 $copyMailAccountStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -134,25 +144,25 @@ function Copy-DbaDbMail {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
+                if ($accounts.count -gt 0 -and $accounts -notcontains $newAccountName) {
                     continue
                 }
 
-                if ($destAccounts.name -contains $accountName) {
+                if ($destAccounts.name -contains $newAccountName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Account $accountName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Account '$newAccountName' exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailAccountStatus.Status = "Skipped"
                             $copyMailAccountStatus.Notes = "Already exists on destination"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                            Write-Message -Message "Account $newAccountName exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account $accountName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping account '$newAccountName' and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping account $accountName." -Level Verbose
-                            $destServer.Mail.Accounts[$accountName].Drop()
+                            Write-Message -Message "Dropping account '$newAccountName'." -Level Verbose
+                            $destServer.Mail.Accounts[$newAccountName].Drop()
                             $destServer.Mail.Accounts.Refresh()
                         } catch {
                             $copyMailAccountStatus.Status = "Failed"
@@ -162,18 +172,18 @@ function Copy-DbaDbMail {
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destinstance, "Migrating account $accountName.")) {
+                if ($pscmdlet.ShouldProcess($destinstance, "Migrating account '$accountName'.")) {
                     try {
-                        Write-Message -Message "Copying mail account $accountName." -Level Verbose
+                        Write-Message -Message "Copying mail account '$accountName'." -Level Verbose
                         $sql = $account.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailAccountStatus.Status = "Successful"
                     } catch {
                         $copyMailAccountStatus.Status = "Failed"
                         $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying mail account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_
+                        Stop-Function -Message "Issue copying mail account." -Target $newAccountName -Category InvalidOperation -InnerErrorRecord $_
                     }
                     $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
@@ -189,6 +199,8 @@ function Copy-DbaDbMail {
             foreach ($profile in $sourceProfiles) {
 
                 $profileName = $profile.name
+                $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
+                Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
                 $copyMailProfileStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -199,39 +211,40 @@ function Copy-DbaDbMail {
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
+                if ($profiles.count -gt 0 -and $profiles -notcontains $newProfileName) {
                     continue
                 }
 
-                if ($destProfiles.name -contains $profileName) {
+                if ($destProfiles.name -contains $newProfileName) {
                     if ($force -eq $false) {
-                        If ($pscmdlet.ShouldProcess($destinstance, "Profile $profileName exists at destination. Use -Force to drop and migrate.")) {
+                        If ($pscmdlet.ShouldProcess($destinstance, "Profile '$newProfileName' exists at destination. Use -Force to drop and migrate.")) {
                             $copyMailProfileStatus.Status = "Skipped"
                             $copyMailProfileStatus.Notes = "Already exists on destination"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                            Write-Message -Message "Profile '$newProfileName' exists at destination. Use -Force to drop and migrate." -Level Verbose
                         }
                         continue
                     }
 
-                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile $profileName and recreating.")) {
+                    If ($pscmdlet.ShouldProcess($destinstance, "Dropping profile '$newProfileName' and recreating.")) {
                         try {
-                            Write-Message -Message "Dropping profile $profileName." -Level Verbose
-                            $destServer.Mail.Profiles[$profileName].Drop()
+                            Write-Message -Message "Dropping profile '$newProfileName'." -Level Verbose
+                            $destServer.Mail.Profiles[$newProfileName].Drop()
                             $destServer.Mail.Profiles.Refresh()
                         } catch {
                             $copyMailProfileStatus.Status = "Failed"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue dropping profile." -Target $newProfileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
                         }
                     }
                 }
 
-                if ($pscmdlet.ShouldProcess($destinstance, "Migrating mail profile $profileName.")) {
+                if ($pscmdlet.ShouldProcess($destinstance, "Migrating mail profile '$profileName'.")) {
                     try {
-                        Write-Message -Message "Copying mail profile $profileName." -Level Verbose
+                        Write-Message -Message "Copying mail profile '$profileName'." -Level Verbose
                         $sql = $profile.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
+                        $sql = $sql -replace "(?<=@profile_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $destServer.Mail.Profiles.Refresh()
@@ -294,7 +307,7 @@ function Copy-DbaDbMail {
                     try {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
-                        $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
+                        $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailServerStatus.Status = "Successful"
@@ -311,10 +324,11 @@ function Copy-DbaDbMail {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $mail = $sourceServer.mail
+        $sourceRegEx = [RegEx]::Escape($source)
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -322,7 +336,7 @@ function Copy-DbaDbMail {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             if ($type.Count -gt 0) {
@@ -414,9 +428,5 @@ function Copy-DbaDbMail {
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabaseMail
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaDatabaseMail
     }
 }

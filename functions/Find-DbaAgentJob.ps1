@@ -1,7 +1,7 @@
 function Find-DbaAgentJob {
     <#
     .SYNOPSIS
-        Find-DbaAgentJob finds agent job/s that fit certain search filters.
+        Find-DbaAgentJob finds agent jobs that fit certain search filters.
 
     .DESCRIPTION
         This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
@@ -10,7 +10,11 @@ function Find-DbaAgentJob {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER JobName
         Filter agent jobs to only the name(s) you list.
@@ -24,7 +28,7 @@ function Find-DbaAgentJob {
         Supports regular expression (e.g. MyJob*) being passed in.
 
     .PARAMETER LastUsed
-        Find all jobs that havent ran in the INT number of previous day(s)
+        Find all jobs that haven't ran in the INT number of previous day(s)
 
     .PARAMETER IsDisabled
         Find all jobs that are disabled
@@ -104,15 +108,14 @@ function Find-DbaAgentJob {
         Returns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
+        PS C:\> Get-DbaRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
 
         Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
@@ -132,7 +135,6 @@ function Find-DbaAgentJob {
         [string[]]$Category,
         [string]$Owner,
         [datetime]$Since,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -149,7 +151,7 @@ function Find-DbaAgentJob {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $jobs = $server.JobServer.jobs
@@ -172,7 +174,7 @@ function Find-DbaAgentJob {
 
             if ($LastUsed) {
                 $DaysBack = $LastUsed * -1
-                $SinceDate = (Get-date).AddDays($DaysBack)
+                $SinceDate = (Get-Date).AddDays($DaysBack)
                 Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
                 $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
             }

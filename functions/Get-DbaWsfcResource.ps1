@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcResource {
     <#
     .SYNOPSIS
@@ -37,7 +36,7 @@ function Get-DbaWsfcResource {
         Gets resource information from the failover cluster cluster01
 
     .EXAMPLE
-        PS C:\> Get-DbaWsfcResource -ComputerName cluster01 | Select *
+        PS C:\> Get-DbaWsfcResource -ComputerName cluster01 | Select-Object *
 
         Shows all resource values, including the ones not shown in the default view
 

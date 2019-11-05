@@ -46,7 +46,7 @@ function Get-DbaDependency {
         https://dbatools.io/Get-DbaDependency
 
     .EXAMPLE
-        PS C:\> $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers
+        PS C:\> $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where-Object Name -eq Customers
         PS C:\> $table | Get-DbaDependency
 
         Returns everything that depends on the "Customers" table
@@ -54,20 +54,11 @@ function Get-DbaDependency {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
-        $InputObject,
-
-        [switch]
-        $AllowSystemObjects,
-
-        [switch]
-        $Parents,
-
-        [switch]
-        $IncludeSelf,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [Parameter(ValueFromPipeline)]$InputObject,
+        [switch]$AllowSystemObjects,
+        [switch]$Parents,
+        [switch]$IncludeSelf,
+        [switch]$EnableException
     )
 
     begin {
@@ -86,10 +77,7 @@ function Get-DbaDependency {
                 $EnumParents,
 
                 [string]
-                $FunctionName,
-
-                [bool]
-                $EnableException
+                $FunctionName
             )
 
             $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
@@ -102,13 +90,13 @@ function Get-DbaDependency {
 
             $urnCollection = New-Object Microsoft.SqlServer.Management.Smo.UrnCollection
 
-            Write-Message -EnableException $EnableException -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
+            Write-Message -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
             $urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$Object.urn)
 
-            #now we set up an event listnenr go get progress reports
+            #now we set up an event listener go get progress reports
             $progressReportEventHandler = [Microsoft.SqlServer.Management.Smo.ProgressReportEventHandler] {
                 $name = $_.Current.GetAttribute('Name');
-                Write-Message -EnableException $EnableException -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
+                Write-Message -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
             }
             $scripter.add_DiscoveryProgress($progressReportEventHandler)
 
@@ -219,9 +207,9 @@ function Get-DbaDependency {
     }
     process {
         foreach ($Item in $InputObject) {
-            Write-Message -EnableException $EnableException -Level Verbose -Message "Processing: $Item"
+            Write-Message -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {
-                Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
+                Stop-Function -Message "$Item is not a valid SMO object" -Category InvalidData -Continue -Target $Item
             }
 
             # Find the server object to pass on to the function
@@ -231,12 +219,12 @@ function Get-DbaDependency {
             until (($parent.urn.type -eq "Server") -or (-not $parent))
 
             if (-not $parent) {
-                Stop-Function -Message "Failed to find valid server object in input: $Item" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
+                Stop-Function -Message "Failed to find valid server object in input: $Item" -Category InvalidData -Continue -Target $Item
             }
 
             $server = $parent
 
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnableException $EnableException -EnumParents $Parents
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {

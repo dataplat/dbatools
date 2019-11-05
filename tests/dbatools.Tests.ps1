@@ -42,7 +42,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     Ensures common formatting standards are applied:
     - OTSB style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
-       #>
+    #>
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
     $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\internal\functions"-Filter '*.ps*1'
     Context "formatting" {
@@ -111,8 +111,19 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
         foreach ($f in $AllPublicFunctions) {
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
-            if ($NotAllowed.Count -gt 0) {
+            if ($NotAllowed.Count -gt 0 -and $f -notmatch 'DbaKbUpdate') {
                 It "$f should instead use Invoke-TlsWebRequest, see #4250" {
+                    $NotAllowed.Count | Should -Be 0
+                }
+            }
+        }
+    }
+    Context "Shell.Application" {
+        # Not every PS instance has Shell.Application
+        foreach ($f in $AllPublicFunctions) {
+            $NotAllowed = Select-String -Path $f -Pattern 'shell.application'
+            if ($NotAllowed.Count -gt 0) {
+                It "$f should not use Shell.Application (usually fallbacks for Expand-Archive, which dbatools ships), see #4800" {
                     $NotAllowed.Count | Should -Be 0
                 }
             }
@@ -137,7 +148,80 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     }
 }
 
+Describe "$ModuleName Tests missing" -Tag 'Tests' {
+    $functions = Get-ChildItem "$ModulePath\functions\" -Recurse -Include *.ps1
+    Context "Every function should have tests" {
+        foreach ($f in $functions) {
+            It "$($f.basename) has a tests.ps1 file" {
+                Test-Path "tests\$($f.basename).tests.ps1" | Should Be $true
+            }
+            If (Test-Path "tests\$($f.basename).tests.ps1") {
+                It "$($f.basename) has validate parameters unit test" {
+                    "tests\$($f.basename).tests.ps1" | should FileContentMatch 'Context "Validate parameters"'
+                }
+            }
+        }
+    }
+}
 
+Describe "$ModuleName Function Name" -Tag 'Compliance' {
+    $FunctionNameMatchesErrors = @()
+    $FunctionNameDbaErrors = @()
+    foreach ($item in (Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1')) {
+        $Tokens = $null
+        $Errors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
+        $FunctionName = $Ast.EndBlock.Statements.Name
+        $BaseName = $item.BaseName
+        if ($FunctionName -cne $BaseName) {
+            $FunctionNameMatchesErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                BaseName     = $BaseName
+                Message      = "$FunctionName is not equal to $BaseName"
+            }
+        }
+        If ($FunctionName -NotMatch "-Dba") {
+            $FunctionNameDbaErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                Message      = "$FunctionName does not contain -Dba"
+            }
+
+        }
+    }
+    foreach ($item in (Get-ChildItem -Path "$ModulePath\internal\functions" -Filter '*.ps*1' | Where-Object BaseName -ne 'Where-DbaObject')) {
+        $Tokens = $null
+        $Errors = $null
+        $Ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
+        $FunctionName = $Ast.EndBlock.Statements.Name
+        $BaseName = $item.BaseName
+        if ($FunctionName -cne $BaseName) {
+            write-host "aaa $functionname bbb $basename"
+            $FunctionNameMatchesErrors += [pscustomobject]@{
+                FunctionName = $FunctionName
+                BaseName     = $BaseName
+                Message      = "$FunctionName is not equal to $BaseName"
+            }
+        }
+    }
+    Context "Function Name Matching Filename Errors" {
+        if ($FunctionNameMatchesErrors.Count -gt 0) {
+            foreach ($err in $FunctionNameMatchesErrors) {
+                It "$($err.FunctionName) is not equal to $($err.BaseName)" {
+                    $err.Message | Should -Be $null
+                }
+            }
+        }
+    }
+    Context "Function Name has -Dba in it" {
+        if ($FunctionNameDbaErrors.Count -gt 0) {
+            foreach ($err in $FunctionNameDbaErrors) {
+                It "$($err.FunctionName) does not contain -Dba" {
+                    $err.Message | Should -Be $null
+                }
+            }
+        }
+    }
+}
 
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
 <#

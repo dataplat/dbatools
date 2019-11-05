@@ -1,12 +1,13 @@
 <!-- Below information IS REQUIRED with every PR -->
 ## Type of Change
 <!-- What type of change does your code introduce -->
- - [ ] Bug fix (non-breaking change, fixes #<enter issue number>)
- - [ ] New feature (non-breaking change, adds functionality)
- - [ ] Breaking change (effects multiple commands or functionality)
+ - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )
+ - [ ] New feature (non-breaking change, adds functionality, fixes #<!--issue number--> )
+ - [ ] Breaking change (effects multiple commands or functionality, fixes #<!--issue number--> )
  - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1)
  - [ ] Adding code coverage to existing functionality
  - [ ] Pester test is included
+ - [ ] If new file reference added for test, has is been added to github.com/sqlcollaborative/appveyor-lab ?
  - [ ] Nunit test is included
  - [ ] Documentation
  - [ ] Build system

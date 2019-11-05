@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaDbAssembly {
     <#
     .SYNOPSIS
@@ -12,7 +11,17 @@ function Get-DbaDbAssembly {
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Database
+        Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked
+
+    .PARAMETER Name
+        Specify an Assembly to be fetched. If not specified all Assemblys will be returned
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -40,13 +49,19 @@ function Get-DbaDbAssembly {
 
         Returns all Database Assembly for the local and sql2016 SQL Server instances
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR
+
+        Will fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
+        [Object[]]$Database,
+        [string[]]$Name,
         [switch]$EnableException
     )
 
@@ -55,26 +70,32 @@ function Get-DbaDbAssembly {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($database in ($server.Databases | Where-Object IsAccessible)) {
+            $databases = $server.Databases | Where-Object IsAccessible
+            if (Test-Bound 'Database') {
+                $databases = $databases | Where-Object Name -in $Database
+            }
+            foreach ($db in $databases) {
                 try {
-                    foreach ($assembly in $database.assemblies) {
+                    if (Test-Bound 'Name') {
+                        $assemblies = $assemblies | Where-Object Name -in  $Name
+                    } else {
+                        $assemblies = $db.assemblies
+                    }
+                    foreach ($assembly in $assemblies) {
 
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.ComputerName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+                        Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name Database -value $db.name
 
-                        Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
+                        Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, Database, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
                     }
                 } catch {
                     Stop-Function -Message "Issue pulling assembly information" -Target $assembly -ErrorRecord $_ -Continue
                 }
             }
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseAssembly
     }
 }
