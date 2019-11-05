@@ -74,6 +74,7 @@ Register-DbaTeppArgumentCompleter -Command "Find-DbaCommand" -Parameter Tag -Nam
 Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Get-DbatoolsConfigValue", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter FullName -Name config
 Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter Module -Name configmodule
 Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter Name -Name config_name
+Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsPath", "Set-DbatoolsPath" -Parameter Name -Name path
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter ExcludeSpid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Hostname -Name processHostname
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Program -Name processProgram

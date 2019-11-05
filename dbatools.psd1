@@ -652,7 +652,10 @@
         # Config system
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
-        'Register-DbatoolsConfig',
+		'Register-DbatoolsConfig',
+		# Managed Path Commands
+		'Get-DbatoolsPath',
+		'Set-DbatoolsPath',
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
