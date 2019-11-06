@@ -7,7 +7,7 @@ function Uninstall-DbatoolsWatchUpdate {
         Removes the scheduled task created for Watch-DbaUpdate by Install-DbatoolsWatchUpdate so that notifications no longer pop up.
 
     .NOTES
-        Tags: JustForFun, Module
+        Tags: Module, Watcher
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -21,8 +21,9 @@ function Uninstall-DbatoolsWatchUpdate {
         PS C:\> Uninstall-DbatoolsWatchUpdate
 
         Removes the scheduled task created by Install-DbatoolsWatchUpdate.
-
     #>
+    [Cmdletbinding()]
+    param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."

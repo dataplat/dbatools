@@ -21,7 +21,7 @@ function Install-DbatoolsWatchUpdate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Module
+        Tags: Module, Watcher
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -40,7 +40,6 @@ function Install-DbatoolsWatchUpdate {
         PS C:\> Install-DbatoolsWatchUpdate -TaskName MyScheduledTask
 
         Will create the scheduled task as the name MyScheduledTask
-
     #>
     [cmdletbinding(SupportsShouldProcess)]
     param(

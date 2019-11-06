@@ -31,7 +31,7 @@ function Get-DbaDiskSpace {
         Filter out drives - format is C:\
 
     .PARAMETER CheckFragmentation
-        If this switch is enabled, fragmentation of all filesystems will be checked.
+        If this switch is enabled, fragmentation of all file systems will be checked.
 
         This will increase the runtime of the function by seconds or even minutes per volume.
 
@@ -51,7 +51,7 @@ function Get-DbaDiskSpace {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Storage, Disk
+        Tags: Server, Management, Space
         Author: Chrissy LeMaire (@cl), netnerds.net | Jakob Bindslet
 
         Website: https://dbatools.io
@@ -85,7 +85,6 @@ function Get-DbaDiskSpace {
         PS C:\> Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
 
         Get all disk and volume space information.
-
     #>
     [CmdletBinding()]
     param (

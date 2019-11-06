@@ -20,7 +20,7 @@ function Get-DbaWsfcSharedVolume {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Cluster, WSFC, FCI, HA
+        Tags: WSFC, FCI, WindowsCluster, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -34,7 +34,6 @@ function Get-DbaWsfcSharedVolume {
         PS C:\> Get-DbaWsfcSharedVolume -ComputerName cluster01
 
         Gets shared volume (CSV) information from the failover cluster cluster01
-
     #>
     [CmdletBinding()]
     param (

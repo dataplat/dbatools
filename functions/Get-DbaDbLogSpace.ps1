@@ -33,7 +33,7 @@ Function Get-DbaDbLogSpace {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, LogFile
+        Tags: Database, Space
         Author: Jess Pomfret, JessPomfret.com
 
         Website: https://dbatools.io
@@ -67,7 +67,6 @@ Function Get-DbaDbLogSpace {
         PS C:\> Get-DbaRegisteredServer -SqlInstance cmsServer | Get-DbaDbLogSpace -Database Database1
 
         Returns the transaction log usage information for Database1 for a group of servers from SQL Server Central Management Server (CMS).
-
     #>
     [CmdletBinding()]
     param (
