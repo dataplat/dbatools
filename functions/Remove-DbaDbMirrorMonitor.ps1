@@ -30,7 +30,7 @@ function Remove-DbaDbMirrorMonitor {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA, Monitor
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -44,7 +44,6 @@ function Remove-DbaDbMirrorMonitor {
         PS C:\> Remove-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012
 
         Stops and deletes the mirroring monitor job for all the databases on sql2008 and sql2012.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

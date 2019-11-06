@@ -52,7 +52,7 @@ function Get-DbaDbMirrorMonitor {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -71,7 +71,6 @@ function Get-DbaDbMirrorMonitor {
         PS C:\> Get-DbaDbMirrorMonitor -SqlInstance sql2005 -LimitResults LastDay -Update
 
         Updates monitor stats then returns the last 24 hours worth of status rows for a monitored database from the status table on sql2008 and sql2012.
-
     #>
     [CmdletBinding()]
     param (

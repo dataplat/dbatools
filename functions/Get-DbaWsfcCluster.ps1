@@ -20,7 +20,7 @@ function Get-DbaWsfcCluster {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Cluster, WSFC, FCI, HA
+        Tags: WSFC, FCI, WindowsCluster, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -39,7 +39,6 @@ function Get-DbaWsfcCluster {
         PS C:\> Get-DbaWsfcCluster -ComputerName cluster01 | Select-Object *
 
         Shows all cluster values, including the ones not shown in the default view
-
     #>
     [CmdletBinding()]
     param (
