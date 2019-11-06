@@ -31,6 +31,17 @@ function Register-DbatoolsConfig {
         This parameters disables user-friendly warnings and enables the throwing of exceptions.
         This is less user friendly, but allows catching exceptions in calling scripts.
 
+    .NOTES
+        Tags: Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Register-DbatoolsConfig
+
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig message.style.* | Register-DbatoolsConfig
 

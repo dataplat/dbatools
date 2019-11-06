@@ -34,6 +34,17 @@ function Reset-DbatoolsConfig {
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
+    .NOTES
+        Tags: Module
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Reset-DbatoolsConfig
+
     .EXAMPLE
         PS C:\> Reset-DbatoolsConfig -Module MyModule
 

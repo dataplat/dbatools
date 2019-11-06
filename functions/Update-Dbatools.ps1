@@ -29,7 +29,7 @@ function Update-Dbatools {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Update-DbaTools
+        https://dbatools.io/Update-Dbatools
 
     .EXAMPLE
         PS C:\> Update-Dbatools
@@ -40,7 +40,6 @@ function Update-Dbatools {
         PS C:\> Update-Dbatools -dev
 
         Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "It is the proper noun of the cmdlet")]

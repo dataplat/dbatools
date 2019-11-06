@@ -7,7 +7,7 @@ function Measure-DbatoolsImport {
         Displays the import load times of the dbatools PowerShell module
 
     .NOTES
-        Tags: Debug
+        Tags: Module, Support
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -26,7 +26,6 @@ function Measure-DbatoolsImport {
         PS C:\> Measure-DbatoolsImport
 
         Displays the import load times of the dbatools PowerShell module
-
     #>
     [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTime
 }

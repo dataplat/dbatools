@@ -38,7 +38,7 @@ function New-DbatoolsSupportPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Debug
+        Tags: Module, Support
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
@@ -52,22 +52,14 @@ function New-DbatoolsSupportPackage {
         PS C:\> New-DbatoolsSupportPackage
 
         Creates a large support pack in order to help us troubleshoot stuff.
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [string]
-        $Path = "$($env:USERPROFILE)\Desktop",
-
-        [string[]]
-        $Variables,
-
-        [switch]
-        $PassThru,
-
+        [string]$Path = "$($env:USERPROFILE)\Desktop",
+        [string[]]$Variables,
+        [switch]$PassThru,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
