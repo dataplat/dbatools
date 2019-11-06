@@ -32,7 +32,7 @@ function New-DbaCmConnection {
         The override will cause the system to ignore explicitly specified credentials, so long as known, good credentials are available.
 
     .PARAMETER DisabledConnectionTypes
-        Exlicitly disable connection types.
+        Explicitly disable connection types.
         These types will then not be used for connecting to the computer.
 
     .PARAMETER DisableBadCredentialCache
@@ -102,7 +102,6 @@ function New-DbaCmConnection {
         - to ignore explicitly specified credentials
 
         Essentially, this configures all connections to those computers to prefer failure with the specified credentials over using alternative credentials.
-
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
@@ -136,7 +135,6 @@ function New-DbaCmConnection {
         $CimDCOMOptions,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"

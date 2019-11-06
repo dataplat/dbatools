@@ -61,27 +61,17 @@ function Test-DbaCmConnection {
         This test will run a connectivity test of CIM over DCOM and CIM over WinRM against the computer sql2014 using Windows Authentication.
 
         The results will be reported and registered. Future calls from Get-DbaCmObject will recognize the results and optimize the query.
-
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for testing connections")]
     param (
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName = $env:COMPUTERNAME,
-
-        [System.Management.Automation.PSCredential]
-        $Credential,
-
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
-        $Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
-
-        [switch]
-        $Force,
-
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]$Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
+        [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         #region Configuration Values
         $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false

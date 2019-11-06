@@ -40,14 +40,11 @@ function Remove-DbaCmConnection {
         PS C:\> Get-DbaCmConnection | Remove-DbaCmConnection
 
         Clears the entire connection cache.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName,
-
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName,
         [switch]$EnableException
     )
 

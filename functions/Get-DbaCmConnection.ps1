@@ -42,22 +42,16 @@ function Get-DbaCmConnection {
         PS C:\> Get-DbaCmConnection -UserName "*charles*"
 
         List all cached connection that use a username containing "charles" as default or override credentials.
-
     #>
     [CmdletBinding()]
     param
     (
         [Parameter(ValueFromPipeline)]
         [Alias('Filter')]
-        [String[]]
-        $ComputerName = "*",
-
-        [String]
-        $UserName = "*",
-
+        [String[]]$ComputerName = "*",
+        [String]$UserName = "*",
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
