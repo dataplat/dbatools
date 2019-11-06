@@ -50,9 +50,9 @@ function Get-DbaMemoryUsage {
         Logs into the sql2017\sqlexpress as sqladmin using SQL Authentication then returns results only where memory exceeds 100 MB
 
     .EXAMPLE
-        PS C:\> $servers | Get-DbaMemoryUsage
+        PS C:\> $servers | Get-DbaMemoryUsage | Out-Gridview
 
-        Gets results from an array of $servers.
+        Gets results from an array of $servers then diplays them in a gridview.
     #>
     [CmdletBinding()]
     param (
@@ -193,6 +193,7 @@ function Get-DbaMemoryUsage {
                 try {
                     foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
                         [PSCustomObject]@{
+                            ComputerName    = $result.ComputerName
                             SqlInstance     = $result.SqlInstance
                             CounterInstance = $result.CounterInstance
                             Counter         = $result.Counter
