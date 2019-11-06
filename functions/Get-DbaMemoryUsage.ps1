@@ -209,14 +209,4 @@ function Get-DbaMemoryUsage {
             }
         }
     }
-} }
-} catch {
-    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
-}
-} else {
-    Write-Message -Level Warning -Message "Can't resolve $Computer."
-    Continue
-}
-}
-}
 }
