@@ -22,7 +22,7 @@ function Get-DbaPageFileSetting {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: CIM
+        Tags: Server, Management, PageFile
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         dbatools PowerShell module (https://dbatools.io)
@@ -41,7 +41,6 @@ function Get-DbaPageFileSetting {
         PS C:\> 'ServerA' | Get-DbaPageFileSetting
 
         Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
-
     #>
     [CmdletBinding()]
     param (

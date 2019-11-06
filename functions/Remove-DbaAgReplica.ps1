@@ -6,7 +6,7 @@ function Remove-DbaAgReplica {
     .DESCRIPTION
         Removes availability group replicas from availability groups.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
@@ -37,7 +37,7 @@ function Remove-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -50,13 +50,12 @@ function Remove-DbaAgReplica {
     .EXAMPLE
         PS C:\> Remove-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint -Replica sp1
 
-       Removes the sp1 replica from the SharePoint ag on sql2017a. Prompts for confirmation.
+        Removes the sp1 replica from the SharePoint ag on sql2017a. Prompts for confirmation.
 
     .EXAMPLE
         PS C:\> Remove-DbaAgReplica -SqlInstance sql2017a | Select-Object *
 
         Returns full object properties on all availability group replicas found on sql2017a
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (

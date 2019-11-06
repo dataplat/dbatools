@@ -23,7 +23,7 @@ function Get-DbaMaintenanceSolutionLog {
         Consider only files generated since this date
 
     .PARAMETER Path
-        Where to search for log files. By default it's the SQL instance errorlogpath path
+        Where to search for log files. By default it's the SQL instance error log path path
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -31,12 +31,14 @@ function Get-DbaMaintenanceSolutionLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Ola, Maintenance
+        Tags: Community, OlaHallengren
         Author: Klaas Vandenberghe (@powerdbaklaas) | Simone Bizzotto ( @niphlod )
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://ola.hallengren.com
 
     .LINK
         https://dbatools.io/Get-DbaMaintenanceSolutionLog

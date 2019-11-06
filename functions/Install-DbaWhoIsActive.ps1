@@ -24,7 +24,7 @@ function Install-DbaWhoIsActive {
         The database to install sp_WhoisActive into. This parameter is mandatory when executing this command unattended.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
+        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -41,12 +41,14 @@ function Install-DbaWhoIsActive {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AdamMechanic, WhoIsActive, SpWhoIsActive
+        Tags: Community, WhoIsActive
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        http://whoisactive.com
 
     .LINK
         https://dbatools.io/Install-DbaWhoIsActive

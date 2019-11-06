@@ -39,7 +39,7 @@ function New-DbaDiagnosticAdsNotebook {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Notebooks, AzureDataStudio
+        Tags: Community, GlennBerry, Notebooks, AzureDataStudio
         Author: Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -79,19 +79,19 @@ function New-DbaDiagnosticAdsNotebook {
         # validate input parameters: you cannot provide $TargetVersion and $SqlInstance
         # together. If you specify a SqlInstance, version will be determined from metadata
         if (-not $TargetVersion -and -not $SqlInstance) {
-            Stop-Function -Message "At least one of `$SqlInstance and `$TargetVersion must be provided"
+            Stop-Function -Message "At least one of $SqlInstance and $TargetVersion must be provided"
             return
         } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
-            Stop-Function -Message "Cannot provide both `$SqlInstance and `$TargetVersion"
+            Stop-Function -Message "Cannot provide both $SqlInstance and $TargetVersion"
             return
         }
 
         if (-not $TargetVersion) {
             $versionQuery = "
                 SELECT SERVERPROPERTY('ProductMajorVersion') AS ProductMajorVersion,
-                       SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
-                       SERVERPROPERTY('ProductLevel') AS ProductLevel,
-                       SERVERPROPERTY('Edition') AS Edition"
+                SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
+                SERVERPROPERTY('ProductLevel') AS ProductLevel,
+                SERVERPROPERTY('Edition') AS Edition"
 
             $versions = @{
                 "9.0"   = "2005"
@@ -122,8 +122,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" |
-            Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
@@ -132,12 +131,10 @@ function New-DbaDiagnosticAdsNotebook {
 
         $cells = @()
 
-        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName |
-            Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
-            ForEach-Object {
-                $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
-                $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
-            }
+        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName | Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } | ForEach-Object {
+            $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
+            $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
+        }
 
         $preamble = '
         {

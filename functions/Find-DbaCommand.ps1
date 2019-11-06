@@ -36,7 +36,7 @@ function Find-DbaCommand {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Find, Help, Command
+        Tags: Module, Find
         Author: Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
@@ -80,7 +80,6 @@ function Find-DbaCommand {
         PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
 
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (

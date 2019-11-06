@@ -79,7 +79,7 @@ function Invoke-DbaDbMirroring {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -129,21 +129,20 @@ function Invoke-DbaDbMirroring {
         Drops existing pubs database on Mirror and Witness and restores them with
         a fresh backup.
 
-        Does all the things in the decription, does not prompt for confirmation.
+        Does all the things in the description, does not prompt for confirmation.
 
     .EXAMPLE
         PS C:\> $map = @{ 'database_data' = 'M:\Data\database_data.mdf' 'database_log' = 'L:\Log\database_log.ldf' }
         PS C:\> Get-ChildItem \\nas\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false
 
-        Restores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.
+        Restores backups from sql2017a to a specific file structure on sql2017b then creates mirror with no prompts for confirmation.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs |
         >> Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
