@@ -78,17 +78,11 @@ function Invoke-DbaWhoIsActive {
         (based on the combination of plan handle, sql handle, and offset)
 
     .PARAMETER GetAdditonalInfo
-        Get additional non-performance-related information about the session or request
-        text_size, language, date_format, date_first, quoted_identifier, arithabort, ansi_null_dflt_on,
-        ansi_defaults, ansi_warnings, ansi_padding, ansi_nulls, concat_null_yields_null,
-        transaction_isolation_level, lock_timeout, deadlock_priority, row_count, command_type
+        Get additional non-performance-related information about the session or request text_size, language, date_format, date_first, quoted_identifier, arithabort, ansi_null_dflt_on, ansi_defaults, ansi_warnings, ansi_padding, ansi_nulls, concat_null_yields_null, transaction_isolation_level, lock_timeout, deadlock_priority, row_count, command_type
 
-        If a SQL Agent job is running, an subnode called agent_info will be populated with some or all of
-        the following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)
+        If a SQL Agent job is running, an subnode called agent_info will be populated with some or all of the following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)
 
-        If @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be
-        populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id,
-        applock_hash, metadata_resource, metadata_class_id, object_name, schema_name
+        If @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id, applock_hash, metadata_resource, metadata_class_id, object_name, schema_name
 
     .PARAMETER FindBlockLeaders
         Walk the blocking chain and count the number of
@@ -101,14 +95,9 @@ function Invoke-DbaWhoIsActive {
 
     .PARAMETER OutputColumnList
         List of desired output columns, in desired order
-        Note that the final output will be the intersection of all enabled features and all
-        columns in the list. Therefore, only columns associated with enabled features will
-        actually appear in the output. Likewise, removing columns from this list may effectively
-        disable features, even if they are turned on
+        Note that the final output will be the intersection of all enabled features and all columns in the list. Therefore, only columns associated with enabled features will actually appear in the output. Likewise, removing columns from this list may effectively disable features, even if they are turned on
 
-        Each element in this list must be one of the valid output column names. Names must be
-        delimited by square brackets. White space, formatting, and additional characters are
-        allowed, as long as the list contains exact matches of delimited valid column names.
+        Each element in this list must be one of the valid output column names. Names must be delimited by square brackets. White space, formatting, and additional characters are allowed, as long as the list contains exact matches of delimited valid column names.
 
     .PARAMETER SortOrder
         Column(s) by which to sort output, optionally with sort directions.
@@ -120,8 +109,7 @@ function Invoke-DbaWhoIsActive {
         tasks, tran_start_time, open_tran_count, blocking_session_id, blocked_session_count,
         percent_complete, host_name, login_name, database_name, start_time, login_time
 
-        Note that column names in the list must be bracket-delimited. Commas and/or white
-        space are not required.
+        Note that column names in the list must be bracket-delimited. Commas and/or white space are not required.
 
     .PARAMETER FormatOutput
         Formats some of the output columns in a more "human readable" form
@@ -133,18 +121,10 @@ function Invoke-DbaWhoIsActive {
         If set to a non-blank value, the script will attempt to insert into the specified destination table. Please note that the script will not verify that the table exists, or that it has the correct schema, before doing the insert. Table can be specified in one, two, or three-part format
 
     .PARAMETER ReturnSchema
-        If set to 1, no data collection will happen and no result set will be returned; instead,
-        a CREATE TABLE statement will be returned via the @schema parameter, which will match
-        the schema of the result set that would be returned by using the same collection of the
-        rest of the parameters. The CREATE TABLE statement will have a placeholder token of
-        <table_name> in place of an actual table name.
+        If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result set that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of <table_name> in place of an actual table name.
 
     .PARAMETER Schema
-        If set to 1, no data collection will happen and no result set will be returned; instead,
-        a CREATE TABLE statement will be returned via the @schema parameter, which will match
-        the schema of the result set that would be returned by using the same collection of the
-        rest of the parameters. The CREATE TABLE statement will have a placeholder token of
-        <table_name> in place of an actual table name.
+        If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result set that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of <table_name> in place of an actual table name.
 
     .PARAMETER Help
         Help! What do I do?
@@ -168,12 +148,14 @@ function Invoke-DbaWhoIsActive {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AdamMechanic, WhoIsActive, SpWhoIsActive
+        Tags: Community, WhoIsActive
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        http://whoisactive.com
 
     .LINK
         https://dbatools.io/Invoke-DbaWhoIsActive
@@ -197,7 +179,6 @@ function Invoke-DbaWhoIsActive {
         PS C:\> Invoke-DbaWhoIsActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders
 
         Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
-
     #>
     [CmdletBinding()]
     param (
@@ -245,12 +226,10 @@ function Invoke-DbaWhoIsActive {
         [switch]$Help,
         [switch]$EnableException
     )
-
     begin {
         $passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
         $localparams = $psboundparameters
     }
-
     process {
 
         foreach ($instance in $sqlinstance) {

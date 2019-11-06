@@ -46,12 +46,14 @@ function Install-DbaFirstResponderKit {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: BrentOzar, FRK, FirstResponderKit
+        Tags: Community, FirstResponderKit
         Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://www.brentozar.com/responder
 
     .LINK
         https://dbatools.io/Install-DbaFirstResponderKit
@@ -86,7 +88,6 @@ function Install-DbaFirstResponderKit {
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
 
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
