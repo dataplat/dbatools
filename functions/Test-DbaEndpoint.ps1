@@ -32,6 +32,7 @@ function Test-DbaEndpoint {
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -66,7 +67,6 @@ function Test-DbaEndpoint {
         Tests all endpoints on the local default SQL Server instance.
 
         See all endpoints that were skipped due to not having a tcp listener port.
-
     #>
     [CmdletBinding()]
     param (

@@ -47,7 +47,6 @@ function Get-DbaEndpoint {
         PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016
 
         Returns all endpoints for the local and sql2016 SQL Server instances
-
     #>
     [CmdletBinding()]
     param (
