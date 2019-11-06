@@ -18,7 +18,7 @@ function Get-DbaOperatingSystem {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ServerInfo, OperatingSystem
+        Tags: Server, Management, OperatingSystem
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io

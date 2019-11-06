@@ -21,7 +21,7 @@ function Get-DbaClientProtocol {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Protocol
+        Tags: Server, Management
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         Website: https://dbatools.io
@@ -51,7 +51,6 @@ function Get-DbaClientProtocol {
 
         Disables the VIA ClientNetworkProtocol on computer sql2.
         If successful, return code 0 is shown.
-
     #>
     [CmdletBinding()]
     param (
@@ -69,8 +68,8 @@ function Get-DbaClientProtocol {
                 $computer = $server.FullComputerName
                 Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
                 $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                    Where-Object { (Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
-                    Sort-Object Name -Descending | Select-Object -First 1
+                Where-Object { (Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
+                Sort-Object Name -Descending | Select-Object -First 1
 
                 if ( $namespace.Name ) {
                     Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer"

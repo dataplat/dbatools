@@ -18,7 +18,7 @@ function Get-DbaRegistryRoot {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Configuration, Registry
+        Tags: Server, Management, Registry
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -34,7 +34,6 @@ function Get-DbaRegistryRoot {
         PS C:\> Get-DbaRegistryRoot -ComputerName server1
 
         Gets the registry root for all instances on server1
-
     #>
     [CmdletBinding()]
     param (
