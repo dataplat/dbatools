@@ -77,7 +77,7 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER DictionaryExportPath
         Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv
 
-        Be carefull with this feature, this export is the key to get the original values which is a security risk!
+        Be careful with this feature, this export is the key to get the original values which is a security risk!
 
     .PARAMETER Force
         Forcefully execute commands when needed
@@ -94,7 +94,7 @@ function Invoke-DbaDbDataMasking {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DataMasking, Database
+        Tags: Masking, DataMasking
         Author: Sander Stad (@sqlstad, sqlstad.nl) | Chrissy LeMaire (@cl, netnerds.net)
 
         Website: https://dbatools.io
@@ -124,7 +124,6 @@ function Invoke-DbaDbDataMasking {
         Get-ChildItem -Path C:\Temp\sqldb1.db1.tables.json | Invoke-DbaDbDataMasking -SqlInstance SQLDB2, sqldb3 -Database DB1 -Confirm:$false
 
         See what would happen if you the data masking configuration from the file "sqldb1.db1.tables.json" to the db1 database on sqldb2 and sqldb3. Do not prompt for confirmation.
-
     #>
     [CmdLetBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
@@ -234,7 +233,7 @@ function Invoke-DbaDbDataMasking {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -253,7 +252,7 @@ function Invoke-DbaDbDataMasking {
                 }
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false -ConnectTimeout $ConnectionTimeout
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -WhatIf:$false -ConnectTimeout $ConnectionTimeout
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $transaction = $sqlconn.BeginTransaction()

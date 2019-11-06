@@ -81,7 +81,7 @@ function New-DbaDbMaskingConfig {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DataMasking, Database
+        Tags: Masking, DataMasking
         Author: Sander Stad (@sqlstad, sqlstad.nl) | Chrissy LeMaire (@cl, netnerds.net)
 
         Website: https://dbatools.io
@@ -105,7 +105,6 @@ function New-DbaDbMaskingConfig {
         New-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Table Customer -Column City -Path C:\Temp\clone
 
         Process only table Customer and only the column named "City"
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -200,7 +199,6 @@ function New-DbaDbMaskingConfig {
 
         $maskingconfig = @()
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -304,9 +302,7 @@ function New-DbaDbMaskingConfig {
                             $minValue = 1
                             $maxValue = 9223372036854775807
                         }
-                        {
-                            $_ -in "char", "nchar", "nvarchar", "varchar"
-                        } {
+                        { $_ -in "char", "nchar", "nvarchar", "varchar" } {
                             if ($columnLength -eq -1) {
                                 if ($_ -in "char", "varchar") {
                                     $minValue = 1
@@ -320,15 +316,9 @@ function New-DbaDbMaskingConfig {
                                 $maxValue = $columnLength
                             }
                         }
-                        "date" {
-                            $maxValue = $null
-                        }
-                        "datetime" {
-                            $maxValue = $null
-                        }
-                        "datetime2" {
-                            $maxValue = $null
-                        }
+                        "date" { $maxValue = $null }
+                        "datetime" { $maxValue = $null }
+                        "datetime2" { $maxValue = $null }
                         "decimal" {
                             $minValue = 1.1
                             $maxValue = $null
@@ -503,19 +493,9 @@ function New-DbaDbMaskingConfig {
                         $type = "Random"
 
                         switch ($columnType) {
-                            {
-                                $_ -in "bit", "bool"
-                            } {
-                                $subType = "Bool"
-                            }
-                            "bigint" {
-                                $subType = "Number"
-                            }
-                            {
-                                $_ -in "char", "nchar", "nvarchar", "varchar"
-                            } {
-                                $subType = "String2"
-                            }
+                            { $_ -in "bit", "bool" } { $subType = "Bool" }
+                            "bigint" { $subType = "Number" }
+                            { $_ -in "char", "nchar", "nvarchar", "varchar" } { $subType = "String2" }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"
@@ -528,38 +508,22 @@ function New-DbaDbMaskingConfig {
                                 $type = "Date"
                                 $subType = "Past"
                             }
-                            "decimal" {
-                                $subType = "Decimal"
-                            }
-                            "float" {
-                                $subType = "Float"
-                            }
-                            "int" {
-                                $subType = "Number"
-                            }
+                            "decimal" { $subType = "Decimal" }
+                            "float" { $subType = "Float" }
+                            "int" { $subType = "Number" }
                             "money" {
                                 $type = "Commerce"
                                 $subType = "Price"
                             }
-                            "smallint" {
-                                $subType = "Number"
-                            }
-                            "smalldatetime" {
-                                $subType = "Date"
-                            }
-                            "text" {
-                                $subType = "String"
-                            }
+                            "smallint" { $subType = "Number" }
+                            "smalldatetime" { $subType = "Date" }
+                            "text" { $subType = "String" }
                             "time" {
                                 $type = "Date"
                                 $subType = "Past"
                             }
-                            "tinyint" {
-                                $subType = "Number"
-                            }
-                            "varbinary" {
-                                $subType = "Byte"
-                            }
+                            "tinyint" { $subType = "Number" }
+                            "varbinary" { $subType = "Byte" }
                             "userdefineddatatype" {
                                 if ($columnLength -eq 1) {
                                     $subType = "Bool"
