@@ -22,7 +22,7 @@ function Get-DbaAgHadr {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Service
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
 
         Website: https://dbatools.io
@@ -36,7 +36,6 @@ function Get-DbaAgHadr {
         PS C:\> Get-DbaAgHadr -SqlInstance sql2016
 
         Returns a status of the Hadr setting for sql2016 SQL Server instance.
-
     #>
     [CmdletBinding()]
     param (

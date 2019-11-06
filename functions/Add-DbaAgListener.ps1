@@ -1,83 +1,82 @@
 
 function Add-DbaAgListener {
     <#
-  .SYNOPSIS
-      Adds a listener to an availability group on a SQL Server instance.
+    .SYNOPSIS
+        Adds a listener to an availability group on a SQL Server instance.
 
-  .DESCRIPTION
-      Adds a listener to an availability group on a SQL Server instance.
+    .DESCRIPTION
+        Adds a listener to an availability group on a SQL Server instance.
 
-.PARAMETER SqlInstance
-      The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
-  .PARAMETER SqlCredential
-      Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-  .PARAMETER AvailabilityGroup
-      The Availability Group to which a listener will be bestowed upon.
+    .PARAMETER AvailabilityGroup
+        The Availability Group to which a listener will be bestowed upon.
 
-  .PARAMETER Name
-      The name of the listener. If one is not specified, the Availability Group name will be used.
+    .PARAMETER Name
+        The name of the listener. If one is not specified, the Availability Group name will be used.
 
-      Note that Name cannot be used with Multiple Ags.
+        Note that Name cannot be used with Multiple Ags.
 
-  .PARAMETER IPAddress
-      Sets the IP address(es) of the availability group listener.
+    .PARAMETER IPAddress
+        Sets the IP address(es) of the availability group listener.
 
-  .PARAMETER SubnetIP
-      Sets the Subnet IP address(es) of the availability group listener.
+    .PARAMETER SubnetIP
+        Sets the Subnet IP address(es) of the availability group listener.
 
-  .PARAMETER SubnetMask
-      Sets the subnet IP mask(s) of the availability group listener. Defaults to 255.255.255.0.
+    .PARAMETER SubnetMask
+        Sets the subnet IP mask(s) of the availability group listener. Defaults to 255.255.255.0.
 
-  .PARAMETER Port
-      Sets the port number used to communicate with the availability group. Defaults to 1433.
+    .PARAMETER Port
+        Sets the port number used to communicate with the availability group. Defaults to 1433.
 
-  .PARAMETER Dhcp
-      Indicates whether the listener uses DHCP.
+    .PARAMETER Dhcp
+        Indicates whether the listener uses DHCP.
 
-  .PARAMETER Passthru
-      Don't create the listener, just pass thru an object that can be further customized before creation.
+    .PARAMETER Passthru
+        Don't create the listener, just pass thru an object that can be further customized before creation.
 
-  .PARAMETER InputObject
-      Enables piping from Get-DbaAvailabilityGroup
+    .PARAMETER InputObject
+        Enables piping from Get-DbaAvailabilityGroup
 
-  .PARAMETER WhatIf
-      Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-  .PARAMETER Confirm
-      Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-  .PARAMETER EnableException
-      By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-      This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-      Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-  .NOTES
-      Tags: AvailabilityGroup, HA, AG
-      Author: Chrissy LeMaire (@cl), netnerds.net
-      Website: https://dbatools.io
-      Copyright: (c) 2018 by dbatools, licensed under MIT
-      License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: AvailabilityGroup, HA, AG
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-  .LINK
-      https://dbatools.io/Add-DbaAgListener
+    .LINK
+        https://dbatools.io/Add-DbaAgListener
 
-  .EXAMPLE
-      PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
+    .EXAMPLE
+        PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
 
-      Creates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.
+        Creates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.
 
-  .EXAMPLE
-      PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | Add-DbaAgListener -Dhcp
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | Add-DbaAgListener -Dhcp
 
-      Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
+        Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
 
-  .EXAMPLE
-      PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20,10.1.77.77 -SubnetMask 255.255.252.0
+    .EXAMPLE
+        PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20,10.1.77.77 -SubnetMask 255.255.252.0
 
-      Creates a multi-subnet listener with 10.0.20.20 and 10.1.77.77, on two /22 subnets, on port 1433 for the SharePoint availability group on sql2017.
-
+        Creates a multi-subnet listener with 10.0.20.20 and 10.1.77.77, on two /22 subnets, on port 1433 for the SharePoint availability group on sql2017.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

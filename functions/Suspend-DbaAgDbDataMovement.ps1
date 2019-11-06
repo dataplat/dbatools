@@ -6,7 +6,7 @@ function Suspend-DbaAgDbDataMovement {
     .DESCRIPTION
         Suspends data movement for an availability group database on a SQL Server instance.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
@@ -37,8 +37,9 @@ function Suspend-DbaAgDbDataMovement {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

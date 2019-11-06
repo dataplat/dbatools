@@ -28,7 +28,7 @@ function Disable-DbaAgHadr {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG,
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
 
         Website: https://dbatools.io
@@ -52,7 +52,6 @@ function Disable-DbaAgHadr {
         PS C:\> Disable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
 
         Sets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
