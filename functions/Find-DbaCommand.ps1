@@ -106,7 +106,12 @@ function Find-DbaCommand {
             if ($commandName -in $script:noncoresmo -or $commandName -in $script:windowsonly) {
                 $availability = 'Windows only'
             }
-            $thishelp = Get-Help $commandName -Full
+            try {
+                $thishelp = Get-Help $commandName -Full
+            } catch {
+                Stop-Function -Message "Issue getting help for $commandName" -Target $commandName -ErrorRecord $_ -Continue
+            }
+
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
@@ -175,7 +180,8 @@ function Find-DbaCommand {
         function Get-DbaIndex() {
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
                 $dbamodule = Get-Module -Name dbatools
-                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -In ('Function', 'Cmdlet')
+                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -In 'Function', 'Cmdlet' | Select-Object -Unique
+                #Had to add Unique because Select-DbaObject was getting populated twice once written to the index file
 
                 $helpcoll = New-Object System.Collections.Generic.List[System.Object]
                 foreach ($command in $allCommands) {
