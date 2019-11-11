@@ -1769,6 +1769,21 @@
             Recovery Model of the database when backup was taken
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.KeyAlgorithm">
+            <summary>
+            Key Algorithm used to encrypt backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.EncryptorThumbprint">
+            <summary>
+            Thumbprint of the certificate or key used to encrypt the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.EncryptorType">
+            <summary>
+            Type of encryptor used to encrypt backup (Key or Certificate)
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Database.Dependency">
             <summary>
             Class containing all dependency information over a database object
