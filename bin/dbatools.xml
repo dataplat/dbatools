@@ -1649,6 +1649,11 @@
             The full Instance name as seen from outside
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.AvailabilityGroupName">
+            <summary>
+            The full Instance name as seen from outside
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Database">
             <summary>
             The Database that was backed up
