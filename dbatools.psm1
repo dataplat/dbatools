@@ -196,7 +196,15 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
 
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
-if (-not ('Microsoft.SqlServer.Management.Smo.Server' -as [type])) {
+<#
+If dbatools has not been imported yet, it also hasn't done libraries yet. Fix that.
+Previously checked for SMO being available, but that would break import with SqlServer loaded
+Some people also use the dbatools library for other things without the module, so also check,
+whether the modulebase has been set (first thing it does after loading library through dbatools import)
+Theoretically, there's a minor cuncurrency collision risk with that, but since the cost is only
+a little import time loss if that happens ...
+#>
+if ((-not ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-not [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)) {
     . $script:psScriptRoot\internal\scripts\libraryimport.ps1
     Write-ImportTime -Text "Starting import SMO libraries"
 }
