@@ -113,7 +113,7 @@ function Copy-DbaLogin {
         Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
 
     .EXAMPLE
-        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser
 
         Copies PreviousUser and then renames it to newlogin.
 
@@ -121,6 +121,22 @@ function Copy-DbaLogin {
         PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
         Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
+
+    .EXAMPLE
+        PS C:\> $loginSplat = @{
+                    Source               = $Sql01
+                    Destination          = "Localhost"
+                    SourceSqlCredential  = $sqlcred
+                    Login                = 'ReadUserP', 'ReadWriteUserP', 'AdminP'
+                    LoginRenameHashtable = @{
+                        "ReadUserP"      = "ReadUserT"
+                        "ReadWriteUserP" = "ReadWriteUserT"
+                        "AdminP"         = "AdminT"
+                    }
+                }
+        PS C:\> Copy-DbaLogin @loginSplat
+
+       Copies the three specified logins to 'localhost' and renames them according to the LoginRenameHashTable.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
