@@ -83,17 +83,16 @@ function Set-DbaAvailabilityGroup {
 
         Enables DTC for all availability groups on sql2016
 
-       .EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 | Set-DbaAvailabilityGroup -DtcSupportEnabled:$false
 
         Disables DTC support for the availability group AG1
 
-        .EXAMPLE
+    .EXAMPLE
         PS C:\> Set-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 -DtcSupportEnabled:$false
 
         Disables DTC support for the availability group AG1
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,

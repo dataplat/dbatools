@@ -28,7 +28,7 @@ function Get-DbaTempdbUsage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Tempdb, Space
+        Tags: Tempdb
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -42,7 +42,6 @@ function Get-DbaTempdbUsage {
         PS C:\> Get-DbaTempdbUsage -SqlInstance localhost\SQLDEV2K14
 
         Gets tempdb usage for localhost\SQLDEV2K14
-
     #>
     [CmdletBinding()]
     param (
@@ -55,7 +54,7 @@ function Get-DbaTempdbUsage {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -69,17 +68,11 @@ function Get-DbaTempdbUsage {
         SERVERPROPERTY('ServerName') AS SqlInstance,
         t.session_id AS Spid,
         r.command AS StatementCommand,
-        SUBSTRING(   est.[text],
-                     (r.statement_start_offset / 2) + 1,
-                     ((CASE r.statement_end_offset
-                            WHEN-1
-                            THEN DATALENGTH(est.[text])
-                            ELSE
-                            r.statement_end_offset
-                       END - r.statement_start_offset
-                      ) / 2
-                     ) + 1
-                 ) AS QueryText,
+        SUBSTRING(   est.[text], (r.statement_start_offset / 2) + 1,
+            ((CASE r.statement_end_offset
+                WHEN-1 THEN DATALENGTH(est.[text]) ELSE r.statement_end_offset
+                END - r.statement_start_offset
+            ) / 2 ) + 1 ) AS QueryText,
         QUOTENAME(DB_NAME(r.database_id)) + N'.' + QUOTENAME(OBJECT_SCHEMA_NAME(est.objectid, est.dbid)) + N'.'
         + QUOTENAME(OBJECT_NAME(est.objectid, est.dbid)) AS ProcedureName,
         r.start_time AS StartTime,
@@ -112,22 +105,19 @@ INNER JOIN sys.dm_exec_sessions AS s
     ON s.session_id = t.session_id
 LEFT JOIN sys.dm_exec_requests AS r
     ON r.session_id = s.session_id
-LEFT JOIN
-          (   SELECT    _tsu.session_id,
-                        _tsu.request_id,
-                        SUM(_tsu.user_objects_alloc_page_count)       AS UserObjectAllocated,
-                        SUM(_tsu.user_objects_dealloc_page_count)     AS UserObjectDeallocated,
-                        SUM(_tsu.internal_objects_alloc_page_count)   AS InternalObjectAllocated,
-                        SUM(_tsu.internal_objects_dealloc_page_count) AS InternalObjectDeallocated
-              FROM      tempdb.sys.dm_db_task_space_usage AS _tsu
-              GROUP BY  _tsu.session_id,
-                        _tsu.request_id
-          ) AS tdb
-    ON  tdb.session_id = r.session_id
-   AND  tdb.request_id = r.request_id
+LEFT JOIN (
+    SELECT _tsu.session_id,
+        _tsu.request_id,
+        SUM(_tsu.user_objects_alloc_page_count)       AS UserObjectAllocated,
+        SUM(_tsu.user_objects_dealloc_page_count)     AS UserObjectDeallocated,
+        SUM(_tsu.internal_objects_alloc_page_count)   AS InternalObjectAllocated,
+        SUM(_tsu.internal_objects_dealloc_page_count) AS InternalObjectDeallocated
+    FROM tempdb.sys.dm_db_task_space_usage AS _tsu
+    GROUP BY _tsu.session_id, _tsu.request_id
+) AS tdb ON  tdb.session_id = r.session_id AND  tdb.request_id = r.request_id
 OUTER APPLY sys.dm_exec_sql_text(r.[sql_handle]) AS est
 WHERE   t.session_id != @@SPID
-  AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
+AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
 OPTION (RECOMPILE);"
 
             $server.Query($sql)

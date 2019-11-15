@@ -4,7 +4,7 @@ function Invoke-DbaAgFailover {
         Failover an availability group.
 
     .DESCRIPTION
-       Failover an availability group.
+        Failover an availability group.
 
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2012 or higher.
@@ -37,8 +37,9 @@ function Invoke-DbaAgFailover {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Failover
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

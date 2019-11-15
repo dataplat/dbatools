@@ -35,7 +35,7 @@ function Invoke-DbaDiagnosticQuery {
         The Queries to exclude
 
     .PARAMETER UseSelectionHelper
-        Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
+        Provides a grid view with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
 
     .PARAMETER QueryName
         Only run specific query
@@ -67,15 +67,14 @@ function Invoke-DbaDiagnosticQuery {
         Shows what would happen if the command would execute, but does not actually perform the command
 
     .PARAMETER OutputPath
-        Directory to parsed diagnostict queries to. This will split them based on server, databasename, and query.
+        Directory to parsed diagnostics queries to. This will split them based on server, database name, and query.
 
     .PARAMETER ExportQueries
-        Use this switch to export the diagnostic queries to sql files. I
-        nstead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
+        Use this switch to export the diagnostic queries to sql files. Instead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
         These sql files will then be created in the OutputDirectory
 
     .NOTES
-        Tags: Database, DMV
+        Tags: Community, GlennBerry
         Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
         Website: https://dbatools.io
@@ -93,7 +92,7 @@ function Invoke-DbaDiagnosticQuery {
     .EXAMPLE
         PS C:\>Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
 
-        Provides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
+        Provides a grid view with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
         Then it will export the results to Export-DbaDiagnosticQuery.
 
     .EXAMPLE
@@ -112,7 +111,7 @@ function Invoke-DbaDiagnosticQuery {
         Export Database Specific Queries For One Target Database
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -OutputPath "C:\temp\DiagnosticQueries" -QueryName 'Database-scoped Configurations'
 
         Export Database Specific Queries For One Target Database and One Specific Query
 
@@ -122,30 +121,24 @@ function Invoke-DbaDiagnosticQuery {
         Choose Queries To Export
 
     .EXAMPLE
-        PS C:\> [PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif
+        PS C:\> [PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -WhatIf
 
         Parse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further
 
     .EXAMPLE
-        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename TestStuff
+        PS C:\> $results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -DatabaseName TestStuff
 
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
-
     #>
-
     [CmdletBinding(SupportsShouldProcess)]
-    [outputtype([pscustomobject[]])]
+    [OutputType([pscustomobject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [Alias('DatabaseName')]
         [object[]]$Database,
-
         [object[]]$ExcludeDatabase,
-
         [object[]]$ExcludeQuery,
-
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [System.IO.FileInfo]$Path,
@@ -156,14 +149,11 @@ function Invoke-DbaDiagnosticQuery {
         [Switch]$ExcludeQueryTextColumn,
         [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing,
-
         [string]$OutputPath,
         [switch]$ExportQueries,
-
         [switch]
         [switch]$EnableException
     )
-
     begin {
         $ProgressId = Get-Random
 
@@ -219,7 +209,6 @@ function Invoke-DbaDiagnosticQuery {
             }
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 

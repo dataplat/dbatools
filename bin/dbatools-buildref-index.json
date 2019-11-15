@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2019-10-09T00:00:00",
+    "LastUpdated": "2019-11-05T00:00:00",
     "Data": [
         {
             "Version": "8.0.47",
@@ -4139,9 +4139,13 @@
             "SP": "RC"
         },
         {
-            "Version": "15.0.9999.00",
+            "Version": "15.0.2000",
             "SP": "RTM",
-            "SupportedUntil": ""
+            "SupportedUntil": "2025-07-01"
+        },
+        {
+            "Version": "15.0.2070",
+            "KBList": "4517790"
         }
     ]
 }
