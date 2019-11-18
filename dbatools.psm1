@@ -291,6 +291,16 @@ Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
+
+# New 3-char aliases
+$shortcuts = @{
+    'ivq' = 'Invoke-DbaQuery'
+    'cdi' = 'Connect-DbaInstance'
+}
+foreach ($_ in $shortcuts.GetEnumerator()) {
+    New-Alias -Name $_.Key -Value $_.Value
+}
+
 # Leave forever
 $forever = @{
     'Get-DbaRegisteredServer' = 'Get-DbaRegServer'
@@ -906,7 +916,7 @@ $script:windowsonly = @(
 )
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
-# So do not explicity export because everything else is then implicity excluded
+# So do not explicitly export because everything else is then implicitly excluded
 if (-not $script:multiFileImport) {
     $exports =
     @(if (($PSVersionTable.Platform)) {
@@ -929,6 +939,9 @@ if (-not $script:multiFileImport) {
         }
         foreach ($k in $script:Forever.Keys) {
             $k
+        }
+        foreach ($c in $script:shortcuts.Keys) {
+            $c
         }
     )
 
