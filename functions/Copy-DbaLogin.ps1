@@ -124,19 +124,19 @@ function Copy-DbaLogin {
 
     .EXAMPLE
         PS C:\> $loginSplat = @{
-                    Source               = $Sql01
-                    Destination          = "Localhost"
-                    SourceSqlCredential  = $sqlcred
-                    Login                = 'ReadUserP', 'ReadWriteUserP', 'AdminP'
-                    LoginRenameHashtable = @{
-                        "ReadUserP"      = "ReadUserT"
-                        "ReadWriteUserP" = "ReadWriteUserT"
-                        "AdminP"         = "AdminT"
-                    }
-                }
+        >> Source = $Sql01
+        >> Destination = "Localhost"
+        >> SourceSqlCredential = $sqlcred
+        >> Login = 'ReadUserP', 'ReadWriteUserP', 'AdminP'
+        >> LoginRenameHashtable = @{
+        >> "ReadUserP" = "ReadUserT"
+        >> "ReadWriteUserP" = "ReadWriteUserT"
+        >> "AdminP"         = "AdminT"
+        >> }
+        >> }
         PS C:\> Copy-DbaLogin @loginSplat
 
-       Copies the three specified logins to 'localhost' and renames them according to the LoginRenameHashTable.
+        Copies the three specified logins to 'localhost' and renames them according to the LoginRenameHashTable.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
