@@ -63,12 +63,12 @@ function Find-SqlInstanceSetup {
             }
         }
         $params = @{
-            ComputerName   = $ComputerName
-            Credential     = $Credential
-            ScriptBlock    = $getFileScript
-            ArgumentList   = @($Path, $Version.ToString())
-            ErrorAction    = 'Stop'
-            Raw            = $true
+            ComputerName = $ComputerName
+            Credential   = $Credential
+            ScriptBlock  = $getFileScript
+            ArgumentList = @($Path, $Version.ToString())
+            ErrorAction  = 'Stop'
+            Raw          = $true
         }
         try {
             Invoke-CommandWithFallback @params -Authentication $Authentication
