@@ -85,8 +85,8 @@ function Get-DbaDbView {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
         foreach ($db in $InputObject) {
