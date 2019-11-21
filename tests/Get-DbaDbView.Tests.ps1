@@ -39,8 +39,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Database | Should Not Contain 'master'
         }
         It "Should exclude system views" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeSystemView | Select-Object Name, IsSystemObject
+            $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeSystemView
             $results.IsSystemObject | Should Not Contain $true
+        }
+    }
+
+    Context "Piping workings" {
+        It "Should allow piping from string" {
+            $results = $script:instance2 | Get-DbaDbView -Database tempdb -ExcludeSystemView | Select-Object Name, IsSystemObject
+            ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
+        }
+        It "Should allow piping from Get-DbaDatabase" {
+            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView -ExcludeSystemView
+            ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
         }
     }
 }

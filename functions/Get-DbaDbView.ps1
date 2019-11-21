@@ -74,16 +74,16 @@ function Get-DbaDbView {
     #>
     [CmdletBinding()]
     param (
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -97,17 +97,17 @@ function Get-DbaDbView {
                 continue
             }
             if (Test-Bound -ParameterName ExcludeSystemView) {
-                $views = $views | Where-Object { $_.IsSystemObject -eq $false }
+                $views = $views | Where-Object -Not IsSystemObject
             }
 
-            $views | ForEach-Object {
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
+            foreach ($view in $views) {
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $_.Parent.ComputerName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $_.Parent.InstanceName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $_.Parent.SqlInstance
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
 
-                Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $_.Parent.ComputerName
-                Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $_.Parent.Instancename
-                Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $_.Parent.SqlInstance
-                Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
-
-                Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name
+                Select-DefaultView -InputObject $view -Property $defaults
             }
         }
     }
