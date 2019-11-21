@@ -334,8 +334,9 @@ function Connect-DbaInstance {
                     return
                 }
 
-                if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.Message.MEssageHost]::DeveloperMode)) { Stop-Function -Message }
-                else {
+                if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.Message.MEssageHost]::DeveloperMode)) {
+                    Stop-Function -Message
+                } else {
                     Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
                 }
             }
@@ -349,11 +350,9 @@ function Connect-DbaInstance {
 
         In order to avoid that and having to refactor lots of functions (and to avoid making regular scripts harder to read), we created this workaround.
         #>
-        if ($SqlCredential) {
-            if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
-                Stop-Function -Message "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
-                return
-            }
+        if ($SqlCredential -and $SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
+            Stop-Function -Message "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+            return
         }
         #endregion Ensure Credential integrity
 
@@ -387,10 +386,14 @@ function Connect-DbaInstance {
         $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
-        if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
+        if ($AzureDomain) {
+            $AzureDomain = [regex]::escape($AzureDomain)
+        }
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         foreach ($instance in $SqlInstance) {
             if ($instance.IsConnectionString) {
@@ -414,11 +417,26 @@ function Connect-DbaInstance {
 
             # Gracefully handle Azure connections
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+                # On Azure SQL default databases aren't supported for logins, so if you don't specify a database at connection time, you're on master
+                # Since we know this, we will set it, because it short circuits later
+                if (!$Database) {
+                    $PSBoundParameters["Database"] = $Database = "master"
+                }
+
+                # If you're already connected to the right database (with the right credentials), there's no reason to reconnect.
                 # so far, this is not evaluating
+                # Could we use $instance.InputObject.ConnectionContext.Databasename to short-circuit?
+                # Since we default DatabaseName to master $instance.InputObject.ConnectionContext.Databasename is always set
+                # We could possibly even make this work with connections that aren't still/already open
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
                     $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
-                    if (($Database -and ($Database -eq $currentdb))) {
-                        $instance.InputObject
+                    # If $Database could be null, we'd need a more complicated test:
+                    # if (($Database -and ($Database -eq $currentdb)) -or (!$Database -and ($currentdb -eq "master"))) {
+                    if ($Database -eq $currentdb) {
+                        $Server = $instance.InputObject
+                        # Set NewDbaConnection property to false so the caller has a way to tell we didn't create this
+                        Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
+                        $Server
                         continue
                     }
                 }
@@ -429,8 +447,8 @@ function Connect-DbaInstance {
                 [object[]]$connstringcmd = (Get-Command New-DbaConnectionString).Parameters.Keys
                 [object[]]$connectcmd = (Get-Command Connect-DbaInstance).Parameters.Keys
 
-                foreach ($key in $connectcmd) {
-                    if ($key -notin $connstringcmd -and $key -ne "SqlCredential") {
+                foreach ($key in $connectcmd -ne "SqlCredential") {
+                    if ($key -notin $connstringcmd) {
                         $null = $boundparams.Remove($key)
                     }
                 }
@@ -464,16 +482,18 @@ function Connect-DbaInstance {
                     }
 
                     if (-not $Database) {
+                        # BUGBUG: they could get here using Tenant without specifying MFA ...
                         Stop-Function -Message "When using AD Universal with MFA Support, database must be specified."
                         return
                     }
 
                     if (-not $SqlCredential) {
+                        # BUGBUG: they could get here using AD Universal with MFA, without specifying Tenant ...
                         Stop-Function -Message "When using Tenant, SqlCredential must be specified."
                         return
                     }
                     Write-Message -Level Verbose -Message "Creating renewable token"
-                    $accesstoken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential)
+                    $accesstoken = New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential
                 }
 
                 try {
@@ -504,6 +524,8 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
+                    Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $True -Force
+
                     # Azure has a really hard time with $server.Databases, which we rely on heavily. Fix that.
                     <# Fixing that changed the db context back to master so we're SOL here until we can figure out another way.
                     # $currentdb = $server.Databases[$Database] | Where-Object Name -eq $server.ConnectionContext.CurrentDatabase | Select-Object -First 1
@@ -527,27 +549,37 @@ function Connect-DbaInstance {
             if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
                 [DbaInstanceParameter]$instance = $instance
                 if ($instance.Type -like "SqlConnection") {
-                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                    $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                    # Since we're returning a SqlConnection that was passed in, we did not create it
+                    Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
+                    [DbaInstanceParameter]$instance = $server
                 }
             } else {
                 [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
-                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
+                    Stop-Function -Message "More than one server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
                 }
             }
             #endregion Safely convert input into instance parameters
 
             #region Input Object was a server object
+            # BUGBUG: It is impossible for $isAzure to be true here.
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
-                    $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    # Since we're returning a SqlConnection that was passed in, we did not create it
+                    $server = $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
+                    $server
                     continue
                 } else {
-                    $instance.InputObject
+                    # Since we're returning a server object that was passed in, we did not create it
+                    $server = $instance.InputObject
+                    Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
+                    $server
                     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $instance.InputObject.ConnectionContext.Copy(), ($instance.InputObject.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
                     # Update cache for instance names
@@ -562,7 +594,8 @@ function Connect-DbaInstance {
             #region Input Object was anything else
             if ($instance.Type -like "SqlConnection") {
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-
+                # Since we're returning a SqlConnection that was passed in, we did not actually create it
+                Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     $server.ConnectionContext.Connect()
                 }
@@ -576,7 +609,10 @@ function Connect-DbaInstance {
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                         Stop-Function -Message "Azure SQL Database not supported" -Continue
                     }
-                    $server.ConnectionContext.SqlConnectionObject
+                    # Since we're returning a SqlConnection that was passed in, we did not create it
+                    $connection = $server.ConnectionContext.SqlConnectionObject
+                    Add-Member -InputObject $connection -NotePropertyName NewDbaConnection -NotePropertyValue $False -Force
+                    $connection
                     continue
                 } else {
                     if (-not $server.ComputerName) {
@@ -613,8 +649,13 @@ function Connect-DbaInstance {
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                # Here we actually made a new connection
+                Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $True -Force
             } elseif (-not $isAzure) {
+                # BUGBUG: I don't think isAzure can be true outside it's if() statement
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
+                # Here we actually made a new connection
+                Add-Member -InputObject $server -NotePropertyName NewDbaConnection -NotePropertyValue $True -Force
             }
 
             if ($AppendConnectionString) {
@@ -622,6 +663,7 @@ function Connect-DbaInstance {
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
             } elseif (-not $isAzure -and -not $isconnectionstring) {
+                # BUGBUG: I don't think isAzure can be true outside it's if() statement
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
