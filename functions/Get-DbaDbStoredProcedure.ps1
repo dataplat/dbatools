@@ -74,21 +74,21 @@ function Get-DbaDbStoredProcedure {
     #>
     [CmdletBinding()]
     param (
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-
 
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {

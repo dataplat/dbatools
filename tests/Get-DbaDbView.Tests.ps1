@@ -24,7 +24,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb | Select-Object Name, IsSystemObject
+        $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
+        It "Should have standard properties" {
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
+            ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        }
         It "Should get test view: $viewName" {
             ($results | Where-Object Name -eq $viewName).Name | Should Be $true
         }
@@ -46,11 +50,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Piping workings" {
         It "Should allow piping from string" {
-            $results = $script:instance2 | Get-DbaDbView -Database tempdb -ExcludeSystemView | Select-Object Name, IsSystemObject
+            $results = $script:instance2 | Get-DbaDbView -Database tempdb
             ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
         }
         It "Should allow piping from Get-DbaDatabase" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView -ExcludeSystemView
+            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
             ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
         }
     }

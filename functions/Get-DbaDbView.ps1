@@ -91,8 +91,12 @@ function Get-DbaDbView {
 
         foreach ($db in $InputObject) {
             $views = $db.views
+            if (-not $db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
+                continue
+            }
 
-            if (!$views) {
+            if (-not $views) {
                 Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
                 continue
             }
@@ -102,9 +106,10 @@ function Get-DbaDbView {
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
             foreach ($view in $views) {
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $_.Parent.ComputerName
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $_.Parent.InstanceName
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $_.Parent.SqlInstance
+
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $view.Parent.ComputerName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $view.Parent.InstanceName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $view.Parent.SqlInstance
                 Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
 
                 Select-DefaultView -InputObject $view -Property $defaults
