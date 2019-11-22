@@ -101,7 +101,7 @@ function Get-DbaDbView {
                 continue
             }
             if (Test-Bound -ParameterName ExcludeSystemView) {
-                $views = $views | Where-Object -Not IsSystemObject
+                $views = $views | Where-Object { -not $_.IsSystemObject }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
