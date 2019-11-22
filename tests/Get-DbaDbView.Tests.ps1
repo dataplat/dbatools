@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should exclude system views" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeSystemView
-            $results.IsSystemObject | Should Not Contain $true
+            ($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
         }
     }
 
