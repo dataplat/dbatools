@@ -97,18 +97,32 @@ function Add-DbaRegServer {
         PS C:\> Connect-DbaInstance -SqlInstance dockersql1 -SqlCredential sqladmin | Add-DbaRegServer -ServerName mydockerjam
 
         Creates a registered server called "mydockerjam" in Local Server Groups that uses SQL authentication and points to the server dockersql1.
+
+    .EXAMPLE
+        PS C:\> Import-Csv -Path C:\temp\regservers.csv | Add-DbaRegServer -SqlInstance sql01
+
+        Imports groups from a CSV file to sql01. CSV file only needs to contain ServerName, but can also contain: Name, Description, Group,
+        ActiveDirectoryTenant, ActiveDirectoryUserId and ConnectionString.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$ServerName,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$Name = $ServerName,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$Description,
+        [parameter(ValueFromPipelineByPropertyName)]
         [object]$Group,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$ActiveDirectoryTenant,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$ActiveDirectoryUserId,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$ConnectionString,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$OtherParams,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
@@ -120,6 +134,11 @@ function Add-DbaRegServer {
         # double check in case a null name was bound
         if (-not $PSBoundParameters.ServerName -and -not $PSBoundParameters.ServerObject) {
             Stop-Function -Message "You must specify either ServerName or ServerObject"
+            return
+        }
+
+        if (-not $PSBoundParameters.SqlInstance -and $PSBoundParameters.InputObject) {
+            Stop-Function -Message "You must specify either SqlInstance or InputObject, but not both"
             return
         }
         if (-not $Name) {
@@ -152,6 +171,10 @@ function Add-DbaRegServer {
             }
         }
 
+        if ($PSBoundParameters.SqlInstance) {
+            $InputObject = $null
+        }
+
         foreach ($instance in $SqlInstance) {
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
@@ -181,12 +204,18 @@ function Add-DbaRegServer {
                 Stop-Function -Message "You cannot use dbatools to remove or add registered servers in Azure Data Studio" -Continue
             }
             Write-Message -Level Verbose -Message "ID: $($reggroup.ID))"
+
             if ($reggroup.ID) {
                 $target = $reggroup.ParentServer.SqlInstance
             } else {
                 $target = "Local Registered Servers"
             }
-            if ($Pscmdlet.ShouldProcess($target, "Adding $name")) {
+
+            if (-not $target) {
+                $target = $instance
+            }
+
+            if ($Pscmdlet.ShouldProcess($target, "Adding $instance")) {
 
                 if ($ServerObject) {
                     foreach ($server in $ServerObject) {
@@ -226,7 +255,8 @@ function Add-DbaRegServer {
 
                         Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                     } catch {
-                        Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                        $message = Get-ErrorMessage -Record $_
+                        Stop-Function -Message "Failed to add $ServerName on $target. $message" -ErrorRecord $_ -Continue
                     }
                 }
             }
