@@ -16107,13 +16107,13 @@
         "CommandName":  "Get-DbaDbStoredProcedure",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbStoredProcedure\nPipe the databases from Get-DbaDatabase into Get-DbaDbStoredProcedure",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16150,6 +16150,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16158,7 +16166,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbStoredProcedure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbStoredProcedure [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbTable",
@@ -16453,13 +16461,13 @@
         "CommandName":  "Get-DbaDbView",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView\nPipe the databases from Get-DbaDatabase into Get-DbaDbView",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16496,6 +16504,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16504,7 +16520,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbView [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbView [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbVirtualLogFile",
