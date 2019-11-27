@@ -82,7 +82,7 @@ function Set-DbaPowerPlan {
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [pscustomobject[]]$InputObject,
         [switch]$EnableException
     )
 
