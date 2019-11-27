@@ -31,17 +31,11 @@ function Set-DbatoolsPath {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
+        [string]$Name,
         [Parameter(Mandatory = $true)]
-        [string]
-        $Path,
-
+        [string]$Path,
         [Parameter(ParameterSetName = 'Register', Mandatory = $true)]
-        [switch]
-        $Register,
-
+        [switch]$Register,
         [Parameter(ParameterSetName = 'Register')]
         [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
         $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::UserDefault
