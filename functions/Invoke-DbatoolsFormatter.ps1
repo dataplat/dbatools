@@ -15,7 +15,7 @@ function Invoke-DbatoolsFormatter {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Formatting
+        Tags: Module, Support
         Author: Simone Bizzotto
 
         Website: https://dbatools.io
@@ -29,7 +29,6 @@ function Invoke-DbatoolsFormatter {
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\functions\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\functions\Get-DbaDatabase.ps1 to dbatools' standards
-
     #>
     [CmdletBinding()]
     param (

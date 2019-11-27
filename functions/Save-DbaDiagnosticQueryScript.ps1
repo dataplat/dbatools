@@ -21,7 +21,7 @@ function Save-DbaDiagnosticQueryScript {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Diagnostic, DMV, Troubleshooting
+        Tags: Community, GlennBerry
         Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
         Website: https://dbatools.io
@@ -33,7 +33,6 @@ function Save-DbaDiagnosticQueryScript {
 
         Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
         If Path is not specified, the "My Documents" location will be used.
-
     #>
     [CmdletBinding()]
     param (

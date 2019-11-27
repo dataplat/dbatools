@@ -27,6 +27,17 @@ function Unregister-DbatoolsConfig {
         By default, only DefaultSettings for the user are unregistered.
         Use this parameter to choose the actual scope for the command to process.
 
+    .NOTES
+        Tags: Module
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Unregister-DbatoolsConfig
+
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig | Unregister-DbatoolsConfig
 

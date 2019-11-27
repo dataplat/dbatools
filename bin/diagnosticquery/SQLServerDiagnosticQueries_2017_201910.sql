@@ -1,7 +1,7 @@
 
--- SQL Server 2019 Diagnostic Information Queries
+-- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 10, 2019
+-- Last Modified: November 4, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -40,8 +40,8 @@
 --*
 --******************************************************************************
 
--- Check the major product version to see if it is SQL Server 2019 CTP 2 or greater
-IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '15%')
+-- Check the major product version to see if it is SQL Server 2017 CTP 1 or greater
+IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '14%')
 	BEGIN
 		DECLARE @ProductVersion varchar(128) = CONVERT(varchar(128), SERVERPROPERTY('ProductVersion'));
 		RAISERROR ('Script does not match the ProductVersion [%s] of this instance. Many of these queries may not work on this version.' , 18 , 16 , @ProductVersion);
@@ -56,30 +56,58 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2019 Builds																		
+-- SQL Server 2017 Builds																		
 -- Build			Description							Release Date	URL to KB Article								
--- 15.0.1000.34		CTP 2.0								9/24/2018
--- 15.0.1100.94		CTP 2.1								11/7/2018
--- 15.0.1200.24		CTP 2.2								12/6/2018
--- 15.0.1300.359	CTP 2.3								3/1/2019
--- 15.0.1400.75		CTP 2.4								3/26/2019
--- 15.0.1500.28		CTP 2.5								4/23/2019
--- 15.0.1600.8		CTP 3.0								5/22/2019
--- 15.0.1700.37		CTP 3.1								6/26/2019
--- 15.0.1800.32		CTP 3.2								7/24/2019
--- 15.0.1900.25		RC1/RC1 Refresh						8/29/2019
-
+-- 14.0.1.246		CTP 1.0								11/30/2016
+-- 14.0.100.187		CTP 1.1								12/16/2016
+-- 14.0.200.24		CTP 1.2								1/19/2017
+-- 14.0.304.138		CTP 1.3								2/17/2017
+-- 14.0.405.198		CTP 1.4								3/20/2017
+-- 14.0.500.272		CTP 2.0								4/19/2017
+-- 14.0.600.250		CTP 2.1								5/17/2017
+-- 14.0.800.90		RC1									7/17/2017
+-- 14.0.900.75		RC2									8/2/2017
+-- 14.0.1000.169	RTM									10/2/2017
+-- 14.0.3006.16		CU1									10/24/2017		https://support.microsoft.com/en-us/help/4038634
+-- 14.0.3008.27		CU2									11/28/2017		https://support.microsoft.com/en-us/help/4052574
+-- 14.0.3015.40		CU3									1/4/2018		https://support.microsoft.com/en-us/help/4052987
+-- 14.0.3022.28		CU4									2/20/2018	    https://support.microsoft.com/en-us/help/4056498
+-- 14.0.3023.8		CU5									3/20/2018		https://support.microsoft.com/en-us/help/4092643
+-- 14.0.3025.34		CU6									4/17/2018	    https://support.microsoft.com/en-us/help/4101464
+-- 14.0.3026.27		CU7									5/23/2018		https://support.microsoft.com/en-us/help/4229789
+-- 14.0.3029.16		CU8									6/19/2018		https://support.microsoft.com/en-us/help/4338363
+-- 14.0.3030.27		CU9									7/19/2018		https://support.microsoft.com/en-us/help/4341265
+-- 14.0.3035.2		CU9 + Security Update				8/13/2018		https://www.microsoft.com/en-us/download/details.aspx?id=57263
+-- 14.0.3037.1		CU10								8/27/2018		https://support.microsoft.com/en-us/help/4342123/cumulative-update-10-for-sql-server-2017
+-- 14.0.3038.14		CU11								9/20/2018		https://support.microsoft.com/en-us/help/4462262	
+-- 14.0.3045.24		CU12								10/23/2018		https://support.microsoft.com/en-us/help/4464082/cumulative-update-12-for-sql-server-2017
+-- 14.0.3048.4		CU13								12/18/2018		https://support.microsoft.com/en-us/help/4466404/cumulative-update-13-for-sql-server-2017
+-- 14.0.3076.1		CU14								3/25/2019		https://support.microsoft.com/en-us/help/4484710/cumulative-update-14-for-sql-server-2017	
+-- 14.0.3103.1		CU14 + Security Update				5/14/2019		https://support.microsoft.com/en-us/help/4494352/security-update-for-sql-server-2017-cu-14-gdr-may-14-2019
+-- 14.0.3162.1		CU15								5/23/2019		https://support.microsoft.com/en-us/help/4498951/cumulative-update-15-for-sql-server-2017
+-- 14.0.3192.2		CU15 + Security Update				7/9/2019		https://support.microsoft.com/en-us/help/4505225/security-update-for-sql-server-2017-cu15-gdr-july-9-2019 
+-- 14.0.3223.3		CU16								8/1/2019		https://support.microsoft.com/en-us/help/4508218/cumulative-update-16-for-sql-server-2017
+-- 14.0.3238.1		CU17							   10/8/2019		https://support.microsoft.com/en-us/help/4515579/cumulative-update-17-for-sql-server-2017		
 		
 															
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
 
--- What's New in SQL Server 2019 (Database Engine)
--- https://bit.ly/2Q29fhz
+-- SQL Server 2017 build versions
+-- https://bit.ly/2FLY88I
 
--- What's New in SQL Server 2019
--- https://bit.ly/2PY442b
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2JsReue
+
+-- Performance and Stability Fixes in SQL Server 2017 CU Builds
+-- https://bit.ly/2GV3CNM
+
+-- What's New in SQL Server 2017 (Database Engine)
+-- https://bit.ly/2HjSeyQ
+
+-- What's New in SQL Server 2017
+-- https://bit.ly/2saQ4Yh
 
 -- Announcing the Modern Servicing Model for SQL Server
 -- https://bit.ly/2KtJ8SS
@@ -93,10 +121,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Download SQL Server Management Studio (SSMS)
 -- https://bit.ly/1OcupT9
 
--- Download and install Azure Data Studio 
+-- Download and install Azure Data Studio  
 -- https://bit.ly/2vgke1A
 
--- SQL Server 2019 Configuration Manager is SQLServerManager15.msc
+-- SQL Server 2017 Configuration Manager is SQLServerManager14.msc
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -138,8 +166,8 @@ SERVERPROPERTY('InstanceDefaultDataPath') AS [InstanceDefaultDataPath],
 SERVERPROPERTY('InstanceDefaultLogPath') AS [InstanceDefaultLogPath],
 SERVERPROPERTY('BuildClrVersion') AS [Build CLR Version],
 SERVERPROPERTY('IsXTPSupported') AS [IsXTPSupported],
-SERVERPROPERTY('IsPolybaseInstalled') AS [IsPolybaseInstalled],				
-SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];	
+SERVERPROPERTY('IsPolybaseInstalled') AS [IsPolybaseInstalled],				-- New for SQL Server 2016
+SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];	-- New for SQL Server 2016
 ------
 
 -- This gives you a lot of useful information about your instance of SQL Server,
@@ -169,7 +197,9 @@ ORDER BY name OPTION (RECOMPILE);
 -- optimize for ad hoc workloads (should be 1)
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
--- tempdb metadata memory-optimized (0 by default, some workloads may benefit by enabling)
+
+-- New configuration options for SQL Server 2017
+-- clr strict security is new in SQL Server 2017, and is enabled by default
 
 -- sys.configurations (Transact-SQL)
 -- https://bit.ly/2HsyDZI
@@ -183,6 +213,9 @@ DBCC TRACESTATUS (-1);
 -- It is very useful to know what global trace flags are currently enabled as part of the diagnostic process.
 
 -- Common trace flags that should be enabled in most cases
+-- TF 460  - Improvement: Optional replacement for "String or binary data would be truncated" message with extended information in SQL Server 2017
+--           https://bit.ly/2sboMli (added in CU12)
+
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/2p6MTjS  
 
@@ -192,9 +225,21 @@ DBCC TRACESTATUS (-1);
 -- TF 7745 - Prevents Query Store data from being written to disk in case of a failover or shutdown command
 --           https://bit.ly/2GU69Km
 
+-- TF 7752 - Enables asynchronous load of Query Store 
+--           This allows a database to become online and queries to be executed before the Query Store has been fully recovered 
+ 
+
+-- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
+-- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
+-- https://bit.ly/2lbNWxK           
+
+-- The behavior of TF 2371 is enabled by default in SQL Server 2016 and newer (in compat level 130 and higher)
 
 -- DBCC TRACEON - Trace Flags (Transact-SQL)
 -- https://bit.ly/2FuSvPg
+
+-- Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads
+-- https://bit.ly/2VVRGTY
 
 
 
@@ -317,7 +362,7 @@ FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- 1033 for os_language_version is US-English
 
--- SQL Server 2019 requires Windows Server 2016 or newer 
+-- SQL Server 2017 requires Windows Server 2012 or newer
 
 -- Hardware and Software Requirements for Installing SQL Server
 -- https://bit.ly/2y3ka5L
@@ -335,7 +380,7 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
 -- You want to see an equal number of schedulers on each NUMA node
--- Watch out if SQL Server 2019 Standard Edition has been installed 
+-- Watch out if SQL Server 2017 Standard Edition has been installed 
 -- on a physical or virtual machine with more than four sockets or more than 24 physical cores
 
 -- sys.dm_os_nodes (Transact-SQL)
@@ -421,7 +466,7 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 -- https://bit.ly/2dn1H6r
 
 
--- Hardware information from SQL Server 2019  (Query 17) (Hardware Info)
+-- Hardware information from SQL Server 2017  (Query 17) (Hardware Info)
 SELECT cpu_count AS [Logical CPU Count], scheduler_count, 
        (socket_count * cores_per_socket) AS [Physical Core Count], 
        socket_count AS [Socket Count], cores_per_socket, numa_node_count,
@@ -432,8 +477,7 @@ SELECT cpu_count AS [Logical CPU Count], scheduler_count,
 	   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
 	   virtual_machine_type_desc AS [Virtual Machine Type], 
        softnuma_configuration_desc AS [Soft NUMA Configuration], 
-	   sql_memory_model_desc, 
-	   container_type_desc -- New in SQL Server 2019
+	   sql_memory_model_desc, process_physical_affinity -- New in SQL Server 2017
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -476,6 +520,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'SYSTEM\CurrentControlSet\s
 -- Recommended value for intensive I/O patterns from VMware is: RequestRingPages=32,MaxQueueDepth=254
 -- https://kb.vmware.com/s/article/2053145
 -- Does not work on Linux
+
 
 
 -- Get BIOS date from Windows Registry (Query 20) (BIOS Date)
@@ -646,7 +691,7 @@ ORDER BY [Overall Latency] OPTION (RECOMPILE);
 -- database files on each drive since SQL Server was last started
 
 
--- Calculates average latency per read, per write, and per total input/output for each database file  (Query 29) (IO Latency by File)
+-- Calculates average stalls per read, per write, and per total input/output for each database file  (Query 29) (IO Latency by File)
 SELECT DB_NAME(fs.database_id) AS [Database Name], CAST(fs.io_stall_read_ms/(1.0 + fs.num_of_reads) AS NUMERIC(10,1)) AS [avg_read_latency_ms],
 CAST(fs.io_stall_write_ms/(1.0 + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_write_latency_ms],
 CAST((fs.io_stall_read_ms + fs.io_stall_write_ms)/(1.0 + fs.num_of_reads + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_io_latency_ms],
@@ -703,7 +748,6 @@ DROP TABLE #IOWarningResults;
 -- https://bit.ly/2qtaw73
 
 
-
 -- Resource Governor Resource Pool information (Query 31) (RG Resource Pools)
 SELECT pool_id, [Name], statistics_start_time,
        min_memory_percent, max_memory_percent,  
@@ -735,8 +779,7 @@ db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_o
 db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
 db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
 db.is_supplemental_logging_enabled, db.is_remote_data_archive_enabled,
-db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, db.resource_pool_id,
-db.is_tempdb_spill_to_remote_store, db.is_result_set_caching_on, db.is_accelerated_database_recovery_on, is_stale_page_detection_on
+db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, db.resource_pool_id      
 FROM sys.databases AS db WITH (NOLOCK)
 INNER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON db.name = lu.instance_name
@@ -929,21 +972,19 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'PREEMPTIVE_OS_PIPEOPS', N'PREEMPTIVE_OS_AUTHENTICATIONOPS',
 		N'PREEMPTIVE_OS_GENERICOPS', N'PREEMPTIVE_OS_VERIFYTRUST',
 		N'PREEMPTIVE_OS_FILEOPS', N'PREEMPTIVE_OS_DEVICEOPS', N'PREEMPTIVE_OS_QUERYREGISTRY',
-		N'PREEMPTIVE_OS_WRITEFILE', N'PREEMPTIVE_OS_WRITEFILEGATHER',
+		N'PREEMPTIVE_OS_WRITEFILE',
 		N'PREEMPTIVE_XE_CALLBACKEXECUTE', N'PREEMPTIVE_XE_DISPATCHER',
 		N'PREEMPTIVE_XE_GETTARGETSTATE', N'PREEMPTIVE_XE_SESSIONCOMMIT',
 		N'PREEMPTIVE_XE_TARGETINIT', N'PREEMPTIVE_XE_TARGETFINALIZE',
         N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
-		N'PWAIT_EXTENSIBILITY_CLEANUP_TASK',
-		N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', N'QDS_ASYNC_QUEUE',
+		N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP',
+		N'QDS_ASYNC_QUEUE',
         N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'REQUEST_FOR_DEADLOCK_SEARCH',
 		N'RESOURCE_QUEUE', N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH', N'SLEEP_DBSTARTUP',
 		N'SLEEP_DCOMSTARTUP', N'SLEEP_MASTERDBREADY', N'SLEEP_MASTERMDREADY',
         N'SLEEP_MASTERUPGRADED', N'SLEEP_MSDBSTARTUP', N'SLEEP_SYSTEMTASK', N'SLEEP_TASK',
-        N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT', N'SOS_WORK_DISPATCHER',
-		N'SP_SERVER_DIAGNOSTICS_SLEEP',
+        N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT', N'SP_SERVER_DIAGNOSTICS_SLEEP',
 		N'SQLTRACE_BUFFER_FLUSH', N'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', N'SQLTRACE_WAIT_ENTRIES',
-		N'STARTUP_DEPENDENCY_MANAGER',
 		N'WAIT_FOR_RESULTS', N'WAITFOR', N'WAITFOR_TASKSHUTDOWN', N'WAIT_XTP_HOST_WAIT',
 		N'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', N'WAIT_XTP_CKPT_CLOSE', N'WAIT_XTP_RECOVERY',
 		N'XE_BUFFERMGR_ALLPROCESSED_EVENT', N'XE_DISPATCHER_JOIN',
@@ -1330,17 +1371,17 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- I/O Statistics by file for the current database  (Query 56) (IO Stats By File)
 SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,
-df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(10, 2)) AS [Size on Disk (MB)],
+df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(16, 2)) AS [Size on Disk (MB)],
 vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,
-CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(10,1)) AS [IO Stall Reads Pct],
-CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(10,1)) AS [IO Stall Writes Pct],
+CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(16,1)) AS [IO Stall Reads Pct],
+CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(16,1)) AS [IO Stall Writes Pct],
 (vfs.num_of_reads + vfs.num_of_writes) AS [Writes + Reads], 
-CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(10, 2)) AS [MB Read], 
-CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(10, 2)) AS [MB Written],
-CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Reads Pct],
-CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Write Pct],
-CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Read Bytes Pct],
-CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Written Bytes Pct]
+CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(16, 2)) AS [MB Read], 
+CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(16, 2)) AS [MB Written],
+CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Reads Pct],
+CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Write Pct],
+CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Read Bytes Pct],
+CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Written Bytes Pct]
 FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS vfs
 INNER JOIN sys.database_files AS df WITH (NOLOCK)
 ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);
@@ -1449,7 +1490,7 @@ qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
--- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
+,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
@@ -1853,23 +1894,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://bit.ly/2q1Q6BM
 
 
--- Determine which scalar UDFs are in-lineable (Query 80) (Inlineable UDFs)
-SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type
-FROM sys.sql_modules AS m WITH (NOLOCK) 
-LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)
-ON  m.object_id = efs.object_id
-WHERE efs.type_desc = N'SQL_SCALAR_FUNCTION'
-OPTION (RECOMPILE);
-------
-
--- Scalar UDF Inlining
--- https://bit.ly/2JU971M
-
--- sys.sql_modules (Transact-SQL)
--- https://bit.ly/2Qt216S
-
-
--- Get QueryStore Options for this database (Query 81) (QueryStore Options)
+-- Get QueryStore Options for this database (Query 80) (QueryStore Options)
 SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc
@@ -1887,7 +1912,7 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 
--- Get input buffer information for the current database (Query 82) (Input Buffer)
+-- Get input buffer information for the current database (Query 81) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
        es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,
        es.[status], ib.event_info AS [Input Buffer]
@@ -1909,9 +1934,10 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 
 
 
--- Get any resumable index rebuild operation information (Query 83) (Resumable Index Rebuild)
+-- Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)
 SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
-       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, iro.start_time, iro.percent_complete
+       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, 
+	   iro.start_time, iro.percent_complete
 FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
 OPTION (RECOMPILE);
 ------ 
@@ -1920,7 +1946,7 @@ OPTION (RECOMPILE);
 -- https://bit.ly/2pYSWqq
 
 
--- Get database automatic tuning options (Query 84) (Automatic Tuning Options)
+-- Get database automatic tuning options (Query 83) (Automatic Tuning Options)
 SELECT [name], desired_state_desc, actual_state_desc, reason_desc
 FROM sys.database_automatic_tuning_options WITH (NOLOCK)
 OPTION (RECOMPILE);
@@ -1931,7 +1957,7 @@ OPTION (RECOMPILE);
 
 
 
--- Look at recent Full backups for the current database (Query 85) (Recent Full Backups)
+-- Look at recent Full backups for the current database (Query 84) (Recent Full Backups)
 SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
 CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],

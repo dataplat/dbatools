@@ -1,5 +1,452 @@
 ﻿[
     {
+        "Name":  "Select-DbaObject",
+        "Description":  null,
+        "Synopsis":  "\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-Last \u003cint\u003e] [-First \u003cint\u003e] [-Skip \u003cint\u003e] [-Wait] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-SkipLast \u003cint\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [-InputObject \u003cpsobject\u003e] [-Unique] [-Wait] [-Index \u003cint[]\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Select-DbaObject",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Alias",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ExcludeProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ExpandProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "First",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Index",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "InputObject",
+                           "",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           null
+                       ],
+                       [
+                           "KeepInputObject",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Last",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Property",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ScriptMethod",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ScriptProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ShowExcludeProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ShowProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Skip",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "SkipLast",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "TypeName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Unique",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Wait",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                          \r\n----------                                                                                                                                                                                                                                                                                                                          \r\n{@{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
+    },
+    {
+        "Name":  "Set-DbatoolsConfig",
+        "Description":  null,
+        "Synopsis":  "\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e -PersistedValue \u003cstring\u003e [-PersistedType \u003cConfigurationValueType\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [[-Module] \u003cstring\u003e] [-Name] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Set-DbatoolsConfig",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Default",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Description",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "DisableHandler",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "DisableValidation",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "EnableException",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "FullName",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Handler",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Hidden",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Initialize",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Module",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ModuleExport",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Name",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PassThru",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PersistedType",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PersistedValue",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Register",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "SimpleExport",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Validation",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Value",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                                \r\n----------                                                                                                                                                                                                                                                                                                                                \r\n{@{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
+    },
+    {
+        "Name":  "Write-Message",
+        "Description":  null,
+        "Synopsis":  "\r\nWrite-Message [-Message] \u003cstring\u003e [-Level \u003cMessageLevel\u003e] [-Tag \u003cstring[]\u003e] [-FunctionName \u003cstring\u003e] [-ModuleName \u003cstring\u003e] [-File \u003cstring\u003e] [-Line \u003cint\u003e] [-ErrorRecord \u003cErrorRecord[]\u003e] [-Exception \u003cException\u003e] [-Once \u003cstring\u003e] [-OverrideExceptionMessage] [-Target \u003cObject\u003e] [-EnableException \u003cbool\u003e] [-Breakpoint] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Write-Message",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Breakpoint",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "EnableException",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ErrorRecord",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Exception",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "File",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "FunctionName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Level",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Line",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Message",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ModuleName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Once",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "OverrideExceptionMessage",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Tag",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Target",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                               \r\n----------                                                                                               \r\n{@{name=Write-Message; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
+    },
+    {
         "Name":  "Add-DbaAgDatabase",
         "Description":  "Adds a database to an availability group on a SQL Server instance.\n\nBefore joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.",
         "Tags":  [
@@ -507,6 +954,7 @@
         "Name":  "Add-DbaDbMirrorMonitor",
         "Description":  "Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on the server instance.\n\nBasically executes sp_dbmmonitoraddmonitoring.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -1136,7 +1584,7 @@
         "CommandName":  "Backup-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -Path C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Database db1 -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -FilePath NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -Path C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Database db1 -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -FilePath NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert\nBacks up the master database using the BackupCert certificate and the AES256 algorithm.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -1363,6 +1811,22 @@
                            "False"
                        ],
                        [
+                           "EncryptionAlgorithm",
+                           "Specified the Encryption Algorithm to used. Must be one of \u0027AES128\u0027,\u0027AES192\u0027,\u0027AES256\u0027 or \u0027TRIPLEDES\u0027\r\nMust specify one of EncryptionCertificate or EncryptionKey as well.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EncryptionCertificate",
+                           "The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist\r\nIs mutually exclusive with the EncryptionKey option",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -1387,7 +1851,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
+        "Syntax":  "Backup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EncryptionAlgorithm \u003cString\u003e] [-EncryptionCertificate \u003cString\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EncryptionAlgorithm \r\n\u003cString\u003e] [-EncryptionCertificate \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nBackup-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Path \u003cString[]\u003e] [-FilePath \u003cString\u003e] [-ReplaceInName] [-CopyOnly] [-Type \u003cString\u003e] -InputObject \u003cObject[]\u003e [-CreateFolder] [-FileCount \u003cInt32\u003e] [-CompressBackup] [-Checksum] [-Verify] [-MaxTransferSize \u003cInt32\u003e] [-BlockSize \u003cInt32\u003e] [-BufferCount \u003cInt32\u003e] [-AzureBaseUrl \u003cString[]\u003e] [-AzureCredential \u003cString\u003e] [-NoRecovery] [-BuildPath] [-WithFormat] [-Initialize] [-SkipTapeHeader] [-TimeStampFormat \u003cString\u003e] [-IgnoreFileChecks] [-OutputScriptOnly] [-EncryptionAlgorithm \u003cString\u003e] \r\n[-EncryptionCertificate \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Backup-DbaDbCertificate",
@@ -1933,7 +2397,7 @@
                      "Connection"
                  ],
         "Synopsis":  "Creates a robust, reusable SQL Server object.",
-        "Alias":  "",
+        "Alias":  "cdi",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
@@ -4788,7 +5252,7 @@
         "CommandName":  "Copy-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$loginSplat = @{\n\u003e\u003e Source = $Sql01\r\n\u003e\u003e Destination = \"Localhost\"\r\n\u003e\u003e SourceSqlCredential = $sqlcred\r\n\u003e\u003e Login = \u0027ReadUserP\u0027, \u0027ReadWriteUserP\u0027, \u0027AdminP\u0027\r\n\u003e\u003e LoginRenameHashtable = @{\r\n\u003e\u003e \"ReadUserP\" = \"ReadUserT\"\r\n\u003e\u003e \"ReadWriteUserP\" = \"ReadWriteUserT\"\r\n\u003e\u003e \"AdminP\"         = \"AdminT\"\r\n\u003e\u003e }\r\n\u003e\u003e }\r\nPS C:\\\u003e Copy-DbaLogin @loginSplat\nCopies the three specified logins to \u0027localhost\u0027 and renames them according to the LoginRenameHashTable.",
         "Params":  [
                        [
                            "Source",
@@ -5785,8 +6249,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     ""
+                     "AG"
                  ],
         "Synopsis":  "Disables the Hadr service setting on the specified SQL Server.",
         "Alias":  "",
@@ -6249,8 +6712,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     ""
+                     "AG"
                  ],
         "Synopsis":  "Enables the Hadr service setting on the specified SQL Server.",
         "Alias":  "",
@@ -7259,7 +7721,10 @@
     {
         "Name":  "Export-DbaDiagnosticQuery",
         "Description":  "The default output format of Invoke-DbaDiagnosticQuery is a custom object. It can also output to CSV and Excel.\nHowever, CSV output can generate a lot of files and Excel output depends on the ImportExcel module by Doug Finke (https://github.com/dfinke/ImportExcel)\nExport-DbaDiagnosticQuery can be used to convert from the default export type to the other available export types.",
-        "Tags":  "Query",
+        "Tags":  [
+                     "Community",
+                     "GlennBerry"
+                 ],
         "Synopsis":  "Export-DbaDiagnosticQuery can convert output generated by Invoke-DbaDiagnosticQuery to CSV or Excel",
         "Alias":  "",
         "Author":  "Andre Kamman (@AndreKamman), http://clouddba.io",
@@ -8431,11 +8896,13 @@
     {
         "Name":  "Export-DbatoolsConfig",
         "Description":  "Exports configuration items to a Json file.",
+        "Tags":  "Module",
         "Synopsis":  "Exports configuration items to a Json file.",
         "Alias":  "",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Export-DbatoolsConfig",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Export-DbatoolsConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Export-DbatoolsConfig -OutPath \u0027~/export.json\u0027\nExports all current settings to json.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbatoolsConfig -Module message -OutPath \u0027~/export.json\u0027 -SkipUnchanged\nExports all settings of the module \u0027message\u0027 that are no longer the original default values to json.",
         "Params":  [
                        [
@@ -9097,9 +9564,8 @@
         "Name":  "Find-DbaCommand",
         "Description":  "Finds dbatools commands searching through the inline help text, building a consolidated json index and querying it because Get-Help is too slow",
         "Tags":  [
-                     "Find",
-                     "Help",
-                     "Command"
+                     "Module",
+                     "Find"
                  ],
         "Synopsis":  "Finds dbatools commands searching through the inline help text",
         "Alias":  "",
@@ -10295,8 +10761,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Database"
+                     "AG"
                  ],
         "Synopsis":  "Gets availability group databases from a SQL Server instance.",
         "Alias":  "",
@@ -11082,8 +11547,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Service"
+                     "AG"
                  ],
         "Synopsis":  "Gets the Hadr service setting on the specified SQL Server instance.",
         "Alias":  "",
@@ -11126,8 +11590,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Listener"
+                     "AG"
                  ],
         "Synopsis":  "Returns availability group listeners.",
         "Alias":  "",
@@ -11193,9 +11656,8 @@
         "Description":  "Returns the availability group replica object found on the server.",
         "Tags":  [
                      "AvailabilityGroup",
-                     "AG",
                      "HA",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Returns the availability group replica object found on the server.",
         "Alias":  "",
@@ -11260,10 +11722,9 @@
         "Name":  "Get-DbaAvailabilityGroup",
         "Description":  "Returns availability group objects from a SQL Server instance.\n\nDefault view provides most common set of properties for information on the Availability Group(s).",
         "Tags":  [
-                     "Hadr",
+                     "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "AvailabilityGroup"
+                     "AG"
                  ],
         "Synopsis":  "Returns availability group objects from a SQL Server instance.",
         "Alias":  "",
@@ -11634,7 +12095,10 @@
     {
         "Name":  "Get-DbaClientAlias",
         "Description":  "Gets SQL Server alias by reading HKLM:\\SOFTWARE\\Microsoft\\MSSQLServer\\Client",
-        "Tags":  "Alias",
+        "Tags":  [
+                     "Server",
+                     "Management"
+                 ],
         "Synopsis":  "Gets any SQL Server alias for the specified server(s)",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
@@ -11673,7 +12137,10 @@
     {
         "Name":  "Get-DbaClientProtocol",
         "Description":  "Gets the SQL Server related client protocols on one or more computers.\n\nRequires Local Admin rights on destination computer(s).\nThe client protocols can be enabled and disabled when retrieved via WSMan.",
-        "Tags":  "Protocol",
+        "Tags":  [
+                     "Server",
+                     "Management"
+                 ],
         "Synopsis":  "Gets the SQL Server related client protocols on a computer.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
@@ -11923,7 +12390,10 @@
     {
         "Name":  "Get-DbaComputerSystem",
         "Description":  "Gets computer system information from the server and returns as an object.",
-        "Tags":  "ServerInfo",
+        "Tags":  [
+                     "Server",
+                     "Management"
+                 ],
         "Synopsis":  "Gets computer system information from the server.",
         "Alias":  "",
         "Author":  "Shawn Melton (@wsmelton), https://wsmelton.github.io",
@@ -13917,7 +14387,7 @@
         "Description":  "Returns transaction log size and space used for each database on the SQL Server instance(s).\n\nThis can be used to monitor how much of your allocated transaction log space is in use, and whether it is nearing the point where it will need to grow.",
         "Tags":  [
                      "Database",
-                     "LogFile"
+                     "Space"
                  ],
         "Synopsis":  "Gets information on the database transaction log usage for each instance(s) of SQL Server.",
         "Alias":  "",
@@ -14535,6 +15005,7 @@
         "Name":  "Get-DbaDbMirror",
         "Description":  "Gets properties of database mirrors and mirror witnesses.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -14577,6 +15048,7 @@
         "Name":  "Get-DbaDbMirrorMonitor",
         "Description":  "Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.\n\nBasically executes sp_dbmmonitorresults.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -15497,8 +15969,7 @@
         "Description":  "This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.\n\nFile free space script borrowed and modified from Glenn Berry\u0027s DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)",
         "Tags":  [
                      "Database",
-                     "Space",
-                     "Storage"
+                     "Space"
                  ],
         "Synopsis":  "Returns database file space information for database files on a SQL instance.",
         "Alias":  "",
@@ -15636,13 +16107,13 @@
         "CommandName":  "Get-DbaDbStoredProcedure",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbStoredProcedure\nPipe the databases from Get-DbaDatabase into Get-DbaDbStoredProcedure",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -15679,6 +16150,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -15687,7 +16166,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbStoredProcedure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbStoredProcedure [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbTable",
@@ -15982,13 +16461,13 @@
         "CommandName":  "Get-DbaDbView",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView\nPipe the databases from Get-DbaDatabase into Get-DbaDbView",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16025,6 +16504,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16033,7 +16520,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbView [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbView [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbVirtualLogFile",
@@ -16244,8 +16731,9 @@
         "Name":  "Get-DbaDiskSpace",
         "Description":  "Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.\n\nBy default, this function only shows drives of types 2 and 3 (removable disk and local disk).\n\nRequires Windows administrator access on SQL Servers",
         "Tags":  [
-                     "Storage",
-                     "Disk"
+                     "Server",
+                     "Management",
+                     "Space"
                  ],
         "Synopsis":  "Displays disk information for all local disk on a server.",
         "Alias":  "",
@@ -16297,7 +16785,7 @@
                        ],
                        [
                            "CheckFragmentation",
-                           "If this switch is enabled, fragmentation of all filesystems will be checked.\nThis will increase the runtime of the function by seconds or even minutes per volume.",
+                           "If this switch is enabled, fragmentation of all file systems will be checked.\nThis will increase the runtime of the function by seconds or even minutes per volume.",
                            "",
                            false,
                            "false",
@@ -17198,14 +17686,18 @@
     {
         "Name":  "Get-DbaInstanceProtocol",
         "Description":  "Gets the SQL Server related server protocols on one or more computers.\n\nRequires Local Admin rights on destination computer(s).\nThe server protocols can be enabled and disabled when retrieved via WSMan.",
-        "Tags":  "Protocol",
+        "Tags":  [
+                     "Server",
+                     "Management",
+                     "Protocol"
+                 ],
         "Synopsis":  "Gets the SQL Server related server protocols on a computer.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
         "CommandName":  "Get-DbaInstanceProtocol",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaInstanceProtocol",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaInstanceProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaInstanceProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaInstanceProtocol -ComputerName sql1,sql2 | Out-GridView\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaInstanceProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq \u0027Named Pipes\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaInstanceProtocol -ComputerName sqlserver2014a\nGets the SQL Server related server protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaInstanceProtocol\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaInstanceProtocol -ComputerName sql1,sql2\nGets the SQL Server related server protocols on computers sql1 and sql2.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaInstanceProtocol -ComputerName sql1 | Where-Object { $_.DisplayName -eq \u0027Named Pipes\u0027 }).Disable()\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, return code 0 is shown.",
         "Params":  [
                        [
                            "ComputerName",
@@ -17632,14 +18124,17 @@
     {
         "Name":  "Get-DbaLocaleSetting",
         "Description":  "Gets the Locale settings on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
-        "Tags":  "OS",
+        "Tags":  [
+                     "Server",
+                     "Management"
+                 ],
         "Synopsis":  "Gets the Locale settings on a computer.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
         "CommandName":  "Get-DbaLocaleSetting",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaLocaleSetting",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sqlserver2014a\nGets the Locale settings on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaLocaleSetting\nGets the Locale settings on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential | Out-Gridview\nGets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers, and shows them in a grid view.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sqlserver2014a\nGets the Locale settings on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaLocaleSetting\nGets the Locale settings on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential\nGets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers.",
         "Params":  [
                        [
                            "ComputerName",
@@ -17794,8 +18289,8 @@
         "Name":  "Get-DbaMaintenanceSolutionLog",
         "Description":  "Ola wrote a .sql script to get the content from the commandLog table. However, if LogToTable=\u0027N\u0027, there will be no logging in that table. This function reads the text files that are written in the SQL Instance\u0027s Log directory.",
         "Tags":  [
-                     "Ola",
-                     "Maintenance"
+                     "Community",
+                     "OlaHallengren"
                  ],
         "Synopsis":  "Reads the log files generated by the IndexOptimize Agent Job from Ola Hallengren\u0027s MaintenanceSolution.",
         "Alias":  "",
@@ -17839,7 +18334,7 @@
                        ],
                        [
                            "Path",
-                           "Where to search for log files. By default it\u0027s the SQL instance errorlogpath path",
+                           "Where to search for log files. By default it\u0027s the SQL instance error log path path",
                            "",
                            false,
                            "false",
@@ -18166,14 +18661,18 @@
     {
         "Name":  "Get-DbaNetworkActivity",
         "Description":  "Gets the Current traffic on every Network Interface on a computer.\nSee https://msdn.microsoft.com/en-us/library/aa394293(v=vs.85).aspx\n\nRequires Local Admin rights on destination computer(s).",
-        "Tags":  "Network",
+        "Tags":  [
+                     "Server",
+                     "Management",
+                     "Network"
+                 ],
         "Synopsis":  "Gets the Current traffic on every Network Interface on a computer.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
         "CommandName":  "Get-DbaNetworkActivity",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaNetworkActivity",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sqlserver2014a\nGets the Current traffic on every Network Interface on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaNetworkActivity\nGets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sql1,sql2 | Out-Gridview\nGets the Current traffic on every Network Interface on computers sql1 and sql2, and shows them in a grid view.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sqlserver2014a\nGets the Current traffic on every Network Interface on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaNetworkActivity\nGets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaNetworkActivity -ComputerName sql1,sql2\nGets the Current traffic on every Network Interface on computers sql1 and sql2.",
         "Params":  [
                        [
                            "ComputerName",
@@ -18289,7 +18788,8 @@
         "Name":  "Get-DbaOperatingSystem",
         "Description":  "Gets operating system information from the server and returns as an object.",
         "Tags":  [
-                     "ServerInfo",
+                     "Server",
+                     "Management",
                      "OperatingSystem"
                  ],
         "Synopsis":  "Gets operating system information from the server.",
@@ -18330,7 +18830,11 @@
     {
         "Name":  "Get-DbaPageFileSetting",
         "Description":  "This command uses CIM (or other, related computer management tools) to detect the page file configuration of the target computer(s).\n\nNote that this may require local administrator privileges for the relevant computers.",
-        "Tags":  "CIM",
+        "Tags":  [
+                     "Server",
+                     "Management",
+                     "PageFile"
+                 ],
         "Synopsis":  "Returns information on the page file configuration of the target computer.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
@@ -19840,7 +20344,8 @@
         "Name":  "Get-DbaRegistryRoot",
         "Description":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
         "Tags":  [
-                     "Configuration",
+                     "Server",
+                     "Management",
                      "Registry"
                  ],
         "Synopsis":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
@@ -21284,10 +21789,7 @@
     {
         "Name":  "Get-DbaTempdbUsage",
         "Description":  "This function queries DMVs for running sessions using tempdb and returns results if those sessions have user or internal space allocated or deallocated against them.",
-        "Tags":  [
-                     "Tempdb",
-                     "Space"
-                 ],
+        "Tags":  "Tempdb",
         "Synopsis":  "Gets Tempdb usage for running queries.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
@@ -21326,7 +21828,10 @@
     {
         "Name":  "Get-DbatoolsChangeLog",
         "Description":  "Opens the link to our online change log. To see the local changelog instead, use the Local parameter.",
-        "Tags":  "changelog",
+        "Tags":  [
+                     "Module",
+                     "ChangeLog"
+                 ],
         "Synopsis":  "Opens the link to our online change log",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
@@ -21357,10 +21862,7 @@
     {
         "Name":  "Get-DbatoolsConfig",
         "Description":  "Retrieves configuration elements by name.\nCan be used to search the existing configuration list.",
-        "Tags":  [
-                     "Config",
-                     "Module"
-                 ],
+        "Tags":  "Module",
         "Synopsis":  "Retrieves configuration elements by name.",
         "Alias":  "",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
@@ -21407,10 +21909,7 @@
     {
         "Name":  "Get-DbatoolsConfigValue",
         "Description":  "Returns the configuration value stored under the specified name.\nIt requires the full name (\u003cModule\u003e.\u003cName\u003e) and is usually only called by functions.",
-        "Tags":  [
-                     "Config",
-                     "Module"
-                 ],
+        "Tags":  "Module",
         "Synopsis":  "Returns the configuration value stored under the specified name.",
         "Alias":  "",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
@@ -21449,7 +21948,10 @@
     {
         "Name":  "Get-DbatoolsLog",
         "Description":  "Returns log entries for dbatools. Handy when debugging or developing a script using it.",
-        "Tags":  "Debug",
+        "Tags":  [
+                     "Module",
+                     "Support"
+                 ],
         "Synopsis":  "Returns log entries for dbatools",
         "Alias":  "",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
@@ -22116,9 +22618,9 @@
         "Name":  "Get-DbaWsfcAvailableDisk",
         "Description":  "Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.",
@@ -22160,9 +22662,9 @@
         "Name":  "Get-DbaWsfcCluster",
         "Description":  "Gets information about one or more failover clusters in a given domain.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more failover clusters in a given domain.",
@@ -22204,9 +22706,9 @@
         "Name":  "Get-DbaWsfcDisk",
         "Description":  "Gets information about the clustered disks on one or more failover clusters in a given domain.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about the clustered disks on one or more failover clusters in a given domain.",
@@ -22248,9 +22750,9 @@
         "Name":  "Get-DbaWsfcNetwork",
         "Description":  "Gets information about one or more networks in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more networks in a failover cluster.",
@@ -22292,9 +22794,9 @@
         "Name":  "Get-DbaWsfcNetworkInterface",
         "Description":  "Gets information about one or more network adapters in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more network adapters in a failover cluster.",
@@ -22336,9 +22838,9 @@
         "Name":  "Get-DbaWsfcNode",
         "Description":  "Gets information about one or more nodes, or servers, in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more nodes, or servers, in a failover cluster.",
@@ -22380,9 +22882,9 @@
         "Name":  "Get-DbaWsfcResource",
         "Description":  "Gets information about one or more resources in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more resources in a failover cluster.",
@@ -22424,9 +22926,9 @@
         "Name":  "Get-DbaWsfcResourceType",
         "Description":  "Gets information about one or more resource types in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more resource types in a failover cluster.",
@@ -22468,9 +22970,9 @@
         "Name":  "Get-DbaWsfcRole",
         "Description":  "Gets information about one or more clustered roles (resource groups) in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about one or more clustered roles (resource groups) in a failover cluster.",
@@ -22512,9 +23014,9 @@
         "Name":  "Get-DbaWsfcSharedVolume",
         "Description":  "Gets information about Cluster Shared Volumes in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
         "Tags":  [
-                     "Cluster",
                      "WSFC",
                      "FCI",
+                     "WindowsCluster",
                      "HA"
                  ],
         "Synopsis":  "Gets information about Cluster Shared Volumes in a failover cluster.",
@@ -22915,8 +23417,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Grants endpoint and availability group permissions to a login.",
         "Alias":  "",
@@ -23710,11 +24211,13 @@
     {
         "Name":  "Import-DbatoolsConfig",
         "Description":  "Imports a json configuration file into the configuration system.",
+        "Tags":  "Module",
         "Synopsis":  "Imports a json configuration file into the configuration system.",
         "Alias":  "",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Import-DbatoolsConfig",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Import-DbatoolsConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbatoolsConfig -Path \u0027.\\config.json\u0027\nImports the configuration stored in \u0027.\\config.json\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbatoolsConfig -ModuleName message\nImports all the module specific settings that have been persisted in any of the default file system paths.",
         "Params":  [
                        [
@@ -23871,8 +24374,7 @@
         "Name":  "Install-DbaFirstResponderKit",
         "Description":  "Downloads, extracts and installs the First Responder Kit stored procedures:\nsp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.\n\nFirst Responder Kit links:\nhttp://FirstResponderKit.org\nhttps://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
         "Tags":  [
-                     "BrentOzar",
-                     "FRK",
+                     "Community",
                      "FirstResponderKit"
                  ],
         "Synopsis":  "Installs or updates the First Responder Kit stored procedures.",
@@ -24241,8 +24743,8 @@
         "Name":  "Install-DbaMaintenanceSolution",
         "Description":  "This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren",
         "Tags":  [
-                     "Ola",
-                     "Maintenance"
+                     "Community",
+                     "OlaHallengren"
                  ],
         "Synopsis":  "Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)",
         "Alias":  "",
@@ -24250,7 +24752,7 @@
         "CommandName":  "Install-DbaMaintenanceSolution",
         "Availability":  "Windows only",
         "Links":  "http://dbatools.io/Install-DbaMaintenanceSolution",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027MyServer\u0027\r\n        \u003e\u003e Database = \u0027maintenance\u0027\r\n        \u003e\u003e ReplaceExisting = $true\r\n        \u003e\u003e InstallJobs = $true\r\n        \u003e\u003e LogToTable = $true\r\n        \u003e\u003e BackupLocation = \u0027C:\\Data\\Backup\u0027\r\n        \u003e\u003e CleanupTime = 65\r\n        \u003e\u003e Verbose = $true\r\n        \u003e\u003e }\r\n        \u003e\u003e Install-DbaMaintenanceSolution @params\nInstalls Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they\u0027ll be replaced.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027MyServer\u0027\r\n\u003e\u003e Database = \u0027maintenance\u0027\r\n\u003e\u003e ReplaceExisting = $true\r\n\u003e\u003e InstallJobs = $true\r\n\u003e\u003e LogToTable = $true\r\n\u003e\u003e BackupLocation = \u0027C:\\Data\\Backup\u0027\r\n\u003e\u003e CleanupTime = 65\r\n\u003e\u003e Verbose = $true\r\n\u003e\u003e }\r\n\u003e\u003e Install-DbaMaintenanceSolution @params\nInstalls Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they\u0027ll be replaced.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027",
         "Params":  [
                        [
                            "SqlInstance",
@@ -24334,7 +24836,7 @@
                        ],
                        [
                            "LocalFile",
-                           "Specifies the path to a local file to install Ola\u0027s solution from. This *should* be the zipfile as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution",
+                           "Specifies the path to a local file to install Ola\u0027s solution from. This *should* be the zip file as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution",
                            "",
                            false,
                            "false",
@@ -24378,7 +24880,10 @@
     {
         "Name":  "Install-DbaSqlWatch",
         "Description":  "Downloads, extracts and installs or updates SqlWatch.\nhttps://sqlwatch.io/",
-        "Tags":  "SqlWatch",
+        "Tags":  [
+                     "Community",
+                     "SqlWatch"
+                 ],
         "Synopsis":  "Installs or updates SqlWatch.",
         "Alias":  "",
         "Author":  "Ken K (github.com/koglerk)",
@@ -24465,7 +24970,10 @@
     {
         "Name":  "Install-DbatoolsWatchUpdate",
         "Description":  "Adds the scheduled task to support Watch-DbaUpdate.",
-        "Tags":  "Module",
+        "Tags":  [
+                     "Module",
+                     "Watcher"
+                 ],
         "Synopsis":  "Adds the scheduled task to support Watch-DbaUpdate.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
@@ -24513,9 +25021,8 @@
         "Name":  "Install-DbaWhoIsActive",
         "Description":  "This command downloads, extracts and installs sp_WhoisActive with Adam\u0027s permission. To read more about sp_WhoisActive, please visit http://whoisactive.com and http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nPlease consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate\n\nNote that you will be prompted a bunch of times to confirm an action.",
         "Tags":  [
-                     "AdamMechanic",
-                     "WhoIsActive",
-                     "SpWhoIsActive"
+                     "Community",
+                     "WhoIsActive"
                  ],
         "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
         "Alias":  "",
@@ -24543,7 +25050,7 @@
                        ],
                        [
                            "LocalFile",
-                           "Specifies the path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the \r\nlatest version will be downloaded and installed from https://whoisactive.com/",
+                           "Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script. If this parameter is not specified, the \r\nlatest version will be downloaded and installed from https://whoisactive.com/",
                            "",
                            false,
                            "false",
@@ -24994,8 +25501,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Failover"
+                     "AG"
                  ],
         "Synopsis":  "Failover an availability group.",
         "Alias":  "",
@@ -25637,8 +26143,8 @@
         "Name":  "Invoke-DbaDbDataMasking",
         "Description":  "TMasks data by using randomized values determined by a configuration file and a randomizer framework\n\nIt will use a configuration file that can be made manually or generated using New-DbaDbMaskingConfig\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml",
         "Tags":  [
-                     "DataMasking",
-                     "Database"
+                     "Masking",
+                     "DataMasking"
                  ],
         "Synopsis":  "Masks data by using randomized values determined by a configuration file and a randomizer framework",
         "Alias":  "",
@@ -25786,7 +26292,7 @@
                        ],
                        [
                            "DictionaryExportPath",
-                           "Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv\nBe carefull with this feature, this export is the key to get the original values which is a security risk!",
+                           "Export the dictionary to the given path. Naming convention will be [computername]_[instancename]_[database]_Dictionary.csv\nBe careful with this feature, this export is the key to get the original values which is a security risk!",
                            "",
                            false,
                            "false",
@@ -26949,6 +27455,7 @@
         "Name":  "Invoke-DbaDbMirrorFailover",
         "Description":  "Failover a mirrored database",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -27031,6 +27538,7 @@
         "Name":  "Invoke-DbaDbMirroring",
         "Description":  "Automates the creation of database mirrors.\n\n* Verifies that a mirror is possible\n* Sets the recovery model to Full if needed\n* If the database does not exist on mirror or witness, a backup/restore is performed\n* Sets up endpoints if necessary\n* Creates a login and grants permissions to service accounts if needed\n* Starts endpoints if needed\n* Sets up partner for mirror\n* Sets up partner for primary\n* Sets up witness if one is specified\n\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -27040,7 +27548,7 @@
         "CommandName":  "Invoke-DbaDbMirroring",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDbMirroring",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirroring @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirroring @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn\u0027t prompt for confirmation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirroring @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e Primary = \u0027sql2017a\u0027\r\n\u003e\u003e Mirror = \u0027sql2017b\u0027\r\n\u003e\u003e MirrorSqlCredential = \u0027sqladmin\u0027\r\n\u003e\u003e Witness = \u0027sql2019\u0027\r\n\u003e\u003e Database = \u0027pubs\u0027\r\n\u003e\u003e SharedPath = \u0027\\\\nas\\sql\\share\u0027\r\n\u003e\u003e Force = $true\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Invoke-DbaDbMirroring @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the description, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file structure on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn\u0027t prompt for confirmation.",
         "Params":  [
                        [
                            "Primary",
@@ -27569,8 +28077,8 @@
         "Name":  "Invoke-DbaDiagnosticQuery",
         "Description":  "This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.\nThe diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:\nhttp://www.sqlskills.com/blogs/glenn/category/dmv-queries/\n\nThe most recent version of the diagnostic queries are included in the dbatools module.\nBut it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.\nIt will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object",
         "Tags":  [
-                     "Database",
-                     "DMV"
+                     "Community",
+                     "GlennBerry"
                  ],
         "Synopsis":  "Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry\u0027s DMV scripts on specified servers",
         "Alias":  "",
@@ -27578,7 +28086,7 @@
         "CommandName":  "Invoke-DbaDiagnosticQuery",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDiagnosticQuery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\nRun the selection made by the user on the Sql Server instance specified.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\\temp\\gboutput\nProvides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.\r\nThen it will export the results to Export-DbaDiagnosticQuery.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport All Queries to Disk\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries for all User Dbs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries For One Target Database\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\" -queryname \u0027Database-scoped Configurations\u0027\nExport Database Specific Queries For One Target Database and One Specific Query\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper\nChoose Queries To Export\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e[PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif\nParse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -queryname \u0027Database-scoped Configurations\u0027 -databasename TestStuff\nRun diagnostic queries targeted at specific database, and only run database level queries against this database.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\nRun the selection made by the user on the Sql Server instance specified.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\\temp\\gboutput\nProvides a grid view with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.\r\nThen it will export the results to Export-DbaDiagnosticQuery.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport All Queries to Disk\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries for all User Dbs\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\"\nExport Database Specific Queries For One Target Database\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -DatabaseSpecific -DatabaseName \u0027tempdb\u0027 -ExportQueries -OutputPath \"C:\\temp\\DiagnosticQueries\" -QueryName \u0027Database-scoped Configurations\u0027\nExport Database Specific Queries For One Target Database and One Specific Query\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance localhost -UseSelectionHelper\nChoose Queries To Export\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e[PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -WhatIf\nParse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [PSCustomObject[]] to work with further\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$results = Invoke-DbaDiagnosticQuery -SqlInstance Sql2017 -DatabaseSpecific -QueryName \u0027Database-scoped Configurations\u0027 -DatabaseName TestStuff\nRun diagnostic queries targeted at specific database, and only run database level queries against this database.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -27638,7 +28146,7 @@
                        ],
                        [
                            "UseSelectionHelper",
-                           "Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.",
+                           "Provides a grid view with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.",
                            "",
                            false,
                            "false",
@@ -27686,7 +28194,7 @@
                        ],
                        [
                            "OutputPath",
-                           "Directory to parsed diagnostict queries to. This will split them based on server, databasename, and query.",
+                           "Directory to parsed diagnostics queries to. This will split them based on server, database name, and query.",
                            "",
                            false,
                            "false",
@@ -27694,7 +28202,7 @@
                        ],
                        [
                            "ExportQueries",
-                           "Use this switch to export the diagnostic queries to sql files. I\r\nnstead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.\r\nThese sql files will then be created in the OutputDirectory",
+                           "Use this switch to export the diagnostic queries to sql files. Instead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.\r\nThese sql files will then be created in the OutputDirectory",
                            "",
                            false,
                            "false",
@@ -27891,7 +28399,7 @@
                      "Query"
                  ],
         "Synopsis":  "A command to run explicit T-SQL commands or files.",
-        "Alias":  "",
+        "Alias":  "ivq",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Invoke-DbaQuery",
         "Availability":  "Windows, Linux, macOS",
@@ -28016,7 +28524,10 @@
     {
         "Name":  "Invoke-DbatoolsFormatter",
         "Description":  "Uses PSSA\u0027s Invoke-Formatter to format the target files and saves it without the BOM.",
-        "Tags":  "Formatting",
+        "Tags":  [
+                     "Module",
+                     "Support"
+                 ],
         "Synopsis":  "Helps formatting function files to dbatools\u0027 standards",
         "Alias":  "",
         "Author":  "Simone Bizzotto",
@@ -28103,9 +28614,8 @@
         "Name":  "Invoke-DbaWhoIsActive",
         "Description":  "Output results of Adam Machanic\u0027s sp_WhoIsActive\n\nThis command was built with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
         "Tags":  [
-                     "AdamMechanic",
-                     "WhoIsActive",
-                     "SpWhoIsActive"
+                     "Community",
+                     "WhoIsActive"
                  ],
         "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive DataTable",
         "Alias":  "",
@@ -28253,7 +28763,7 @@
                        ],
                        [
                            "GetAdditonalInfo",
-                           "Get additional non-performance-related information about the session or request\r\ntext_size, language, date_format, date_first, quoted_identifier, arithabort, ansi_null_dflt_on,\r\nansi_defaults, ansi_warnings, ansi_padding, ansi_nulls, concat_null_yields_null,\r\ntransaction_isolation_level, lock_timeout, deadlock_priority, row_count, command_type\nIf a SQL Agent job is running, an subnode called agent_info will be populated with some or all of\r\nthe following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)\nIf @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be\r\npopulated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id,\r\napplock_hash, metadata_resource, metadata_class_id, object_name, schema_name",
+                           "Get additional non-performance-related information about the session or request text_size, language, date_format, date_first, quoted_identifier, arithabort, ansi_null_dflt_on, ansi_defaults, \r\nansi_warnings, ansi_padding, ansi_nulls, concat_null_yields_null, transaction_isolation_level, lock_timeout, deadlock_priority, row_count, command_type\nIf a SQL Agent job is running, an subnode called agent_info will be populated with some or all of the following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)\nIf @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id, \r\napplock_hash, metadata_resource, metadata_class_id, object_name, schema_name",
                            "",
                            false,
                            "false",
@@ -28277,7 +28787,7 @@
                        ],
                        [
                            "OutputColumnList",
-                           "List of desired output columns, in desired order\r\nNote that the final output will be the intersection of all enabled features and all\r\ncolumns in the list. Therefore, only columns associated with enabled features will\r\nactually appear in the output. Likewise, removing columns from this list may effectively\r\ndisable features, even if they are turned on\nEach element in this list must be one of the valid output column names. Names must be\r\ndelimited by square brackets. White space, formatting, and additional characters are\r\nallowed, as long as the list contains exact matches of delimited valid column names.",
+                           "List of desired output columns, in desired order\r\nNote that the final output will be the intersection of all enabled features and all columns in the list. Therefore, only columns associated with enabled features will actually appear in the output. \r\nLikewise, removing columns from this list may effectively disable features, even if they are turned on\nEach element in this list must be one of the valid output column names. Names must be delimited by square brackets. White space, formatting, and additional characters are allowed, as long as the list \r\ncontains exact matches of delimited valid column names.",
                            "",
                            false,
                            "false",
@@ -28285,7 +28795,7 @@
                        ],
                        [
                            "SortOrder",
-                           "Column(s) by which to sort output, optionally with sort directions.\r\nValid column choices:\r\nsession_id, physical_io, reads, physical_reads, writes, tempdb_allocations,\r\ntempdb_current, CPU, context_switches, used_memory, physical_io_delta,\r\nreads_delta, physical_reads_delta, writes_delta, tempdb_allocations_delta,\r\ntempdb_current_delta, CPU_delta, context_switches_delta, used_memory_delta,\r\ntasks, tran_start_time, open_tran_count, blocking_session_id, blocked_session_count,\r\npercent_complete, host_name, login_name, database_name, start_time, login_time\nNote that column names in the list must be bracket-delimited. Commas and/or white\r\nspace are not required.",
+                           "Column(s) by which to sort output, optionally with sort directions.\r\nValid column choices:\r\nsession_id, physical_io, reads, physical_reads, writes, tempdb_allocations,\r\ntempdb_current, CPU, context_switches, used_memory, physical_io_delta,\r\nreads_delta, physical_reads_delta, writes_delta, tempdb_allocations_delta,\r\ntempdb_current_delta, CPU_delta, context_switches_delta, used_memory_delta,\r\ntasks, tran_start_time, open_tran_count, blocking_session_id, blocked_session_count,\r\npercent_complete, host_name, login_name, database_name, start_time, login_time\nNote that column names in the list must be bracket-delimited. Commas and/or white space are not required.",
                            "",
                            false,
                            "false",
@@ -28309,7 +28819,7 @@
                        ],
                        [
                            "ReturnSchema",
-                           "If set to 1, no data collection will happen and no result set will be returned; instead,\r\na CREATE TABLE statement will be returned via the @schema parameter, which will match\r\nthe schema of the result set that would be returned by using the same collection of the\r\nrest of the parameters. The CREATE TABLE statement will have a placeholder token of\r\n\u003ctable_name\u003e in place of an actual table name.",
+                           "If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result \r\nset that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of \u003ctable_name\u003e in place of an actual table name.",
                            "",
                            false,
                            "false",
@@ -28317,7 +28827,7 @@
                        ],
                        [
                            "Schema",
-                           "If set to 1, no data collection will happen and no result set will be returned; instead,\r\na CREATE TABLE statement will be returned via the @schema parameter, which will match\r\nthe schema of the result set that would be returned by using the same collection of the\r\nrest of the parameters. The CREATE TABLE statement will have a placeholder token of\r\n\u003ctable_name\u003e in place of an actual table name.",
+                           "If set to 1, no data collection will happen and no result set will be returned; instead, a CREATE TABLE statement will be returned via the @schema parameter, which will match the schema of the result \r\nset that would be returned by using the same collection of the rest of the parameters. The CREATE TABLE statement will have a placeholder token of \u003ctable_name\u003e in place of an actual table name.",
                            "",
                            false,
                            "false",
@@ -28423,8 +28933,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Joins a secondary replica to an availability group on a SQL Server instance.",
         "Alias":  "",
@@ -28690,9 +29199,10 @@
         "Name":  "Measure-DbaDiskSpaceRequirement",
         "Description":  "Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.\nThis command will accept a hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.",
         "Tags":  [
-                     "Database",
-                     "DiskSpace",
-                     "Migration"
+                     "Server",
+                     "Management",
+                     "Space",
+                     "Database"
                  ],
         "Synopsis":  "Calculate the space needed to copy and possibly replace a database from one SQL server to another.",
         "Alias":  "",
@@ -28772,7 +29282,10 @@
     {
         "Name":  "Measure-DbatoolsImport",
         "Description":  "Displays the import load times of the dbatools PowerShell module",
-        "Tags":  "Debug",
+        "Tags":  [
+                     "Module",
+                     "Support"
+                 ],
         "Synopsis":  "Displays the import load times of the dbatools PowerShell module",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
@@ -29911,7 +30424,7 @@
     },
     {
         "Name":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n* Performs backup/restore if seeding mode is manual\n* Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
@@ -30402,7 +30915,7 @@
                        ],
                        [
                            "DisabledConnectionTypes",
-                           "Exlicitly disable connection types.\r\nThese types will then not be used for connecting to the computer.",
+                           "Explicitly disable connection types.\r\nThese types will then not be used for connecting to the computer.",
                            "",
                            false,
                            "false",
@@ -32076,8 +32589,8 @@
         "Name":  "New-DbaDbMaskingConfig",
         "Description":  "Generates a new data masking configuration file. This file is important to apply any data masking to the data in a database.\n\nNote that the following column and data types are not currently supported:\nIdentity\nForeignKey\nComputed\nHierarchyid\nGeography\nGeometry\nXml\n\nRead more here:\nhttps://sachabarbs.wordpress.com/2018/06/11/bogus-simple-fake-data-tool/\nhttps://github.com/bchavez/Bogus",
         "Tags":  [
-                     "DataMasking",
-                     "Database"
+                     "Masking",
+                     "DataMasking"
                  ],
         "Synopsis":  "Generates a new data masking configuration file to be used with Invoke-DbaDbDataMasking",
         "Alias":  "",
@@ -33134,12 +33647,14 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString[]\u003e] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString\u003e] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDiagnosticAdsNotebook",
         "Description":  "Creates a new Jupyter Notebook for use with Azure Data Studio, based on Glenn Berry\u0027s\npopular Diagnostic queries",
         "Tags":  [
+                     "Community",
+                     "GlennBerry",
                      "Notebooks",
                      "AzureDataStudio"
                  ],
@@ -33371,7 +33886,7 @@
                        ],
                        [
                            "Port",
-                           "Port for TCP. If one is not provided, it will be autogenerated.",
+                           "Port for TCP. If one is not provided, it will be auto-generated.",
                            "",
                            false,
                            "false",
@@ -33858,7 +34373,10 @@
     {
         "Name":  "New-DbatoolsSupportPackage",
         "Description":  "This function creates an extensive debugging package that can help with reproducing and fixing issues.\n\nThe file will be created on the desktop by default and will contain quite a bit of information:\n- OS Information\n- Hardware Information (CPU, Ram, things like that)\n- .NET Information\n- PowerShell Information\n- Your input history\n- The In-Memory message log\n- The In-Memory error log\n- Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.",
-        "Tags":  "Debug",
+        "Tags":  [
+                     "Module",
+                     "Support"
+                 ],
         "Synopsis":  "Creates a package of troubleshooting information that can be used by dbatools to help debug issues.",
         "Alias":  "",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
@@ -35072,11 +35590,13 @@
     {
         "Name":  "Register-DbatoolsConfig",
         "Description":  "Registers an existing configuration object in registry.\nThis allows simple persisting of settings across powershell consoles.\nIt also can be used to generate a registry template, which can then be used to create policies.",
+        "Tags":  "Module",
         "Synopsis":  "Registers an existing configuration object in registry.",
         "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Register-DbatoolsConfig",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Register-DbatoolsConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig message.style.* | Register-DbatoolsConfig\nRetrieves all configuration items that that start with message.style. and registers them in registry for the current user.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -FullName \"message.consoleoutput.disable\" -Scope SystemDefault\nRetrieves the configuration item \"message.consoleoutput.disable\" and registers it in registry as the default setting for all users on this machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRegister-DbatoolsConfig -Module Message -Scope SystemMandatory\nRetrieves all configuration items of the module Message, then registers them in registry to enforce them for all users on the current system.",
         "Params":  [
                        [
@@ -35136,8 +35656,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Database"
+                     "AG"
                  ],
         "Synopsis":  "Removes a database from an availability group on a SQL Server instance.",
         "Alias":  "",
@@ -35634,8 +36153,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Listener"
+                     "AG"
                  ],
         "Synopsis":  "Removes a listener from an availability group on a SQL Server instance.",
         "Alias":  "",
@@ -35718,8 +36236,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Removes availability group replicas from availability groups.",
         "Alias":  "",
@@ -36705,6 +37222,7 @@
         "Name":  "Remove-DbaDbMirror",
         "Description":  "Removes database mirrors. Does not set databases in recovery to recovered.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -36779,9 +37297,9 @@
         "Name":  "Remove-DbaDbMirrorMonitor",
         "Description":  "Stops and deletes the mirroring monitor job for all the databases on the server instance.\n\nBasically executes sp_dbmmonitordropmonitoring.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
-                     "HA",
-                     "Monitor"
+                     "HA"
                  ],
         "Synopsis":  "Stops and deletes the mirroring monitor job for all the databases on the server instance.",
         "Alias":  "",
@@ -38453,6 +38971,7 @@
         "Name":  "Repair-DbaDbMirror",
         "Description":  "Attempts to repair a suspended mirroring database.\n\nRestarts the endpoints then sets the partner to resume. See this article for more info:\n\nhttp://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -38771,11 +39290,13 @@
     {
         "Name":  "Reset-DbatoolsConfig",
         "Description":  "This command can be used to revert a configuration item to the value it was initialized with.\nGenerally, this amounts to reverting it to its default value.\n\nIn order for a reset to be possible, two conditions must be met:\n- The setting must have been initialized.\n- The setting cannot have been enforced by policy.",
+        "Tags":  "Module",
         "Synopsis":  "Reverts a configuration item to its default value.",
         "Alias":  "",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Reset-DbatoolsConfig",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Reset-DbatoolsConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eReset-DbatoolsConfig -Module MyModule\nResets all configuration items of the MyModule to default.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Reset-DbatoolsConfig\nResets ALL configuration items to default.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eReset-DbatoolsConfig -FullName MyModule.Group.Setting1\nResets the configuration item named \u0027MyModule.Group.Setting1\u0027.",
         "Params":  [
                        [
@@ -39622,8 +40143,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Resumes data movement for an availability group database on a SQL Server instance.",
         "Alias":  "",
@@ -39706,8 +40226,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Login"
+                     "AG"
                  ],
         "Synopsis":  "Revokes endpoint and availability group permissions to a login.",
         "Alias":  "",
@@ -39804,9 +40323,8 @@
         "Name":  "Save-DbaDiagnosticQueryScript",
         "Description":  "The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
         "Tags":  [
-                     "Diagnostic",
-                     "DMV",
-                     "Troubleshooting"
+                     "Community",
+                     "GlennBerry"
                  ],
         "Synopsis":  "Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts",
         "Alias":  "",
@@ -41206,8 +41724,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Listener"
+                     "AG"
                  ],
         "Synopsis":  "Sets a listener property for an availability group on a SQL Server instance.",
         "Alias":  "",
@@ -41298,8 +41815,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Sets the properties for a replica to an availability group on a SQL Server instance.",
         "Alias":  "",
@@ -42069,6 +42585,7 @@
         "Name":  "Set-DbaDbMirror",
         "Description":  "Sets properties of database mirrors.",
         "Tags":  [
+                     "Mirroring",
                      "Mirror",
                      "HA"
                  ],
@@ -42106,7 +42623,7 @@
                        ],
                        [
                            "Partner",
-                           "Sets the partner fqdn.",
+                           "Sets the partner Fully Qualified Domain Name.",
                            "",
                            false,
                            "false",
@@ -42114,7 +42631,7 @@
                        ],
                        [
                            "Witness",
-                           "Sets the witness fqdn.",
+                           "Sets the witness Fully Qualified Domain Name.",
                            "",
                            false,
                            "false",
@@ -42723,7 +43240,7 @@
         "CommandName":  "Set-DbaEndpoint",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaEndpoint",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa\nSets all endpoint owners to sa on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance sql2016 -Endpoint ep1 | Set-DbaEndpoint -Type TSql\nChanges the endpoint type to tsql on endpoint ep1",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa\nSets all endpoint owners to sa on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance sql2016 -Endpoint ep1 | Set-DbaEndpoint -Type TSql\nChanges the endpoint type to Tsql on endpoint ep1",
         "Params":  [
                        [
                            "SqlInstance",
@@ -43872,8 +44389,6 @@
         "Description":  "Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.\n\nOther parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is \"smaller\" than what the function will size it to before running the function.",
         "Tags":  [
                      "Tempdb",
-                     "Space",
-                     "Configure",
                      "Configuration"
                  ],
         "Synopsis":  "Sets tempdb data and log files according to best practices.",
@@ -45630,8 +46145,7 @@
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
-                     "AG",
-                     "Replica"
+                     "AG"
                  ],
         "Synopsis":  "Suspends data movement for an availability group database on a SQL Server instance.",
         "Alias":  "",
@@ -46597,8 +47111,8 @@
         "Name":  "Test-DbaDbDataMaskingConfig",
         "Description":  "When you\u0027re dealing with large masking configurations, things can get complicated and messy.\nThis function will test for a range of rules and returns all the tables and columns that contain errors.",
         "Tags":  [
-                     "Data masking",
-                     "Testing"
+                     "Masking",
+                     "DataMasking"
                  ],
         "Synopsis":  "Checks the masking configuration if it\u0027s valid",
         "Alias":  "",
@@ -48119,8 +48633,8 @@
         "Name":  "Test-DbaTempDbConfig",
         "Description":  "Evaluates tempdb against a set of rules to match best practices. The rules are:\n\n* TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).\n* File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?\n* File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.\n* File Location - Is tempdb located on the C:\\? Best practice says to locate it elsewhere.\n* File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn\u0027t allowed to grow.\n* Data File Size Equal - Are the sizes of all the tempdb data files the same?\n\nOther rules can be added at a future date.",
         "Tags":  [
-                     "tempdb",
-                     "configuration"
+                     "Tempdb",
+                     "Configuration"
                  ],
         "Synopsis":  "Evaluates tempdb against several rules to match best practices.",
         "Alias":  "",
@@ -48234,7 +48748,10 @@
     {
         "Name":  "Uninstall-DbaSqlWatch",
         "Description":  "Deletes all user objects, agent jobs, and historical data associated with SqlWatch.",
-        "Tags":  "SqlWatch",
+        "Tags":  [
+                     "Community",
+                     "SqlWatch"
+                 ],
         "Synopsis":  "Uninstalls SqlWatch.",
         "Alias":  "",
         "Author":  "Ken K (github.com/koglerk)",
@@ -48298,8 +48815,8 @@
         "Name":  "Uninstall-DbatoolsWatchUpdate",
         "Description":  "Removes the scheduled task created for Watch-DbaUpdate by Install-DbatoolsWatchUpdate so that notifications no longer pop up.",
         "Tags":  [
-                     "JustForFun",
-                     "Module"
+                     "Module",
+                     "Watcher"
                  ],
         "Synopsis":  "Removes the scheduled task created for Watch-DbaUpdate by Install-DbatoolsWatchUpdate so that notifications no longer pop up.",
         "Alias":  "",
@@ -48316,11 +48833,13 @@
     {
         "Name":  "Unregister-DbatoolsConfig",
         "Description":  "Removes registered configuration settings.\nThis function can be used to remove settings that have been persisted for either user or computer.\n\nNote: This command has no effect on configuration settings currently in memory.",
+        "Tags":  "Module",
         "Synopsis":  "Removes registered configuration settings.",
         "Alias":  "",
+        "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Unregister-DbatoolsConfig",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
+        "Links":  "https://dbatools.io/Unregister-DbatoolsConfig",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbatoolsConfig | Unregister-DbatoolsConfig\nCompletely removes all registered configurations currently loaded in memory.\r\nIn most cases, this will mean removing all registered configurations.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUnregister-DbatoolsConfig -Scope SystemDefault -FullName \u0027MyModule.Path.DefaultExport\u0027\nUnregisters the setting \u0027MyModule.Path.DefaultExport\u0027 from the list of computer-wide defaults.\r\nNote: Changing system wide settings requires running the console with elevation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUnregister-DbatoolsConfig -Module MyModule\nUnregisters all configuration settings for the module MyModule.",
         "Params":  [
                        [
@@ -48624,7 +49143,7 @@
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Update-Dbatools",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Update-DbaTools",
+        "Links":  "https://dbatools.io/Update-Dbatools",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-Dbatools\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-Dbatools -dev\nUpdates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.",
         "Params":  [
                        [
@@ -48737,8 +49256,8 @@
         "Name":  "Watch-DbatoolsUpdate",
         "Description":  "Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.\n\nAnyone know how to make it clickable so that it opens an URL?",
         "Tags":  [
-                     "JustForFun",
-                     "Module"
+                     "Module",
+                     "Watcher"
                  ],
         "Synopsis":  "Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.",
         "Alias":  "",

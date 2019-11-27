@@ -1104,10 +1104,16 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
+        [ValidateSet('AES128', 'AES192', 'AES256', 'TRIPLEDES')]
+        [String]$EncryptionAlgorithm,
+        [String]$EncryptionCertificate,
         [switch]$EnableException
     )
 
     begin {
+        # This is here ready to go when get EKM working so we can do encrption with asymmetric encryption.
+        $EncryptionKey = $null
+
         if (-not (Test-Bound 'TimeStampFormat')) {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
@@ -1197,6 +1203,38 @@ function Backup-DbaDatabase {
                 $Path = $AzureBaseUrl
             }
 
+            if (Test-Bound 'EncryptionAlgorithm') {
+                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                    return
+                } else {
+                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                    if (Test-Bound 'EncryptionCertificate') {
+                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                        if ($null -eq $tCertCheck) {
+                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                            $encryptionOptions.encryptorName = $EncryptionCertificate
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                    if (Test-Bound 'EncryptionKey') {
+                        # Should not end up here until Key encryption in implemented
+                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                        if ($null -eq $tKeyCheck) {
+                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                            $encryptionOptions.encryptorName = $EncryptionKey
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                }
+            }
+
             if ($OutputScriptOnly) {
                 $IgnoreFileChecks = $true
             }
@@ -1273,6 +1311,10 @@ function Backup-DbaDatabase {
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             $Suffix = "bak"
+
+            if ($null -ne $encryptionOptions) {
+                $backup.EncryptionOption = $encryptionOptions
+            }
 
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
@@ -1492,6 +1534,9 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
+                                    EncryptorName        = $encryptionOptions.EncryptorName
+                                    KeyAlgorithm         = $encryptionOptions.Algorithm
+                                    EncruptorType        = $encryptionOptions.encryptorType
                                 } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
@@ -1530,9 +1575,11 @@ function Backup-DbaDatabase {
                 }
             }
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+
             if ($failures.Count -eq 0) {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
+
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
             $FilePath = $null
         }
@@ -7108,6 +7155,7 @@ function Copy-DbaDbTableData {
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
+                        $cmd.CommandTimeout = 0
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
@@ -15181,7 +15229,12 @@ function Find-DbaCommand {
             if ($commandName -in $script:noncoresmo -or $commandName -in $script:windowsonly) {
                 $availability = 'Windows only'
             }
-            $thishelp = Get-Help $commandName -Full
+            try {
+                $thishelp = Get-Help $commandName -Full
+            } catch {
+                Stop-Function -Message "Issue getting help for $commandName" -Target $commandName -ErrorRecord $_ -Continue
+            }
+
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
@@ -15250,7 +15303,8 @@ function Find-DbaCommand {
         function Get-DbaIndex() {
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
                 $dbamodule = Get-Module -Name dbatools
-                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -EQ 'Function'
+                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -In 'Function', 'Cmdlet' | Select-Object -Unique
+                #Had to add Unique because Select-DbaObject was getting populated twice once written to the index file
 
                 $helpcoll = New-Object System.Collections.Generic.List[System.Object]
                 foreach ($command in $allCommands) {
@@ -20179,16 +20233,13 @@ function Get-DbaClientProtocol {
         [PSCredential] $Credential,
         [switch]$EnableException
     )
-
     process {
         foreach ( $computer in $ComputerName.ComputerName ) {
             $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
             if ( $server.FullComputerName ) {
                 $computer = $server.FullComputerName
                 Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
-                $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                    Where-Object { (Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
-                    Sort-Object Name -Descending | Select-Object -First 1
+                $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue | Where-Object { (Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
 
                 if ( $namespace.Name ) {
                     Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer"
@@ -20205,15 +20256,13 @@ function Get-DbaClientProtocol {
                     } catch {
                         Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer"
                     }
-                } #if namespace
-                else {
+                } else {
                     Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up."
-                } #else no namespace
-            } #if computername
-            else {
+                }
+            } else {
                 Write-Message -Level Warning -Message "Failed to connect to $computer"
             }
-        } #foreach computer
+        }
     }
 }
 
@@ -20225,15 +20274,10 @@ function Get-DbaCmConnection {
     (
         [Parameter(ValueFromPipeline)]
         [Alias('Filter')]
-        [String[]]
-        $ComputerName = "*",
-
-        [String]
-        $UserName = "*",
-
+        [String[]]$ComputerName = "*",
+        [String]$UserName = "*",
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
@@ -21604,17 +21648,34 @@ function Get-DbaDbBackupHistory {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.VersionMajor -ge 10) {
+            if ($server.VersionMajor -ge 12) {
+                $compressedFlag = $true
+                $encryptedFlag = $true
+                # 2014 introducted encryption
+                $backupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize,
+                encryptor_thumbprint as EncryptorThumbprint,
+                encryptor_type as EncryptorType,
+                key_algorithm AS KeyAlgorithm"
+
+            } elseif ($server.VersionMajor -ge 10 -and $server.VersionMajor -lt 12) {
                 $compressedFlag = $true
                 # 2008 introduced compressed_backup_size
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                backupset.compressed_backup_size as CompressedBackupSize"
+                backupset.compressed_backup_size as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                NULL as CompressedBackupSize"
+                NULL as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             }
 
             $databases = @()
@@ -21798,7 +21859,10 @@ function Get-DbaDbBackupHistory {
                         a.DeviceType,
                         a.is_copy_only,
                         a.last_recovery_fork_guid,
-                        a.recovery_model
+                        a.recovery_model,
+                        a.EncryptorThumbprint,
+                        a.EncryptorType,
+                        a.KeyAlgorithm
                     FROM (
                         SELECT
                         RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
@@ -22046,6 +22110,9 @@ function Get-DbaDbBackupHistory {
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
                     $historyObject.RecoveryModel = $commonFields.recovery_model
+                    $historyObject.EncryptorType = $commonFields.EncryptorType
+                    $historyObject.EncryptorThumbprint = $commonFields.EncryptorThumbprint
+                    $historyObject.KeyAlgorithm = $commonFields.KeyAlgorithm
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
@@ -25500,60 +25567,50 @@ function Get-DbaDbStoredProcedure {
     
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
+            }
+            if ($db.StoredProcedures.Count -eq 0) {
+                Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-            foreach ($db in $databases) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-                    continue
-                }
-                if ($db.StoredProcedures.Count -eq 0) {
-                    Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+            foreach ($proc in $db.StoredProcedures) {
+                if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
                     continue
                 }
 
-                foreach ($proc in $db.StoredProcedures) {
-                    if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
-                        continue
-                    }
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $proc.Parent.ComputerName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $proc.Parent.InstanceName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $proc.Parent.SqlInstance
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
-
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
-                    'DateLastModified', 'Name', 'ImplementationType', 'Startup'
-                    Select-DefaultView -InputObject $proc -Property $defaults
-                }
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
+                'DateLastModified', 'Name', 'ImplementationType', 'Startup'
+                Select-DefaultView -InputObject $proc -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbTable {
@@ -25793,56 +25850,50 @@ function Get-DbaDbView {
     
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $views = $db.views
+            if (-not $db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+            if (-not $views) {
+                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                continue
             }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            if (Test-Bound -ParameterName ExcludeSystemView) {
+                $views = $views | Where-Object { -not $_.IsSystemObject }
             }
 
-            foreach ($db in $databases) {
-                $views = $db.views
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
+            foreach ($view in $views) {
 
-                if (!$views) {
-                    Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
-                if (Test-Bound -ParameterName ExcludeSystemView) {
-                    $views = $views | Where-Object { $_.IsSystemObject -eq $false }
-                }
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $view.Parent.ComputerName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $view.Parent.InstanceName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $view.Parent.SqlInstance
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
 
-                $views | ForEach-Object {
-
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
-
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name
-                }
+                Select-DefaultView -InputObject $view -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbVirtualLogFile {
@@ -28322,16 +28373,13 @@ function Get-DbaInstanceProtocol {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ($Server.FullComputerName) {
                 $Computer = $server.FullComputerName
                 Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
-                $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                    Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
-                    Sort-Object Name -Descending | Select-Object -First 1
+                $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue | Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
                 if ($namespace.Name) {
                     Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
                     try {
@@ -28768,10 +28816,6 @@ function Get-DbaLastBackup {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-                    Continue
-                }
                 $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastFullBackup) {
                     $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
@@ -29062,7 +29106,6 @@ function Get-DbaLocaleSetting {
         [PSCredential] $Credential,
         [switch]$EnableException
     )
-
     begin {
         $ComputerName = $ComputerName | ForEach-Object { $_.split("\")[0] } | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
@@ -29072,9 +29115,6 @@ function Get-DbaLocaleSetting {
         [UInt32]$CIMHiveCU = 2147483649
     }
     process {
-        # uses cim commands
-
-
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
@@ -29088,26 +29128,22 @@ function Get-DbaLocaleSetting {
                 }
                 if ( $CIMSession ) {
                     Write-Message -Level Verbose -Message "Getting properties from Registry Key"
-                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname } |
-                        Select-Object -ExpandProperty snames
+                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname } | Select-Object -ExpandProperty snames
 
                     foreach ($Name in $PropNames) {
-                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } |
-                            Select-Object -ExpandProperty svalue
+                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } | Select-Object -ExpandProperty svalue
                         $props.add($Name, $sValue)
                     }
                     [PSCustomObject]$props
-                } #if CIMSession
-                else {
+                } else {
                     Write-Message -Level Warning -Message "Can't create CIMSession on $computer"
                 }
-            } #if computername
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Can't connect to $computer"
             }
-        } #foreach computer
-    } #PROCESS
-} #function
+        }
+    }
+}
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaLogin {
@@ -29682,7 +29718,6 @@ function Get-DbaMemoryUsage {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-
     begin {
         if ($Simple) {
             $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
@@ -29708,20 +29743,18 @@ function Get-DbaMemoryUsage {
             Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Memcounters } |
-                    ForEach-Object {
-                        $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-                        if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-                        [PSCustomObject]@{
-                            ComputerName    = $env:computername
-                            SqlInstance     = $instance
-                            CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                            Counter         = $_.Path.split("\")[-1]
-                            Pages           = $null
-                            Memory          = $_.cookedvalue / 1024
-                        }
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Memcounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024
                     }
+                }
             } catch {
                 
                 Write-Verbose -Message "No Memory Manager Counters on $Computer"
@@ -29730,20 +29763,18 @@ function Get-DbaMemoryUsage {
             Write-Verbose -Message "Searching for Plan Cache Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Plancounters } |
-                    ForEach-Object {
-                        $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-                        if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-                        [PSCustomObject]@{
-                            ComputerName    = $env:computername
-                            SqlInstance     = $instance
-                            CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                            Counter         = $_.Path.split("\")[-1]
-                            Pages           = $_.cookedvalue
-                            Memory          = $_.cookedvalue * 8192 / 1048576
-                        }
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Plancounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $_.cookedvalue
+                        Memory          = $_.cookedvalue * 8192 / 1048576
                     }
+                }
             } catch {
                 
                 Write-Verbose -Message "No Plan Cache Counters on $Computer"
@@ -29752,20 +29783,18 @@ function Get-DbaMemoryUsage {
             Write-Verbose -Message "Searching for Buffer Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $BufManpagecounters } |
-                    ForEach-Object {
-                        $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-                        if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-                        [PSCustomObject]@{
-                            ComputerName    = $env:computername
-                            SqlInstance     = $instance
-                            CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                            Counter         = $_.Path.split("\")[-1]
-                            Pages           = $_.cookedvalue
-                            Memory          = $_.cookedvalue * 8192 / 1048576.0
-                        }
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $BufManpagecounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $_.cookedvalue
+                        Memory          = $_.cookedvalue * 8192 / 1048576.0
                     }
+                }
             } catch {
                 
                 Write-Verbose -Message "No Buffer Manager Counters on $Computer"
@@ -29774,20 +29803,18 @@ function Get-DbaMemoryUsage {
             Write-Verbose -Message "Searching for SSAS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSAScounters } |
-                    ForEach-Object {
-                        $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-                        if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-                        [PSCustomObject]@{
-                            ComputerName    = $env:COMPUTERNAME
-                            SqlInstance     = $instance
-                            CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                            Counter         = $_.Path.split("\")[-1]
-                            Pages           = $null
-                            Memory          = $_.cookedvalue / 1024
-                        }
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSAScounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:COMPUTERNAME
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024
                     }
+                }
             } catch {
                 
                 Write-Verbose -Message "No SSAS Counters on $Computer"
@@ -29796,27 +29823,24 @@ function Get-DbaMemoryUsage {
             Write-Verbose -Message "Searching for SSIS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSIScounters } |
-                    ForEach-Object {
-                        $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-                        if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-                        [PSCustomObject]@{
-                            ComputerName    = $env:computername
-                            SqlInstance     = $instance
-                            CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                            Counter         = $_.Path.split("\")[-1]
-                            Pages           = $null
-                            Memory          = $_.cookedvalue / 1024 / 1024
-                        }
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSIScounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024 / 1024
                     }
+                }
             } catch {
                 
                 Write-Verbose -Message "No SSIS Counters on $Computer"
             }
         }
     }
-
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue
@@ -34863,7 +34887,7 @@ function Get-DbaTempdbUsage {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -34877,17 +34901,11 @@ function Get-DbaTempdbUsage {
         SERVERPROPERTY('ServerName') AS SqlInstance,
         t.session_id AS Spid,
         r.command AS StatementCommand,
-        SUBSTRING(   est.[text],
-                     (r.statement_start_offset / 2) + 1,
-                     ((CASE r.statement_end_offset
-                            WHEN-1
-                            THEN DATALENGTH(est.[text])
-                            ELSE
-                            r.statement_end_offset
-                       END - r.statement_start_offset
-                      ) / 2
-                     ) + 1
-                 ) AS QueryText,
+        SUBSTRING(   est.[text], (r.statement_start_offset / 2) + 1,
+            ((CASE r.statement_end_offset
+                WHEN-1 THEN DATALENGTH(est.[text]) ELSE r.statement_end_offset
+                END - r.statement_start_offset
+            ) / 2 ) + 1 ) AS QueryText,
         QUOTENAME(DB_NAME(r.database_id)) + N'.' + QUOTENAME(OBJECT_SCHEMA_NAME(est.objectid, est.dbid)) + N'.'
         + QUOTENAME(OBJECT_NAME(est.objectid, est.dbid)) AS ProcedureName,
         r.start_time AS StartTime,
@@ -34920,22 +34938,19 @@ INNER JOIN sys.dm_exec_sessions AS s
     ON s.session_id = t.session_id
 LEFT JOIN sys.dm_exec_requests AS r
     ON r.session_id = s.session_id
-LEFT JOIN
-          (   SELECT    _tsu.session_id,
-                        _tsu.request_id,
-                        SUM(_tsu.user_objects_alloc_page_count)       AS UserObjectAllocated,
-                        SUM(_tsu.user_objects_dealloc_page_count)     AS UserObjectDeallocated,
-                        SUM(_tsu.internal_objects_alloc_page_count)   AS InternalObjectAllocated,
-                        SUM(_tsu.internal_objects_dealloc_page_count) AS InternalObjectDeallocated
-              FROM      tempdb.sys.dm_db_task_space_usage AS _tsu
-              GROUP BY  _tsu.session_id,
-                        _tsu.request_id
-          ) AS tdb
-    ON  tdb.session_id = r.session_id
-   AND  tdb.request_id = r.request_id
+LEFT JOIN (
+    SELECT _tsu.session_id,
+        _tsu.request_id,
+        SUM(_tsu.user_objects_alloc_page_count)       AS UserObjectAllocated,
+        SUM(_tsu.user_objects_dealloc_page_count)     AS UserObjectDeallocated,
+        SUM(_tsu.internal_objects_alloc_page_count)   AS InternalObjectAllocated,
+        SUM(_tsu.internal_objects_dealloc_page_count) AS InternalObjectDeallocated
+    FROM tempdb.sys.dm_db_task_space_usage AS _tsu
+    GROUP BY _tsu.session_id, _tsu.request_id
+) AS tdb ON  tdb.session_id = r.session_id AND  tdb.request_id = r.request_id
 OUTER APPLY sys.dm_exec_sql_text(r.[sql_handle]) AS est
 WHERE   t.session_id != @@SPID
-  AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
+AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
 OPTION (RECOMPILE);"
 
             $server.Query($sql)
@@ -35054,56 +35069,54 @@ function Get-DbatoolsLog {
         }
 
         if (Test-Bound -ParameterName LastError) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            } | Select-Object -Last 1
-    }
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
+        }
 
-    if (Test-Bound -ParameterName Target) {
-        $messages = $messages | Where-Object TargetObject -eq $Target
-    }
+        if (Test-Bound -ParameterName Target) {
+            $messages = $messages | Where-Object TargetObject -eq $Target
+        }
 
-    if (Test-Bound -ParameterName Tag) {
-        $messages = $messages | Where-Object {
-            $_.Tags | Where-Object {
-                $_ -in $Tag
+        if (Test-Bound -ParameterName Tag) {
+            $messages = $messages | Where-Object {
+                $_.Tags | Where-Object {
+                    $_ -in $Tag
+                }
             }
         }
-    }
 
-    if (Test-Bound -ParameterName Runspace) {
-        $messages = $messages | Where-Object Runspace -eq $Runspace
-    }
+        if (Test-Bound -ParameterName Runspace) {
+            $messages = $messages | Where-Object Runspace -eq $Runspace
+        }
 
-    if (Test-Bound -ParameterName Last) {
-        $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
-        $start = $history[0].StartExecutionTime
-        $end = $history[-1].EndExecutionTime
+        if (Test-Bound -ParameterName Last) {
+            $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
+            $start = $history[0].StartExecutionTime
+            $end = $history[-1].EndExecutionTime
 
-        $messages = $messages | Where-Object {
-            ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            $messages = $messages | Where-Object {
+                ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            }
+        }
+
+        if (Test-Bound -ParameterName Level) {
+            $messages = $messages | Where-Object Level -In $Level
+        }
+
+        if ($Raw) {
+            return $messages
+        } else {
+            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
+                Name       = "Message"
+                Expression = {
+                    $msg = ($_.Message.Split("`n") -join " ")
+                    do {
+                        $msg = $msg.Replace('  ', ' ')
+                    } until ($msg -notmatch '  ')
+                    $msg
+                }
+            }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
         }
     }
-
-    if (Test-Bound -ParameterName Level) {
-        $messages = $messages | Where-Object Level -In $Level
-    }
-
-    if ($Raw) {
-        return $messages
-    } else {
-        $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
-            Name       = "Message"
-            Expression = {
-                $msg = ($_.Message.Split("`n") -join " ")
-                do {
-                    $msg = $msg.Replace('  ', ' ')
-                } until ($msg -notmatch '  ')
-                $msg
-            }
-        }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
-    }
-}
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -39582,7 +39595,6 @@ function Install-DbaMaintenanceSolution {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
@@ -40880,7 +40892,7 @@ Function Invoke-DbaAdvancedUpdate {
             try {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
                 $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
-                    if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
+                    if ($args[0] -like '*\dbatools_KB*_Extract*' -and (Test-Path $args[0])) {
                         Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                     }
                 } -Raw -ArgumentList $spExtractPath
@@ -42141,7 +42153,7 @@ function Invoke-DbaDbDataMasking {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -42160,7 +42172,7 @@ function Invoke-DbaDbDataMasking {
                 }
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false -ConnectTimeout $ConnectionTimeout
+                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -WhatIf:$false -ConnectTimeout $ConnectionTimeout
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $sqlconn.Open()
                 $transaction = $sqlconn.BeginTransaction()
@@ -45701,20 +45713,15 @@ function Invoke-DbaDbUpgrade {
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaDiagnosticQuery {
     
-
     [CmdletBinding(SupportsShouldProcess)]
-    [outputtype([pscustomobject[]])]
+    [OutputType([pscustomobject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [Alias('DatabaseName')]
         [object[]]$Database,
-
         [object[]]$ExcludeDatabase,
-
         [object[]]$ExcludeQuery,
-
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [System.IO.FileInfo]$Path,
@@ -45725,14 +45732,11 @@ function Invoke-DbaDiagnosticQuery {
         [Switch]$ExcludeQueryTextColumn,
         [Switch]$ExcludePlanColumn,
         [Switch]$NoColumnParsing,
-
         [string]$OutputPath,
         [switch]$ExportQueries,
-
         [switch]
         [switch]$EnableException
     )
-
     begin {
         $ProgressId = Get-Random
 
@@ -45788,7 +45792,6 @@ function Invoke-DbaDiagnosticQuery {
             }
         }
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -46978,12 +46981,10 @@ function Invoke-DbaWhoIsActive {
         [switch]$Help,
         [switch]$EnableException
     )
-
     begin {
         $passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
         $localparams = $psboundparameters
     }
-
     process {
 
         foreach ($instance in $sqlinstance) {
@@ -47399,8 +47400,7 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$credential
             )
-            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
+            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential | Select-Object @{n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -49835,7 +49835,6 @@ function New-DbaCmConnection {
         $CimDCOMOptions,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
@@ -51772,7 +51771,6 @@ function New-DbaDbMaskingConfig {
 
         $maskingconfig = @()
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -51876,9 +51874,7 @@ function New-DbaDbMaskingConfig {
                             $minValue = 1
                             $maxValue = 9223372036854775807
                         }
-                        {
-                            $_ -in "char", "nchar", "nvarchar", "varchar"
-                        } {
+                        { $_ -in "char", "nchar", "nvarchar", "varchar" } {
                             if ($columnLength -eq -1) {
                                 if ($_ -in "char", "varchar") {
                                     $minValue = 1
@@ -51892,15 +51888,9 @@ function New-DbaDbMaskingConfig {
                                 $maxValue = $columnLength
                             }
                         }
-                        "date" {
-                            $maxValue = $null
-                        }
-                        "datetime" {
-                            $maxValue = $null
-                        }
-                        "datetime2" {
-                            $maxValue = $null
-                        }
+                        "date" { $maxValue = $null }
+                        "datetime" { $maxValue = $null }
+                        "datetime2" { $maxValue = $null }
                         "decimal" {
                             $minValue = 1.1
                             $maxValue = $null
@@ -52075,19 +52065,9 @@ function New-DbaDbMaskingConfig {
                         $type = "Random"
 
                         switch ($columnType) {
-                            {
-                                $_ -in "bit", "bool"
-                            } {
-                                $subType = "Bool"
-                            }
-                            "bigint" {
-                                $subType = "Number"
-                            }
-                            {
-                                $_ -in "char", "nchar", "nvarchar", "varchar"
-                            } {
-                                $subType = "String2"
-                            }
+                            { $_ -in "bit", "bool" } { $subType = "Bool" }
+                            "bigint" { $subType = "Number" }
+                            { $_ -in "char", "nchar", "nvarchar", "varchar" } { $subType = "String2" }
                             "date" {
                                 $type = "Date"
                                 $subType = "Past"
@@ -52100,38 +52080,22 @@ function New-DbaDbMaskingConfig {
                                 $type = "Date"
                                 $subType = "Past"
                             }
-                            "decimal" {
-                                $subType = "Decimal"
-                            }
-                            "float" {
-                                $subType = "Float"
-                            }
-                            "int" {
-                                $subType = "Number"
-                            }
+                            "decimal" { $subType = "Decimal" }
+                            "float" { $subType = "Float" }
+                            "int" { $subType = "Number" }
                             "money" {
                                 $type = "Commerce"
                                 $subType = "Price"
                             }
-                            "smallint" {
-                                $subType = "Number"
-                            }
-                            "smalldatetime" {
-                                $subType = "Date"
-                            }
-                            "text" {
-                                $subType = "String"
-                            }
+                            "smallint" { $subType = "Number" }
+                            "smalldatetime" { $subType = "Date" }
+                            "text" { $subType = "String" }
                             "time" {
                                 $type = "Date"
                                 $subType = "Past"
                             }
-                            "tinyint" {
-                                $subType = "Number"
-                            }
-                            "varbinary" {
-                                $subType = "Byte"
-                            }
+                            "tinyint" { $subType = "Number" }
+                            "varbinary" { $subType = "Byte" }
                             "userdefineddatatype" {
                                 if ($columnLength -eq 1) {
                                     $subType = "Bool"
@@ -52744,7 +52708,7 @@ function New-DbaDbUser {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
         [parameter(ParameterSetName = "Login")]
-        [string[]]$Login,
+        [string]$Login,
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
@@ -52803,7 +52767,7 @@ function New-DbaDbUser {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -52895,7 +52859,7 @@ function New-DbaDbUser {
                 }
 
                 #Display Results
-                Get-DbaDbUser -SqlInstance $instance -SqlCredential $sqlcredential -Database $db.Name | Where-Object name -eq $smoUser.Name
+                Get-DbaDbUser -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name | Where-Object name -eq $smoUser.Name
             }
         }
     }
@@ -52919,19 +52883,19 @@ function New-DbaDiagnosticAdsNotebook {
         # validate input parameters: you cannot provide $TargetVersion and $SqlInstance
         # together. If you specify a SqlInstance, version will be determined from metadata
         if (-not $TargetVersion -and -not $SqlInstance) {
-            Stop-Function -Message "At least one of `$SqlInstance and `$TargetVersion must be provided"
+            Stop-Function -Message "At least one of $SqlInstance and $TargetVersion must be provided"
             return
         } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
-            Stop-Function -Message "Cannot provide both `$SqlInstance and `$TargetVersion"
+            Stop-Function -Message "Cannot provide both $SqlInstance and $TargetVersion"
             return
         }
 
         if (-not $TargetVersion) {
             $versionQuery = "
                 SELECT SERVERPROPERTY('ProductMajorVersion') AS ProductMajorVersion,
-                       SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
-                       SERVERPROPERTY('ProductLevel') AS ProductLevel,
-                       SERVERPROPERTY('Edition') AS Edition"
+                SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
+                SERVERPROPERTY('ProductLevel') AS ProductLevel,
+                SERVERPROPERTY('Edition') AS Edition"
 
             $versions = @{
                 "9.0"   = "2005"
@@ -52962,8 +52926,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" |
-            Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
@@ -52972,12 +52935,10 @@ function New-DbaDiagnosticAdsNotebook {
 
         $cells = @()
 
-        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName |
-            Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
-            ForEach-Object {
-                $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
-                $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
-            }
+        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName | Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } | ForEach-Object {
+            $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
+            $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
+        }
 
         $preamble = '
         {
@@ -53104,7 +53065,7 @@ function New-DbaEndpoint {
             if ($Port) {
                 $tcpPort = $port
             } else {
-                $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
+                $thisport = (Get-DbaEndpoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
                 if ($thisport.ListenerPort -eq 0) {
@@ -53691,18 +53652,11 @@ function New-DbatoolsSupportPackage {
     
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [string]
-        $Path = "$($env:USERPROFILE)\Desktop",
-
-        [string[]]
-        $Variables,
-
-        [switch]
-        $PassThru,
-
+        [string]$Path = "$($env:USERPROFILE)\Desktop",
+        [string[]]$Variables,
+        [switch]$PassThru,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
@@ -55892,9 +55846,7 @@ function Remove-DbaCmConnection {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName,
-
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName,
         [switch]$EnableException
     )
 
@@ -56747,7 +56699,7 @@ function Remove-DbaDbMirror {
 
         foreach ($db in $InputObject) {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Turning off mirror for $db")) {
-                # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                # use t-sql cuz $db.Alter() does not always work against restoring dbs
                 try {
                     try {
                         $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
@@ -58976,8 +58928,8 @@ function Repair-DbaDbMirror {
 
         foreach ($db in $InputObject) {
             try {
-                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Stop-DbaEndPoint
-                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Start-DbaEndPoint
+                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Stop-DbaEndpoint
+                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Start-DbaEndpoint
                 $db | Set-DbaDbMirror -State Resume
                 if ($Pscmdlet.ShouldProcess("console", "displaying output")) {
                     $db
@@ -62751,7 +62703,6 @@ function Set-DbaAgReplica {
 #.ExternalHelp dbatools-Help.xml
 function Set-DbaAvailabilityGroup {
     
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -62809,70 +62760,30 @@ function Set-DbaCmConnection {
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
-
         [Parameter(ParameterSetName = "Credential")]
-        [PSCredential]
-        $Credential,
-
+        [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Windows")]
-        [switch]
-        $UseWindowsCredentials,
-
-        [switch]
-        $OverrideExplicitCredential,
-
-        [switch]
-        $OverrideConnectionPolicy,
-
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]
-        $DisabledConnectionTypes = 'None',
-
-        [switch]
-        $DisableBadCredentialCache,
-
-        [switch]
-        $DisableCimPersistence,
-
-        [switch]
-        $DisableCredentialAutoRegister,
-
-        [switch]
-        $EnableCredentialFailover,
-
+        [switch]$UseWindowsCredentials,
+        [switch]$OverrideExplicitCredential,
+        [switch]$OverrideConnectionPolicy,
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$DisabledConnectionTypes = 'None',
+        [switch]$DisableBadCredentialCache,
+        [switch]$DisableCimPersistence,
+        [switch]$DisableCredentialAutoRegister,
+        [switch]$EnableCredentialFailover,
         [Parameter(ParameterSetName = "Credential")]
-        [switch]
-        $WindowsCredentialsAreBad,
-
-        [Microsoft.Management.Infrastructure.Options.WSManSessionOptions]
-        $CimWinRMOptions,
-
-        [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
-        $CimDCOMOptions,
-
-        [System.Management.Automation.PSCredential[]]
-        $AddBadCredential,
-
-        [System.Management.Automation.PSCredential[]]
-        $RemoveBadCredential,
-
-        [switch]
-        $ClearBadCredential,
-
-        [switch]
-        $ClearCredential,
-
-        [switch]
-        $ResetCredential,
-
-        [switch]
-        $ResetConnectionStatus,
-
-        [switch]
-        $ResetConfiguration,
-
+        [switch]$WindowsCredentialsAreBad,
+        [Microsoft.Management.Infrastructure.Options.WSManSessionOptions]$CimWinRMOptions,
+        [Microsoft.Management.Infrastructure.Options.DComSessionOptions]$CimDCOMOptions,
+        [System.Management.Automation.PSCredential[]]$AddBadCredential,
+        [System.Management.Automation.PSCredential[]]$RemoveBadCredential,
+        [switch]$ClearBadCredential,
+        [switch]$ClearCredential,
+        [switch]$ResetCredential,
+        [switch]$ResetConnectionStatus,
+        [switch]$ResetConfiguration,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
@@ -63390,7 +63301,7 @@ function Set-DbaDbMirror {
             try {
                 if ($Partner) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting partner on $db")) {
-                        # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                        # use t-sql cuz $db.Alter() does not always work against restoring dbs
                         $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
                     }
                 } elseif ($Witness) {
@@ -64168,7 +64079,6 @@ function Set-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
@@ -66304,7 +66214,6 @@ function Start-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
@@ -67047,7 +66956,6 @@ function Stop-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
@@ -68185,21 +68093,12 @@ function Test-DbaCmConnection {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for testing connections")]
     param (
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName = $env:COMPUTERNAME,
-
-        [System.Management.Automation.PSCredential]
-        $Credential,
-
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
-        $Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
-
-        [switch]
-        $Force,
-
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]$Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
+        [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         #region Configuration Values
         $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
@@ -68697,7 +68596,7 @@ function Test-DbaDbCompatibility {
             }
 
             $serverversion = "Version$($server.VersionMajor)0"
-            $dbs = $server.Databases | Where-Object IsAccessible
+            $dbs = $server.Databases
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -69348,16 +69247,13 @@ function Test-DbaDbDataGeneratorConfig {
 #.ExternalHelp dbatools-Help.xml
 function Test-DbaDbDataMaskingConfig {
     
-
-    [cmdletbinding()]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory)]
         [string]$FilePath,
         [switch]$EnableException
     )
-
     begin {
-
         if (-not (Test-Path -Path $FilePath)) {
             Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
             return
@@ -69386,7 +69282,6 @@ function Test-DbaDbDataMaskingConfig {
 
         $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -69485,7 +69380,7 @@ function Test-DbaDbDataMaskingConfig {
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
-                                Error  = "The value for MinValue cannot be 'null' when using sub type 'Betweeen'"
+                                Error  = "The value for MinValue cannot be 'null' when using sub type 'Between'"
                             }
                         }
 
@@ -69494,21 +69389,14 @@ function Test-DbaDbDataMaskingConfig {
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
-                                Error  = "The value for MaxValue cannot be 'null' when using sub type 'Betweeen'"
+                                Error  = "The value for MaxValue cannot be 'null' when using sub type 'Between'"
                             }
                         }
-
-                    } # End if sub type 'between'
-
-                } # End if column type date
-
-            } # End for each column
-
-        } # End for each table
-
-
-    } # End process
-
+                    }
+                }
+            }
+        }
+    }
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -72821,6 +72709,8 @@ Function Uninstall-DbaSqlWatch {
 #.ExternalHelp dbatools-Help.xml
 function Uninstall-DbatoolsWatchUpdate {
     
+    [Cmdletbinding()]
+    param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Message -Level Warning -Message "This command only supports Windows 10 and higher."
@@ -73578,7 +73468,7 @@ function Watch-DbaDbLogin {
 #.ExternalHelp dbatools-Help.xml
 function Watch-DbatoolsUpdate {
     
-    [cmdletbinding()]
+    [CmdletBinding()]
     param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
@@ -74514,15 +74404,18 @@ function Find-SqlInstanceSetup {
             }
         }
         $params = @{
-            ComputerName   = $ComputerName
-            Credential     = $Credential
-            Authentication = $Authentication
-            ScriptBlock    = $getFileScript
-            ArgumentList   = @($Path, $Version.ToString())
-            ErrorAction    = 'Stop'
-            Raw            = $true
+            ComputerName = $ComputerName
+            Credential   = $Credential
+            ScriptBlock  = $getFileScript
+            ArgumentList = @($Path, $Version.ToString())
+            ErrorAction  = 'Stop'
+            Raw          = $true
         }
-        Invoke-CommandWithFallback @params
+        try {
+            Invoke-CommandWithFallback @params -Authentication $Authentication
+        } catch {
+            Invoke-CommandWithFallback @params
+        }
     }
 }
 
@@ -77581,6 +77474,7 @@ function Invoke-Command2 {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
+        [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )

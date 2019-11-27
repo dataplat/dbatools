@@ -39,7 +39,7 @@ function Repair-DbaDbMirror {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -60,7 +60,6 @@ function Repair-DbaDbMirror {
 
         Attempts to repair the mirrored but suspended pubs database on sql2017.
         Restarts the endpoints then sets the partner to resume. Does not prompt for confirmation.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -82,8 +81,8 @@ function Repair-DbaDbMirror {
 
         foreach ($db in $InputObject) {
             try {
-                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Stop-DbaEndPoint
-                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Start-DbaEndPoint
+                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Stop-DbaEndpoint
+                Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Start-DbaEndpoint
                 $db | Set-DbaDbMirror -State Resume
                 if ($Pscmdlet.ShouldProcess("console", "displaying output")) {
                     $db

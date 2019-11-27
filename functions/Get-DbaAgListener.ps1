@@ -31,7 +31,7 @@ function Get-DbaAgListener {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Listener
+        Tags: AvailabilityGroup, HA, AG
         Author: Viorel Ciucu (@viorelciucu)
 
         Website: https://dbatools.io
@@ -51,12 +51,10 @@ function Get-DbaAgListener {
 
         Returns all listeners found on sql2017a on sql2017a for the availability group AG-a
 
-
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup OPP | Get-DbaAgListener
 
         Returns all listeners found on sql2017a on sql2017a for the availability group OPP
-
     #>
     [CmdletBinding()]
     param (

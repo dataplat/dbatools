@@ -23,7 +23,7 @@ function Get-DbaDbMirror {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -42,7 +42,6 @@ function Get-DbaDbMirror {
         PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
 
         Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
-
     #>
     [CmdletBinding()]
     param (

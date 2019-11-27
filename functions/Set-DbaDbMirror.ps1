@@ -21,10 +21,10 @@ function Set-DbaDbMirror {
         The target database.
 
     .PARAMETER Partner
-        Sets the partner fqdn.
+        Sets the partner Fully Qualified Domain Name.
 
     .PARAMETER Witness
-        Sets the witness fqdn.
+        Sets the witness Fully Qualified Domain Name.
 
     .PARAMETER SafetyLevel
         Sets the mirroring safety level.
@@ -47,7 +47,7 @@ function Set-DbaDbMirror {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -76,7 +76,6 @@ function Set-DbaDbMirror {
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -State Suspend -Confirm:$false
 
         Does not prompt for confirmation and sets the state to suspend for the database "dbtools"
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -106,7 +105,7 @@ function Set-DbaDbMirror {
             try {
                 if ($Partner) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting partner on $db")) {
-                        # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                        # use t-sql cuz $db.Alter() does not always work against restoring dbs
                         $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
                     }
                 } elseif ($Witness) {
