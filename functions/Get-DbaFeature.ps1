@@ -10,7 +10,7 @@ function Get-DbaFeature {
         https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html
 
         Assumptions:
-        1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles,
+        1. The sub-folder "Microsoft SQL Server" exists in [System.Environment]::GetFolderPath("ProgramFiles"),
         even if SQL was installed to a non-default path. This has been
         verified on SQL 2008R2 and SQL 2012. Further verification may be needed.
         2. The discovery report displays installed components for the version of SQL
@@ -69,7 +69,7 @@ function Get-DbaFeature {
 
     begin {
         $scriptblock = {
-            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$env:ProgramFiles\Microsoft SQL Server" -ErrorAction SilentlyContinue |
+            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "[System.Environment]::GetFolderPath("ProgramFiles")\Microsoft SQL Server" -ErrorAction SilentlyContinue |
                 Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
                 Sort-Object FullName -Descending | Select-Object -First 1
             if ($setup) {

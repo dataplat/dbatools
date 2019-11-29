@@ -92,8 +92,8 @@ if ($IsLinux -or $IsMacOs) {
     $path_AppData = @($Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator))[0]
     if (-not $path_AppData) { $path_AppData = Join-Path $HOME .local/share/ }
 } else {
-    # Defaults to $Env:AppData on Windows
-    $path_AppData = $env:APPDATA
+    # Defaults to [System.Environment]::GetFolderPath("ApplicationData") on Windows
+    $path_AppData = [System.Environment]::GetFolderPath("ApplicationData")
     if (-not $path_AppData) { $path_AppData = [Environment]::GetFolderPath("ApplicationData") }
 }
 #endregion $path_AppData

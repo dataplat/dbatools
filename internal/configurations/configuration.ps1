@@ -30,7 +30,7 @@ Examples are better than a thousand words:
 
 a) Setting the configuration value
 # Put this in a configuration file in this folder
-Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Initialize -Description "Sopmething meaningful here"
+Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$([System.Environment]::GetFolderPath("ApplicationData"))\PowerShell\dbatools" -Initialize -Description "Sopmething meaningful here"
 
 b) Retrieving the configuration value in your function
 # Put this in the function that uses this setting
@@ -39,7 +39,7 @@ $path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
 # Explanation #
 #-------------#
 
-In step a), which is run during module import, we assign the configuration of the name 'Path.DbatoolsLog' the value "$($env:AppData)\PowerShell\dbatools"
+In step a), which is run during module import, we assign the configuration of the name 'Path.DbatoolsLog' the value "$([System.Environment]::GetFolderPath("ApplicationData"))\PowerShell\dbatools"
 Unless there already IS a value set to this name (that's what the '-Default' switch is doing).
 That means, that if a user had a different configuration value in his profile, that value will win. Userchoice over preset.
 ALL configurations defined by the module should be 'default' values.
@@ -86,10 +86,10 @@ if ($IsLinux -or $IsMacOs)
 }
 else
 {
-    # Defaults to $Env:AppData on Windows
-    $script:path_FileUserShared = Join-DbaPath $Env:AppData $psVersionName "dbatools" "Config"
-    $script:AppData = $Env:APPDATA
-    if (-not $Env:AppData)
+    # Defaults to [System.Environment]::GetFolderPath("ApplicationData") on Windows
+    $script:path_FileUserShared = Join-DbaPath [System.Environment]::GetFolderPath("ApplicationData") $psVersionName "dbatools" "Config"
+    $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
+    if (-not [System.Environment]::GetFolderPath("ApplicationData"))
     {
         $script:path_FileUserShared = Join-DbaPath ([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
         $script:AppData = [Environment]::GetFolderPath("ApplicationData")
