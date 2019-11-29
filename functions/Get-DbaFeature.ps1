@@ -69,7 +69,7 @@ function Get-DbaFeature {
 
     begin {
         $scriptblock = {
-            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "[System.Environment]::GetFolderPath("ProgramFiles")\Microsoft SQL Server" -ErrorAction SilentlyContinue |
+            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server" -ErrorAction SilentlyContinue |
                 Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
                 Sort-Object FullName -Descending | Select-Object -First 1
             if ($setup) {
