@@ -78,7 +78,7 @@ function Test-DbaDbCompatibility {
             }
 
             $serverversion = "Version$($server.VersionMajor)0"
-            $dbs = $server.Databases | Where-Object IsAccessible
+            $dbs = $server.Databases
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }

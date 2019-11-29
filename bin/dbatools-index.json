@@ -2397,7 +2397,7 @@
                      "Connection"
                  ],
         "Synopsis":  "Creates a robust, reusable SQL Server object.",
-        "Alias":  "",
+        "Alias":  "cdi",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
@@ -5252,7 +5252,7 @@
         "CommandName":  "Copy-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$loginSplat = @{\n\u003e\u003e Source = $Sql01\r\n\u003e\u003e Destination = \"Localhost\"\r\n\u003e\u003e SourceSqlCredential = $sqlcred\r\n\u003e\u003e Login = \u0027ReadUserP\u0027, \u0027ReadWriteUserP\u0027, \u0027AdminP\u0027\r\n\u003e\u003e LoginRenameHashtable = @{\r\n\u003e\u003e \"ReadUserP\" = \"ReadUserT\"\r\n\u003e\u003e \"ReadWriteUserP\" = \"ReadWriteUserT\"\r\n\u003e\u003e \"AdminP\"         = \"AdminT\"\r\n\u003e\u003e }\r\n\u003e\u003e }\r\nPS C:\\\u003e Copy-DbaLogin @loginSplat\nCopies the three specified logins to \u0027localhost\u0027 and renames them according to the LoginRenameHashTable.",
         "Params":  [
                        [
                            "Source",
@@ -16107,13 +16107,13 @@
         "CommandName":  "Get-DbaDbStoredProcedure",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\nGets all database Stored Procedures\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\nGets the Stored Procedures for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\nGets the Stored Procedures for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\nGets the Stored Procedures for all databases that are not system objects\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbStoredProcedure\nPipe the databases from Get-DbaDatabase into Get-DbaDbStoredProcedure",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16150,6 +16150,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16158,7 +16166,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbStoredProcedure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbStoredProcedure [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemSp] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbTable",
@@ -16453,13 +16461,13 @@
         "CommandName":  "Get-DbaDbView",
         "Availability":  "Windows, Linux, macOS",
         "Links":  null,
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView\nPipe the databases from Get-DbaDatabase into Get-DbaDbView",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
                            "",
-                           true,
+                           false,
                            "true (ByValue)",
                            ""
                        ],
@@ -16496,6 +16504,14 @@
                            "False"
                        ],
                        [
+                           "InputObject",
+                           "Enables piping from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16504,7 +16520,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbView [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbView [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbVirtualLogFile",
@@ -28383,7 +28399,7 @@
                      "Query"
                  ],
         "Synopsis":  "A command to run explicit T-SQL commands or files.",
-        "Alias":  "",
+        "Alias":  "ivq",
         "Author":  "Friedrich Weinmann (@FredWeinmann)",
         "CommandName":  "Invoke-DbaQuery",
         "Availability":  "Windows, Linux, macOS",
@@ -33631,7 +33647,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString[]\u003e] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString\u003e] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDiagnosticAdsNotebook",
