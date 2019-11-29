@@ -39,7 +39,7 @@ function Uninstall-DbatoolsWatchUpdate {
                     Write-Message -Level Warning -Message "Task doesn't exist. Skipping removal."
                 } else {
                     Write-Message -Level Output -Message "Removing watchupdate.xml."
-                    $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+                    $file = "$(Get-DbatoolsPath -Name localappdata)\dbatools\watchupdate.xml"
                     Remove-Item $file -ErrorAction SilentlyContinue
 
                     Write-Message -Level Output -Message "Removing Scheduled Task 'dbatools version check'."

@@ -763,7 +763,9 @@ $script:xplat = @(
     'Install-DbaFirstResponderKit',
     'Install-DbaWhoIsActive',
     'Update-Dbatools',
-    'Add-DbaServerRoleMember'
+    'Add-DbaServerRoleMember',
+    'Get-DbatoolsPath',
+    'Set-DbatoolsPath'
 )
 
 $script:noncoresmo = @(

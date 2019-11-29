@@ -653,6 +653,9 @@
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
         'Register-DbatoolsConfig',
+        # Managed Path Commands
+        'Get-DbatoolsPath',
+        'Set-DbatoolsPath',
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',

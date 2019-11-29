@@ -49,7 +49,7 @@ function Watch-DbatoolsUpdate {
 
         if ($galleryVersion -le $localVersion) { return }
 
-        $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+        $file = "$(Get-DbatoolsPath -Name localappdata)\dbatools\watchupdate.xml"
 
         $new = [PSCustomObject]@{
             NotifyVersion = $galleryVersion
