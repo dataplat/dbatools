@@ -80,8 +80,8 @@ if ($IsLinux -or $IsMacOs) {
     $path_LocalAppData = $Env:XDG_CONFIG_HOME
     if (-not $path_LocalAppData) { $path_LocalAppData = Join-Path $HOME .config/ }
 } else {
-    # Defaults to $Env:LocalAppData on Windows
-    $path_LocalAppData = $Env:LocalAppData
+    # Defaults to [System.Environment]::GetFolderPath("LocalApplicationData") on Windows
+    $path_LocalAppData = [System.Environment]::GetFolderPath("LocalApplicationData")
     if (-not $path_LocalAppData) { $path_LocalAppData = [Environment]::GetFolderPath("LocalApplicationData") }
 }
 #endregion $path_localAppData
