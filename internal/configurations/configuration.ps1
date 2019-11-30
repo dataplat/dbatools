@@ -86,11 +86,11 @@ if ($IsLinux -or $IsMacOs) {
     $script:AppData = $fileUserShared
 } else {
     # Defaults to [System.Environment]::GetFolderPath("ApplicationData") on Windows
-    $script:path_FileUserShared = Join-DbaPath [System.Environment]::GetFolderPath("ApplicationData") $psVersionName "dbatools" "Config"
+    $script:path_FileUserShared = Join-DbaPath $([System.Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
     $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
-    if (-not ([System.Environment]::GetFolderPath("ApplicationData"))) {
-        $script:path_FileUserShared = Join-DbaPath ([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
-        $script:AppData = [Environment]::GetFolderPath("ApplicationData")
+    if (-not $([System.Environment]::GetFolderPath("ApplicationData"))) {
+        $script:path_FileUserShared = Join-DbaPath $([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+        $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
     }
 }
 #endregion User Shared
