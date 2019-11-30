@@ -30,7 +30,7 @@ Examples are better than a thousand words:
 
 a) Setting the configuration value
 # Put this in a configuration file in this folder
-Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Initialize -Description "Sopmething meaningful here"
+Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$([System.Environment]::GetFolderPath("ApplicationData"))\PowerShell\dbatools" -Initialize -Description "Sopmething meaningful here"
 
 b) Retrieving the configuration value in your function
 # Put this in the function that uses this setting
@@ -39,7 +39,7 @@ $path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
 # Explanation #
 #-------------#
 
-In step a), which is run during module import, we assign the configuration of the name 'Path.DbatoolsLog' the value "$($env:AppData)\PowerShell\dbatools"
+In step a), which is run during module import, we assign the configuration of the name 'Path.DbatoolsLog' the value "$([System.Environment]::GetFolderPath("ApplicationData"))\PowerShell\dbatools"
 Unless there already IS a value set to this name (that's what the '-Default' switch is doing).
 That means, that if a user had a different configuration value in his profile, that value will win. Userchoice over preset.
 ALL configurations defined by the module should be 'default' values.
@@ -58,56 +58,51 @@ $psVersionName = "WindowsPowerShell"
 if ($PSVersionTable.PSVersion.Major -ge 6) { $psVersionName = "PowerShell" }
 
 #region User Local
-if ($IsLinux -or $IsMacOs)
-{
+if ($IsLinux -or $IsMacOs) {
     # Defaults to $Env:XDG_CONFIG_HOME on Linux or MacOS ($HOME/.config/)
     $fileUserLocal = $Env:XDG_CONFIG_HOME
     if (-not $fileUserLocal) { $fileUserLocal = Join-Path $HOME .config/ }
-    
+
     $script:path_FileUserLocal = Join-DbaPath $fileUserLocal $psVersionName "dbatools/"
-}
-else
-{
-    # Defaults to $Env:LocalAppData on Windows
-    $script:path_FileUserLocal = Join-Path $Env:LocalAppData "$psVersionName\dbatools\Config"
+} else {
+    # Defaults to $localappdatapath on Windows
+    if ($env:LOCALAPPDATA) {
+        $localappdatapath = $env:LOCALAPPDATA
+    } else {
+        $localappdatapath = [System.Environment]::GetFolderPath("LocalApplicationData")
+    }
+    $script:path_FileUserLocal = Join-Path $localappdatapath "$psVersionName\dbatools\Config"
     if (-not $script:path_FileUserLocal) { $script:path_FileUserLocal = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "$psVersionName\dbatools\Config" }
 }
 #endregion User Local
 
 #region User Shared
-if ($IsLinux -or $IsMacOs)
-{
+if ($IsLinux -or $IsMacOs) {
     # Defaults to the first value in $Env:XDG_CONFIG_DIRS on Linux or MacOS (or $HOME/.local/share/)
     $fileUserShared = @($Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator))[0]
     if (-not $fileUserShared) { $fileUserShared = Join-Path $HOME .local/share/ }
-    
+
     $script:path_FileUserShared = Join-DbaPath $fileUserShared $psVersionName "dbatools/"
     $script:AppData = $fileUserShared
-}
-else
-{
-    # Defaults to $Env:AppData on Windows
-    $script:path_FileUserShared = Join-DbaPath $Env:AppData $psVersionName "dbatools" "Config"
-    $script:AppData = $Env:APPDATA
-    if (-not $Env:AppData)
-    {
-        $script:path_FileUserShared = Join-DbaPath ([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
-        $script:AppData = [Environment]::GetFolderPath("ApplicationData")
+} else {
+    # Defaults to [System.Environment]::GetFolderPath("ApplicationData") on Windows
+    $script:path_FileUserShared = Join-DbaPath $([System.Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+    $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
+    if (-not $([System.Environment]::GetFolderPath("ApplicationData"))) {
+        $script:path_FileUserShared = Join-DbaPath $([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+        $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
     }
 }
 #endregion User Shared
 
 #region System
-if ($IsLinux -or $IsMacOs)
-{
+if ($IsLinux -or $IsMacOs) {
     # Defaults to /etc/xdg elsewhere
     $XdgConfigDirs = $Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator) | Where-Object { $_ -and (Test-Path $_) }
     if ($XdgConfigDirs.Count -gt 1) { $basePath = $XdgConfigDirs[1] }
     else { $basePath = "/etc/xdg/" }
     $script:path_FileSystem = Join-DbaPath $basePath $psVersionName "dbatools/"
-}
-else
-{
+} else {
     # Defaults to $Env:ProgramData on Windows
     $script:path_FileSystem = Join-DbaPath $Env:ProgramData $psVersionName "dbatools" "Config"
     if (-not $script:path_FileSystem) { $script:path_FileSystem = Join-DbaPath ([Environment]::GetFolderPath("CommonApplicationData")) $psVersionName "dbatools" "Config" }
@@ -123,51 +118,42 @@ $script:path_typedata = Join-DbaPath $script:AppData $psVersionName "dbatools" "
 
 # Determine Registry Availability
 $script:NoRegistry = $false
-if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*"))
-{
+if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*")) {
     $script:NoRegistry = $true
 }
 
 $configpath = Resolve-Path "$script:PSModuleRoot\internal\configurations"
 
 # Import configuration validation
-foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\validation")))
-{
+foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\validation"))) {
     if ($script:doDotSource) { . $file.FullName }
     else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
 }
 
 # Import other configuration files
-foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\settings")))
-{
+foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\settings"))) {
     if ($script:doDotSource) { . $file.FullName }
     else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
 }
 
-if (-not [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone)
-{
+if (-not [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone) {
     # Read config from all settings
     $config_hash = Read-DbatoolsConfigPersisted -Scope 127
-    
-    foreach ($value in $config_hash.Values)
-    {
-        try
-        {
+
+    foreach ($value in $config_hash.Values) {
+        try {
             if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException }
             else { Set-DbatoolsConfig -FullName $value.FullName -PersistedValue $value.Value -PersistedType $value.Type -EnableException }
             [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicySet = $value.Policy
             [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicyEnforced = $value.Enforced
-        }
-        catch { }
+        } catch { }
     }
-    
-    if ($null -ne $global:dbatools_config)
-    {
-        if ($global:dbatools_config.GetType().FullName -eq "System.Management.Automation.ScriptBlock")
-        {
+
+    if ($null -ne $global:dbatools_config) {
+        if ($global:dbatools_config.GetType().FullName -eq "System.Management.Automation.ScriptBlock") {
             [System.Management.Automation.ScriptBlock]::Create($global:dbatools_config.ToString()).Invoke()
         }
     }
-    
+
     [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
 }
