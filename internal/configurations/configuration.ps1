@@ -66,7 +66,7 @@ if ($IsLinux -or $IsMacOs) {
     $script:path_FileUserLocal = Join-DbaPath $fileUserLocal $psVersionName "dbatools/"
 } else {
     # Defaults to [System.Environment]::GetFolderPath("LocalApplicationData") on Windows
-    $script:path_FileUserLocal = Join-Path [System.Environment]::GetFolderPath("LocalApplicationData") "$psVersionName\dbatools\Config"
+    $script:path_FileUserLocal = Join-Path $([System.Environment]::GetFolderPath("LocalApplicationData")) "$psVersionName\dbatools\Config"
     if (-not $script:path_FileUserLocal) { $script:path_FileUserLocal = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "$psVersionName\dbatools\Config" }
 }
 #endregion User Local
