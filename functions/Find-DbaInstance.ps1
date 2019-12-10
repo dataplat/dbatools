@@ -604,7 +604,7 @@ function Find-DbaInstance {
                         if ($computer.Properties["dnshostname"] -and $computer.Properties["dnshostname"] -ne '') {
                             $computer.Properties["dnshostname"][0]
                         } else {
-                            $computer.Properties["serviceprincipalname"][0] -match '(?<=/).*(?=:)' > $null
+                            $computer.Properties["serviceprincipalname"][0] -match '(?<=/)[^:]*' > $null
                             if ($matches) {
                                 $matches[0]
                             } else {
