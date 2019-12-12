@@ -23665,6 +23665,7 @@ function Get-DbaDbForeignKey {
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name Database -value $db.Name
+                        Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name Table -Value $tbl.Name
 
                         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'ID', 'CreateDate',
                         'DateLastModified', 'Name', 'IsEnabled', 'IsChecked', 'NotForReplication', 'ReferencedKey', 'ReferencedTable', 'ReferencedTableSchema'
@@ -25567,60 +25568,50 @@ function Get-DbaDbStoredProcedure {
     
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
+            }
+            if ($db.StoredProcedures.Count -eq 0) {
+                Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-            foreach ($db in $databases) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-                    continue
-                }
-                if ($db.StoredProcedures.Count -eq 0) {
-                    Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+            foreach ($proc in $db.StoredProcedures) {
+                if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
                     continue
                 }
 
-                foreach ($proc in $db.StoredProcedures) {
-                    if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
-                        continue
-                    }
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $proc.Parent.ComputerName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $proc.Parent.InstanceName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $proc.Parent.SqlInstance
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
-
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
-                    'DateLastModified', 'Name', 'ImplementationType', 'Startup'
-                    Select-DefaultView -InputObject $proc -Property $defaults
-                }
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
+                'DateLastModified', 'Name', 'ImplementationType', 'Startup'
+                Select-DefaultView -InputObject $proc -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbTable {
@@ -25860,56 +25851,50 @@ function Get-DbaDbView {
     
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $views = $db.views
+            if (-not $db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+            if (-not $views) {
+                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                continue
             }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            if (Test-Bound -ParameterName ExcludeSystemView) {
+                $views = $views | Where-Object { -not $_.IsSystemObject }
             }
 
-            foreach ($db in $databases) {
-                $views = $db.views
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
+            foreach ($view in $views) {
 
-                if (!$views) {
-                    Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
-                if (Test-Bound -ParameterName ExcludeSystemView) {
-                    $views = $views | Where-Object { $_.IsSystemObject -eq $false }
-                }
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $view.Parent.ComputerName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $view.Parent.InstanceName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $view.Parent.SqlInstance
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
 
-                $views | ForEach-Object {
-
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
-
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name
-                }
+                Select-DefaultView -InputObject $view -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbVirtualLogFile {
@@ -26777,7 +26762,7 @@ function Get-DbaFeature {
 
     begin {
         $scriptblock = {
-            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$env:ProgramFiles\Microsoft SQL Server" -ErrorAction SilentlyContinue |
+            $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server" -ErrorAction SilentlyContinue |
                 Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
                 Sort-Object FullName -Descending | Select-Object -First 1
             if ($setup) {
@@ -28832,10 +28817,6 @@ function Get-DbaLastBackup {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-                    Continue
-                }
                 $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastFullBackup) {
                     $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
@@ -28911,11 +28892,6 @@ function Get-DbaLastGoodCheckDb {
             return
         }
 
-        #if ($SqlInstance) {
-        #    Write-Message -Level Verbose -Message "Processing via SQL Instance."
-        #    $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
-        #}
-
         if ($SqlInstance) {
             $InputObject = $SqlInstance
         }
@@ -28925,7 +28901,7 @@ function Get-DbaLastGoodCheckDb {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+                    $databases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
@@ -32802,7 +32778,7 @@ function Get-DbaRegServer {
     }
     process {
         if (-not $PSBoundParameters.SqlInstance -and -not ($IsLinux -or $IsMacOs)) {
-            $null = Get-ChildItem -Recurse "$env:APPDATA\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $null = Get-ChildItem -Recurse "$(Get-DbatoolsPath -Name appdata)\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
         $servers = @()
@@ -35136,6 +35112,20 @@ function Get-DbatoolsLog {
                 }
             }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
         }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Get-DbatoolsPath {
+    
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Name
+    )
+
+    process {
+        Get-DbatoolsConfigValue -FullName "Path.Managed.$Name"
     }
 }
 
@@ -40310,7 +40300,7 @@ function Invoke-DbaAdvancedInstall {
                 [version]$Version
             )
             $versionNumber = "$($Version.Major)$($Version.Minor)".Substring(0, 3)
-            $rootPath = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
+            $rootPath = "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
             $summaryPath = "$rootPath\Summary.txt"
             $output = [PSCustomObject]@{
                 Path              = $null
@@ -46434,7 +46424,7 @@ function Invoke-DbaQuery {
 
                         switch -regex ($uri.Scheme) {
                             "http" {
-                                $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                                $tempfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
                                     try {
                                         Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
@@ -46499,7 +46489,7 @@ function Invoke-DbaQuery {
                 }
 
                 try {
-                    $newfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                    $newfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                     Set-Content -Value $code -Path $newfile -Force -ErrorAction Stop -Encoding UTF8
                     $files += $newfile
                     $temporaryFilesCount++
@@ -52728,7 +52718,7 @@ function New-DbaDbUser {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
         [parameter(ParameterSetName = "Login")]
-        [string[]]$Login,
+        [string]$Login,
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
@@ -52787,7 +52777,7 @@ function New-DbaDbUser {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -52879,7 +52869,7 @@ function New-DbaDbUser {
                 }
 
                 #Display Results
-                Get-DbaDbUser -SqlInstance $instance -SqlCredential $sqlcredential -Database $db.Name | Where-Object name -eq $smoUser.Name
+                Get-DbaDbUser -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name | Where-Object name -eq $smoUser.Name
             }
         }
     }
@@ -64858,7 +64848,7 @@ function Set-DbaPowerPlan {
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [pscustomobject[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -65780,6 +65770,29 @@ function Set-DbaTempDbConfig {
                 }
             }
         }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Set-DbatoolsPath {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(ParameterSetName = 'Register', Mandatory = $true)]
+        [switch]$Register,
+        [Parameter(ParameterSetName = 'Register')]
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::UserDefault
+    )
+
+    process {
+        Set-DbatoolsConfig -FullName "Path.Managed.$Name" -Value $Path
+        if ($Register) { Register-DbatoolsConfig -FullName "Path.Managed.$Name" -Scope $Scope }
     }
 }
 
@@ -68616,7 +68629,7 @@ function Test-DbaDbCompatibility {
             }
 
             $serverversion = "Version$($server.VersionMajor)0"
-            $dbs = $server.Databases | Where-Object IsAccessible
+            $dbs = $server.Databases
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -71742,7 +71755,7 @@ function Test-DbaPowerPlan {
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [pscustomobject[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -72746,7 +72759,7 @@ function Uninstall-DbatoolsWatchUpdate {
                     Write-Message -Level Warning -Message "Task doesn't exist. Skipping removal."
                 } else {
                     Write-Message -Level Output -Message "Removing watchupdate.xml."
-                    $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+                    $file = "$(Get-DbatoolsPath -Name localappdata)\dbatools\watchupdate.xml"
                     Remove-Item $file -ErrorAction SilentlyContinue
 
                     Write-Message -Level Output -Message "Removing Scheduled Task 'dbatools version check'."
@@ -73513,7 +73526,7 @@ function Watch-DbatoolsUpdate {
 
         if ($galleryVersion -le $localVersion) { return }
 
-        $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+        $file = "$(Get-DbatoolsPath -Name localappdata)\dbatools\watchupdate.xml"
 
         $new = [PSCustomObject]@{
             NotifyVersion = $galleryVersion
@@ -74424,15 +74437,18 @@ function Find-SqlInstanceSetup {
             }
         }
         $params = @{
-            ComputerName   = $ComputerName
-            Credential     = $Credential
-            Authentication = $Authentication
-            ScriptBlock    = $getFileScript
-            ArgumentList   = @($Path, $Version.ToString())
-            ErrorAction    = 'Stop'
-            Raw            = $true
+            ComputerName = $ComputerName
+            Credential   = $Credential
+            ScriptBlock  = $getFileScript
+            ArgumentList = @($Path, $Version.ToString())
+            ErrorAction  = 'Stop'
+            Raw          = $true
         }
-        Invoke-CommandWithFallback @params
+        try {
+            Invoke-CommandWithFallback @params -Authentication $Authentication
+        } catch {
+            Invoke-CommandWithFallback @params
+        }
     }
 }
 
@@ -77491,6 +77507,7 @@ function Invoke-Command2 {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
+        [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )
