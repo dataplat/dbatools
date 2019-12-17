@@ -487,6 +487,7 @@ function New-DbaDbMaskingConfig {
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
+                            KeepNull        = $true
                             Composite       = $null
                         }
                     } else {
@@ -550,7 +551,7 @@ function New-DbaDbMaskingConfig {
                             Format          = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
-                            KeepNull        = $false
+                            KeepNull        = $true
                             Composite       = $null
                         }
                     }
