@@ -8,7 +8,11 @@ function Get-DbaDbBackupHistory {
 
         You can even get detailed information (including file path) for latest full, differential and log files.
 
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
+        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availabity Group listener or a database in an Availability Group
+
+        If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history
+
+        If a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
@@ -69,7 +73,7 @@ function Get-DbaDbBackupHistory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER AgCheck
-        Internal parameter used for getting history from AvailabilityGroups
+        Internal parameter used for getting history from AvailabilityGroups. If set, this will disable  Availability Group support
 
     .NOTES
         Tags: DisasterRecovery, Backup
@@ -142,6 +146,11 @@ function Get-DbaDbBackupHistory {
         PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
 
         If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance AgListener -Last
+
+        Will query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -223,14 +232,12 @@ function Get-DbaDbBackupHistory {
                 $agShortInstance = $instance.FullName.split('.')[0]
                 if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
                     # We have a listener passed in, just query the dbs specified or all in the AG
-                    # foreach ($agreplica in ($server.AvailabilityGroups | ? { $_.AvailabilityGroupListeners.name -eq $instance }).AvailabilityReplicas.name ) {
                     $null = $PSBoundParameters.Remove('SqlInstance')
                     $null = $PSBoundParameters.Remove('IncludeCopyOnly')
                     $null = $PsBoundParameters.Remove('AgCheck')
-                    Write-Message -Level Verbose -Message "Fetching history from replicas"
+                    Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
                     $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
                     $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
-                    # }
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     $AgLoopResults.Foreach{ $_.AvailabilityGroupName = $AvailabilityGroupName }
                     if ($Last) {
@@ -242,14 +249,11 @@ function Get-DbaDbBackupHistory {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
                     }
-                    $ProcessedAgDatabases += $PSBoundParameters['Database']
                     # Results are already in the correct format so drop to output
                     $agresults
                     # We're done at this point so exit function
                     return
                 }
-                # Return
-                # Stop-Function -Message 'done ag'
             }
 
             if ($server.VersionMajor -ge 12) {
@@ -307,9 +311,9 @@ function Get-DbaDbBackupHistory {
                     $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityGroupListeners.name -database $adb.Name @PSBoundParameters
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     $AgLoopResults.Foreach{ $_.AvailabilityGroupName = $AvailabilityGroupName }
-                    # Results already in the righ format, drop straight to output
+                    # Results already in the right format, drop straight to output
                     $AgLoopResults
-                    # Remove database as it's now done with
+                    # Remove database from collection as it's now done with
                     $databases = $databases | Where-Object Name -ne $adb.name
                 }
             }
