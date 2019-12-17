@@ -239,7 +239,9 @@ function Get-DbaDbBackupHistory {
                     $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
                     $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
+                    # if (-not $raw) {
                     $AgLoopResults.Foreach{ $_.AvailabilityGroupName = $AvailabilityGroupName }
+                    # }
                     if ($Last) {
                         Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
                         $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
@@ -248,6 +250,18 @@ function Get-DbaDbBackupHistory {
                         Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
+                    } elseif ($LastDiff) {
+                        Set-Variable -name agl -Value $AgLoopResults -Scope global
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } elseif ($LastLog) {
+                        Set-Variable -name agl -Value $AgLoopResults -Scope global
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } else {
+                        $AgResults += $AgLoopResult
                     }
                     # Results are already in the correct format so drop to output
                     $agresults
@@ -467,6 +481,7 @@ function Get-DbaDbBackupHistory {
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
+                        '' as AvailabilityGroupName,
                         a.[Database],
                         a.Username,
                         a.Start,
