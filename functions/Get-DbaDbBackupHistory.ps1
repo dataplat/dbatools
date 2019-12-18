@@ -239,9 +239,9 @@ function Get-DbaDbBackupHistory {
                     $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
                     $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    # if (-not $raw) {
-                    $AgLoopResults.Foreach{ $_.AvailabilityGroupName = $AvailabilityGroupName }
-                    # }
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
                     if ($Last) {
                         Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
                         $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
@@ -321,7 +321,9 @@ function Get-DbaDbBackupHistory {
                     $null = $PSBoundParameters.Remove('Database')
                     $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityGroupListeners.name -database $adb.Name @PSBoundParameters
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    $AgLoopResults.Foreach{ $_.AvailabilityGroupName = $AvailabilityGroupName }
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
                     # Results already in the right format, drop straight to output
                     $AgLoopResults
                     # Remove database from collection as it's now done with
