@@ -68,6 +68,11 @@ function Get-DbaAgListener {
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if (!($SqlInstance -or $InputObject -or $MyInvocation.ExpectingInput)) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        }
+    }
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup

@@ -117,6 +117,11 @@ function Add-DbaAgReplica {
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if (!($SqlInstance -or $InputObject -or $MyInvocation.ExpectingInput)) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {

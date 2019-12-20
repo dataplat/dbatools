@@ -73,7 +73,11 @@ function Invoke-DbaAgFailover {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if (!($SqlInstance -or $InputObject -or $MyInvocation.ExpectingInput)) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        }
+
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ($SqlInstance -and -not $AvailabilityGroup) {

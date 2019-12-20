@@ -150,7 +150,10 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if (!($Primary -or $InputObject -or $MyInvocation.ExpectingInput)) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        }
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $allcombos = @()
     }

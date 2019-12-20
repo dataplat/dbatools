@@ -116,6 +116,11 @@ function Add-DbaAgDatabase {
         [switch]$UseLastBackup,
         [switch]$EnableException
     )
+    begin {
+        if (!($SqlInstance -or $InputObject -or $MyInvocation.ExpectingInput)) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        }
+    }
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
