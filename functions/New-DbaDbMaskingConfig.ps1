@@ -592,7 +592,7 @@ function New-DbaDbMaskingConfig {
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")
                     }
-                    $temppath
+
                     Set-Content -Path $temppath -Value ($maskingconfig | ConvertTo-Json -Depth 5)
                     Get-ChildItem -Path $temppath
                 } catch {
