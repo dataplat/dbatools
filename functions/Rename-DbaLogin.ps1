@@ -88,6 +88,10 @@ function Rename-DbaLogin {
             $Databases = $server.Databases | Where-Object IsAccessible
             $currentLogin = $server.Logins[$Login]
 
+            if ( -not $currentLogin) {
+                Stop-Function -Message "Login '$login' not found on $instance" -ErrorRecord $_ -Target login -Continue
+            }
+
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
                 try {
                     $dbenums = $currentLogin.EnumDatabaseMappings()
