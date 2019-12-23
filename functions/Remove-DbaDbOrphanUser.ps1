@@ -151,14 +151,17 @@ function Remove-DbaDbOrphanUser {
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
+                            $users = @()
                             if ($User.Count -eq 0) {
                                 #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                             } else {
 
                                 Write-Message -Level Verbose -Message "Validating users on database $db."
                                 #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                             }
                         }
 
