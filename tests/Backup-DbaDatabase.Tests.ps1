@@ -189,7 +189,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should prefix them correctly" {
             for ($i = 1; $i -le $fileCount; $i++) {
-                $results.BackupFile[0] | Should -BeLike "$i-*'"
+                $results.BackupFile[0] | Should -BeLike "$i-*"
             }
         }
     }
