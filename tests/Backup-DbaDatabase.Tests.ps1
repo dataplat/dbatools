@@ -188,7 +188,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.BackupFilesCount | Should -Be 3
         }
         It "Should prefix them correctly" {
-            for ($i = 1; $i -le $fileCount; $i++) {
+            for ($i = 0; $i -lt $fileCount; $i++) {
                 $results.BackupFile[$i] | Should -BeLike "$i-*"
             }
         }
