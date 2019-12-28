@@ -29,7 +29,7 @@ function Backup-DbaDbCertificate {
         A string value that specifies the system path to encrypt the private key.
 
     .PARAMETER DecryptionPassword
-        A string value that specifies the system path to decrypt the private key.
+        Secure string used to decrypt the private key.
 
     .PARAMETER Path
         The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.

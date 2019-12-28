@@ -48,27 +48,16 @@ function Test-ElevationRequirement {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Stop')]
     param (
-        [DbaInstanceParameter]
-        $ComputerName,
-
+        [DbaInstanceParameter]$ComputerName,
         [Parameter(ParameterSetName = 'Stop')]
-        [switch]
-        $Continue,
-
+        [switch]$Continue,
         [Parameter(ParameterSetName = 'Stop')]
-        [string]
-        $ContinueLabel,
-
+        [string]$ContinueLabel,
         [Parameter(ParameterSetName = 'Stop')]
-        [switch]
-        $SilentlyContinue,
-
+        [switch]$SilentlyContinue,
         [Parameter(ParameterSetName = 'NoStop')]
-        [switch]
-        $NoStop,
-
-        [bool]
-        $EnableException = $EnableException
+        [switch]$NoStop,
+        [bool]$EnableException = $EnableException
     )
 
     $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
