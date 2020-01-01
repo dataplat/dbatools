@@ -43,10 +43,10 @@ function Save-DbaDiagnosticQueryScript {
         param ($uri)
         try {
             try {
-                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
             } catch {
                 (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
             }
             return $data
         } catch {
