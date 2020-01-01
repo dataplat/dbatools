@@ -16539,7 +16539,7 @@ function Find-DbaInstance {
                 $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
 
                 $objSearcher.PageSize = 200
-                $objSearcher.Filter = "(&(objectcategory=computer)(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
+                $objSearcher.Filter = "(&(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
                 $objSearcher.SearchScope = 'Subtree'
 
                 $results = $objSearcher.FindAll()
@@ -16547,10 +16547,15 @@ function Find-DbaInstance {
                     if ($GetSPN) {
                         $computer.Properties["serviceprincipalname"] | Where-Object { $_ -like "MSSQLsvc*:*" }
                     } else {
-                        if ($computer.Properties["dnshostname"]) {
+                        if ($computer.Properties["dnshostname"] -and $computer.Properties["dnshostname"] -ne '') {
                             $computer.Properties["dnshostname"][0]
                         } else {
-                            $computer.Properties["name"][0]
+                            $computer.Properties["serviceprincipalname"][0] -match '(?<=/)[^:]*' > $null
+                            if ($matches) {
+                                $matches[0]
+                            } else {
+                                $computer.Properties["name"][0]
+                            }
                         }
                     }
                 }
@@ -19877,12 +19882,12 @@ function Get-DbaBuildReference {
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             try {
-                $WebContent = Invoke-TlsWebRequest $url -ErrorAction Stop
+                $WebContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
             } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    $WebContent = Invoke-TlsWebRequest $url -ErrorAction Stop
+                    $WebContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
                 } catch {
                     Write-Message -Level Warning -Message "Couldn't download updated index from $url"
                     return
@@ -30126,13 +30131,9 @@ function Get-DbaNetworkCertificate {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-
     process {
         # Registry access
-
-
         foreach ($computer in $computername) {
-
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
             } catch {
@@ -30140,7 +30141,6 @@ function Get-DbaNetworkCertificate {
             }
 
             foreach ($sqlwmi in $sqlwmis) {
-
                 $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
@@ -30203,8 +30203,7 @@ function Get-DbaNetworkCertificate {
                 }
 
                 try {
-                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
-                        Select-DefaultView -ExcludeProperty Certificate
+                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop | Select-DefaultView -ExcludeProperty Certificate
                 } catch {
                     Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
                 }
@@ -56842,14 +56841,17 @@ function Remove-DbaDbOrphanUser {
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
+                            $users = @()
                             if ($User.Count -eq 0) {
                                 #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                             } else {
 
                                 Write-Message -Level Verbose -Message "Validating users on database $db."
                                 #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                             }
                         }
 
@@ -58857,6 +58859,10 @@ function Rename-DbaLogin {
             $Databases = $server.Databases | Where-Object IsAccessible
             $currentLogin = $server.Logins[$Login]
 
+            if ( -not $currentLogin) {
+                Stop-Function -Message "Login '$login' not found on $instance" -ErrorRecord $_ -Target login -Continue
+            }
+
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
                 try {
                     $dbenums = $currentLogin.EnumDatabaseMappings()
@@ -60422,13 +60428,13 @@ function Restore-DbaDbCertificate {
         [object[]]$Path,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
-        [Alias("Password", "DecryptionPassword")]
-        [Security.SecureString]$SecurePassword = (Read-Host "Password" -AsSecureString),
+        [Alias("Password", "SecurePassword")]
+        [Security.SecureString]$DecryptionPassword = (Read-Host "Password" -AsSecureString),
         [switch]$EnableException
     )
     process {
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Failed to connect to: $SqlInstance" -Target $SqlInstance -ErrorRecord $_
             return
@@ -60466,16 +60472,16 @@ function Restore-DbaDbCertificate {
                     Write-Message -Level Verbose -Message "Private key: $privatekey"
                     try {
                         if ($EncryptionPassword) {
-                            $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
+                            $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
                         } else {
-                            $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
+                            $smocert.Create($fullcertname, 1, $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword)))
                         }
                     } catch {
                         try {
                             if ($EncryptionPassword) {
-                                $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
+                                $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword)), [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)))
                             } else {
-                                $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
+                                $smocert.Create($fullcertname, $([Microsoft.SqlServer.Management.Smo.CertificateSourceType]::"File"), $privatekey, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword)))
                             }
                         } catch {
                             Stop-Function -Message $_ -ErrorRecord $_ -Target $instance -Continue
@@ -60781,10 +60787,10 @@ function Save-DbaDiagnosticQueryScript {
         param ($uri)
         try {
             try {
-                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
             } catch {
                 (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                $data = (Invoke-TlsWebRequest -uri $uri -ErrorAction Stop)
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
             }
             return $data
         } catch {
@@ -65289,7 +65295,7 @@ function Set-DbaStartupParameter {
     
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param ([parameter(Mandatory)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$MasterData,
@@ -65313,221 +65319,226 @@ function Set-DbaStartupParameter {
     )
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
+        $null = Test-ElevationRequirement -ComputerName $SqlInstance[0]
     }
     process {
-        if (-not $Offline) {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($instance in $SqlInstance) {
+            if (-not $Offline) {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Write-Message -Level Warning -Message "Failed to connect to $instance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
+                    $Server = $instance
+                    $Offline = $true
+                }
+            } else {
+                Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
+                $server = $instance
+            }
+
+            # Get Current parameters (uses WMI) -- requires elevated session
             try {
-                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $currentStartup = Get-DbaStartupParameter -SqlInstance $instance -Credential $Credential -EnableException
             } catch {
-                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
-                $Server = $SqlInstance
-                $Offline = $true
+                Stop-Function -Message "Unable to gather current startup parameters" -Target $instance -ErrorRecord $_
+                return
             }
-        } else {
-            Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
-            $server = $SqlInstance
-        }
+            $originalParamString = $currentStartup.ParameterString
 
-        # Get Current parameters (uses WMI) -- requires elevated session
-        try {
-            $currentStartup = Get-DbaStartupParameter -SqlInstance $SqlInstance -Credential $Credential -EnableException
-        } catch {
-            Stop-Function -Message "Unable to gather current startup parameters" -Target $SqlInstance -ErrorRecord $_
-            return
-        }
-        $originalParamString = $currentStartup.ParameterString
+            Write-Message -Level Verbose -Message "Original startup parameter string: $originalParamString"
 
-        Write-Message -Level Verbose -Message "Original startup parameter string: $originalParamString"
-
-        if ('StartupConfig' -in $PSBoundParameters.Keys) {
-            Write-Message -Level VeryVerbose -Message "startupObject passed in"
-            $newStartup = $StartupConfig
-            $TraceFlagOverride = $true
-        } else {
-            Write-Message -Level VeryVerbose -Message "Parameters passed in"
-            $newStartup = $currentStartup.PSObject.Copy()
-            foreach ($param in ($PSBoundParameters.Keys | Where-Object { $_ -in ($newStartup.PSObject.Properties.Name) })) {
-                if ($PSBoundParameters.Item($param) -ne $newStartup.$param) {
-                    $newStartup.$param = $PSBoundParameters.Item($param)
-                }
-            }
-        }
-
-        if (!($currentStartup.SingleUser)) {
-
-            if ($newStartup.MasterData.Length -gt 0) {
-                if ($Offline -and -not $Force) {
-                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
-                    $parameterString += "-d$($currentStartup.MasterData);"
-
-                } else {
-                    if ($Force) {
-                        $parameterString += "-d$($newStartup.MasterData);"
-                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.MasterData -Parent)) {
-                        $parameterString += "-d$($newStartup.MasterData);"
-                    } else {
-                        Stop-Function -Message "Specified folder for MasterData file is not reachable by instance $SqlInstance"
-                        return
+            if ('StartupConfig' -in $PSBoundParameters.Keys) {
+                Write-Message -Level VeryVerbose -Message "startupObject passed in"
+                $newStartup = $StartupConfig
+                $TraceFlagOverride = $true
+            } else {
+                Write-Message -Level VeryVerbose -Message "Parameters passed in"
+                $newStartup = $currentStartup.PSObject.Copy()
+                foreach ($param in ($PSBoundParameters.Keys | Where-Object { $_ -in ($newStartup.PSObject.Properties.Name) })) {
+                    if ($PSBoundParameters.Item($param) -ne $newStartup.$param) {
+                        $newStartup.$param = $PSBoundParameters.Item($param)
                     }
                 }
-            } else {
-                Stop-Function -Message "MasterData value must be provided"
-                return
             }
 
-            if ($newStartup.ErrorLog.Length -gt 0) {
-                if ($Offline -and -not $Force) {
-                    Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"
-                    $parameterString += "-e$($currentStartup.ErrorLog);"
-                } else {
-                    if ($Force) {
-                        $parameterString += "-e$($newStartup.ErrorLog);"
-                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.ErrorLog -Parent)) {
-                        $parameterString += "-e$($newStartup.ErrorLog);"
+            if (!($currentStartup.SingleUser)) {
+
+                if ($newStartup.MasterData.Length -gt 0) {
+                    if ($Offline -and -not $Force) {
+                        Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
+                        $parameterString += "-d$($currentStartup.MasterData);"
+
                     } else {
-                        Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
-                        return
+                        if ($Force) {
+                            $parameterString += "-d$($newStartup.MasterData);"
+                        } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.MasterData -Parent)) {
+                            $parameterString += "-d$($newStartup.MasterData);"
+                        } else {
+                            Stop-Function -Message "Specified folder for MasterData file is not reachable by instance $instance"
+                            return
+                        }
                     }
-                }
-            } else {
-                Stop-Function -Message "ErrorLog value must be provided"
-                return
-            }
-
-            if ($newStartup.MasterLog.Length -gt 0) {
-                if ($Offline -and -not $Force) {
-                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"
-                    $parameterString += "-l$($currentStartup.MasterLog);"
                 } else {
-                    if ($Force) {
-                        $parameterString += "-l$($newStartup.MasterLog);"
-                    } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.MasterLog -Parent)) {
-                        $parameterString += "-l$($newStartup.MasterLog);"
+                    Stop-Function -Message "MasterData value must be provided"
+                    return
+                }
+
+                if ($newStartup.ErrorLog.Length -gt 0) {
+                    if ($Offline -and -not $Force) {
+                        Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"
+                        $parameterString += "-e$($currentStartup.ErrorLog);"
                     } else {
-                        Stop-Function -Message "Specified folder for MasterLog  file is not reachable by $SqlInstance"
-                        return
+                        if ($Force) {
+                            $parameterString += "-e$($newStartup.ErrorLog);"
+                        } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.ErrorLog -Parent)) {
+                            $parameterString += "-e$($newStartup.ErrorLog);"
+                        } else {
+                            Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $instance"
+                            return
+                        }
                     }
+                } else {
+                    Stop-Function -Message "ErrorLog value must be provided"
+                    return
+                }
+
+                if ($newStartup.MasterLog.Length -gt 0) {
+                    if ($Offline -and -not $Force) {
+                        Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"
+                        $parameterString += "-l$($currentStartup.MasterLog);"
+                    } else {
+                        if ($Force) {
+                            $parameterString += "-l$($newStartup.MasterLog);"
+                        } elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newStartup.MasterLog -Parent)) {
+                            $parameterString += "-l$($newStartup.MasterLog);"
+                        } else {
+                            Stop-Function -Message "Specified folder for MasterLog  file is not reachable by $instance"
+                            return
+                        }
+                    }
+                } else {
+                    Stop-Function -Message "MasterLog value must be provided."
+                    return
                 }
             } else {
-                Stop-Function -Message "MasterLog value must be provided."
-                return
-            }
-        } else {
 
-            Write-Message -Level Verbose -Message "Instance is presently configured for single user, skipping path validation"
-            if ($newStartup.MasterData.Length -gt 0) {
-                $parameterString += "-d$($newStartup.MasterData);"
-            } else {
-                Stop-Function -Message "Must have a value for MasterData"
-                return
-            }
-            if ($newStartup.ErrorLog.Length -gt 0) {
-                $parameterString += "-e$($newStartup.ErrorLog);"
-            } else {
-                Stop-Function -Message "Must have a value for Errorlog"
-                return
-            }
-            if ($newStartup.MasterLog.Length -gt 0) {
-                $parameterString += "-l$($newStartup.MasterLog);"
-            } else {
-                Stop-Function -Message "Must have a value for MasterLog"
-                return
-            }
-        }
-
-        if ($newStartup.CommandPromptStart) {
-            $parameterString += "-c;"
-        }
-        if ($newStartup.MinimalStart) {
-            $parameterString += "-f;"
-        }
-        if ($newStartup.MemoryToReserve -notin ($null, 0)) {
-            $parameterString += "-g$($newStartup.MemoryToReserve)"
-        }
-        if ($newStartup.SingleUser) {
-            if ($SingleUserDetails.Length -gt 0) {
-                if ($SingleUserDetails -match ' ') {
-                    $SingleUserDetails = """$SingleUserDetails"""
+                Write-Message -Level Verbose -Message "Instance is presently configured for single user, skipping path validation"
+                if ($newStartup.MasterData.Length -gt 0) {
+                    $parameterString += "-d$($newStartup.MasterData);"
+                } else {
+                    Stop-Function -Message "Must have a value for MasterData"
+                    return
                 }
-                $parameterString += "-m$SingleUserDetails;"
-            } else {
-                $parameterString += "-m;"
+                if ($newStartup.ErrorLog.Length -gt 0) {
+                    $parameterString += "-e$($newStartup.ErrorLog);"
+                } else {
+                    Stop-Function -Message "Must have a value for Errorlog"
+                    return
+                }
+                if ($newStartup.MasterLog.Length -gt 0) {
+                    $parameterString += "-l$($newStartup.MasterLog);"
+                } else {
+                    Stop-Function -Message "Must have a value for MasterLog"
+                    return
+                }
             }
-        }
-        if ($newStartup.NoLoggingToWinEvents) {
-            $parameterString += "-n;"
-        }
-        If ($newStartup.StartAsNamedInstance) {
-            $parameterString += "-s;"
-        }
-        if ($newStartup.DisableMonitoring) {
-            $parameterString += "-x;"
-        }
-        if ($newStartup.IncreasedExtents) {
-            $parameterString += "-E;"
-        }
-        if ($newStartup.TraceFlags -eq 'None') {
-            $newStartup.TraceFlags = ''
-        }
-        if ($TraceFlagOverride -and 'TraceFlag' -in $PSBoundParameters.Keys) {
-            if ($null -ne $TraceFlag -and '' -ne $TraceFlag) {
-                $newStartup.TraceFlags = $TraceFlag -join ','
-                $parameterString += (($TraceFlag.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
+
+            if ($newStartup.CommandPromptStart) {
+                $parameterString += "-c;"
             }
-        } else {
-            if ('TraceFlag' -in $PSBoundParameters.Keys) {
-                if ($null -eq $TraceFlag) { $TraceFlag = '' }
-                $oldFlags = @($currentStartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
-                $newFlags = $TraceFlag
-                $newStartup.TraceFlags = (@($oldFlags) + @($newFlags) | Sort-Object -Unique) -join ','
-            } elseif ($TraceFlagOverride) {
+            if ($newStartup.MinimalStart) {
+                $parameterString += "-f;"
+            }
+            if ($newStartup.MemoryToReserve -notin ($null, 0)) {
+                $parameterString += "-g$($newStartup.MemoryToReserve)"
+            }
+            if ($newStartup.SingleUser) {
+                if ($SingleUserDetails.Length -gt 0) {
+                    if ($SingleUserDetails -match ' ') {
+                        $SingleUserDetails = """$SingleUserDetails"""
+                    }
+                    $parameterString += "-m$SingleUserDetails;"
+                } else {
+                    $parameterString += "-m;"
+                }
+            }
+            if ($newStartup.NoLoggingToWinEvents) {
+                $parameterString += "-n;"
+            }
+            If ($newStartup.StartAsNamedInstance) {
+                $parameterString += "-s;"
+            }
+            if ($newStartup.DisableMonitoring) {
+                $parameterString += "-x;"
+            }
+            if ($newStartup.IncreasedExtents) {
+                $parameterString += "-E;"
+            }
+            if ($newStartup.TraceFlags -eq 'None') {
                 $newStartup.TraceFlags = ''
-            } else {
-                $newStartup.TraceFlags = if ($currentStartup.TraceFlags -eq 'None') { }
-                else { $currentStartup.TraceFlags -join ',' }
             }
-            If ($newStartup.TraceFlags.Length -ne 0) {
-                $parameterString += (($newStartup.TraceFlags.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
-            }
-        }
-
-        $instanceName = $SqlInstance.InstanceName
-        $displayName = "SQL Server ($instanceName)"
-
-        $scriptBlock = {
-            #Variable marked as unused by PSScriptAnalyzer
-            #$instance = $args[0]
-            $displayName = $args[1]
-            $parameterString = $args[2]
-
-            $wmiSvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayName }
-            $wmiSvc.StartupParameters = $parameterString
-            $wmiSvc.Alter()
-            $wmiSvc.Refresh()
-            if ($wmiSvc.StartupParameters -eq $parameterString) {
-                $true
-            } else {
-                $false
-            }
-        }
-        if ($PSCmdlet.ShouldProcess("Setting startup parameters on $SqlInstance to $parameterString")) {
-            try {
-                if ($Credential) {
-                    $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
-
-                    $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -Credential $Credential -EnableException
-                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
-                } else {
-                    $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -scriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
-
-                    $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
-                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
-                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name Notes -Value "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
+            if ($TraceFlagOverride -and 'TraceFlag' -in $PSBoundParameters.Keys) {
+                if ($null -ne $TraceFlag -and '' -ne $TraceFlag) {
+                    $newStartup.TraceFlags = $TraceFlag -join ','
+                    $parameterString += (($TraceFlag.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
                 }
-                $output
-            } catch {
-                Stop-Function -Message "Startup parameter update failed on $SqlInstance. " -Target $SqlInstance -ErrorRecord $_
-                return
+            } else {
+                if ('TraceFlag' -in $PSBoundParameters.Keys) {
+                    if ($null -eq $TraceFlag) { $TraceFlag = '' }
+                    $oldFlags = @($currentStartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
+                    $newFlags = $TraceFlag
+                    $newStartup.TraceFlags = (@($oldFlags) + @($newFlags) | Sort-Object -Unique) -join ','
+                } elseif ($TraceFlagOverride) {
+                    $newStartup.TraceFlags = ''
+                } else {
+                    $newStartup.TraceFlags = if ($currentStartup.TraceFlags -eq 'None') { }
+                    else { $currentStartup.TraceFlags -join ',' }
+                }
+                If ($newStartup.TraceFlags.Length -ne 0) {
+                    $parameterString += (($newStartup.TraceFlags.Split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
+                }
+            }
+
+            $instanceName = $instance.InstanceName
+            $displayName = "SQL Server ($instanceName)"
+
+            $scriptBlock = {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$instance = $args[0]
+                $displayName = $args[1]
+                $parameterString = $args[2]
+
+                $wmiSvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayName }
+                $wmiSvc.StartupParameters = $parameterString
+                $wmiSvc.Alter()
+                $wmiSvc.Refresh()
+                if ($wmiSvc.StartupParameters -eq $parameterString) {
+                    $true
+                } else {
+                    $false
+                }
+            }
+            if ($PSCmdlet.ShouldProcess("Setting startup parameters on $instance to $parameterString")) {
+                try {
+                    if ($Credential) {
+                        $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
+
+                        $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -Credential $Credential -EnableException
+                        Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
+                    } else {
+                        $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -scriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
+
+                        $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
+                        Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
+                        Add-Member -Force -InputObject $output -MemberType NoteProperty -Name Notes -Value "Startup parameters changed on $instance. You must restart SQL Server for changes to take effect."
+                    }
+                    $output
+                } catch {
+                    Stop-Function -Message "Startup parameter update failed on $instance. " -Target $instance -ErrorRecord $_
+                    return
+                }
             }
         }
     }
@@ -82007,27 +82018,16 @@ function Test-ElevationRequirement {
     
     [CmdletBinding(DefaultParameterSetName = 'Stop')]
     param (
-        [DbaInstanceParameter]
-        $ComputerName,
-
+        [DbaInstanceParameter]$ComputerName,
         [Parameter(ParameterSetName = 'Stop')]
-        [switch]
-        $Continue,
-
+        [switch]$Continue,
         [Parameter(ParameterSetName = 'Stop')]
-        [string]
-        $ContinueLabel,
-
+        [string]$ContinueLabel,
         [Parameter(ParameterSetName = 'Stop')]
-        [switch]
-        $SilentlyContinue,
-
+        [switch]$SilentlyContinue,
         [Parameter(ParameterSetName = 'NoStop')]
-        [switch]
-        $NoStop,
-
-        [bool]
-        $EnableException = $EnableException
+        [switch]$NoStop,
+        [bool]$EnableException = $EnableException
     )
 
     $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)

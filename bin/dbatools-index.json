@@ -1918,7 +1918,7 @@
                        ],
                        [
                            "DecryptionPassword",
-                           "A string value that specifies the system path to decrypt the private key.",
+                           "Secure string used to decrypt the private key.",
                            "",
                            false,
                            "false",
@@ -18703,9 +18703,12 @@
     },
     {
         "Name":  "Get-DbaNetworkCertificate",
-        "Description":  "Gets computer certificates on localhost that are candidates for using with SQL Server\u0027s network encryption",
-        "Tags":  "Certificate",
-        "Synopsis":  "Simplifies finding computer certificates that are candidates for using with SQL Server\u0027s network encryption",
+        "Description":  "Gets the computer certificates that is assigned to the SQL Server instance for enabling network encryption.",
+        "Tags":  [
+                     "Certificate",
+                     "Encryption"
+                 ],
+        "Synopsis":  "Gets the computer certificate enabled for the SQL Server instance\u0027s network encryption.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaNetworkCertificate",
@@ -18723,7 +18726,7 @@
                        ],
                        [
                            "Credential",
-                           "Allows you to login to $ComputerName using alternative credentials.",
+                           "Alternate credential object to use for accessing the target computer(s).",
                            "",
                            false,
                            "false",
@@ -39989,7 +39992,7 @@
         "CommandName":  "Restore-DbaDbCertificate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Restore-DbaDbCertificate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password\nPS C:\\\u003e Restore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -SecurePassword $securepass\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -SecurePassword (Get-Credential usernamedoesntmatter).Password\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password\nPS C:\\\u003e Restore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -DecryptionPassword $securepass\nRestores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates\\DatabaseTDE.cer -DecryptionPassword (Get-Credential usernamedoesntmatter).Password\nRestores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -40032,9 +40035,9 @@
                            "master"
                        ],
                        [
-                           "SecurePassword",
+                           "DecryptionPassword",
                            "Secure string used to decrypt the private key.",
-                           "Password,DecryptionPassword",
+                           "Password,SecurePassword",
                            false,
                            "false",
                            "(Read-Host \"Password\" -AsSecureString)"
@@ -40064,7 +40067,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Restore-DbaDbCertificate [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Path] \u003cObject[]\u003e [[-EncryptionPassword] \u003cSecureString\u003e] [[-Database] \u003cString\u003e] [[-SecurePassword] \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Restore-DbaDbCertificate [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Path] \u003cObject[]\u003e [[-EncryptionPassword] \u003cSecureString\u003e] [[-Database] \u003cString\u003e] [[-DecryptionPassword] \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Restore-DbaDbSnapshot",
@@ -44272,7 +44275,7 @@
                        ],
                        [
                            "IncreasedExtents",
-                           "Increases the number of extents that are allocated for each file in a filegroup.",
+                           "Increases the number of extents that are allocated for each file in a file group.",
                            "",
                            false,
                            "false",
@@ -44335,7 +44338,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlag] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagOverride] [[-StartupConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MasterData] \u003cString\u003e] [[-MasterLog] \u003cString\u003e] [[-ErrorLog] \u003cString\u003e] [[-TraceFlag] \u003cString[]\u003e] [-CommandPromptStart] [-MinimalStart] [[-MemoryToReserve] \u003cInt32\u003e] [-SingleUser] [[-SingleUserDetails] \u003cString\u003e] [-NoLoggingToWinEvents] [-StartAsNamedInstance] [-DisableMonitoring] [-IncreasedExtents] [-TraceFlagOverride] [[-StartupConfig] \u003cObject\u003e] [-Offline] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaTcpPort",
