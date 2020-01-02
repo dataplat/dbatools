@@ -68,12 +68,12 @@ function Suspend-DbaAgDbDataMovement {
         [Microsoft.SqlServer.Management.Smo.AvailabilityDatabase[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        if (!($SqlInstance -or $InputObject -or $MyInvocation.ExpectingInput)) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
-        }
-    }
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
