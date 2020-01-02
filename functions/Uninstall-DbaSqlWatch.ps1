@@ -31,12 +31,14 @@ Function Uninstall-DbaSqlWatch {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SqlWatch
+        Tags: Community, SqlWatch
         Author: Ken K (github.com/koglerk)
-        Website: https://sqlwatch.io
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://sqlwatch.io
 
     .LINK
         https://dbatools.io/Uninstall-DbaSqlWatch
@@ -88,9 +90,9 @@ Function Uninstall-DbaSqlWatch {
             }
 
             # get SqlWatch objects
-            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
-            $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
-            $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
+            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" }
+            $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "vw_sql_perf_mon_*" }
+            $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
             $agentJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }
 
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch SQL Agent jobs")) {

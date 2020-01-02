@@ -6,7 +6,7 @@ function Add-DbaAgDatabase {
     .DESCRIPTION
         Adds a database to an availability group on a SQL Server instance.
 
-        Before joining the replica databases to the availablity group, the databases will be initialized with automatic seeding or full/log backup.
+        Before joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.

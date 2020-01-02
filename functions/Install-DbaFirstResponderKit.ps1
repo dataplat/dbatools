@@ -28,7 +28,7 @@ function Install-DbaFirstResponderKit {
         Specifies an alternate branch of the First Responder Kit to install. (master or dev)
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.
+        Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
     .PARAMETER Force
@@ -46,12 +46,14 @@ function Install-DbaFirstResponderKit {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: BrentOzar, FRK, FirstResponderKit
+        Tags: Community, FirstResponderKit
         Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://www.brentozar.com/responder
 
     .LINK
         https://dbatools.io/Install-DbaFirstResponderKit
@@ -86,7 +88,6 @@ function Install-DbaFirstResponderKit {
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
 
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -100,21 +101,20 @@ function Install-DbaFirstResponderKit {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         if (-not $DbatoolsData) {
-            $DbatoolsData = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+            $DbatoolsData = [System.IO.Path]::GetTempPath()
         }
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
-        $zipfolder = "$temp\SQL-Server-First-Responder-Kit-$Branch\"
+        $temp = [System.IO.Path]::GetTempPath()
+        $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
+        $zipfolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
         $FRKLocation = "FRK_$Branch"
         $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
         if ($LocalFile) {
@@ -139,7 +139,9 @@ function Install-DbaFirstResponderKit {
 
             $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
-                Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                if (Test-Windows -NoWarn) {
+                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                }
                 Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
@@ -154,12 +156,12 @@ function Install-DbaFirstResponderKit {
                         Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
                     }
 
-
                     # Unblock if there's a block
-                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                    if (Test-Windows -NoWarn) {
+                        Unblock-File $zipfile -ErrorAction SilentlyContinue
+                    }
 
                     Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
-
                     Remove-Item -Path $zipfile
                 } catch {
                     Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
@@ -185,9 +187,9 @@ function Install-DbaFirstResponderKit {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."

@@ -73,7 +73,7 @@ function Get-DbaAgentAlertCategory {
 
             try {
                 foreach ($cat in $alertCategories) {
-                    $alertCount = ($server.JobServer.Alerts | Where-Object {$_.CategoryName -eq $cat.Name}).Count
+                    $alertCount = ($server.JobServer.Alerts | Where-Object { $_.CategoryName -eq $cat.Name }).Count
 
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

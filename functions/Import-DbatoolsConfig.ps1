@@ -33,6 +33,17 @@ function Import-DbatoolsConfig {
         This parameters disables user-friendly warnings and enables the throwing of exceptions.
         This is less user friendly, but allows catching exceptions in calling scripts.
 
+    .NOTES
+        Tags: Module
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Import-DbatoolsConfig
+
     .EXAMPLE
         PS C:\> Import-DbatoolsConfig -Path '.\config.json'
 
@@ -134,7 +145,7 @@ function Import-DbatoolsConfig {
             $data = Read-DbatoolsConfigPersisted -Module $ModuleName -Scope $Scope -ModuleVersion $ModuleVersion
 
             foreach ($value in $data.Values) {
-                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException}
+                if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException }
                 else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
             }
         }

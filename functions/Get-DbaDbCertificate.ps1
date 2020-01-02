@@ -62,7 +62,7 @@ function Get-DbaDbCertificate {
     .EXAMPLE
         PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Subject 'Availability Group Cert'
 
-        Gets the cert1 certificate within the db1 database
+        Gets the certificate within the db1 database that has the subject 'Availability Group Cert'
 
     #>
     [CmdletBinding()]
@@ -88,8 +88,6 @@ function Get-DbaDbCertificate {
                 continue
             }
 
-            #Variable marked as unused by PSScriptAnalyzer
-            #$dbName = $db.Name
             $certs = $db.Certificates
 
             if ($null -eq $certs) {

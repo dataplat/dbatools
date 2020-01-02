@@ -82,15 +82,15 @@ function Get-DbaAgentJobCategory {
 
             $jobCategories = $server.JobServer.JobCategories |
                 Where-Object {
-                ($_.Name -in $Category -or !$Category) -and
-                ($_.CategoryType -in $CategoryType -or !$CategoryType)
-            }
+                    ($_.Name -in $Category -or !$Category) -and
+                    ($_.CategoryType -in $CategoryType -or !$CategoryType)
+                }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
 
             try {
                 foreach ($cat in $jobCategories) {
-                    $jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
+                    $jobCount = ($server.JobServer.Jobs | Where-Object { $_.CategoryID -eq $cat.ID }).Count
 
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

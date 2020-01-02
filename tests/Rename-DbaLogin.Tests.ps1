@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'NewLogin', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -22,16 +22,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $newlogin = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
     }
     AfterAll {
-        Stop-DbaProcess -SqlInstance $script:instance1 -Login $renamed
-        (Get-Dbalogin -SqlInstance $script:instance1 -Login $renamed).Drop()
+        $null = Stop-DbaProcess -SqlInstance $script:instance1 -Login $renamed
+        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $renamed -Confirm:$false
     }
 
-    It "renames the login" {
+    Context "renames the login" {
         $results = Rename-DbaLogin -SqlInstance $script:instance1 -Login $login -NewLogin $renamed
-        $results.Status -eq "Successful"
-        $results.PreviousLogin = $login
-        $results.NewLogin = $renamed
-        $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login $renamed
-        $null -ne $login1
+        It "rename is successful" {
+            $results.Status | Should Be "Successful"
+        }
+        It "output for previous login is correct" {
+            $results.PreviousLogin | Should Be $login
+        }
+        It "output for new login is correct" {
+            $results.NewLogin | Should Be $renamed
+        }
+        It "results aren't null" {
+            Get-DbaLogin -SqlInstance $script:instance1 -login $renamed | Should Not BeNullOrEmpty
+        }
     }
 }

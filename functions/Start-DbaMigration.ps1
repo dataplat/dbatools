@@ -227,7 +227,7 @@ function Start-DbaMigration {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         if ($Exclude -notcontains "Databases") {
             if (-not $BackupRestore -and -not $DetachAttach -and -not $UseLastBackup) {

@@ -266,7 +266,7 @@ function Copy-DbaDbTableData {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
@@ -389,6 +389,7 @@ function Copy-DbaDbTableData {
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
+                        $cmd.CommandTimeout = 0
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()

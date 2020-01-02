@@ -112,7 +112,7 @@ function New-DbaDbSnapshot {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $NoSupportForSnap = @('model', 'master', 'tempdb')
         # Evaluate the default suffix here for naming consistency

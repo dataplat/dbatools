@@ -48,7 +48,7 @@ function Get-DbaKbUpdate {
         PS C:\> Get-DbaKbUpdate -Name KB4057119, 4057114 -Simple
 
         A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
-#>
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]

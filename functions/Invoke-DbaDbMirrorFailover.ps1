@@ -37,7 +37,7 @@ function Invoke-DbaDbMirrorFailover {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -59,7 +59,6 @@ function Invoke-DbaDbMirrorFailover {
 
         Forces the failover of the pubs database on sql2016 and allows data loss.
         Does not prompt for confirmation.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -72,7 +71,7 @@ function Invoke-DbaDbMirrorFailover {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {

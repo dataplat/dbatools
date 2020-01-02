@@ -17,5 +17,6 @@
     // https://twitter.com/TylerLeonhardt/status/1102749805233737729
 	"[powershell]": {
 		"editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
-	}
+    },
+    "powershell.scriptAnalysis.settingsPath": "bin\\PSScriptAnalyzerRules.psd1"
 }

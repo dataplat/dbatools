@@ -154,7 +154,7 @@ function Get-DbaIoLatency {
                     NumberOfBytesRead    = $row.num_of_bytes_read
                     NumberOfBytesWritten = $row.num_of_bytes_written
                     SampleMilliseconds   = $row.sample_ms
-                    SizeOnDiskBytes      = $row.num_of_bytes_written
+                    SizeOnDiskBytes      = $row.size_on_disk_bytes
                     FileHandle           = $row.file_handle
                     ReadLatency          = $row.ReadLatency
                     WriteLatency         = $row.WriteLatency

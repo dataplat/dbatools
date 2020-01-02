@@ -70,7 +70,6 @@ function Sync-DbaLoginPermission {
         Copies permissions ONLY for logins netnerds and realcajun.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
@@ -95,12 +94,12 @@ function Sync-DbaLoginPermission {
             )
 
             $stepCounter = 0
-            foreach ($sourceLogin in $alllogins) {
+            foreach ($sourceLogin in $allLogins) {
 
                 $username = $sourceLogin.Name
                 $currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
-                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $alllogins.count
+                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.count
 
                 if ($currentLogin -eq $username) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
@@ -123,18 +122,18 @@ function Sync-DbaLoginPermission {
         }
 
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $sqlcredential
-            $alllogins = Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin
-            $loginname = $alllogins.Name
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $allLogins = Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin
+            $loginName = $allLogins.Name
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if ($null -eq $loginname) {
+        if ($null -eq $loginName) {
             Stop-Function -Message "No matching logins found for $($login -join ', ') on $Source"
             return
         }

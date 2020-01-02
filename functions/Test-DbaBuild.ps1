@@ -145,7 +145,7 @@ function Test-DbaBuild {
             $MaxBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>SP|CU)$'
             $pieces = $MaxBehind.Split(' ')	| Where-Object { $_ }
             try {
-                $ParsedMaxBehind = @{}
+                $ParsedMaxBehind = @{ }
                 foreach ($piece in $pieces) {
                     $pieceMatch = $MaxBehindValidator.Match($piece)
                     if ($pieceMatch.Success -ne $true) {

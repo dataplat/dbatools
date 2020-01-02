@@ -382,7 +382,7 @@ function Expand-DbaDbLogFile {
                                             $backup.BackupSetName = $db + " Backup"
                                             $backup.Database = $db
                                             $backup.MediaDescription = "Disk"
-                                            $dt = get-date -format yyyyMMddHHmmssms
+                                            $dt = Get-Date -format yyyyMMddHHmmssms
                                             $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                             if ($DefaultCompression -eq $true) {
                                                 $backup.CompressionOption = 1

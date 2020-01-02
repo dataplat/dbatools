@@ -39,7 +39,7 @@ function Invoke-DbaAsync {
 
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-       #>
+    #>
 
     param (
         [Alias('Connection', 'Conn')]
@@ -80,7 +80,7 @@ function Invoke-DbaAsync {
                         Write-Message -Level Verbose -Message "SQL Error:  $Err"
                     } #Shiyang, add the verbose output of exception
                     switch ($ErrorActionPreference.ToString()) {
-                        { 'SilentlyContinue', 'Ignore' -contains $_ } {   }
+                        { 'SilentlyContinue', 'Ignore' -contains $_ } { }
                         'Stop' { throw $Err }
                         'Continue' { throw $Err }
                         Default { Throw $Err }
@@ -168,12 +168,12 @@ function Invoke-DbaAsync {
             if ($null -ne $SqlParameters) {
                 $SqlParameters.GetEnumerator() |
                     ForEach-Object {
-                    if ($null -ne $_.Value) {
-                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                    } else {
-                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
-                    }
-                } > $null
+                        if ($null -ne $_.Value) {
+                            $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                        } else {
+                            $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                        }
+                    } > $null
             }
 
             $ds = New-Object system.Data.DataSet

@@ -75,7 +75,7 @@ function New-DbaAgentJobCategory {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         if (-not $CategoryType) {
             Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose

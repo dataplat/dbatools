@@ -220,17 +220,17 @@ function Get-DbaAgentJobHistory {
                 }
 
                 if ($WithOutputFile) {
-                    $outmap = @{}
+                    $outmap = @{ }
                     $outfiles = Get-DbaAgentJobOutputFile -SqlInstance $Server -SqlCredential $SqlCredential -Job $Job
 
                     foreach ($out in $outfiles) {
                         if (!$outmap.ContainsKey($out.Job)) {
-                            $outmap[$out.Job] = @{}
+                            $outmap[$out.Job] = @{ }
                         }
                         $outmap[$out.Job][$out.StepId] = $out.OutputFileName
                     }
                 }
-                $outcome = [pscustomobject]@{}
+                $outcome = [pscustomobject]@{ }
                 foreach ($execution in $executions) {
                     $status = switch ($execution.RunStatus) {
                         0 { "Failed" }

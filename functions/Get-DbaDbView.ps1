@@ -25,6 +25,9 @@ function Get-DbaDbView {
     .PARAMETER ExcludeSystemView
         This switch removes all system objects from the view collection.
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -63,55 +66,53 @@ function Get-DbaDbView {
 
         Gets the views for the databases on Sql1 and Sql2/sqlexpress
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView
+
+        Pipe the databases from Get-DbaDatabase into Get-DbaDbView
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $views = $db.views
+            if (-not $db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+            if (-not $views) {
+                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                continue
             }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            if (Test-Bound -ParameterName ExcludeSystemView) {
+                $views = $views | Where-Object { -not $_.IsSystemObject }
             }
 
-            foreach ($db in $databases) {
-                $views = $db.views
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
+            foreach ($view in $views) {
 
-                if (!$views) {
-                    Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
-                if (Test-Bound -ParameterName ExcludeSystemView) {
-                    $views = $views | Where-Object { $_.IsSystemObject -eq $false }
-                }
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $view.Parent.ComputerName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $view.Parent.InstanceName
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $view.Parent.SqlInstance
+                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
 
-                $views | Foreach-Object {
-
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
-
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name
-                }
+                Select-DefaultView -InputObject $view -Property $defaults
             }
         }
     }

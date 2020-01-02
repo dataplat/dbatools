@@ -170,7 +170,7 @@ function New-DbaAgentJob {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the event log level is of type string and set the integer value
         if ($EventLogLevel -notin 1, 2, 3) {

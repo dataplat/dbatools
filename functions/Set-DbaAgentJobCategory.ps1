@@ -72,7 +72,7 @@ function Set-DbaAgentJobCategory {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check if multiple categories are being changed
         if ($Category.Count -gt 1 -and $NewName.Count -eq 1) {

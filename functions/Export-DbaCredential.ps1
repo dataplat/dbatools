@@ -76,7 +76,7 @@ function Export-DbaCredential {
     begin {
         $null = Test-ExportDirectory -Path $Path
         $serverArray = @()
-        $credentialArray = @{}
+        $credentialArray = @{ }
         $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {

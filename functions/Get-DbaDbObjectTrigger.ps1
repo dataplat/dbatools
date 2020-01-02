@@ -74,7 +74,7 @@ function Get-DbaDbObjectTrigger {
     )
     process {
         if ($InputObject.Count -gt 0) {
-            $InputObject | foreach-object {
+            $InputObject | ForEach-Object {
                 if (-not ($_ -is [Microsoft.SqlServer.Management.Smo.TableViewBase])) {
                     Stop-Function -Message "InputObject $_ is not of type Table or View." -Continue
                     return

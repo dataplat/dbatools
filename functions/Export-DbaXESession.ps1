@@ -1,7 +1,7 @@
 function Export-DbaXESession {
     <#
     .SYNOPSIS
-        Exports Extened Events creation script to a T-SQL file or console.
+        Exports Extended Events creation script to a T-SQL file or console.
 
     .DESCRIPTION
         Exports script to create Extended Events Session to sql file  or console.

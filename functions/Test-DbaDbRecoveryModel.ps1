@@ -84,9 +84,9 @@ function Test-DbaDbRecoveryModel {
         }
 
         switch ($RecoveryModel) {
-            "Full" {$recoveryCode = 1}
-            "Bulk_Logged" {$recoveryCode = 2}
-            "Simple" {$recoveryCode = 3}
+            "Full" { $recoveryCode = 1 }
+            "Bulk_Logged" { $recoveryCode = 2 }
+            "Simple" { $recoveryCode = 3 }
         }
 
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,

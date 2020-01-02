@@ -178,7 +178,7 @@ function Set-DbaAgentJobStep {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {

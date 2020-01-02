@@ -4,7 +4,7 @@ function Add-DbaRegServer {
         Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups
 
     .DESCRIPTION
-        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups. If you need more flexiblity, look into Import-DbaRegServer which
+        Adds registered servers to SQL Server Central Management Server (CMS) or Local Server Groups. If you need more flexibility, look into Import-DbaRegServer which
         accepts multiple kinds of input and allows you to add reg servers from different CMSes.
 
     .PARAMETER SqlInstance

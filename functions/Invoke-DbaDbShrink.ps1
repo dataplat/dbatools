@@ -183,7 +183,7 @@ function Invoke-DbaDbShrink {
             $server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
             Write-Message -Level Verbose -Message "Connection timeout set to $StatementTimeout"
 
-            $dbs = $server.Databases | Where-Object {$_.IsAccessible}
+            $dbs = $server.Databases | Where-Object { $_.IsAccessible }
 
             if ($AllUserDatabases) {
                 $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }

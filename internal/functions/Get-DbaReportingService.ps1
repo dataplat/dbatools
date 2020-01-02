@@ -90,6 +90,7 @@ function Get-DbaReportingService {
     }
     process {
         foreach ($computer in $ComputerName) {
+            $serviceArray = @()
             Write-Message -Level VeryVerbose -Message "Getting Reporting Server namespace on $Computer" -Target $Computer
             try {
                 $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer\ReportServer -Query "Select Name FROM __NAMESPACE" -EnableException -Credential $credential
@@ -112,49 +113,52 @@ function Get-DbaReportingService {
                     Stop-Function -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)\$($namespaceVersion.Name)." -Target $Computer -ErrorRecord $_ -Continue
                 }
                 ForEach ($service in $services) {
-                    if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
-                        #Add other properties and methods
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
-                        Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
+                    if ($serviceArray -notcontains $($service.ServiceName)) {
+                        if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
+                            #Add other properties and methods
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
+                            Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
 
-                        try {
-                            $service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
-                        } catch {
-                            Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
-                        }
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service32.SystemName
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
-                        $startMode = switch ($service32.StartMode) {
-                            Auto { 'Automatic' } #Replacing for consistency to match other SQL Services
-                            default { $_ }
-                        }
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $startMode
-                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
-                        Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
-                            param ([bool]$Force = $false)
-                            Stop-DbaService -InputObject $this -Force:$Force
-                        }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
-                            param ([bool]$Force = $false)
-                            Restart-DbaService -InputObject $this -Force:$Force
-                        }
-                        Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
-                            param (
-                                [parameter(Mandatory)]
-                                [string]$Mode
-                            )
-                            $supportedModes = @("Automatic", "Manual", "Disabled")
-                            if ($Mode -notin $supportedModes) {
-                                Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
-                                Return
+                            try {
+                                $service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
+                            } catch {
+                                Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
                             }
-                            Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
-                            $this.StartMode = $Mode
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service32.SystemName
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $service32.State
+                            $startMode = switch ($service32.StartMode) {
+                                Auto { 'Automatic' } #Replacing for consistency to match other SQL Services
+                                default { $_ }
+                            }
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $startMode
+                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name DisplayName -Value $service32.DisplayName
+                            Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue 100
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
+                                param ([bool]$Force = $false)
+                                Stop-DbaService -InputObject $this -Force:$Force
+                            }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
+                                param ([bool]$Force = $false)
+                                Restart-DbaService -InputObject $this -Force:$Force
+                            }
+                            Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
+                                param (
+                                    [parameter(Mandatory)]
+                                    [string]$Mode
+                                )
+                                $supportedModes = @("Automatic", "Manual", "Disabled")
+                                if ($Mode -notin $supportedModes) {
+                                    Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaService'
+                                    Return
+                                }
+                                Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
+                                $this.StartMode = $Mode
+                            }
+                            $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
+                            Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                         }
-                        $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
-                        Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
+                        $serviceArray += $service.ServiceName
                     }
                 }
             }

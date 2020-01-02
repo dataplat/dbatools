@@ -20,7 +20,7 @@ function Get-DbaDbPhysicalFile {
         dbatools PowerShell module (https://dbatools.io)
        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-       #>
+    #>
     [CmdletBinding()]
     param(
         [parameter(Mandatory)]
@@ -31,7 +31,7 @@ function Get-DbaDbPhysicalFile {
     try {
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
         return
     }
     if ($Server.versionMajor -le 8) {

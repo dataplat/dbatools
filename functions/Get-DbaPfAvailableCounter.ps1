@@ -72,36 +72,36 @@ function Get-DbaPfAvailableCounter {
     begin {
         $scriptblock = {
             $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
-                Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
+            Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
 
-            foreach ($counter in $counters) {
-                [pscustomobject]@{
-                    ComputerName = $env:COMPUTERNAME
-                    Name         = $counter
-                    Credential   = $args
-                }
-            }
-        }
-
-        # In case people really want a "like" search, which is slower
-        $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
-    }
-    process {
-
-
-        foreach ($computer in $ComputerName) {
-
-            try {
-                if ($pattern) {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
-                        Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
-                } else {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
-                        Select-DefaultView -ExcludeProperty Credential
-                }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+        foreach ($counter in $counters) {
+            [pscustomobject]@{
+                ComputerName = $env:COMPUTERNAME
+                Name         = $counter
+                Credential   = $args
             }
         }
     }
+
+    # In case people really want a "like" search, which is slower
+    $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
+}
+process {
+
+
+    foreach ($computer in $ComputerName) {
+
+        try {
+            if ($pattern) {
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                    Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
+            } else {
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                    Select-DefaultView -ExcludeProperty Credential
+            }
+        } catch {
+            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+        }
+    }
+}
 }

@@ -128,7 +128,8 @@ function Export-DbaLogin {
         Exports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting
 
     .EXAMPLE
-        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+        PS C:\> Set-DbatoolsConfig -FullName formatting.batchseparator -Value $null
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql
 
         Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 

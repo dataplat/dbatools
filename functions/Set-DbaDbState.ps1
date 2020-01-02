@@ -145,7 +145,7 @@ function Set-DbaDbState {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Get-WrongCombo($optset, $allparams) {
             $x = 0
@@ -264,7 +264,7 @@ function Set-DbaDbState {
                 Write-Message -Level Warning -Message "Database $db is a system one, skipping"
                 Continue
             }
-            $dbStatuses = @{}
+            $dbStatuses = @{ }
             $server = $db.Parent
             if ($server -notin $dbStatuses.Keys) {
                 $dbStatuses[$server] = Get-DbaDbState -SqlInstance $server
@@ -459,7 +459,7 @@ function Set-DbaDbState {
 
             }
             if ($warn) {
-                $warn = $warn | Where-Object {$_} | Get-Unique
+                $warn = $warn | Where-Object { $_ } | Get-Unique
                 $warn = $warn -Join ';'
             } else {
                 $warn = $null

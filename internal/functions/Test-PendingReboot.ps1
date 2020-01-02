@@ -29,7 +29,7 @@ function Test-PendingReboot {
             $icmParams.Credential = $Credential
         }
 
-        $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName -ClassName Win32_OperatingSystem -EnableException
+        $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName  -Credential $Credential -ClassName Win32_OperatingSystem -EnableException
 
         # If Vista/2008 & Above query the CBS Reg Key
         If ($OperatingSystem.BuildNumber -ge 6001) {

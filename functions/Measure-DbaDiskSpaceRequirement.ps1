@@ -43,7 +43,7 @@ function Measure-DbaDiskSpaceRequirement {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, DiskSpace, Migration
+        Tags: Server, Management, Space, Database
         Author: Pollus Brodeur (@pollusb)
 
         Website: https://dbatools.io
@@ -76,7 +76,6 @@ function Measure-DbaDiskSpaceRequirement {
         PS C:\> Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query $qry | Measure-DbaDiskSpaceRequirement
 
         Using a SQL table. We are DBA after all!
-
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -98,8 +97,8 @@ function Measure-DbaDiskSpaceRequirement {
         [switch]$EnableException
     )
     begin {
-        $local:cacheMP = @{}
-        $local:cacheDP = @{}
+        $local:cacheMP = @{ }
+        $local:cacheDP = @{ }
         function Get-MountPoint {
             [CmdletBinding()]
             param(
@@ -107,8 +106,7 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$credential
             )
-            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n = 'Mountpoint'; e = {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
+            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential | Select-Object @{n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -193,7 +191,7 @@ function Measure-DbaDiskSpaceRequirement {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
         }
 
         try {
@@ -211,12 +209,12 @@ function Measure-DbaDiskSpaceRequirement {
         if (Test-Bound 'Database' -not) {
             Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
-        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-        $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+        $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
+        $sourceFiles += @($sourceDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })
 
         if ($destDb = Get-DbaDatabase -SqlInstance $destServer -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Data'}})
-            $destFiles += @($destDb.LogFiles        | Select-Object Name, FileName, Size, @{n = 'Type'; e = {'Log'}})
+            $destFiles = @($destDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
+            $destFiles += @($destDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })
             $computerName = $destDb.ComputerName
         } else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination."

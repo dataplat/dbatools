@@ -65,6 +65,9 @@ function Test-DbaLastBackup {
     .PARAMETER MaxSize
         Max size in MB. Databases larger than this value will not be restored.
 
+    .PARAMETER DeviceType
+        Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
+        
     .PARAMETER AzureCredential
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
@@ -166,6 +169,7 @@ function Test-DbaLastBackup {
         [switch]$CopyFile,
         [string]$CopyPath,
         [int]$MaxSize,
+        [string[]]$DeviceType,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
         [string]$AzureCredential,
@@ -279,13 +283,13 @@ function Test-DbaLastBackup {
             if (Test-Bound "IgnoreLogBackup") {
                 Write-Message -Level Verbose -Message "Skipping Log backups as requested."
                 $lastbackup = @()
-                $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull -WarningAction SilentlyContinue
-                $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -WarningAction SilentlyContinue
+                $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull -DeviceType $DeviceType -WarningAction SilentlyContinue
+                $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType $DeviceType -WarningAction SilentlyContinue
                 if ($full.start -le $diff.start) {
                     $lastbackup += $diff
                 }
             } else {
-                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last -WarningAction SilentlyContinue
+                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType $DeviceType -WarningAction SilentlyContinue
             }
 
             if (-not $lastbackup) {
@@ -346,9 +350,7 @@ function Test-DbaLastBackup {
                 }
                 $fileexists = $false
                 $success = $restoreresult = $dbccresult = "Skipped"
-            } elseif (-not ($lastbackup | Where-Object {
-                        $_.type -eq 'Full'
-                    })) {
+            } elseif (-not ($lastbackup | Where-Object { $_.type -eq 'Full' })) {
                 Write-Message -Level Verbose -Message "No full backup returned from lastbackup."
                 $lastbackup = @{
                     Path = "Not found"
@@ -359,9 +361,7 @@ function Test-DbaLastBackup {
                 Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
                 $fileexists = $dbccresult = "Skipped"
                 $success = $restoreresult = "Restore not located on shared location"
-            } elseif (($lastbackup[0].Path | ForEach-Object {
-                        Test-DbaPath -SqlInstance $destserver -Path $_
-                    }) -eq $false) {
+            } elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaPath -SqlInstance $destserver -Path $_ }) -eq $false) {
                 Write-Message -Level Verbose -Message "SQL Server cannot find backup."
                 $fileexists = $false
                 $success = $restoreresult = $dbccresult = "Skipped"
@@ -376,7 +376,7 @@ function Test-DbaLastBackup {
                 $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
 
                 if ($MaxSize -and $MaxSize -lt $totalsize) {
-                    $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxSize MB)."
+                    $success = "The backup size for $dbname ($totalsize MB) exceeds the specified maximum size ($MaxSize MB)."
                     $dbccresult = "Skipped"
                 } else {
                     $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
@@ -477,7 +477,7 @@ function Test-DbaLastBackup {
                 if ($CopyFile) {
                     Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
                     try {
-                        $removearray | Remove-item -ErrorAction Stop
+                        $removearray | Remove-Item -ErrorAction Stop
                     } catch {
                         Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                     }

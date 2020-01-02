@@ -66,6 +66,9 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER WithReplace
         Indicated that if the database already exists it should be replaced
 
+    .PARAMETER KeepReplication
+        Indicates whether replication configuration should be restored as part of the database restore operation
+
     .PARAMETER KeepCDC
         Indicates whether CDC information should be restored as part of the database
 
@@ -125,6 +128,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$Continue,
         [string]$AzureCredential,
         [switch]$WithReplace,
+        [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
         [switch]$EnableException
@@ -133,7 +137,7 @@ function Invoke-DbaAdvancedRestore {
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))) {
@@ -192,7 +196,7 @@ function Invoke-DbaAdvancedRestore {
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
-            $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
+            $backups = @($InternalHistory | Where-Object { $_.Database -eq $Database } | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
 
             foreach ($backup in $backups) {
@@ -201,7 +205,7 @@ function Invoke-DbaAdvancedRestore {
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
                 } elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
-                    $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
+                    $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (Get-Date -Format yyyMMddHHmmss) + ".bak"
                     Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
                 } else {
                     $Restore.NoRecovery = $False
@@ -229,6 +233,9 @@ function Invoke-DbaAdvancedRestore {
                 if ($BlockSize) {
                     $Restore.Blocksize = $BlockSize
                 }
+                if ($KeepReplication) {
+                    $Restore.KeepReplication = $KeepReplication
+                }
                 if ($true -ne $Continue -and ($null -eq $Pages)) {
                     foreach ($file in $backup.FileList) {
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
@@ -238,11 +245,11 @@ function Invoke-DbaAdvancedRestore {
                     }
                 }
                 $Action = switch ($backup.Type) {
-                    '1' {'Database'}
-                    '2' {'Log'}
-                    '5' {'Database'}
-                    'Transaction Log' {'Log'}
-                    Default {'Database'}
+                    '1' { 'Database' }
+                    '2' { 'Log' }
+                    '5' { 'Database' }
+                    'Transaction Log' { 'Log' }
+                    Default { 'Database' }
                 }
 
                 Write-Message -Level Debug -Message "restore action = $Action"
@@ -339,6 +346,7 @@ function Invoke-DbaAdvancedRestore {
                                 Owner                  = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery
                                 WithReplace            = $WithReplace
+                                KeepReplication        = $KeepReplication
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count

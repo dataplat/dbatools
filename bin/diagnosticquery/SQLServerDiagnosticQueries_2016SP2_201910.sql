@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 8, 2019
+-- Last Modified: November 12, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -74,6 +74,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5337.0		SP2 CU7						5/22/2019		https://support.microsoft.com/en-us/help/4495256/cumulative-update-7-for-sql-server-2016-sp2
 -- 13.0.5366.0		SP2 CU7 + Security Update	7/9/2019		https://support.microsoft.com/en-us/help/4505222/security-update-for-sql-server-2016-sp2-cu7-gdr-july-9-2019	
 -- 13.0.5426.0		SP2 CU8						7/31/2019		https://support.microsoft.com/en-us/help/4505830/cumulative-update-8-for-sql-server-2016-sp2 
+-- 13.0.5470.0		SP2 CU9						9/30/2019		https://support.microsoft.com/en-us/help/4515435/cumulative-update-9-for-sql-server-2016-sp2 
+-- 13.0.5492.2		SP2 CU10				    10/8/2019		https://support.microsoft.com/en-us/help/4524334/cumulative-update-10-for-sql-server-2016-sp2		
 
 		
 															
@@ -1932,7 +1934,10 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- https://bit.ly/28Rpb2x
 
 
--- These five Pluralsight Courses go into more detail about how to run these queries and interpret the results
+-- These six Pluralsight Courses go into more detail about how to run these queries and interpret the results
+
+-- Azure SQL Database: Diagnosing Performance Issues with DMVs
+-- https://bit.ly/2meDRCN
 
 -- SQL Server 2017: Diagnosing Performance Issues with DMVs
 -- https://bit.ly/2FqCeti

@@ -141,7 +141,7 @@ function Test-DbaAgentJobOwner {
             if ($Job) {
                 $results = $return
             } else {
-                $results = $return | Where-Object {$_.OwnerMatch -eq $False}
+                $results = $return | Where-Object { $_.OwnerMatch -eq $False }
             }
         }
     }

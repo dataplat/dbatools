@@ -156,7 +156,7 @@ function Import-DbaSpConfigure {
             }
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ($Path.length -eq 0) {
@@ -180,7 +180,7 @@ function Import-DbaSpConfigure {
                 foreach ($sourceprop in $sourceserver.Configuration.Properties) {
                     $displayname = $sourceprop.DisplayName
 
-                    $destprop = $destprops | where-object { $_.Displayname -eq $displayname }
+                    $destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
                     if ($null -ne $destprop) {
                         try {
                             $destprop.configvalue = $sourceprop.configvalue

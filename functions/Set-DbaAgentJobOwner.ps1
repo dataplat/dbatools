@@ -108,7 +108,7 @@ function Set-DbaAgentJobOwner {
             Write-Message -Level Verbose -Message "Gathering jobs to update."
 
             if ($Job) {
-                $jobcollection = $server.JobServer.Jobs | Where-Object {$Job -contains $_.Name}
+                $jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
             } else {
                 $jobcollection = $server.JobServer.Jobs
             }

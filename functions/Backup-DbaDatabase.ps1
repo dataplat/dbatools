@@ -100,7 +100,7 @@ function Backup-DbaDatabase {
     .PARAMETER AzureBaseUrl
         The URL(s) to the base container of an Azure Storage account to write backups to.
         If specifying the AzureCredential parameter you can only provide 1 value as page blobs do not support multiple URLs
-        If useing Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
+        If using Shared Access keys, you may specify as many URLs as you want, as long as a corresponding credential exists on the source server.
         If specified, the only other parameters than can be used are "CopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
     .PARAMETER AzureCredential
@@ -119,6 +119,14 @@ function Backup-DbaDatabase {
 
     .PARAMETER OutputScriptOnly
         Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
+
+    .PARAMETER EncryptionAlgorithm
+        Specified the Encryption Algorithm to used. Must be one of 'AES128','AES192','AES256' or 'TRIPLEDES'
+        Must specify one of EncryptionCertificate or EncryptionKey as well.
+
+    .PARAMETER EncryptionCertificate
+        The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
+        Is mutually exclusive with the EncryptionKey option
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -160,12 +168,12 @@ function Backup-DbaDatabase {
         Performs a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql credential "https://dbatoolsaz.blob.core.windows.net/azbackups" registered on the sql2016 instance.
 
     .EXAMPLE
-        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
+        PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
 
     .EXAMPLE
-        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
+        PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
 
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
@@ -175,9 +183,14 @@ function Backup-DbaDatabase {
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 
     .EXAMPLE
-        PS C:\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
 
-        Performs a backup of the database striptest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
+        Performs a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert
+
+        Backs up the master database using the BackupCert certificate and the AES256 algorithm.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -215,10 +228,16 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
+        [ValidateSet('AES128', 'AES192', 'AES256', 'TRIPLEDES')]
+        [String]$EncryptionAlgorithm,
+        [String]$EncryptionCertificate,
         [switch]$EnableException
     )
 
     begin {
+        # This is here ready to go when get EKM working so we can do encrption with asymmetric encryption.
+        $EncryptionKey = $null
+
         if (-not (Test-Bound 'TimeStampFormat')) {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
@@ -257,14 +276,14 @@ function Backup-DbaDatabase {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ($null -eq $Path -and $FilePath -ne 'NUL') {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
+            if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
+                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
             if ($Path.Count -gt 1) {
                 Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
-                $Filecount = $Path.Count
+                $FileCount = $Path.Count
             }
 
             if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInFile) {
@@ -290,9 +309,14 @@ function Backup-DbaDatabase {
                     $FileCount = 1
                 } else {
                     foreach ($baseUrl in $AzureBaseUrl) {
+                        $base = $baseUrl -split "/"
+                        if ( $base.Count -gt 4) {
+                            Write-Message "AzureURL contains a folder"
+                            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                        }
                         Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                        if (Get-DbaCredential -SqlInstance $server -Name $AzureBaseUrl.trim("/")) {
-                            Write-Message -Message "Found a SAS backup credental" -Level Verbose
+                        if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
+                            Write-Message -Message "Found a SAS backup credential" -Level Verbose
                         } else {
                             Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
                             return
@@ -301,6 +325,38 @@ function Backup-DbaDatabase {
                 }
                 $FileCount = $AzureBaseUrl.count
                 $Path = $AzureBaseUrl
+            }
+
+            if (Test-Bound 'EncryptionAlgorithm') {
+                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                    return
+                } else {
+                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                    if (Test-Bound 'EncryptionCertificate') {
+                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                        if ($null -eq $tCertCheck) {
+                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                            $encryptionOptions.encryptorName = $EncryptionCertificate
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                    if (Test-Bound 'EncryptionKey') {
+                        # Should not end up here until Key encryption in implemented
+                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                        if ($null -eq $tKeyCheck) {
+                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                            $encryptionOptions.encryptorName = $EncryptionKey
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                }
             }
 
             if ($OutputScriptOnly) {
@@ -332,7 +388,7 @@ function Backup-DbaDatabase {
             $server = $db.Parent
 
             if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
+                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
@@ -380,6 +436,10 @@ function Backup-DbaDatabase {
             $backup.Database = $db.Name
             $Suffix = "bak"
 
+            if ($null -ne $encryptionOptions) {
+                $backup.EncryptionOption = $encryptionOptions
+            }
+
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
                     Write-Message -Level Warning -Message "$dbname is enabled for encryption, will not compress"
@@ -420,7 +480,7 @@ function Backup-DbaDatabase {
                 $gbhSwitch = @{'LastFull' = $true }
             }
 
-            $backup.CopyOnly = $copyonly
+            $backup.CopyOnly = $CopyOnly
             $backup.Action = $SMOBackupType
             if ($null -ne $AzureBaseUrl -and $null -ne $AzureCredential) {
                 $backup.CredentialName = $AzureCredential
@@ -452,8 +512,8 @@ function Backup-DbaDatabase {
                 $FinalBackupPath += $Path
             }
 
-            if ($Path.Count -eq 1 -and $Filecount -gt 1) {
-                for ($i = 0; $i -lt ($Filecount - 1); $i++) {
+            if ($Path.Count -eq 1 -and $FileCount -gt 1) {
+                for ($i = 0; $i -lt ($FileCount - 1); $i++) {
                     $FinalBackupPath += $FinalBackupPath[0]
                 }
             }
@@ -515,7 +575,7 @@ function Backup-DbaDatabase {
             $backupComplete = $false
 
             if (!$failures) {
-                $Filecount = $FinalBackupPath.Count
+                $FileCount = $FinalBackupPath.Count
 
                 foreach ($backupfile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
@@ -540,7 +600,7 @@ function Backup-DbaDatabase {
                 $humanBackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -556,7 +616,7 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
@@ -598,6 +658,9 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
+                                    EncryptorName        = $encryptionOptions.EncryptorName
+                                    KeyAlgorithm         = $encryptionOptions.Algorithm
+                                    EncruptorType        = $encryptionOptions.encryptorType
                                 } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
@@ -636,9 +699,11 @@ function Backup-DbaDatabase {
                 }
             }
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+
             if ($failures.Count -eq 0) {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
+
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
             $FilePath = $null
         }

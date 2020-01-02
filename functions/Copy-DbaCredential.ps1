@@ -115,7 +115,7 @@ function Copy-DbaCredential {
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Copy-Credential {
             <#
@@ -219,7 +219,7 @@ function Copy-DbaCredential {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
 

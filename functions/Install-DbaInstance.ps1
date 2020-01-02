@@ -86,6 +86,9 @@ function Install-DbaInstance {
     .PARAMETER BackupPath
         Path to the Backup folder.
 
+    .PARAMETER UpdateSourcePath
+        Path to the updates that you want to slipstream into the installation.
+
     .PARAMETER AdminAccount
         One or more members of the sysadmin group. Uses UserName from the -Credential parameter if specified, or current Windows user by default.
 
@@ -177,9 +180,10 @@ function Install-DbaInstance {
         Install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer
+        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer -UpdateSourcePath \\my\updates
 
         Run the installation locally with default settings apart from the application volume, this will be redirected to G:\SQLServer.
+        The installation procedure would search for SQL Server updates in \\my\updates and slipstream them into the installation.
 
     .Example
         C:\PS> $svcAcc = Get-Credential MyDomain\SvcSqlServer
@@ -230,6 +234,7 @@ function Install-DbaInstance {
         [string]$LogPath,
         [string]$TempPath,
         [string]$BackupPath,
+        [string]$UpdateSourcePath,
         [string[]]$AdminAccount,
         [int]$Port,
         [int]$Throttle = 50,
@@ -256,7 +261,7 @@ function Install-DbaInstance {
             )
             #Collect config entries from the ini file
             Write-Message -Level Verbose -Message "Reading Ini file from $Path"
-            $config = @{}
+            $config = @{ }
             switch -regex -file $Path {
                 #Comment
                 '^#.*' { continue }
@@ -264,7 +269,7 @@ function Install-DbaInstance {
                 "^\[(.+)\]\s*$" {
                     $section = $matches[1]
                     if (-not $config.$section) {
-                        $config.$section = @{}
+                        $config.$section = @{ }
                     }
                     continue
                 }
@@ -378,7 +383,7 @@ function Install-DbaInstance {
         # check if installation path(s) is a network path and try to access it from the local machine
         Write-ProgressHelper -ExcludePercent -Activity "Looking for setup files" -StepNumber 0 -Message "Checking if installation is available locally"
         $isNetworkPath = $true
-        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false} }
+        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false } }
         if ($isNetworkPath) {
             Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
             try {
@@ -582,7 +587,7 @@ function Install-DbaInstance {
             if ($Configuration) {
                 foreach ($key in $Configuration.Keys) {
                     $configNode.$key = [string]$Configuration.$key
-                    if ($key -eq 'UpdateSource' -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
+                    if ($key -eq 'UpdateSource' -and $configNode.$key -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
                         #enable updates since now we have a source
                         $configNode.UPDATEENABLED = "True"
                     }
@@ -616,6 +621,10 @@ function Install-DbaInstance {
             }
             if (Test-Bound -ParameterName AdminAccount) {
                 $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+            }
+            if (Test-Bound -ParameterName UpdateSourcePath) {
+                $configNode.UPDATESOURCE = $UpdateSourcePath
+                $configNode.UPDATEENABLED = "True"
             }
             # PID
             if (Test-Bound -ParameterName ProductID) {

@@ -100,6 +100,7 @@ function Sync-DbaAvailabilityGroup {
     .NOTES
         Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -150,9 +151,6 @@ function Sync-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        if (!($Primary -or $InputObject -or $MyInvocation.ExpectingInput)) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
-        }
         if ($Force) { $ConfirmPreference = 'none' }
 
         $allcombos = @()
@@ -169,7 +167,7 @@ function Sync-DbaAvailabilityGroup {
             try {
                 $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
             }
         }
@@ -189,7 +187,7 @@ function Sync-DbaAvailabilityGroup {
                 try {
                     $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                    Stop-Function -Message "Error occurred while establishing connection to $computer" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                     return
                 }
             }
@@ -200,7 +198,7 @@ function Sync-DbaAvailabilityGroup {
             SecondaryServer = $secondaries
         }
 
-        # In the event that someone pipes in an availability group, this will keep the syncer from running a bunch of times
+        # In the event that someone pipes in an availability group, this will keep the sync from running a bunch of times
         $dupe = $false
 
         foreach ($ag in $allcombos) {

@@ -111,11 +111,6 @@ Function Invoke-DbaAdvancedUpdate {
         }
         if ($Credential) {
             $execParams.Credential = $Credential
-        } else {
-            if (Test-Bound -Not Authentication) {
-                # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
-                $execParams.Authentication = "Default"
-            }
         }
 
         if (!$ExtractPath) {
@@ -177,7 +172,7 @@ Function Invoke-DbaAdvancedUpdate {
             try {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
                 $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
-                    if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
+                    if ($args[0] -like '*\dbatools_KB*_Extract*' -and (Test-Path $args[0])) {
                         Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                     }
                 } -Raw -ArgumentList $spExtractPath

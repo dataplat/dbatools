@@ -140,7 +140,7 @@ function Remove-DbaDatabaseSafely {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         if (!$AllDatabases -and !$Database) {
             Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -ErrorRecord $_

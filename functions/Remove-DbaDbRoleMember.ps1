@@ -51,7 +51,7 @@ function Remove-DbaDbRoleMember {
         https://dbatools.io/Remove-DbaDbRoleMember
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -DatabaseUser user1
+        PS C:\> Remove-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -User user1
 
         Removes user1 from the role db_owner in the database mydb on the local default SQL Server instance
 

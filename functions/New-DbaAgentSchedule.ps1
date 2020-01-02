@@ -151,7 +151,7 @@ function New-DbaAgentSchedule {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # if a Schedule is not provided there is no much point
         if (!$Schedule) {

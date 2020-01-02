@@ -1,5 +1,5 @@
 ---
-name: Support Question ❓
+name: ❓ Support Question
 about: If you have a question you may try asking on StackExchange network or dbatools
   channel in sqlcommunity.slack.com
 title: ''
