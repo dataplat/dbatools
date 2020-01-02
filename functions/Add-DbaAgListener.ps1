@@ -95,7 +95,7 @@ function Add-DbaAgListener {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -Not SqlInstance, InputObject -Not) {
+        if (Test-Bound -Not SqlInstance, InputObject) {
             Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
             return
         }
