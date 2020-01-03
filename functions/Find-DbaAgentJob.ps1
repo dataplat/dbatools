@@ -154,7 +154,6 @@ function Find-DbaAgentJob {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobs = $server.JobServer.jobs
             $output = @()
 
             if ($JobName) {
