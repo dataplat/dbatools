@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 3, 2019
+-- Last Modified: December 4, 2019
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -1244,15 +1244,11 @@ SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'Edition') AS [Database Edition],
 
 
 
--- Sign up for Microsoft Visual Studio Dev Essentials and get a free three month pass to Pluralsight
-
 -- Microsoft Visual Studio Dev Essentials
--- https://bit.ly/1q6xbDL
+-- https://bit.ly/2qjNRxi
 
+-- Microsoft Azure Learn
+-- https://bit.ly/2O0Hacc
 
--- Sign up for Microsoft Azure Essentials and get lots of free Azure usage credits, MCP exam voucher, three month Pluralsight subscription
-
--- Microsoft Azure Essentials
--- https://bit.ly/2KH91dQ
 
 
