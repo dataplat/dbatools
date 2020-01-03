@@ -112,6 +112,11 @@ function Find-DbaAgentJob {
 
         Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
+    .EXAMPLE
+        $Instances = 'SQL2017N5','SQL2019N5','SQL2019N20','SQL2019N21','SQL2019N22'
+        Find-DbaAgentJob -SqlInstance $Instances -JobName *backup* -IsNotScheduled
+
+        Returns all agent job(s) wiht backup in the name, that don't have a schedule on 'SQL2017N5','SQL2019N5','SQL2019N20','SQL2019N21','SQL2019N22'
     #>
     [CmdletBinding()]
     param (
@@ -174,6 +179,11 @@ function Find-DbaAgentJob {
                 $output = $jobs
             }
 
+            if ($Category) {
+                Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
+                $output = $jobs | Where-Object { $Category -contains $_.Category }
+            }
+
             if ($IsFailed) {
                 Write-Message -Level Verbose -Message "Checking for failed jobs."
                 $output = $jobs | Where-Object LastRunOutcome -eq "Failed"
@@ -188,21 +198,16 @@ function Find-DbaAgentJob {
 
             if ($IsDisabled) {
                 Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-                $output = $jobs | Where-Object IsEnabled -eq $false
+                $output += $jobs | Where-Object IsEnabled -eq $false
             }
 
             if ($IsNotScheduled) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-                $output = $jobs | Where-Object HasSchedule -eq $false
+                $output += $jobs | Where-Object HasSchedule -eq $false
             }
             if ($IsNoEmailNotification) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-                $output = $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
-            }
-
-            if ($Category) {
-                Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
-                $output = $jobs | Where-Object { $Category -contains $_.Category }
+                $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
             }
 
             if ($Owner) {
