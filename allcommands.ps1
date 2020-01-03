@@ -15022,29 +15022,41 @@ function Find-DbaAgentJob {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobs = $server.JobServer.jobs
             $output = @()
-
-            if ($IsFailed) {
-                Write-Message -Level Verbose -Message "Checking for failed jobs."
-                $output += $jobs | Where-Object LastRunOutcome -eq "Failed"
-            }
 
             if ($JobName) {
                 Write-Message -Level Verbose -Message "Retrieving jobs by their name."
-                $output += Get-JobList -SqlInstance $server -JobFilter $JobName
+                $jobs = Get-JobList -SqlInstance $server -JobFilter $JobName
+                $output = $jobs
             }
 
             if ($StepName) {
                 Write-Message -Level Verbose -Message "Retrieving jobs by their step names."
-                $output += Get-JobList -SqlInstance $server -StepFilter $StepName
+                $jobs = Get-JobList -SqlInstance $server -StepFilter $StepName
+                $output = $jobs
+            }
+
+            if ( -not ($JobName -or $StepName)) {
+                Write-Message -Level Verbose -Message "Retrieving all jobs"
+                $jobs = Get-JobList -SqlInstance $server
+                $output = $jobs
+            }
+
+            if ($Category) {
+                Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
+                $output = $jobs | Where-Object { $Category -contains $_.Category }
+            }
+
+            if ($IsFailed) {
+                Write-Message -Level Verbose -Message "Checking for failed jobs."
+                $output = $jobs | Where-Object LastRunOutcome -eq "Failed"
             }
 
             if ($LastUsed) {
                 $DaysBack = $LastUsed * -1
                 $SinceDate = (Get-Date).AddDays($DaysBack)
                 Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
-                $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
+                $output = $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
             }
 
             if ($IsDisabled) {
@@ -15061,20 +15073,15 @@ function Find-DbaAgentJob {
                 $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
             }
 
-            if ($Category) {
-                Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
-                $output += $jobs | Where-Object { $Category -contains $_.Category }
-            }
-
             if ($Owner) {
                 Write-Message -Level Verbose -Message "Finding job/s with owner critera"
                 if ($Owner -match "-") {
                     $OwnerMatch = $Owner -replace "-", ""
                     Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
-                    $output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
+                    $output = $jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
                 } else {
                     Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
-                    $output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
+                    $output = $jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
                 }
             }
 
@@ -21590,13 +21597,9 @@ function Get-DbaDbBackupHistory {
         [DateTime]$Since = (Get-Date '01/01/1970'),
         [ValidateScript( { ($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_) })]
         [string]$RecoveryFork,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$Last,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastFull,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastDiff,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastLog,
         [string[]]$DeviceType,
         [switch]$Raw,
@@ -21604,6 +21607,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
+        [switch]$AgCheck,
         [switch]$EnableException
     )
 
@@ -21652,6 +21656,46 @@ function Get-DbaDbBackupHistory {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            $AgResults = @()
+            $ProcessedAgDatabases = @()
+            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+                $agShortInstance = $instance.FullName.split('.')[0]
+                if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
+                    # We have a listener passed in, just query the dbs specified or all in the AG
+                    $null = $PSBoundParameters.Remove('SqlInstance')
+                    $null = $PSBoundParameters.Remove('IncludeCopyOnly')
+                    $null = $PsBoundParameters.Remove('AgCheck')
+                    Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
+                    $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
+                    $AvailabilityGroupName = $AvailabilityGroupBase.name
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
+                    if ($Last) {
+                        Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
+                        $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
+                    } elseif ($LastFull) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } elseif ($LastDiff) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } elseif ($LastLog) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } else {
+                        $AgResults += $AgLoopResult
+                    }
+                    # Results are already in the correct format so drop to output
+                    $agresults
+                    # We're done at this point so exit function
+                    return
+                }
+            }
 
             if ($server.VersionMajor -ge 12) {
                 $compressedFlag = $true
@@ -21693,6 +21737,28 @@ function Get-DbaDbBackupHistory {
             }
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            }
+            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+                $adbs = $databases | Where-Object Name -In  $server.AvailabilityGroups.AvailabilityDatabases.Name
+                $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
+                ForEach ($adb in $adbs) {
+                    Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
+                    if ($adb.GetType().name -ne 'Database') {
+                        $adb = Get-DbaDatabase -SqlInstance $server -Database $adb.name
+                    }
+                    $AvailabilityGroupBase = $adb.parent.AvailabilityGroups[$adb.AvailabilityGroupName]
+                    $null = $PSBoundParameters.Remove('SqlInstance')
+                    $null = $PSBoundParameters.Remove('Database')
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityGroupListeners.name -database $adb.Name @PSBoundParameters
+                    $AvailabilityGroupName = $AvailabilityGroupBase.name
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
+                    # Results already in the right format, drop straight to output
+                    $AgLoopResults
+                    # Remove database from collection as it's now done with
+                    $databases = $databases | Where-Object Name -ne $adb.name
+                }
             }
             foreach ($d in $deviceTypeFilter) {
                 $deviceTypeFilterRight = "IN ('" + ($deviceTypeFilter -Join "','") + "')"
@@ -21744,8 +21810,8 @@ function Get-DbaDbBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
-                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck
+                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$AgCheck
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
@@ -21758,7 +21824,12 @@ function Get-DbaDbBackupHistory {
                             continue
                         }
                     }
-                    $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                    if ($IncludeCopyOnly -eq $true) {
+                        Write-Message -Level Verbose -Message 'Copy Only chekc'
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                    } else {
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                    }
                     #This line does the output for -Last!!!
                     $allBackups | Sort-Object -Property LastLsn, Type
                 }
@@ -21839,6 +21910,7 @@ function Get-DbaDbBackupHistory {
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
+                        '' as AvailabilityGroupName,
                         a.[Database],
                         a.Username,
                         a.Start,
@@ -22037,7 +22109,7 @@ function Get-DbaDbBackupHistory {
             }
 
             Write-Message -Level Debug -Message "SQL Statement: `n$sql"
-            Write-Message -Level SomewhatVerbose -Message "Executing sql query."
+            Write-Message -Level SomewhatVerbose -Message "Executing sql query on $server."
             $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, RowState, Table, ItemArray, HasErrors
 
             if ($raw) {
@@ -35709,7 +35781,8 @@ function Get-DbaUserPermission {
                     Stop-Function -Message "The database $db is not accessible" -Continue
                 }
 
-                $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
+                $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+                $sql = [System.IO.File]::ReadAllText("$sqlFile")
                 $sql = $sql.Replace("<TARGETDB>", $db.Name)
 
                 #Create objects in active database
@@ -60973,9 +61046,15 @@ function Select-DbaBackupInformation {
             #  $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
 
+        # Check for AGs
         if (Test-Bound -ParameterName ServerName) {
-            Write-Message -Message "Filtering by ServerName" -Level Verbose
-            $InternalHistory = $InternalHistory | Where-Object { $_.InstanceName -in $servername }
+            if (($InternalHistory | Where-Object { $_.AvailabilityGroupName -ne '' }).count -ne 0) {
+                Write-Message -Level Verbose -Message 'Dealing with Availabilitygroups'
+                $InternalHistory = $InternalHistory | Where-Object { $_.AvailabilityGroupName -in $servername }
+            } else {
+                Write-Message -Message "Filtering by ServerName" -Level Verbose
+                $InternalHistory = $InternalHistory | Where-Object { $_.InstanceName -in $servername }
+            }
         }
 
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
