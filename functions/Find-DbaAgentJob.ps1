@@ -158,7 +158,8 @@ function Find-DbaAgentJob {
 
             if ($JobName) {
                 Write-Message -Level Verbose -Message "Retrieving jobs by their name."
-                $output += Get-JobList -SqlInstance $server -JobFilter $JobName
+                $jobs = Get-JobList -SqlInstance $server -JobFilter $JobName
+                $output = $jobs
             }
 
             if ($StepName) {
