@@ -157,11 +157,6 @@ function Find-DbaAgentJob {
             $jobs = $server.JobServer.jobs
             $output = @()
 
-            if ($IsFailed) {
-                Write-Message -Level Verbose -Message "Checking for failed jobs."
-                $output += $jobs | Where-Object LastRunOutcome -eq "Failed"
-            }
-
             if ($JobName) {
                 Write-Message -Level Verbose -Message "Retrieving jobs by their name."
                 $output += Get-JobList -SqlInstance $server -JobFilter $JobName
@@ -169,7 +164,19 @@ function Find-DbaAgentJob {
 
             if ($StepName) {
                 Write-Message -Level Verbose -Message "Retrieving jobs by their step names."
-                $output += Get-JobList -SqlInstance $server -StepFilter $StepName
+                $jobs = Get-JobList -SqlInstance $server -StepFilter $StepName
+                $output = $jobs
+            }
+
+            if ( -not ($JobName -or $StepName)) {
+                Write-Message -Level Verbose -Message "Retrieving all jobs"
+                $jobs = Get-JobList -SqlInstance $server
+                $output = $jobs
+            }
+
+            if ($IsFailed) {
+                Write-Message -Level Verbose -Message "Checking for failed jobs."
+                $output = $jobs | Where-Object LastRunOutcome -eq "Failed"
             }
 
             if ($LastUsed) {
