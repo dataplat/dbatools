@@ -183,26 +183,26 @@ function Find-DbaAgentJob {
                 $DaysBack = $LastUsed * -1
                 $SinceDate = (Get-Date).AddDays($DaysBack)
                 Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
-                $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
+                $output = $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
             }
 
             if ($IsDisabled) {
                 Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-                $output += $jobs | Where-Object IsEnabled -eq $false
+                $output = $jobs | Where-Object IsEnabled -eq $false
             }
 
             if ($IsNotScheduled) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-                $output += $jobs | Where-Object HasSchedule -eq $false
+                $output = $jobs | Where-Object HasSchedule -eq $false
             }
             if ($IsNoEmailNotification) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-                $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
+                $output = $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
             }
 
             if ($Category) {
                 Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
-                $output += $jobs | Where-Object { $Category -contains $_.Category }
+                $output = $jobs | Where-Object { $Category -contains $_.Category }
             }
 
             if ($Owner) {
@@ -210,10 +210,10 @@ function Find-DbaAgentJob {
                 if ($Owner -match "-") {
                     $OwnerMatch = $Owner -replace "-", ""
                     Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
-                    $output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
+                    $output = $jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
                 } else {
                     Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
-                    $output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
+                    $output = $jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
                 }
             }
 
