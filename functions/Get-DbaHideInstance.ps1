@@ -20,7 +20,7 @@ function Get-DbaHideInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags:   HideInstance, Security
+        Tags:   Instance, Security
         Author: Tracy Boggiano @TracyBoggiano, databaseuperhero.com
 
         Website: https://dbatools.io
@@ -57,7 +57,8 @@ function Get-DbaHideInstance {
                 Write-Message -Level Verbose -Message "Resolving hostname."
                 $resolved = $null
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
-            } catch {
+            }
+            catch {
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
             }
 
@@ -69,7 +70,8 @@ function Get-DbaHideInstance {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock {
                     $wmi.Services
                 } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -77,7 +79,8 @@ function Get-DbaHideInstance {
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            } catch {
+            }
+            catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
                 $null = 1
@@ -95,7 +98,8 @@ function Get-DbaHideInstance {
                 if (-not [System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
-                } else {
+                }
+                else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
                 }
             }
@@ -127,7 +131,8 @@ function Get-DbaHideInstance {
                 foreach ($result in $results) {
                     [pscustomobject]$result
                 }
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
             }
         }

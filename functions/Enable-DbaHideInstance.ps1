@@ -26,7 +26,7 @@ function Enable-DbaHideInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HideInstance, Security
+        Tags: Instance, Security
         Author: Gareth Newman (@gazeranco), ifexists.blog
 
         Website: https://dbatools.io
@@ -66,17 +66,20 @@ function Enable-DbaHideInstance {
 
             try {
                 $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
-            } catch {
+            }
+            catch {
                 try {
                     $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo -EnableException
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Issue resolving $instance" -Target $instance -Category InvalidArgument -Continue
                 }
             }
 
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -EnableException | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
@@ -84,7 +87,8 @@ function Enable-DbaHideInstance {
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
-            } catch {
+            }
+            catch {
                 $null = 1
             }
             $serviceaccount = $sqlwmi.ServiceAccount
@@ -96,7 +100,8 @@ function Enable-DbaHideInstance {
                 if (![System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = ($regroot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
-                } else {
+                }
+                else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
                 }
             }
@@ -125,7 +130,8 @@ function Enable-DbaHideInstance {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
             }
