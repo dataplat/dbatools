@@ -26,7 +26,7 @@ function Enable-DbaHideInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: HideInstance, Security
+        Tags: Instance, Security
         Author: Gareth Newman (@gazeranco), ifexists.blog
 
         Website: https://dbatools.io
