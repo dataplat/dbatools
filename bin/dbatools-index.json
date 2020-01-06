@@ -6440,7 +6440,7 @@
         "Name":  "Disable-DbaHideInstance",
         "Description":  "Disables the Hide Instance setting of the SQL Server network configuration.\n\nThis requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
         "Tags":  [
-                     "HideInstance",
+                     "Instance",
                      "Security"
                  ],
         "Synopsis":  "Disables the Hide Instance setting of the SQL Server network configuration.",
@@ -6922,7 +6922,7 @@
         "Name":  "Enable-DbaHideInstance",
         "Description":  "Enables the Hide Instance setting of the SQL Server network configuration.\n\nThis setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
         "Tags":  [
-                     "HideInstance",
+                     "Instance",
                      "Security"
                  ],
         "Synopsis":  "Enables the Hide Instance setting of the SQL Server network configuration.",
@@ -17474,6 +17474,48 @@
                        ]
                    ],
         "Syntax":  "Get-DbaHelpIndex [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-ObjectName] \u003cString\u003e] [-IncludeStats] [-IncludeDataTypes] [-Raw] [-IncludeFragmentation] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaHideInstance",
+        "Description":  "Gets Hide Instance settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
+        "Tags":  [
+                     "Instance",
+                     "Security"
+                 ],
+        "Synopsis":  "Gets Hide Instance settings for a SQL Server instance",
+        "Alias":  "",
+        "Author":  "Tracy Boggiano @TracyBoggiano, databaseuperhero.com",
+        "CommandName":  "Get-DbaHideInstance",
+        "Availability":  "Windows only",
+        "Links":  "https://dbatools.io/Get-DbaHideInstance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaHideInstance\nGets Hide Instance properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaHideInstance -SqlInstance sql01\\SQL2008R2SP2\nGets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not sql instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaHideInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaInstanceAudit",
