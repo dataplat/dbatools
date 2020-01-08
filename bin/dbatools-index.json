@@ -1,452 +1,5 @@
 ﻿[
     {
-        "Name":  "Select-DbaObject",
-        "Description":  null,
-        "Synopsis":  "\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-Last \u003cint\u003e] [-First \u003cint\u003e] [-Skip \u003cint\u003e] [-Wait] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-SkipLast \u003cint\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [-InputObject \u003cpsobject\u003e] [-Unique] [-Wait] [-Index \u003cint[]\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n",
-        "Alias":  "",
-        "CommandName":  "Select-DbaObject",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
-        "Examples":  "",
-        "Params":  [
-                       [
-                           "Alias",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ExcludeProperty",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ExpandProperty",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "First",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Index",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "InputObject",
-                           "",
-                           "",
-                           false,
-                           "true (ByValue)",
-                           null
-                       ],
-                       [
-                           "KeepInputObject",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Last",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Property",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ScriptMethod",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ScriptProperty",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ShowExcludeProperty",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ShowProperty",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Skip",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "SkipLast",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "TypeName",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Unique",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Wait",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ]
-                   ],
-        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                          \r\n----------                                                                                                                                                                                                                                                                                                                          \r\n{@{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
-    },
-    {
-        "Name":  "Set-DbatoolsConfig",
-        "Description":  null,
-        "Synopsis":  "\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e -PersistedValue \u003cstring\u003e [-PersistedType \u003cConfigurationValueType\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [[-Module] \u003cstring\u003e] [-Name] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n",
-        "Alias":  "",
-        "CommandName":  "Set-DbatoolsConfig",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
-        "Examples":  "",
-        "Params":  [
-                       [
-                           "Default",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Description",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "DisableHandler",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "DisableValidation",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "EnableException",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "FullName",
-                           "",
-                           "",
-                           true,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Handler",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Hidden",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Initialize",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Module",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ModuleExport",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Name",
-                           "",
-                           "",
-                           true,
-                           "false",
-                           null
-                       ],
-                       [
-                           "PassThru",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "PersistedType",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "PersistedValue",
-                           "",
-                           "",
-                           true,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Register",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "SimpleExport",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Validation",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Value",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ]
-                   ],
-        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                                \r\n----------                                                                                                                                                                                                                                                                                                                                \r\n{@{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
-    },
-    {
-        "Name":  "Write-Message",
-        "Description":  null,
-        "Synopsis":  "\r\nWrite-Message [-Message] \u003cstring\u003e [-Level \u003cMessageLevel\u003e] [-Tag \u003cstring[]\u003e] [-FunctionName \u003cstring\u003e] [-ModuleName \u003cstring\u003e] [-File \u003cstring\u003e] [-Line \u003cint\u003e] [-ErrorRecord \u003cErrorRecord[]\u003e] [-Exception \u003cException\u003e] [-Once \u003cstring\u003e] [-OverrideExceptionMessage] [-Target \u003cObject\u003e] [-EnableException \u003cbool\u003e] [-Breakpoint] [\u003cCommonParameters\u003e]\r\n",
-        "Alias":  "",
-        "CommandName":  "Write-Message",
-        "Availability":  "Windows, Linux, macOS",
-        "Links":  null,
-        "Examples":  "",
-        "Params":  [
-                       [
-                           "Breakpoint",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "EnableException",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ErrorRecord",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Exception",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "File",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "FunctionName",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Level",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Line",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Message",
-                           "",
-                           "",
-                           true,
-                           "false",
-                           null
-                       ],
-                       [
-                           "ModuleName",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Once",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "OverrideExceptionMessage",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Tag",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ],
-                       [
-                           "Target",
-                           "",
-                           "",
-                           false,
-                           "false",
-                           null
-                       ]
-                   ],
-        "Syntax":  "syntaxItem                                                                                               \r\n----------                                                                                               \r\n{@{name=Write-Message; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
-    },
-    {
         "Name":  "Add-DbaAgDatabase",
         "Description":  "Adds a database to an availability group on a SQL Server instance.\n\nBefore joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.",
         "Tags":  [
@@ -30947,7 +30500,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaClientAlias [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-ServerName] \u003cDbaInstanceParameter[]\u003e [-Alias] \u003cString\u003e [[-Protocol] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaClientAlias [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-ServerName] \u003cDbaInstanceParameter\u003e [-Alias] \u003cString\u003e [[-Protocol] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaCmConnection",
@@ -33148,7 +32701,7 @@
         "CommandName":  "New-DbaDbTable",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-Table",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$col = @{\n\u003e\u003e Name      = \u0027test\u0027\r\n \u003e\u003e Type      = \u0027varchar\u0027\r\n \u003e\u003e MaxLength = 20\r\n \u003e\u003e Nullable  = $true\r\n \u003e\u003e }\r\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col\nCreates a new table on sql2017 in tempdb witht he name testtable and one column",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$col = @{\n\u003e\u003e Name      = \u0027test\u0027\r\n\u003e\u003e Type      = \u0027varchar\u0027\r\n\u003e\u003e MaxLength = 20\r\n\u003e\u003e Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col\nCreates a new table on sql2017 in tempdb with the name testtable and one column\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e# Create collection\n\u003e\u003e $cols = @()\n\u003e\u003e # Add columns to collection\r\n\u003e\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test\u0027\r\n\u003e\u003e     Type      = \u0027varchar\u0027\r\n\u003e\u003e     MaxLength = 20\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test2\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test3\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     MaxLength = 9\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test4\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     Precision = 8\r\n\u003e\u003e     Scale = 2\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols\nCreates a new table on sql2017 in tempdb with the name testtable and four columns",
         "Params":  [
                        [
                            "SqlInstance",
@@ -33192,7 +32745,7 @@
                        ],
                        [
                            "ColumnMap",
-                           "Hashtable for easy column creation. Looks like this:\n# Create collection\r\n$cols = @()\n# Add columns to collection\r\n$cols += @{\r\n    Name      = \u0027test\u0027\r\n    Type      = \u0027varchar\u0027\r\n    MaxLength = 20\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test2\u0027\r\n    Type      = \u0027int\u0027\r\n    Nullable  = $false\r\n}\r\n$cols += @{\r\n    Name      = \u0027test3\u0027\r\n    Type      = \u0027decimal\u0027\r\n    MaxLength = 9\r\n    Nullable  = $true\r\n}\r\n$cols += @{\r\n    Name      = \u0027test4\u0027\r\n    Type      = \u0027decimal\u0027\r\n    Precision = 8\r\n    Scale = 2\r\n    Nullable  = $false\r\n}",
+                           "Hashtable for easy column creation. See Examples for details",
                            "",
                            false,
                            "false",
@@ -40589,6 +40142,163 @@
         "Syntax":  "Select-DbaBackupInformation [-BackupHistory] \u003cObject\u003e [[-RestoreTime] \u003cDateTime\u003e] [-IgnoreLogs] [-IgnoreDiffs] [[-DatabaseName] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-ContinuePoints] \u003cObject\u003e] [[-LastRestoreType] \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Select-DbaObject",
+        "Description":  null,
+        "Synopsis":  "\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-Last \u003cint\u003e] [-First \u003cint\u003e] [-Skip \u003cint\u003e] [-Wait] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-SkipLast \u003cint\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [-InputObject \u003cpsobject\u003e] [-Unique] [-Wait] [-Index \u003cint[]\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Select-DbaObject",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Alias",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ExcludeProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ExpandProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "First",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Index",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "InputObject",
+                           "",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           null
+                       ],
+                       [
+                           "KeepInputObject",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Last",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Property",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ScriptMethod",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ScriptProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ShowExcludeProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ShowProperty",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Skip",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "SkipLast",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "TypeName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Unique",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Wait",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                          \r\n----------                                                                                                                                                                                                                                                                                                                          \r\n{@{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Select-DbaObject; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
+    },
+    {
         "Name":  "Set-DbaAgentAlert",
         "Description":  "Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.",
         "Tags":  [
@@ -44603,6 +44313,171 @@
                        ]
                    ],
         "Syntax":  "Set-DbaTempDbConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-DataFileCount] \u003cInt32\u003e] [-DataFileSize] \u003cInt32\u003e [[-LogFileSize] \u003cInt32\u003e] [[-DataFileGrowth] \u003cInt32\u003e] [[-LogFileGrowth] \u003cInt32\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-OutFile] \u003cString\u003e] [-OutputScriptOnly] [-DisableGrowth] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbatoolsConfig",
+        "Description":  null,
+        "Synopsis":  "\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [-FullName] \u003cstring\u003e -PersistedValue \u003cstring\u003e [-PersistedType \u003cConfigurationValueType\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbatoolsConfig [[-Module] \u003cstring\u003e] [-Name] \u003cstring\u003e [[-Value] \u003cObject\u003e] [-Description \u003cstring\u003e] [-Validation \u003cstring\u003e] [-Handler \u003cscriptblock\u003e] [-Hidden] [-Default] [-Initialize] [-SimpleExport] [-ModuleExport] [-DisableValidation] [-DisableHandler] [-PassThru] [-Register] [-EnableException] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Set-DbatoolsConfig",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Default",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Description",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "DisableHandler",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "DisableValidation",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "EnableException",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "FullName",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Handler",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Hidden",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Initialize",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Module",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ModuleExport",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Name",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PassThru",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PersistedType",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "PersistedValue",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Register",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "SimpleExport",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Validation",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Value",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                                                                                                                                                                                                                                                                \r\n----------                                                                                                                                                                                                                                                                                                                                \r\n{@{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}, @{name=Set-DbatoolsConfig; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
     },
     {
         "Name":  "Set-DbatoolsPath",
@@ -49642,5 +49517,130 @@
                        ]
                    ],
         "Syntax":  "Write-DbaDbTableData -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] -InputObject \u003cObject\u003e [-Table] \u003cString\u003e [[-Schema] \u003cString\u003e] [-BatchSize \u003cInt32\u003e] [-NotifyAfter \u003cInt32\u003e] [-AutoCreateTable] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [-bulkCopyTimeOut \u003cInt32\u003e] [-EnableException] [-UseDynamicStringLength] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Write-Message",
+        "Description":  null,
+        "Synopsis":  "\r\nWrite-Message [-Message] \u003cstring\u003e [-Level \u003cMessageLevel\u003e] [-Tag \u003cstring[]\u003e] [-FunctionName \u003cstring\u003e] [-ModuleName \u003cstring\u003e] [-File \u003cstring\u003e] [-Line \u003cint\u003e] [-ErrorRecord \u003cErrorRecord[]\u003e] [-Exception \u003cException\u003e] [-Once \u003cstring\u003e] [-OverrideExceptionMessage] [-Target \u003cObject\u003e] [-EnableException \u003cbool\u003e] [-Breakpoint] [\u003cCommonParameters\u003e]\r\n",
+        "Alias":  "",
+        "CommandName":  "Write-Message",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  null,
+        "Examples":  "",
+        "Params":  [
+                       [
+                           "Breakpoint",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "EnableException",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ErrorRecord",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Exception",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "File",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "FunctionName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Level",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Line",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Message",
+                           "",
+                           "",
+                           true,
+                           "false",
+                           null
+                       ],
+                       [
+                           "ModuleName",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Once",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "OverrideExceptionMessage",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Tag",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ],
+                       [
+                           "Target",
+                           "",
+                           "",
+                           false,
+                           "false",
+                           null
+                       ]
+                   ],
+        "Syntax":  "syntaxItem                                                                                               \r\n----------                                                                                               \r\n{@{name=Write-Message; CommonParameters=True; WorkflowCommonParameters=False; parameter=System.Object[]}}"
     }
 ]
