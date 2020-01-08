@@ -183,9 +183,9 @@ function Invoke-DbaQuery {
                     }
                     "System.String" {
                         if (Test-PsVersion -Is 3) {
-                            $uri = [uri]$item
+                            $uri = [uri](Resolve-Path $item).Path
                         } else {
-                            $uri = [uri]::New($item)
+                            $uri = [uri]::New( (Resolve-Path $item).Path )
                         }
 
                         switch -regex ($uri.Scheme) {
