@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Be $null
         }
         It "Should return a warning" {
-            $warnvar | Should -Be "No databases match the request for backups"
+            $warnvar | Should -BeLike "*No databases match the request for backups*"
         }
     }
 
