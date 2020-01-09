@@ -139,28 +139,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             { Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should Throw
         }
     }
-    Context "Respects options specified in the ScriptingOptionsObject parameter" {
-        It 'Excludes database context' {
-            $scriptingOptions = New-DbaScriptingOption
-            $scriptingOptions.IncludeDatabaseContext = $false
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
-            $allfiles += $file.FullName
-            $results | Should Not Match "USE [$dbname1]"
-        }
-        It 'Includes database context' {
-            $scriptingOptions = New-DbaScriptingOption
-            $scriptingOptions.IncludeDatabaseContext = $true
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
-            $allfiles += $file.FullName
-            $results | Should Match "USE [$dbname1]"
-        }
-        It 'Defaults to include database context' {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
-            $allfiles += $file.FullName
-            $results | Should Match "USE [$dbname1]"
-        }
-    }
 }
