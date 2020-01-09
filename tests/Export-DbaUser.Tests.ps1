@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Excludes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $file = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Not Match "USE [$dbname]"
@@ -61,13 +61,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $file = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Match "USE [$dbname]"
         }
         It 'Defaults to include database context' {
-            $file = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Match "USE [$dbname]"
