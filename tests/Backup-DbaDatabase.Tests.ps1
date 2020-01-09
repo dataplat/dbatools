@@ -49,6 +49,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "No database found to backup should raise warning and null output" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar
+        It "Should not return object" {
+            $results | Should -Be $null
+        }
+        It "Should return a warning" {
+            $warnvar | Should -Be "No databases match the request for backups"
+        }
+    }
+
     Context "Database should backup 1 database" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master
         It "Database backup object count Should Be 1" {

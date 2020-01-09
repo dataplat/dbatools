@@ -385,6 +385,10 @@ function Backup-DbaDatabase {
             $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
         }
 
+        if ($InputObject.count -eq 0) {
+            Write-Message -Level Warning -Message "No databases match the request for backups"
+        }
+
         foreach ($db in $InputObject) {
             $ProgressId = Get-Random
             $failures = @()
