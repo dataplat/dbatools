@@ -156,5 +156,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $allfiles += $file.FullName
             $results | Should Match "USE [$dbname1]"
         }
+        It 'Defaults to include database context' {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Match "USE [$dbname1]"
+        }
     }
 }
