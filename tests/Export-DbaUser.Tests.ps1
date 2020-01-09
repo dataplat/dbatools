@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
-            $results | Should Not BeLike '*USE `[' + $dbname + '`]*'
+            $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
         }
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
@@ -64,13 +64,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
-            $results | Should BeLike '*USE `[' + $dbname + '`]*'
+            $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
         It 'Defaults to include database context' {
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
-            $results | Should BeLike '*USE `[' + $dbname + '`]*'
+            $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
     }
 }
