@@ -210,7 +210,7 @@ function Export-DbaUser {
                 Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script for user $dbuser"
 
                 #setting database
-                if (($PSBoundParameters.ContainsKey('ScriptingOptionsObject') -and $ScriptingOptionsObject.IncludeDatabaseContext) -or -not $PSBoundParameters.ContainsKey('ScriptingOptionsObject')) {
+                if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
                     $outsql += "USE [" + $db.Name + "]"
                 }
 
