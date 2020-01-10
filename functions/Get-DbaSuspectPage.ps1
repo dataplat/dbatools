@@ -32,6 +32,9 @@ function Get-DbaSuspectPage {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaSuspectPage
+
     .EXAMPLE
         PS C:\> Get-DbaSuspectPage -SqlInstance sql2016
 
