@@ -99,8 +99,8 @@ foreach ($command in $commands) {
         $testhelpall += 1
         if (-not ([string]::Equals($help.relatedLinks.NavigationLink.uri, "https://dbatools.io/$commandName"))) {
             # the link should point to the correct page
-            It "The link for $commandName should be https://dbatools.io/$commandName" {
-                $help.relatedLinks.NavigationLink.uri | Should -BeExactly "https://dbatools.io/$commandName"  -Because "The web-page should be the one for the command!"
+            It "The first link for $commandName should be https://dbatools.io/$commandName" {
+                $help.relatedLinks[0].NavigationLink.uri | Should -BeExactly "https://dbatools.io/$commandName"  -Because "The web-page should be the one for the command!"
             }
             $testhelperrors += 1
         }
