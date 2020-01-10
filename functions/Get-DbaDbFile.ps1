@@ -211,53 +211,53 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                             $_.drive -eq $result.PhysicalName.Substring(0, 1)
                         } | Select-Object $MbFreeColName
 
-                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
-                    }
+                    $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                 }
-                if ($result.GrowthType -eq "Percent") {
-                    $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
-                } else {
-                    $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
-                }
-                if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
-                    [dbasize]$nextgrowtheventadd = 0
-                }
+            }
+            if ($result.GrowthType -eq "Percent") {
+                $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
+            } else {
+                $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
+            }
+            if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
+                [dbasize]$nextgrowtheventadd = 0
+            }
 
-                [PSCustomObject]@{
-                    ComputerName             = $server.ComputerName
-                    InstanceName             = $server.ServiceName
-                    SqlInstance              = $server.DomainInstanceName
-                    Database                 = $db.name
-                    FileGroupName            = $result.FileGroupName
-                    ID                       = $result.ID
-                    Type                     = $result.Type
-                    TypeDescription          = $result.TypeDescription
-                    LogicalName              = $result.LogicalName.Trim()
-                    PhysicalName             = $result.PhysicalName.Trim()
-                    State                    = $result.State
-                    MaxSize                  = $maxsize
-                    Growth                   = $result.Growth
-                    GrowthType               = $result.GrowthType
-                    NextGrowthEventSize      = $nextgrowtheventadd
-                    Size                     = $size
-                    UsedSpace                = $usedspace
-                    AvailableSpace           = $AvailableSpace
-                    IsOffline                = $result.IsOffline
-                    IsReadOnly               = $result.IsReadOnly
-                    IsReadOnlyMedia          = $result.IsReadOnlyMedia
-                    IsSparse                 = $result.IsSparse
-                    NumberOfDiskWrites       = $result.NumberOfDiskWrites
-                    NumberOfDiskReads        = $result.NumberOfDiskReads
-                    ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
-                    WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
-                    VolumeFreeSpace          = $VolumeFreeSpace
-                    FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
-                    FileGroupType            = $result.FileGroupType
-                    FileGroupTypeDescription = $result.FileGroupTypeDescription
-                    FileGroupDefault         = $result.FileGroupDefault
-                    FileGroupReadOnly        = $result.FileGroupReadOnly
-                }
+            [PSCustomObject]@{
+                ComputerName             = $server.ComputerName
+                InstanceName             = $server.ServiceName
+                SqlInstance              = $server.DomainInstanceName
+                Database                 = $db.name
+                FileGroupName            = $result.FileGroupName
+                ID                       = $result.ID
+                Type                     = $result.Type
+                TypeDescription          = $result.TypeDescription
+                LogicalName              = $result.LogicalName.Trim()
+                PhysicalName             = $result.PhysicalName.Trim()
+                State                    = $result.State
+                MaxSize                  = $maxsize
+                Growth                   = $result.Growth
+                GrowthType               = $result.GrowthType
+                NextGrowthEventSize      = $nextgrowtheventadd
+                Size                     = $size
+                UsedSpace                = $usedspace
+                AvailableSpace           = $AvailableSpace
+                IsOffline                = $result.IsOffline
+                IsReadOnly               = $result.IsReadOnly
+                IsReadOnlyMedia          = $result.IsReadOnlyMedia
+                IsSparse                 = $result.IsSparse
+                NumberOfDiskWrites       = $result.NumberOfDiskWrites
+                NumberOfDiskReads        = $result.NumberOfDiskReads
+                ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
+                WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
+                VolumeFreeSpace          = $VolumeFreeSpace
+                FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
+                FileGroupType            = $result.FileGroupType
+                FileGroupTypeDescription = $result.FileGroupTypeDescription
+                FileGroupDefault         = $result.FileGroupDefault
+                FileGroupReadOnly        = $result.FileGroupReadOnly
             }
         }
     }
+}
 }

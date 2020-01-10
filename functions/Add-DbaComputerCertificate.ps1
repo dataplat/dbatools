@@ -140,7 +140,7 @@ function Add-DbaComputerCertificate {
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
-                        Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                            Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                     }
