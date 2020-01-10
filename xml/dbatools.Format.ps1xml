@@ -61,7 +61,7 @@
                     <PropertyName>Version</PropertyName>
                   </TableColumnItem>
                   <TableColumnItem>
-                    <PropertyName>Platform</PropertyName>
+                    <PropertyName>HostPlatform</PropertyName>
                   </TableColumnItem>
                   <TableColumnItem>
                     <PropertyName>IsAzure</PropertyName>
@@ -133,7 +133,7 @@
                 </TableRowEntries>
             </TableControl>
         </View>
-        
+
         <!-- Sqlcollaborative.Dbatools.Computer.PageFileSetting -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Computer.PageFileSetting</Name>
