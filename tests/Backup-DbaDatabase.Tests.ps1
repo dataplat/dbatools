@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException', 'EncryptionAlgorithm', 'EncryptionCertificate'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException', 'EncryptionAlgorithm', 'EncryptionCertificate', 'IncrementPrefix'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -46,6 +46,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
         It "Should not return object" {
             $results | Should -Be $null
+        }
+    }
+
+    Context "No database found to backup should raise warning and null output" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar
+        It "Should not return object" {
+            $results | Should -Be $null
+        }
+        It "Should return a warning" {
+            $warnvar | Should -BeLike "*No databases match the request for backups*"
         }
     }
 
@@ -177,6 +187,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should have 1 period in file extension" {
             foreach ($path in $results.BackupFile) {
                 [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
+            }
+        }
+    }
+
+    Context "Should prefix the filenames when IncrementPrefix set" {
+        $fileCount = 3
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -FileCount $fileCount -IncrementPrefix
+        It "Should have created 3 backups" {
+            $results.BackupFilesCount | Should -Be 3
+        }
+        It "Should prefix them correctly" {
+            for ($i = 1; $i -le $fileCount; $i++) {
+                $results.BackupFile[$i - 1] | Should -BeLike "$i-*"
             }
         }
     }
