@@ -47,10 +47,15 @@
               </TableColumnHeader>
               <TableColumnHeader>
               </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
             </TableHeaders>
             <TableRowEntries>
               <TableRowEntry>
                 <TableColumnItems>
+                  <TableColumnItem>
+                    <PropertyName>ComputerName</PropertyName>
+                  </TableColumnItem>
                   <TableColumnItem>
                     <PropertyName>Name</PropertyName>
                   </TableColumnItem>
