@@ -33,6 +33,9 @@ function Enable-DbaHideInstance {
         Copyright: (c) 2019 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Enable-DbaHideInstance
+
     .EXAMPLE
         PS C:\> Enable-DbaHideInstance
 
