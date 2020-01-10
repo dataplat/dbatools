@@ -1080,6 +1080,7 @@ function Backup-DbaDatabase {
         [string[]]$Path,
         [Alias('BackupFileName')]
         [string]$FilePath,
+        [switch]$IncrementPrefix,
         [switch]$ReplaceInName,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
@@ -1257,6 +1258,10 @@ function Backup-DbaDatabase {
             $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
         }
 
+        if ($InputObject.count -eq 0) {
+            Write-Message -Level Warning -Message "No databases match the request for backups"
+        }
+
         foreach ($db in $InputObject) {
             $ProgressId = Get-Random
             $failures = @()
@@ -1399,10 +1404,11 @@ function Backup-DbaDatabase {
             } else {
                 $slash = "\"
             }
+
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + ("$($i+1)-" * $IncrementPrefix.ToBool() ) + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             } elseif ($FinalBackupPath[0] -ne 'NUL:') {
                 $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
@@ -16959,7 +16965,7 @@ function Find-DbaLoginInGroup {
                     $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName);
                     $subgroups = @()
                     foreach ($member in $group.Members) {
-                        $memberDomain = $ads.Name
+                        $memberDomain = $member.Context.Name
                         if ($member.StructuralObjectClass -eq 'group') {
                             $fullName = $memberDomain + "\" + $member.SamAccountName
                             if ($fullName -in $discard) {
