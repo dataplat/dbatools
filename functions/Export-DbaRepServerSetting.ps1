@@ -63,6 +63,9 @@ function Export-DbaRepServerSetting {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Export-DbaRepServerSetting
+
     .EXAMPLE
         PS C:\> Export-DbaRepServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
 
