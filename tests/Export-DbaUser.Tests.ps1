@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'DestinationVersion', 'Path', 'FilePath', 'InputObject', 'NoClobber', 'Append', 'EnableException', 'ScriptingOptionsObject', 'ExcludeGoBatchSeparator', 'Passthru'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -46,6 +46,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "Exported file is bigger than 0" {
                 (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
             }
+        }
+    }
+
+    Context "Respects options specified in the ScriptingOptionsObject parameter" {
+        It 'Excludes database context' {
+            $scriptingOptions = New-DbaScriptingOption
+            $scriptingOptions.IncludeDatabaseContext = $false
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
+        }
+        It 'Includes database context' {
+            $scriptingOptions = New-DbaScriptingOption
+            $scriptingOptions.IncludeDatabaseContext = $true
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should BeLike ('*USE `[' + $dbname + '`]*')
+        }
+        It 'Defaults to include database context' {
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
     }
 }

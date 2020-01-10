@@ -210,7 +210,9 @@ function Export-DbaUser {
                 Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script for user $dbuser"
 
                 #setting database
-                $outsql += "USE [" + $db.Name + "]"
+                if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
+                    $outsql += "USE [" + $db.Name + "]"
+                }
 
                 try {
                     #Fixed Roles #Dependency Issue. Create Role, before add to role.
