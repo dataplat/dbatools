@@ -96,6 +96,9 @@ function Update-DbaInstance {
     .PARAMETER ExtractPath
         Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
 
+    .LINK
+        https://dbatools.io/Update-DbaInstance
+
     .NOTES
         Tags: Install, Patching, SP, CU, Instance
         Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
