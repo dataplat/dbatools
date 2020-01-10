@@ -90,7 +90,7 @@ foreach ($command in $commands) {
         $testhelpall += 1
         if ([string]::IsNullOrEmpty($help.relatedLinks.NavigationLink)) {
             # Should have a navigation link
-            It "There should be a navaigation link for $commandName" {
+            It "There should be a navigation link for $commandName" {
                 $help.relatedLinks.NavigationLink | Should -Not -BeNullOrEmpty -Because "We need a .LINK for Get-Help -Online to work"
             }
             $testhelperrors += 1
