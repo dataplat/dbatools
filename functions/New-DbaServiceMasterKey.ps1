@@ -41,6 +41,9 @@ function New-DbaServiceMasterKey {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/New-DbaServiceMasterKey
+
     .EXAMPLE
         PS C:\> New-DbaServiceMasterKey -SqlInstance Server1
 
