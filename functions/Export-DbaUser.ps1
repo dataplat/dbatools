@@ -76,27 +76,27 @@ function Export-DbaUser {
         https://dbatools.io/Export-DbaUser
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sql2005 -Path C:\temp\sql2005-users.sql
+        PS C:\> Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql
 
         Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\temp\users.sql -Append
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
 
         Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
         Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
         Exports user User1 from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
 
@@ -104,13 +104,13 @@ function Export-DbaUser {
         PS C:\> $options = New-DbaScriptingOption
         PS C:\> $options.ScriptDrops = $false
         PS C:\> $options.WithDependencies = $true
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ScriptingOptionsObject $options
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ScriptingOptionsObject $options
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
         It will not script drops but will script dependencies.
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ExcludeGoBatchSeparator
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ExcludeGoBatchSeparator
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
