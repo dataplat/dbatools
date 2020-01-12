@@ -53,6 +53,9 @@ function Backup-DbaDbMasterKey {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Backup-DbaDbMasterKey
+
     .EXAMPLE
         PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
         ```

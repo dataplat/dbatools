@@ -65,6 +65,9 @@ function Invoke-DbaBalanceDataFiles {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Invoke-DbaBalanceDataFiles
+
     .EXAMPLE
         PS C:\> Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1
 

@@ -39,7 +39,7 @@ function Get-DbaDbQueryStoreOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaQueryStoreOptions
+        https://dbatools.io/Get-DbaDbQueryStoreOption
 
     .EXAMPLE
         PS C:\> Get-DbaDbQueryStoreOption -SqlInstance ServerA\sql

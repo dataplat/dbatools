@@ -27,6 +27,9 @@ function Get-DbatoolsConfigValue {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbatoolsConfigValue
+
     .EXAMPLE
         PS C:\> Get-DbatoolsConfigValue -Name 'System.MailServer'
 
