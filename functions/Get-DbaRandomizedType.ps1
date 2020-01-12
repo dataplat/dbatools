@@ -35,7 +35,7 @@ function Get-DbaRandomizedType {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRandomizedDatasetTemplate
+        https://dbatools.io/Get-DbaRandomizedType
 
     .EXAMPLE
         Get-DbaRandomizedType

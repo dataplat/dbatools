@@ -43,6 +43,15 @@ Function Invoke-DbaAdvancedUpdate {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .NOTES
+        Tags: Instance, Update
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Invoke-DbaAdvancedUpdate
+
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 

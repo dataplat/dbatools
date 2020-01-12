@@ -28,6 +28,9 @@ function Save-DbaDiagnosticQueryScript {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Save-DbaDiagnosticQueryScript
+
     .EXAMPLE
         PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp
 

@@ -35,6 +35,9 @@ function Get-DbaTrace {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaTrace
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2016
 

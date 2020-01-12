@@ -38,6 +38,9 @@ function Get-DbaDbUdf {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbUdf
+
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance sql2016
 

@@ -44,6 +44,9 @@ function Get-DbaDbCertificate {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbCertificate
+
     .EXAMPLE
         PS C:\> Get-DbaDbCertificate -SqlInstance sql2016
 
