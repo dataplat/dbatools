@@ -80,17 +80,65 @@ function Get-DbaDbView {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
+        [string[]]$View,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
+
+    begin {
+        if ($View) {
+            $fqtns = @()
+            foreach ($v in $View) {
+                $fqtn = Get-ObjectNameParts -ObjectName $v
+
+                if (!$fqtn.Parsed) {
+                    Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
+                    Continue
+                }
+
+                $fqtns += [PSCustomObject] @{
+                    Database   = $fqtn.Database
+                    Schema     = $fqtn.Schema
+                    View       = $fqtn.Name
+                    InputValue = $fqtn.InputValue
+                }
+            }
+            if (!$fqtns) {
+                Stop-Function -Message "No Valid View specified"  -ErrorRecord $_ -Target $instance -Continue
+            }
+        }
+    }
+
     process {
         if (Test-Bound SqlInstance) {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
         foreach ($db in $InputObject) {
-            $views = $db.views
+
+            if ($fqtns) {
+                $views = @()
+                foreach ($fqtn in $fqtns) {
+                    # If the user specified a database in a three-part name, and it's not the
+                    # database currently being processed, skip this view.
+                    if ($fqtn.Database) {
+                        if ($fqtn.Database -ne $db.Name) {
+                            continue
+                        }
+                    }
+
+                    $vw = $db.views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+
+                    if (-not $vw) {
+                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.Name) in $db on $server"
+                    }
+                    $views += $vw
+                }
+            } else {
+                $views = $db.views
+            }
+
             if (-not $db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
                 continue
@@ -105,14 +153,14 @@ function Get-DbaDbView {
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
-            foreach ($view in $views) {
+            foreach ($v in $views) {
 
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name ComputerName -value $view.Parent.ComputerName
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name InstanceName -value $view.Parent.InstanceName
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name SqlInstance -value $view.Parent.SqlInstance
-                Add-Member -Force -InputObject $view -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name ComputerName -value $v.Parent.ComputerName
+                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name InstanceName -value $v.Parent.InstanceName
+                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name SqlInstance -value $v.Parent.SqlInstance
+                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name Database -value $db.Name
 
-                Select-DefaultView -InputObject $view -Property $defaults
+                Select-DefaultView -InputObject $v -Property $defaults
             }
         }
     }
