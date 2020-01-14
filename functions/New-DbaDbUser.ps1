@@ -75,9 +75,14 @@ function New-DbaDbUser {
         Creates a new sql user named user1 mapped to Login1 in the specified database.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1
+        PS C:\> Get-DbaDbUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver1 -Database DB2
 
-        Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
+        Copies users from sqlserver1.DB1 to sqlserver1.DB2. Does not copy permissions!
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver1 -ExcludeSystem | New-DbaDbUser -SqlInstance sqlserver1 -Login Login1 -Username Login1
+
+        Creates a new login Login1 on every user database on sqlserver1.
 
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
@@ -88,10 +93,8 @@ function New-DbaDbUser {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
-        [parameter(ParameterSetName = "Login")]
+        [parameter(Mandatory, ParameterSetName = "Login")]
         [string]$Login,
-        [parameter(ParameterSetName = "NoLogin")]
-        [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
@@ -119,7 +122,7 @@ function New-DbaDbUser {
                         }
                     }
                 } else {
-                    Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser -Continue
+                    Stop-Function -Message "Login $($smoLogin.Name) already exists as user $($existingUser.Name) and -Force was not specified" -Target $existingUser -Continue
                 }
             }
         }
@@ -150,18 +153,19 @@ function New-DbaDbUser {
     process {
         if ($InputObject) {
             if ($InputObject[0] -is [Microsoft.SqlServer.Management.Smo.Database]) {
-                if (Test-Bound Database) {
+                if (Test-Bound 'Database') {
                     Stop-Function -Message 'The Database parameter cannot be used when piping database objects.'
                     return
                 }
 
                 $Database = $InputObject.Name
             } elseif ($InputObject[0] -is [Microsoft.SqlServer.Management.Smo.User]) {
-                if (Test-Bound Username) {
+                if (Test-Bound 'Username') {
                     Stop-Function -Message 'The Username parameter cannot be used when piping user objects.'
                     return
                 }
 
+                $Login = $InputObject.Login
                 $Username = $InputObject.Name
             } else {
                 Stop-Function -Message 'InputObject is not of the right type. Please use Get-DbaDatabase, Get-DbaLogin, or Get-DbaDbUser.'
@@ -195,45 +199,38 @@ function New-DbaDbUser {
             foreach ($db in $databases) {
                 Write-Message -Level Verbose -Message "Add users to Database $db on target $server"
 
-                switch -Wildcard ($PSCmdlet.ParameterSetName) {
-                    "Login*" {
-                        # Creates a user with Login
-                        Write-Message -Level VeryVerbose -Message "Using UserType: SqlLogin"
+                if ($PSCmdlet.ParameteSetName -eq 'Login' -or (Test-Bound 'InputObject')) {
+                    # Creates a user with Login
+                    Write-Message -Level VeryVerbose -Message "Using UserType: SqlLogin"
 
-                        if (Test-Bound 'Login' -Not) {
-                            Stop-Function -Message "Parameter -Login is required " -Target $instance
+                    if ($Login.GetType().Name -eq 'Login') {
+                        $smoLogin = $Login
+                    } else {
+                        #get the login associated with the given name.
+                        $smoLogin = $server.Logins | Where-Object Name -eq $Login
+                        if ($null -eq $smoLogin) {
+                            Stop-Function -Message "Invalid Login: $Login is not found on $Server" -Target $instance;
+                            return
                         }
-                        if ($Login.GetType().Name -eq 'Login') {
-                            $smoLogin = $Login
-                        } else {
-                            #get the login associated with the given name.
-                            $smoLogin = $server.Logins | Where-Object Name -eq $Login
-                            if ($null -eq $smoLogin) {
-                                Stop-Function -Message "Invalid Login: $Login is not found on $Server" -Target $instance;
-                                return
-                            }
-                        }
-
-                        Test-SqlLoginInDatabase -Database $db -Login $smoLogin
-
-                        if ( $PSCmdlet.ParameterSetName -eq "LoginWithNewUsername" ) {
-                            $Name = $Username
-                            Write-Message -Level Verbose -Message "Using UserName: $Username"
-                        } else {
-                            $Name = $smoLogin.Name
-                            Write-Message -Level Verbose -Message "Using LoginName: $Name"
-                        }
-
-                        $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
                     }
 
-                    "NoLogin" {
-                        # Creates a user without login
-                        Write-Message -Level Verbose -Message "Using UserType: NoLogin"
-                        $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin
+                    Test-SqlLoginInDatabase -Database $db -Login $smoLogin
+
+                    if ( $PSCmdlet.ParameterSetName -eq "LoginWithNewUsername" ) {
                         $Name = $Username
+                        Write-Message -Level Verbose -Message "Using UserName: $Username"
+                    } else {
+                        $Name = $smoLogin.Name
+                        Write-Message -Level Verbose -Message "Using LoginName: $Name"
                     }
-                } #switch
+
+                    $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
+                } elseif ($PSCmdlet.ParameterSetName -eq 'NoLogin') {
+                    # Creates a user without login
+                    Write-Message -Level Verbose -Message "Using UserType: NoLogin"
+                    $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin
+                    $Name = $Username
+                }
 
                 # Does user exist with same name?
                 Test-SqlUserInDatabase -Database $db -Username $Name
@@ -244,7 +241,7 @@ function New-DbaDbUser {
                         $smoUser.Parent = $db
                         $smoUser.Name = $Name
 
-                        if ( $PSBoundParameters.Keys -contains 'Login' -and $Login.GetType().Name -eq 'Login' ) {
+                        if ($Login -and $Login.GetType().Name -eq 'Login') {
                             $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
@@ -255,7 +252,7 @@ function New-DbaDbUser {
                     }
                     $smoUser.Refresh()
 
-                    if ( $PSBoundParameters.Keys -contains 'Username' -and $smoUser.Name -ne $Username ) {
+                    if ((Test-Bound 'Username') -and $smoUser.Name -ne $Username) {
                         $smoUser.Rename($Username)
                     }
 
