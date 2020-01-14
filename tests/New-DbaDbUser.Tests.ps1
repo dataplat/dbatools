@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'InputObject', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -28,6 +28,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolscidb_$(Get-Random)"
+        $dbname2 = "dbatoolscidb_$(Get-Random)"
         $userName = "dbatoolscidb_UserWithLogin"
         $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
@@ -37,13 +38,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbname
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database @($dbname, $dbname2) -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance3 -Login $userName -Confirm:$false
     }
     Context "Should create the user with login" {
         It "Creates the user and get it" {
             New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -Login $userName
             (Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
+        }
+    }
+    Context 'Should create the user on a database from the pipeline' {
+        It 'Creates the user and get it' {
+            Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | New-DbaDbUser -SqlInstance $script:instance3 -Login $userName
+            (Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userName).Name | Should Be $userName
+        }
+    }
+    Context 'Should create the user passed in from the pipeline' {
+        It 'Creates the user and get it' {
+            $users = Get-DbaDbUser -SqlInstance $script:instance3 -ExcludeSystemUser -Database $dbname | Sort-Object -Property Name
+            $users | New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname2
+            $newUsers = Get-DbaDbUser -SqlInstance $script:instance3 -ExcludeSystemUser -Database $dbname2 | Sort-Object -Property Name
+            ($newUsers.Name -join ', ') | Should -Be ($users.Name -join ', ')
         }
     }
     Context "Should create the user without login" {
