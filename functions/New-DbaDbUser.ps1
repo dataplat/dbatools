@@ -31,6 +31,9 @@ function New-DbaDbUser {
     .PARAMETER Username
         When specified, the user will have this name.
 
+    .PARAMETER InputObject
+        A collection of databases (Get-DbaDatabase), users (Get-DbaDbUser), or logins (Get-DbaLogin) to have a user created in.
+
     .PARAMETER Force
         If user exists, drop and recreate.
 
@@ -90,6 +93,8 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -143,6 +148,27 @@ function New-DbaDbUser {
     }
 
     process {
+        if ($InputObject) {
+            if ($InputObject[0] -is [Microsoft.SqlServer.Management.Smo.Database]) {
+                if (Test-Bound Database) {
+                    Stop-Function -Message 'The Database parameter cannot be used when piping database objects.'
+                    return
+                }
+
+                $Database = $InputObject.Name
+            } elseif ($InputObject[0] -is [Microsoft.SqlServer.Management.Smo.User]) {
+                if (Test-Bound Username) {
+                    Stop-Function -Message 'The Username parameter cannot be used when piping user objects.'
+                    return
+                }
+
+                $Username = $InputObject.Name
+            } else {
+                Stop-Function -Message 'InputObject is not of the right type. Please use Get-DbaDatabase, Get-DbaLogin, or Get-DbaDbUser.'
+                return
+            }
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -174,7 +200,7 @@ function New-DbaDbUser {
                         # Creates a user with Login
                         Write-Message -Level VeryVerbose -Message "Using UserType: SqlLogin"
 
-                        if ($PSBoundParameters.Keys -notcontains 'Login') {
+                        if (Test-Bound 'Login' -Not) {
                             Stop-Function -Message "Parameter -Login is required " -Target $instance
                         }
                         if ($Login.GetType().Name -eq 'Login') {
