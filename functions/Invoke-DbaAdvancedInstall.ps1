@@ -128,7 +128,7 @@ function Invoke-DbaAdvancedInstall {
             }
             if (Test-Path $summaryPath) {
                 $output.Path = $summaryPath
-                $output.Content = Get-Content -Path $summaryPath
+                $output.Content = Get-Content -Path $summaryPath | Select-String "Exit Message"
                 # get last folder created - that's our setup
                 $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
                 if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
