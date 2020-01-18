@@ -538,8 +538,6 @@ function Install-DbaInstance {
                         ISSVCSTARTUPTYPE      = "Automatic"
                         QUIET                 = "True"
                         QUIETSIMPLE           = "False"
-                        RSINSTALLMODE         = "DefaultNativeMode"
-                        RSSVCSTARTUPTYPE      = "Automatic"
                         SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
                         SQLSVCSTARTUPTYPE     = "Automatic"
                         SQLSYSADMINACCOUNTS   = $defaultAdminAccount
@@ -570,6 +568,11 @@ function Install-DbaInstance {
                     $execParams += '/IACCEPTROPENLICENSETERMS '
                     break
                 }
+            }
+            # Reporting Services
+            if ('RS' -in $featureList) {
+                if (-Not $configNode.RSINSTALLMODE) { $configNode.RSINSTALLMODE = "DefaultNativeMode" }
+                if (-Not $configNode.RSSVCSTARTUPTYPE) { $configNode.RSSVCSTARTUPTYPE = "Automatic" }
             }
             # version-specific stuff
             if ($canonicVersion -gt '10.0') {
