@@ -620,7 +620,7 @@ function Install-DbaInstance {
             }
             if (Test-Bound -ParameterName AdminAccount) {
                 if ($AdminAccount.Count -gt 1) {
-                    $configNode.SQLSYSADMINACCOUNTS = $AdminAccount | Join-String -FormatString '"{0}"' -Separator ' '
+                    $configNode.SQLSYSADMINACCOUNTS = '"' + ($AdminAccount -join '" "') + '"'
                 } else {
                     $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
                 }

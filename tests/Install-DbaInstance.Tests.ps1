@@ -117,6 +117,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                     SaCredential                  = $cred
                     Port                          = 1337
                     PerformVolumeMaintenanceTasks = $true
+                    AdminAccount                  = 'local\foo', 'local\bar'
                 }
                 $result = Install-DbaInstance @splat -EnableException -Confirm:$false
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
@@ -137,6 +138,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.Notes | Should -BeNullOrEmpty
                 $result.Configuration.$mainNode.SAPWD | Should -Be 'foo'
                 $result.Configuration.$mainNode.SQLSVCACCOUNT | Should -Be 'foo'
+                $result.Configuration.$mainNode.SQLSYSADMINACCOUNTS | Should -Be '"local\foo" "local\bar"'
                 if ($version -in '2016', '2017') {
                     $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
                 }
