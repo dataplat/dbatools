@@ -139,7 +139,7 @@ function Install-DbaInstance {
 
     .PARAMETER DotNetPath
         Path to the .Net 3.5 installation folder (Windows installation media) for offline installations.
-        
+
         Required for DBMail feature in versions under SQL Server 2016 CU2/SP1+CU2
 
     .PARAMETER AuthenticationMode
@@ -622,7 +622,11 @@ function Install-DbaInstance {
                 $configNode.SQLBACKUPDIR = $BackupPath
             }
             if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                if ($AdminAccount.Count -gt 1) {
+                    $configNode.SQLSYSADMINACCOUNTS = $AdminAccount | Join-String -FormatString '"{0}"' -Separator ' '
+                } else {
+                    $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                }
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath
