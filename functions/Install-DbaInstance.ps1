@@ -137,11 +137,6 @@ function Install-DbaInstance {
     .PARAMETER Restart
         Restart computer automatically if a restart is required before or after the installation.
 
-    .PARAMETER DotNetPath
-        Path to the .Net 3.5 installation folder (Windows installation media) for offline installations.
-
-        Required for DBMail feature in versions under SQL Server 2016 CU2/SP1+CU2
-
     .PARAMETER AuthenticationMode
         Chooses between Mixed and Windows authentication.
 
@@ -250,7 +245,6 @@ function Install-DbaInstance {
         [pscredential]$FTCredential,
         [pscredential]$PBEngineCredential,
         [string]$SaveConfiguration,
-        # [string]$DotNetPath,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$EnableException
