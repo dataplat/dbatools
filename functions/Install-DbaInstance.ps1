@@ -137,11 +137,6 @@ function Install-DbaInstance {
     .PARAMETER Restart
         Restart computer automatically if a restart is required before or after the installation.
 
-    .PARAMETER DotNetPath
-        Path to the .Net 3.5 installation folder (Windows installation media) for offline installations.
-        
-        Required for DBMail feature in versions under SQL Server 2016 CU2/SP1+CU2
-
     .PARAMETER AuthenticationMode
         Chooses between Mixed and Windows authentication.
 
@@ -250,7 +245,6 @@ function Install-DbaInstance {
         [pscredential]$FTCredential,
         [pscredential]$PBEngineCredential,
         [string]$SaveConfiguration,
-        # [string]$DotNetPath,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$EnableException
@@ -538,8 +532,6 @@ function Install-DbaInstance {
                         ISSVCSTARTUPTYPE      = "Automatic"
                         QUIET                 = "True"
                         QUIETSIMPLE           = "False"
-                        RSINSTALLMODE         = "DefaultNativeMode"
-                        RSSVCSTARTUPTYPE      = "Automatic"
                         SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
                         SQLSVCSTARTUPTYPE     = "Automatic"
                         SQLSYSADMINACCOUNTS   = $defaultAdminAccount
@@ -570,6 +562,11 @@ function Install-DbaInstance {
                     $execParams += '/IACCEPTROPENLICENSETERMS '
                     break
                 }
+            }
+            # Reporting Services
+            if ('RS' -in $featureList) {
+                if (-Not $configNode.RSINSTALLMODE) { $configNode.RSINSTALLMODE = "DefaultNativeMode" }
+                if (-Not $configNode.RSSVCSTARTUPTYPE) { $configNode.RSSVCSTARTUPTYPE = "Automatic" }
             }
             # version-specific stuff
             if ($canonicVersion -gt '10.0') {
@@ -622,7 +619,11 @@ function Install-DbaInstance {
                 $configNode.SQLBACKUPDIR = $BackupPath
             }
             if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                if ($AdminAccount.Count -gt 1) {
+                    $configNode.SQLSYSADMINACCOUNTS = '"' + ($AdminAccount -join '" "') + '"'
+                } else {
+                    $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                }
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath
