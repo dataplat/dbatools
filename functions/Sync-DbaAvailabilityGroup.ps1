@@ -156,6 +156,11 @@ function Sync-DbaAvailabilityGroup {
         $allcombos = @()
     }
     process {
+        if (Test-Bound -Not Primary, InputObject) {
+            Stop-Function -Message "You must supply either -Primary or an Input Object"
+            return
+        }
+
         if (-not $AvailabilityGroup -and -not $Secondary -and -not $InputObject) {
             Stop-Function -Message "You must specify a secondary or an availability group."
             return
