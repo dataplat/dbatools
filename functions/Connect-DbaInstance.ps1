@@ -340,6 +340,20 @@ function Connect-DbaInstance {
                 }
             }
         }
+        function Hide-ConnectionString {
+            Param (
+                [string]$ConnectionString
+            )
+            try {
+                $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+                if ($connStringBuilder.Password) {
+                    $connStringBuilder.Password = ''.Padleft(8, '*')
+                }
+                return $connStringBuilder.ConnectionString
+            } catch {
+                return "Failed to mask the connection string`: $($_.Exception.Message)"
+            }
+        }
         #endregion Utility functions
 
         #region Ensure Credential integrity
@@ -479,13 +493,14 @@ function Connect-DbaInstance {
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                    $maskedConnString = Hide-ConnectionString $azureconnstring
+                    Write-Message -Level Verbose -Message "Connecting to $maskedConnString"
                     try {
                         $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     } catch {
                         Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
                         continue
                     }
-                    Write-Message -Level Verbose -Message $sqlconn.ConnectionString
                     # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
