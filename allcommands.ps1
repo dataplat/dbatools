@@ -21,6 +21,11 @@ function Add-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Group when using the SqlInstance parameter."
@@ -194,6 +199,11 @@ function Add-DbaAgListener {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
             Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
             return
@@ -314,6 +324,11 @@ function Add-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
@@ -2152,6 +2167,20 @@ function Connect-DbaInstance {
                 }
             }
         }
+        function Hide-ConnectionString {
+            Param (
+                [string]$ConnectionString
+            )
+            try {
+                $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+                if ($connStringBuilder.Password) {
+                    $connStringBuilder.Password = ''.Padleft(8, '*')
+                }
+                return $connStringBuilder.ConnectionString
+            } catch {
+                return "Failed to mask the connection string`: $($_.Exception.Message)"
+            }
+        }
         #endregion Utility functions
 
         #region Ensure Credential integrity
@@ -2286,13 +2315,14 @@ function Connect-DbaInstance {
                 try {
                     # this is the way, as recommended by Microsoft
                     # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
+                    $maskedConnString = Hide-ConnectionString $azureconnstring
+                    Write-Message -Level Verbose -Message "Connecting to $maskedConnString"
                     try {
                         $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
                     } catch {
                         Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
                         continue
                     }
-                    Write-Message -Level Verbose -Message $sqlconn.ConnectionString
                     # assign this twice, not sure why but hey it works better
                     if ($accesstoken) {
                         $sqlconn.AccessToken = $accesstoken
@@ -5462,7 +5492,7 @@ function Copy-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."
-            if ($sourceServer.VersionMajor -lt 8 -and $destServer.VersionMajor -lt 8) {
+            if ($sourceServer.VersionMajor -lt 8 -or $destServer.VersionMajor -lt 8) {
                 Stop-Function -Message "This script can only be run on SQL Server 2000 and above. Quitting." -Continue
             }
 
@@ -6094,6 +6124,7 @@ function Copy-DbaDatabase {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Copy-DbaDataCollector {
@@ -18337,6 +18368,11 @@ function Get-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
@@ -19334,6 +19370,11 @@ function Get-DbaAgListener {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
@@ -19369,6 +19410,11 @@ function Get-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
@@ -37880,6 +37926,11 @@ function Grant-DbaAgPermission {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"\
+            return
+        }
+
         if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
@@ -41144,8 +41195,8 @@ function Invoke-DbaAgFailover {
         if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
-        if (-not $SqlInstance -and -not $InputObject) {
-            Stop-Function -Message "You must either specify the SqlInstance parameter or pass in at least one AvailabilityGroup object."
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
             return
         }
 
@@ -47374,6 +47425,10 @@ function Join-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
 
         if ($InputObject) {
             $AvailabilityGroup += $InputObject.Name
@@ -55375,6 +55430,11 @@ function Remove-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database)) {
                 Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
@@ -55787,6 +55847,11 @@ function Remove-DbaAgListener {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Listener)) {
                 Stop-Function -Message "You must specify one or more listeners and one or more Availability Groups when using the SqlInstance parameter."
@@ -55833,6 +55898,11 @@ function Remove-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance -and -not $Replica) {
             Stop-Function -Message "You must specify a replica when using the SqlInstance parameter."
             return
@@ -55876,6 +55946,11 @@ function Remove-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup, AllAvailabilityGroups)) {
             Stop-Function -Message "You must specify AllAvailabilityGroups groups or AvailabilityGroups when using the SqlInstance parameter."
             return
@@ -60809,6 +60884,11 @@ function Resume-DbaAgDbDataMovement {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
@@ -60852,6 +60932,11 @@ function Revoke-DbaAgPermission {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
@@ -62788,6 +62873,10 @@ function Set-DbaAgListener {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
             Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
             return
@@ -62839,6 +62928,11 @@ function Set-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if (-not $InputObject) {
             if (-not $AvailabilityGroup -or -not $Replica) {
                 Stop-Function -Message "You must specify an AvailabilityGroup and replica or pipe in an availabilty group to continue."
@@ -62940,6 +63034,11 @@ function Set-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup, AllAvailabilityGroups)) {
             Stop-Function -Message "You must specify AllAvailabilityGroups groups or AvailabilityGroups when using the SqlInstance parameter."
             return
@@ -67599,6 +67698,11 @@ function Suspend-DbaAgDbDataMovement {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
@@ -67651,6 +67755,11 @@ function Sync-DbaAvailabilityGroup {
         $allcombos = @()
     }
     process {
+        if (Test-Bound -Not Primary, InputObject) {
+            Stop-Function -Message "You must supply either -Primary or an Input Object"
+            return
+        }
+
         if (-not $AvailabilityGroup -and -not $Secondary -and -not $InputObject) {
             Stop-Function -Message "You must specify a secondary or an availability group."
             return
