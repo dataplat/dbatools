@@ -298,9 +298,9 @@ function Install-DbaInstance {
                                 $origVal = "$origVal"
                             }
                             if ($origVal -ne $origVal.Trim('"')) {
-                                $output += "$sectionKey=`"$($origVal.Trim('"') -join ',')`""
+                                $output += "$sectionKey=$origVal"
                             } else {
-                                $output += "$sectionKey==$(($origVal | ForEach-Object { '"{0}"' -f $_  }) -join ' ')"
+                                $output += "$sectionKey=`"$origVal`""
                             }
                         }
                     }
