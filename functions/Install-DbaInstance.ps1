@@ -631,7 +631,7 @@ function Install-DbaInstance {
                 $configNode.SQLBACKUPDIR = $BackupPath
             }
             if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_  }) -join ' '
+                $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath
