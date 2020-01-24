@@ -290,10 +290,18 @@ function Install-DbaInstance {
                 $output += "[$key]"
                 if ($Content.$key -is [hashtable]) {
                     foreach ($sectionKey in $Content.$key.Keys) {
-                        if ($Content.$key.$sectionKey -is [array]) {
-                            $output += "$sectionKey=$(($Content.$key.$sectionKey | ForEach-Object { '"{0}"' -f $_  }) -join ' ')"
+                        $origVal = $Content.$key.$sectionKey
+                        if ($origVal -is [array]) {
+                            $output += "$sectionKey=`"$($origVal -join ',')`""
                         } else {
-                            $output += "$sectionKey=`"$($Content.$key.$sectionKey -join ',')`""
+                            if ($origVal -is [int]) {
+                                $origVal = "$origVal"
+                            }
+                            if ($origVal -ne $origVal.Trim('"')) {
+                                $output += "$sectionKey=`"$($origVal.Trim('"') -join ',')`""
+                            } else {
+                                $output += "$sectionKey==$(($origVal | ForEach-Object { '"{0}"' -f $_  }) -join ' ')"
+                            }
                         }
                     }
                 }
@@ -623,7 +631,7 @@ function Install-DbaInstance {
                 $configNode.SQLBACKUPDIR = $BackupPath
             }
             if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_  }) -join ' '
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath
