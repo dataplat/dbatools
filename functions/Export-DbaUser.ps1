@@ -433,7 +433,7 @@ function Export-DbaUser {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
 
-                if ($perms.Count -gt 0) {
+                if (@($perms.Count) -gt 0) {
                     if ($ExcludeGoBatchSeparator) {
                         $sql = "$useDatabase $outsql"
                     } else {
@@ -446,9 +446,12 @@ function Export-DbaUser {
                 if (-not $Passthru) {
                     # If generate a file per user, clean the collection to populate with next one
                     if ($GenerateFilePerUser) {
-                        $outsql = @()
-                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                        Get-ChildItem -Path $FilePath
+                        if (-not [string]::IsNullOrEmpty($sql)) {
+                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            Get-ChildItem -Path $FilePath
+                            $outsql = @()
+                            $sql = ""
+                        }
                     }
                 } else {
                     $sql
