@@ -236,7 +236,7 @@ function Export-DbaUser {
 
                 #setting database
                 if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
-                    $outsql += "USE [" + $db.Name + "]"
+                    $useDatabase = "USE [" + $db.Name + "]"
                 }
 
                 try {
@@ -433,13 +433,16 @@ function Export-DbaUser {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
 
-                if ($ExcludeGoBatchSeparator) {
-                    $sql = $outsql
-                } else {
-                    $sql = $outsql -join "`r`nGO`r`n"
-                    #add the final GO
-                    $sql += "`r`nGO"
+                if ($perms.Count -gt 0) {
+                    if ($ExcludeGoBatchSeparator) {
+                        $sql = "$useDatabase $outsql"
+                    } else {
+                        $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                        #add the final GO
+                        $sql += "`r`nGO"
+                    }
                 }
+
                 if (-not $Passthru) {
                     # If generate a file per user, clean the collection to populate with next one
                     if ($GenerateFilePerUser) {
