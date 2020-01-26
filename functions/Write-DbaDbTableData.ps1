@@ -17,7 +17,7 @@ function Write-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to import the table into.
+        The database where the Input Object data will be written
 
     .PARAMETER InputObject
         This is the DataTable (or data row) to import to SQL Server.
