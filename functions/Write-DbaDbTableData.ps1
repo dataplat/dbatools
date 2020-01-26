@@ -424,7 +424,7 @@ function Write-DbaDbTableData {
                 [void]$quotedFQTN.Append( $databaseName )
             }
             [void]$quotedFQTN.Append( '].' )
-        } 
+        }
 
         [void]$quotedFQTN.Append( '[' )
         if ($schemaName.Contains(']')) {
@@ -517,7 +517,7 @@ function Write-DbaDbTableData {
         }
         # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
         $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
-        
+
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
         $bulkCopy.NotifyAfter = $NotifyAfter
