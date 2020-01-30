@@ -17,7 +17,7 @@ function Write-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database to import the table into.
+        The database where the Input Object data will be written
 
     .PARAMETER InputObject
         This is the DataTable (or data row) to import to SQL Server.
@@ -412,13 +412,19 @@ function Write-DbaDbTableData {
 
         $quotedFQTN = New-Object System.Text.StringBuilder
 
-        [void]$quotedFQTN.Append( '[' )
-        if ($databaseName.Contains(']')) {
-            [void]$quotedFQTN.Append( $databaseName.Replace(']', ']]') )
-        } else {
-            [void]$quotedFQTN.Append( $databaseName )
+        if ($server.ServerType -ne 'SqlAzureDatabase') {
+            <#
+                Skip adding database name to Fully Qualified Tablename for Azure SQL DB
+                Azure SQL DB does not support Three Part names
+            #>
+            [void]$quotedFQTN.Append( '[' )
+            if ($databaseName.Contains(']')) {
+                [void]$quotedFQTN.Append( $databaseName.Replace(']', ']]') )
+            } else {
+                [void]$quotedFQTN.Append( $databaseName )
+            }
+            [void]$quotedFQTN.Append( '].' )
         }
-        [void]$quotedFQTN.Append( '].' )
 
         [void]$quotedFQTN.Append( '[' )
         if ($schemaName.Contains(']')) {
@@ -509,13 +515,9 @@ function Write-DbaDbTableData {
                 }
             }
         }
+        # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
+        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
 
-        if ($server.isAzure) {
-            # will for sure have the database in connstring
-            $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString, $bulkCopyOptions)
-        } else {
-            $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
-        }
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
         $bulkCopy.NotifyAfter = $NotifyAfter
