@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'StatementTimeout', 'MinimumVersion', 'AzureUnsupported', 'NonPooled'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'StatementTimeout', 'MinimumVersion', 'AzureUnsupported', 'NonPooled'
 
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
