@@ -49389,7 +49389,7 @@
                        ],
                        [
                            "Database",
-                           "The database to import the table into.",
+                           "The database where the Input Object data will be written",
                            "",
                            false,
                            "false",
