@@ -88,7 +88,12 @@ function Export-DbaUser {
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
-        Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
+        Exports ONLY users User1 and User2 from sqlserver2014a to the file C:\temp\users.sql
+
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp
+
+        Exports ONLY users User1 and User2 from sqlserver2014a to the folder C:\temp. One file per user will be generated
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
