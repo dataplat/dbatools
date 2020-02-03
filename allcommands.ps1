@@ -60357,7 +60357,7 @@ function Restore-DbaDatabase {
 
         #region Validation
         try {
-            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
@@ -74586,6 +74586,7 @@ function Connect-SqlInstance {
         [PSCredential]$SqlCredential,
         [int]$StatementTimeout,
         [int]$MinimumVersion,
+        [string]$Database,
         [switch]$AzureUnsupported,
         [switch]$NonPooled
     )
