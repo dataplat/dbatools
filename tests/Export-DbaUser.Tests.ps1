@@ -54,7 +54,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
+            $results = Get-Content -FilePath $file -Raw
             $allfiles += $file.FullName
             $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
         }
@@ -62,13 +62,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
+            $results = Get-Content -FilePath $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
         It 'Defaults to include database context' {
             $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
-            $results = Get-Content -Path $file -Raw
+            $results = Get-Content -FilePath $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
