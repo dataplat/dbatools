@@ -17,6 +17,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_user_CustomFile.sql"
+        $outputFile2 = "$AltExportPath\Dbatoolsci_user_CustomFile2.sql"
         try {
             $dbname = "dbatoolsci_exportdbauser"
             $login = "dbatoolsci_exportdbauser_login"
@@ -35,6 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
         Remove-DbaLogin -SqlInstance $script:instance1 -Login $login -Confirm:$false
         (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
+        (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
@@ -53,24 +55,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Excludes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
+            (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
+            (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
         It 'Defaults to include database context' {
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -FilePath $outputFile -WarningAction SilentlyContinue
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
+            (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
     }
 }
