@@ -53,22 +53,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Excludes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -FilePath $file -Raw
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
         }
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -WarningAction SilentlyContinue
-            $results = Get-Content -FilePath $file -Raw
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
         It 'Defaults to include database context' {
-            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -WarningAction SilentlyContinue
-            $results = Get-Content -FilePath $file -Raw
+            $file = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -FilePath $outputFile -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
         }
