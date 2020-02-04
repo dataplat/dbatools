@@ -442,7 +442,11 @@ function Export-DbaUser {
                     if ($ExcludeGoBatchSeparator) {
                         $sql = "$useDatabase $outsql"
                     } else {
-                        $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                        if ($useDatabase) {
+                            $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                        } else {
+                            $sql = $outsql -join "`r`nGO`r`n"
+                        }
                         #add the final GO
                         $sql += "`r`nGO"
                     }
@@ -454,18 +458,20 @@ function Export-DbaUser {
                         if (-not [string]::IsNullOrEmpty($sql)) {
                             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                             Get-ChildItem -Path $FilePath
-                            $outsql = @()
-                            $sql = ""
                         }
+                    } else {
+                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                     }
+                    # Clear variables for next user
+                    $outsql = @()
+                    $sql = ""
                 } else {
                     $sql
                 }
             }
         }
-        # Just a single file, will be output here.
+        # Just a single file, output path once here
         if (-Not $GenerateFilePerUser) {
-            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
             Get-ChildItem -Path $FilePath
         }
     }
