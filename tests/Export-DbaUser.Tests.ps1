@@ -22,6 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $dbname = "dbatoolsci_exportdbauser"
             $login = "dbatoolsci_exportdbauser_login"
             $user = "dbatoolsci_exportdbauser_user"
+            $table = "dbatoolsci_exportdbauser_table"
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("CREATE DATABASE [$dbname]")
 
@@ -30,6 +31,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
             $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
+
+            $null = $db.Query("CREATE TABLE $table (C1 INT);")
+            $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user];")
         } catch { } # No idea why appveyor can't handle this
     }
     AfterAll {
