@@ -3,7 +3,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
 
     Param(
         [parameter(Mandatory)]
-        [ValidateScript( {Test-Path $_})]
+        [ValidateScript( { Test-Path $_ })]
         [System.IO.FileInfo]$filename,
         [Switch]$ExcludeQueryTextColumn,
         [Switch]$ExcludePlanColumn,
@@ -11,7 +11,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     )
 
     $out = "Parsing file {0}" -f $filename
-    write-verbose -Message $out
+    Write-Verbose -Message $out
 
     $ParsedScript = @()
     [string]$scriptpart = ""
@@ -22,12 +22,12 @@ function Invoke-DbaDiagnosticQueryScriptParser {
     $querynr = 0
     $DBSpecific = $false
 
-    if ($ExcludeQueryTextColumn) {$QueryTextColumn = ""}  else {$QueryTextColumn = ", t.[text] AS [Complete Query Text]"}
-    if ($ExcludePlanColumn) {$PlanTextColumn = ""} else {$PlanTextColumn = ", qp.query_plan AS [Query Plan]"}
+    if ($ExcludeQueryTextColumn) { $QueryTextColumn = "" }  else { $QueryTextColumn = ", t.[text] AS [Complete Query Text]" }
+    if ($ExcludePlanColumn) { $PlanTextColumn = "" } else { $PlanTextColumn = ", qp.query_plan AS [Query Plan]" }
 
     foreach ($line in $fullscript) {
         if ($start -eq $false) {
-            if (($line -match "You have the correct major version of SQL Server for this diagnostic information script") -or ($line.StartsWith("-- Server level queries ***"))) {
+            if (($line -match "You have the correct major version of SQL Server for this diagnostic information script") -or ($line.StartsWith("-- Server level queries ***") -or ($line.StartsWith("-- Instance level queries ***")))) {
                 $start = $true
             }
             continue
@@ -49,7 +49,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
             $prev_queryname = $Matches[3]
 
             if ($querynr -gt 0) {
-                $properties = @{QueryNr = $querynr; QueryName = $queryname; DBSpecific = $DBSpecific; Description = $queryDescription; Text = $scriptpart}
+                $properties = @{QueryNr = $querynr; QueryName = $queryname; DBSpecific = $DBSpecific; Description = $queryDescription; Text = $scriptpart }
                 $newscript = New-Object -TypeName PSObject -Property $properties
                 $ParsedScript += $newscript
                 $scriptpart = ""
@@ -65,7 +65,7 @@ function Invoke-DbaDiagnosticQueryScriptParser {
         }
     }
 
-    $properties = @{QueryNr = $querynr; QueryName = $queryname; DBSpecific = $DBSpecific; Description = $queryDescription; Text = $scriptpart}
+    $properties = @{QueryNr = $querynr; QueryName = $queryname; DBSpecific = $DBSpecific; Description = $queryDescription; Text = $scriptpart }
     $newscript = New-Object -TypeName PSObject -Property $properties
     $ParsedScript += $newscript
     $ParsedScript

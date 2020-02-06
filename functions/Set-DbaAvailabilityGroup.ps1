@@ -10,7 +10,11 @@ function Set-DbaAvailabilityGroup {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
         Only set specific availability group properties.
@@ -79,17 +83,16 @@ function Set-DbaAvailabilityGroup {
 
         Enables DTC for all availability groups on sql2016
 
-       .EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 | Set-DbaAvailabilityGroup -DtcSupportEnabled:$false
 
         Disables DTC support for the availability group AG1
 
-        .EXAMPLE
+    .EXAMPLE
         PS C:\> Set-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1 -DtcSupportEnabled:$false
 
         Disables DTC support for the availability group AG1
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
@@ -112,6 +115,11 @@ function Set-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup, AllAvailabilityGroups)) {
             Stop-Function -Message "You must specify AllAvailabilityGroups groups or AvailabilityGroups when using the SqlInstance parameter."
             return

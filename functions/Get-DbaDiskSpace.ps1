@@ -21,13 +21,17 @@ function Get-DbaDiskSpace {
         All properties previously generated through this command are present at the same time, but hidden by default.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ExcludeDrive
         Filter out drives - format is C:\
 
     .PARAMETER CheckFragmentation
-        If this switch is enabled, fragmentation of all filesystems will be checked.
+        If this switch is enabled, fragmentation of all file systems will be checked.
 
         This will increase the runtime of the function by seconds or even minutes per volume.
 
@@ -47,7 +51,7 @@ function Get-DbaDiskSpace {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Storage, Disk
+        Tags: Server, Management, Space
         Author: Chrissy LeMaire (@cl), netnerds.net | Jakob Bindslet
 
         Website: https://dbatools.io
@@ -81,7 +85,6 @@ function Get-DbaDiskSpace {
         PS C:\> Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
 
         Get all disk and volume space information.
-
     #>
     [CmdletBinding()]
     param (

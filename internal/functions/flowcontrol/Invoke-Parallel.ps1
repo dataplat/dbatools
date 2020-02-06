@@ -385,7 +385,7 @@ function Invoke-Parallel {
                                 NewVarName = ('__using_{0}' -f $Var.SubExpression.VariablePath.UserPath)
                             }
                         } catch {
-                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable!"
+                            Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable."
                         }
                     }
                     $ParamsToAdd += $UsingVariableData | Select-Object -ExpandProperty NewName -Unique

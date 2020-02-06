@@ -10,7 +10,11 @@ function Get-DbaSuspectPage {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        A credential to use to connect to the SQL Instance rather than using Windows Authentication
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database to return. If unspecified, all records will be returned.
@@ -27,6 +31,9 @@ function Get-DbaSuspectPage {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaSuspectPage
 
     .EXAMPLE
         PS C:\> Get-DbaSuspectPage -SqlInstance sql2016

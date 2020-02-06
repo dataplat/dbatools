@@ -72,6 +72,15 @@ function Invoke-DbaAdvancedInstall {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .NOTES
+        Tags: Instance, Update
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+    https://dbatools.io/Invoke-DbaAdvancedInstall
+
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 
@@ -110,7 +119,7 @@ function Invoke-DbaAdvancedInstall {
                 [version]$Version
             )
             $versionNumber = "$($Version.Major)$($Version.Minor)".Substring(0, 3)
-            $rootPath = "$env:ProgramFiles\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
+            $rootPath = "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server\$versionNumber\Setup Bootstrap\Log"
             $summaryPath = "$rootPath\Summary.txt"
             $output = [PSCustomObject]@{
                 Path              = $null
@@ -119,7 +128,7 @@ function Invoke-DbaAdvancedInstall {
             }
             if (Test-Path $summaryPath) {
                 $output.Path = $summaryPath
-                $output.Content = Get-Content -Path $summaryPath
+                $output.Content = Get-Content -Path $summaryPath | Select-String "Exit Message"
                 # get last folder created - that's our setup
                 $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
                 if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
@@ -198,6 +207,7 @@ function Invoke-DbaAdvancedInstall {
     $connectionParams = @{
         ComputerName = $ComputerName
         ErrorAction  = "Stop"
+        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
     if ($Credential) { $connectionParams.Credential = $Credential }
     # need to figure out where to store the config file
@@ -307,6 +317,6 @@ function Invoke-DbaAdvancedInstall {
             $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
         }
     }
-    $output  | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
+    $output | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
     Write-Progress -Activity $activity -Completed
 }

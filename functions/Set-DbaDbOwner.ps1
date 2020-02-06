@@ -12,7 +12,11 @@ function Set-DbaDbOwner {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -118,7 +122,7 @@ function Set-DbaDbOwner {
             }
 
             #Owner cannot be a group
-            $TargetLoginObject = $server.Logins | where-object {$PSItem.Name -eq $TargetLogin }| Select-Object -property  Name, LoginType
+            $TargetLoginObject = $server.Logins | Where-Object { $PSItem.Name -eq $TargetLogin } | Select-Object -property  Name, LoginType
             if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
                 Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
             }

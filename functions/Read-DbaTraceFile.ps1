@@ -12,7 +12,11 @@ function Read-DbaTraceFile {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Path to the trace file. This path is relative to the SQL Server instance.
@@ -130,6 +134,9 @@ function Read-DbaTraceFile {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Read-DbaTraceFile
+
     .EXAMPLE
         PS C:\> Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc
 
@@ -242,16 +249,15 @@ function Read-DbaTraceFile {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                return
             }
 
             if (Test-Bound -Parameter Path) {
-                $currentpath = $path
+                $currentPath = $path
             } else {
-                $currentpath = $server.ConnectionContext.ExecuteScalar("Select path from sys.traces where is_default = 1")
+                $currentPath = $server.ConnectionContext.ExecuteScalar("SELECT path FROM sys.traces WHERE is_default = 1")
             }
 
-            foreach ($file in $currentpath) {
+            foreach ($file in $currentPath) {
                 Write-Message -Level Verbose -Message "Parsing $file"
 
                 $exists = Test-DbaPath -SqlInstance $server -Path $file
@@ -261,15 +267,15 @@ function Read-DbaTraceFile {
                     Continue
                 }
 
-                $sql = "select SERVERPROPERTY('MachineName') AS ComputerName,
-                ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                SERVERPROPERTY('ServerName') AS SqlInstance,
-                 * FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
+                $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, *
+                FROM [fn_trace_gettable]('$file', DEFAULT)
+                $Where"
 
+                Write-Message -Message "SQL: $sql" -Level Debug
                 try {
                     $server.Query($sql)
                 } catch {
-                    Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
+                    Stop-Function -Message "Error returned from SQL Server: $instance" -Target $server -InnerErrorRecord $_
                 }
             }
         }

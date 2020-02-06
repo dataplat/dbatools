@@ -61,6 +61,7 @@ function Connect-SqlInstance {
         [PSCredential]$SqlCredential,
         [int]$StatementTimeout,
         [int]$MinimumVersion,
+        [string]$Database,
         [switch]$AzureUnsupported,
         [switch]$NonPooled
     )

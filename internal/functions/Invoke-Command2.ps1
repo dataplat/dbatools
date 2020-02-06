@@ -30,6 +30,9 @@ function Invoke-Command2 {
             Name of the remote PSSessionConfiguration to use.
             Should be registered already using Register-PSSessionConfiguration or internal Register-RemoteSessionConfiguration.
 
+        .PARAMETER UseSSL
+            Enables SSL
+
         .PARAMETER ArgumentList
             Any arguments to pass to the scriptblock being run
 
@@ -58,12 +61,13 @@ function Invoke-Command2 {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
+        [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )
     <# Note: Credential stays as an object type for legacy reasons. #>
 
-    $InvokeCommandSplat = @{}
+    $InvokeCommandSplat = @{ }
     if ($ArgumentList) {
         $InvokeCommandSplat["ArgumentList"] = $ArgumentList
     }
@@ -88,10 +92,15 @@ function Invoke-Command2 {
                 Authentication = $Authentication
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
+                UseSSL         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             if (Test-Windows -NoWarn) {
-                $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                $psSessionSplat += @{ SessionOption = $timeout }
+                $psSessionOptionsSplat = @{
+                    IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                    IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                }
+                $sessionOption = New-PSSessionOption @psSessionOptionsSplat
+                $psSessionSplat += @{ SessionOption = $sessionOption }
             }
             if ($Credential) {
                 $psSessionSplat += @{ Credential = $Credential }

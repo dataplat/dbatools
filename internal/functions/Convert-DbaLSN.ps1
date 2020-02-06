@@ -17,7 +17,7 @@ function Convert-DbaLSN {
         Will return object $Output with the following value
         $Output.HexLSN = 0000002f:000044aa:002b
         $Output.NumbericLSN =
-          #>
+    #>
     [CmdletBinding()]
     param(
         [string]$LSN,

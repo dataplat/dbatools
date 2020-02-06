@@ -29,8 +29,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $aliases.AliasName -contains 'dbatoolscialias1' | Should Be $true
             }
 
-            $null = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
-
+            It "removes the alias and shows computername" {
+                $results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
+                $results.ComputerName | Should -Not -BeNullOrEmpty
+            }
             $aliases = Get-DbaClientAlias
             It "alias is not included in results" {
                 $aliases.AliasName -notcontains 'dbatoolscialias1' | Should Be $true

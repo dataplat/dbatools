@@ -111,7 +111,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
         foreach ($f in $AllPublicFunctions) {
             $NotAllowed = Select-String -Path $f -Pattern 'Invoke-WebRequest | New-Object System.Net.WebClient|\.DownloadFile'
-            if ($NotAllowed.Count -gt 0) {
+            if ($NotAllowed.Count -gt 0 -and $f -notmatch 'DbaKbUpdate') {
                 It "$f should instead use Invoke-TlsWebRequest, see #4250" {
                     $NotAllowed.Count | Should -Be 0
                 }
@@ -167,7 +167,7 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
 Describe "$ModuleName Function Name" -Tag 'Compliance' {
     $FunctionNameMatchesErrors = @()
     $FunctionNameDbaErrors = @()
-    foreach($item in (Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1')) {
+    foreach ($item in (Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1')) {
         $Tokens = $null
         $Errors = $null
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
@@ -176,19 +176,19 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         if ($FunctionName -cne $BaseName) {
             $FunctionNameMatchesErrors += [pscustomobject]@{
                 FunctionName = $FunctionName
-                BaseName = $BaseName
-                Message = "$FunctionName is not equal to $BaseName"
+                BaseName     = $BaseName
+                Message      = "$FunctionName is not equal to $BaseName"
             }
         }
         If ($FunctionName -NotMatch "-Dba") {
             $FunctionNameDbaErrors += [pscustomobject]@{
                 FunctionName = $FunctionName
-                Message = "$FunctionName does not contain -Dba"
+                Message      = "$FunctionName does not contain -Dba"
             }
 
         }
     }
-    foreach($item in (Get-ChildItem -Path "$ModulePath\internal\functions" -Filter '*.ps*1' | Where-Object BaseName -ne 'Where-DbaObject')) {
+    foreach ($item in (Get-ChildItem -Path "$ModulePath\internal\functions" -Filter '*.ps*1' | Where-Object BaseName -ne 'Where-DbaObject')) {
         $Tokens = $null
         $Errors = $null
         $Ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
@@ -198,8 +198,8 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
             write-host "aaa $functionname bbb $basename"
             $FunctionNameMatchesErrors += [pscustomobject]@{
                 FunctionName = $FunctionName
-                BaseName = $BaseName
-                Message = "$FunctionName is not equal to $BaseName"
+                BaseName     = $BaseName
+                Message      = "$FunctionName is not equal to $BaseName"
             }
         }
     }

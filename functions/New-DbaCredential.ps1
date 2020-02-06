@@ -10,7 +10,11 @@ function New-DbaCredential {
         The target SQL Server(s)
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The Credential name
@@ -49,6 +53,9 @@ function New-DbaCredential {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/New-DbaCredential
+
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1
 
@@ -71,10 +78,16 @@ function New-DbaCredential {
         Creates a credential, "AzureBackupBlobStore", on Server1 using the Access Keys for Backup To URL. Identity must be the full URI for the blob container that will be the backup target. The SecurePassword supplied is one of the two Access Keys for the Azure Storage Account.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Name 'https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Store Container Name>' -Identity 'SHARED ACCESS SIGNATURE' -SecurePassword (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+        PS C:\> $sasParams = @{
+        >>SqlInstance = "server1"
+        >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
+        >>Identity = "SHARED ACCESS SIGNATURE"
+        >>SecurePassword = (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @sasParams
 
-        Create a credential on Server1 using a SAS token for Backup To URL. Name has to be the full URI for the blob store container that will be the backup target. The SecurePassword will be the Share Access Token (SAS) and passed in as a SecureString.
-
+        Create a credential on Server1 using a SAS token for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
+        The SecurePassword will be the Shared Access Token (SAS), as a SecureString.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -95,7 +108,7 @@ function New-DbaCredential {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $mappedClass = switch ($MappedClassType) {
             "CryptographicProvider" { 1 }
@@ -121,7 +134,11 @@ function New-DbaCredential {
                 if ($currentCred) {
                     if ($force) {
                         Write-Message -Level Verbose -Message "Dropping credential $Name"
-                        $currentCred.Drop()
+                        try {
+                            $currentCred.Drop()
+                        } catch {
+                            Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
+                        }
                     } else {
                         Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
                     }
@@ -141,7 +158,7 @@ function New-DbaCredential {
 
                         Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
                     } catch {
-                        Stop-Function -Message "Failed to create credential in $cred on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -InnerErrorRecord $_ -Continue
+                        Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
                     }
                 }
             }

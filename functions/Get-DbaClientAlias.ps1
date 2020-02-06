@@ -18,7 +18,7 @@ function Get-DbaClientAlias {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Alias
+        Tags: Server, Management
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -47,7 +47,6 @@ function Get-DbaClientAlias {
         PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
 
         Gets all SQL Server client aliases on Server1 and Server2
-
     #>
     [CmdletBinding()]
     param (
@@ -56,71 +55,67 @@ function Get-DbaClientAlias {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
+    begin {
+        $scriptblock = {
+            function Get-ItemPropertyValue {
+                param (
+                    [parameter()]
+                    [String]$Path,
+                    [parameter()]
+                    [String]$Name
+                )
+                (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            }
 
-    process {
-        foreach ($computer in $ComputerName) {
-            $scriptblock = {
+            $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 
-                function Get-ItemPropertyValue {
-                    param (
-                        [parameter()]
-                        [String]$Path,
-                        [parameter()]
-                        [String]$Name
-                    )
-                    (Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+            foreach ($basekey in $basekeys) {
+
+                <# DO NOT use Write-Message as this is inside of a scriptblock #>
+                if ((Test-Path $basekey) -eq $false) {
+                    continue
                 }
 
-                $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
+                $client = "$basekey\Client"
 
-                foreach ($basekey in $basekeys) {
+                if ((Test-Path $client) -eq $false) {
+                    continue
+                }
 
-                    if ((Test-Path $basekey) -eq $false) {
-                        <# DO NOT use Write-Message as this is inside of a script block #>
-                        Write-Warning "Base key ($basekey) does not exist. Quitting."
-                        continue
-                    }
+                $connect = "$client\ConnectTo"
 
-                    $client = "$basekey\Client"
+                if ((Test-Path $connect) -eq $false) {
+                    continue
+                }
 
-                    if ((Test-Path $client) -eq $false) {
-                        continue
-                    }
+                if ($basekey -like "*WOW64*") {
+                    $architecture = "32-bit"
+                } else {
+                    $architecture = "64-bit"
+                }
 
-                    $connect = "$client\ConnectTo"
-
-                    if ((Test-Path $connect) -eq $false) {
-                        continue
-                    }
-
-                    if ($basekey -like "*WOW64*") {
-                        $architecture = "32-bit"
-                    } else {
-                        $architecture = "64-bit"
-                    }
-
-                    # "Get SQL Server alias for $ComputerName for $architecture"
-                    $all = Get-Item -Path $connect
-                    foreach ($entry in $all.Property) {
-                        $value = Get-ItemPropertyValue -Path $connect -Name $entry
-                        $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
-                        if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
-
-                        [pscustomobject]@{
-                            ComputerName   = $env:COMPUTERNAME
-                            NetworkLibrary = $protocol
-                            ServerName     = $clean
-                            AliasName      = $entry
-                            AliasString    = $value
-                            Architecture   = $architecture
-                        }
+                # "Get SQL Server alias for $ComputerName for $architecture"
+                $all = Get-Item -Path $connect
+                foreach ($entry in $all.Property) {
+                    $value = Get-ItemPropertyValue -Path $connect -Name $entry
+                    $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
+                    if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
+                    [pscustomobject]@{
+                        ComputerName   = $env:COMPUTERNAME
+                        NetworkLibrary = $protocol
+                        ServerName     = $clean
+                        AliasName      = $entry
+                        AliasString    = $value
+                        Architecture   = $architecture
                     }
                 }
             }
-
+        }
+    }
+    process {
+        foreach ($computer in $ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
-                    Select-DefaultView -Property ComputerName, Architecture, NetworkLibrary, ServerName, AliasName
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }

@@ -14,7 +14,11 @@ function New-DbaDirectory {
         The Path to tests. Can be a file or directory.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -78,7 +82,7 @@ function New-DbaDirectory {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
         }
 
-        $sql = "EXEC master.dbo.xp_create_subdir'$path'"
+        $sql = "EXEC master.dbo.xp_create_subdir '$path'"
         Write-Message -Level Debug -Message $sql
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {

@@ -38,6 +38,10 @@ function Get-DbaRandomizedValue {
     .PARAMETER Symbol
         Use a symbol in front of the value i.e. $100,12
 
+    .PARAMETER Value
+        This is the value that needs to be used for several possible transformations.
+        One example is the subtype "Shuffling" where the value will be shuffled.
+
     .PARAMETER Locale
         Set the local to enable certain settings in the masking. The default is 'en'
 
@@ -100,6 +104,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
     )
@@ -158,14 +163,9 @@ function Get-DbaRandomizedValue {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            <# cant get this to work and it's expensive
-                if (-not $randomizerSubTypes) {
-                    $randomizerSubTypes = $script:randomizerTypes.Group | Where-Object Type -eq $RandomizerType | Select-Object SubType -ExpandProperty SubType
-                }
-                if ($RandomizerSubType -notin $randomizerSubTypes) {
-                    Stop-Function -Message "Invalid randomizer type with sub type combination" -Continue -Target $RandomizerSubType
-                }
-            #>
+            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
+            }
         }
 
         if (-not $Min) {
@@ -189,19 +189,19 @@ function Get-DbaRandomizedValue {
 
             switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
-                    if ($Min -lt -9223372036854775808) {
+                    if (-not $Min -or $Min -lt -9223372036854775808) {
                         $Min = -9223372036854775808
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 9223372036854775807) {
+                    if (-not $Max -or $Max -gt 9223372036854775807) {
                         $Max = 9223372036854775807
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
                 }
 
                 { $psitem -in 'bit', 'bool' } {
-                    if ($faker.System.Random.Bool()) {
+                    if ($script:faker.Random.Bool()) {
                         1
                     } else {
                         0
@@ -209,84 +209,84 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd")
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
-                    $faker.Finance.Amount($Min, $Max, $Precision)
+                    $script:faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
-                    if ($Min -lt -2147483648) {
+                    if (-not $Min -or $Min -lt -2147483648) {
                         $Min = -2147483648
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 2147483647) {
+                    if (-not $Max -or $Max -gt 2147483647 -or $Max -lt $Min) {
                         $Max = 2147483647
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
 
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
                     } else {
-                        ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 }
                 'smallint' {
-                    if ($Min -lt -32768) {
+                    if (-not $Min -or $Min -lt -32768) {
                         $Min = 32768
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 32767) {
+                    if (-not $Max -or $Max -gt 32767 -or $Max -lt $Min) {
                         $Max = 32767
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 'time' {
-                    ($faker.Date.Past()).ToString("HH:mm:ss.fffffff")
+                    ($script:faker.Date.Past()).ToString("HH:mm:ss.fffffff")
                 }
                 'tinyint' {
-                    if ($Min -lt 0) {
+                    if (-not $Min -or $Min -lt 0) {
                         $Min = 0
-                        Write-Message -Level Verbose -Message "Min value for data type is too small. Reset to $Min"
+                        Write-Message -Level Verbose -Message "Min value for data type is empty or too small. Reset to $Min"
                     }
 
-                    if ($Max -gt 255) {
+                    if (-not $Max -or $Max -gt 255 -or $Max -lt $Min) {
                         $Max = 255
-                        Write-Message -Level Verbose -Message "Max value for data type is too big. Reset to $Max"
+                        Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
 
-                    $faker.System.Random.Int($Min, $Max)
+                    $script:faker.Random.Int($Min, $Max)
                 }
                 { $psitem -in 'uniqueidentifier', 'guid' } {
-                    $faker.System.Random.Guid().Guid
+                    $script:faker.System.Random.Guid().Guid
                 }
                 'userdefineddatatype' {
                     if ($Max -eq 1) {
-                        if ($faker.System.Random.Bool()) {
+                        if ($script:faker.System.Random.Bool()) {
                             1
                         } else {
                             0
@@ -296,7 +296,7 @@ function Get-DbaRandomizedValue {
                     }
                 }
                 { $psitem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
-                    $faker.Random.String2($Min, $Max, $CharacterString)
+                    $script:faker.Random.String2($Min, $Max, $CharacterString)
                 }
 
             }
@@ -309,35 +309,35 @@ function Get-DbaRandomizedValue {
                 'address' {
 
                     if ($randSubType -in 'latitude', 'longitude') {
-                        $faker.Address.Latitude($Min, $Max)
+                        $script:faker.Address.Latitude($Min, $Max)
                     } elseif ($randSubType -eq 'zipcode') {
                         if ($Format) {
-                            $faker.Address.ZipCode("$($Format)")
+                            $script:faker.Address.ZipCode("$($Format)")
                         } else {
-                            $faker.Address.ZipCode()
+                            $script:faker.Address.ZipCode()
                         }
                     } else {
-                        $faker.Address.$RandomizerSubType()
+                        $script:faker.Address.$RandomizerSubType()
                     }
 
                 }
                 'commerce' {
                     if ($randSubType -eq 'categories') {
-                        $faker.Commerce.Categories($Max)
+                        $script:faker.Commerce.Categories($Max)
                     } elseif ($randSubType -eq 'departments') {
-                        $faker.Commerce.Department($Max)
+                        $script:faker.Commerce.Department($Max)
                     } elseif ($randSubType -eq 'price') {
-                        $faker.Commerce.Price($min, $Max, $Precision, $Symbol)
+                        $script:faker.Commerce.Price($min, $Max, $Precision, $Symbol)
                     } else {
-                        $faker.Commerce.$RandomizerSubType()
+                        $script:faker.Commerce.$RandomizerSubType()
                     }
 
                 }
                 'company' {
-                    $faker.Company.$RandomizerSubType()
+                    $script:faker.Company.$RandomizerSubType()
                 }
                 'database' {
-                    $faker.Database.$RandomizerSubType()
+                    $script:faker.Database.$RandomizerSubType()
                 }
                 'date' {
                     if ($randSubType -eq 'between') {
@@ -353,7 +353,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -363,9 +363,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -375,13 +375,13 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            $faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
 
                     } elseif ($randSubType -eq 'recent') {
-                        $faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -392,34 +392,34 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         } else {
-                            ($faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
                         }
                     } else {
-                        $faker.Date.$RandomizerSubType()
+                        $script:faker.Date.$RandomizerSubType()
                     }
                 }
                 'finance' {
                     if ($randSubType -eq 'account') {
-                        $faker.Finance.Account($Max)
+                        $script:faker.Finance.Account($Max)
                     } elseif ($randSubType -eq 'amount') {
-                        $faker.Finance.Amount($Min, $Max, $Precision)
+                        $script:faker.Finance.Amount($Min, $Max, $Precision)
                     } else {
-                        $faker.Finance.$RandomizerSubType()
+                        $script:faker.Finance.$RandomizerSubType()
                     }
                 }
                 'hacker' {
-                    $faker.Hacker.$RandomizerSubType()
+                    $script:faker.Hacker.$RandomizerSubType()
                 }
                 'image' {
-                    $faker.Image.$RandomizerSubType()
+                    $script:faker.Image.$RandomizerSubType()
                 }
                 'internet' {
                     if ($randSubType -eq 'password') {
-                        $faker.Internet.Password($Max)
+                        $script:faker.Internet.Password($Max)
                     } else {
-                        $faker.Internet.$RandomizerSubType()
+                        $script:faker.Internet.$RandomizerSubType()
                     }
                 }
                 'lorem' {
@@ -429,7 +429,7 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraph($Min)
+                        $script:faker.Lorem.Paragraph($Min)
 
                     } elseif ($randSubType -eq 'paragraphs') {
                         if ($Min -lt 1) {
@@ -437,19 +437,19 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Paragraphs($Min)
+                        $script:faker.Lorem.Paragraphs($Min)
 
                     } elseif ($randSubType -eq 'letter') {
-                        $faker.Lorem.Letter($Max)
+                        $script:faker.Lorem.Letter($Max)
                     } elseif ($randSubType -eq 'lines') {
-                        $faker.Lorem.Lines($Max)
+                        $script:faker.Lorem.Lines($Max)
                     } elseif ($randSubType -eq 'sentence') {
                         if ($Min -lt 1) {
                             $Min = 1
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentence($Min, $Max)
+                        $script:faker.Lorem.Sentence($Min, $Max)
 
                     } elseif ($randSubType -eq 'sentences') {
                         if ($Min -lt 1) {
@@ -457,49 +457,59 @@ function Get-DbaRandomizedValue {
                             Write-Message -Level Verbose -Message "Min value for sub type is too small. Reset to $Min"
                         }
 
-                        $faker.Lorem.Sentences($Min, $Max)
+                        $script:faker.Lorem.Sentences($Min, $Max)
 
                     } elseif ($randSubType -eq 'slug') {
-                        $faker.Lorem.Slug($Max)
+                        $script:faker.Lorem.Slug($Max)
                     } elseif ($randSubType -eq 'words') {
-                        $faker.Lorem.Words($Max)
+                        $script:faker.Lorem.Words($Max)
                     } else {
-                        $faker.Lorem.$RandomizerSubType()
+                        $script:faker.Lorem.$RandomizerSubType()
                     }
                 }
                 'name' {
-                    $faker.Name.$RandomizerSubType()
+                    $script:faker.Name.$RandomizerSubType()
                 }
                 'person' {
-                    $faker.Person.$RandomizerSubType
+                    if ($randSubType -eq "phone") {
+                        if ($Format) {
+                            $script:faker.Phone.PhoneNumber($Format)
+                        } else {
+                            $script:faker.Phone.PhoneNumber()
+                        }
+                    } else {
+                        $script:faker.Person.$RandomizerSubType
+                    }
                 }
                 'phone' {
                     if ($Format) {
-                        $faker.Phone.PhoneNumber($Format)
+                        $script:faker.Phone.PhoneNumber($Format)
                     } else {
-                        $faker.Phone.PhoneNumber()
+                        $script:faker.Phone.PhoneNumber()
                     }
                 }
                 'random' {
                     if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
-                        $faker.Random.$RandomizerSubType($Min, $Max)
+                        $script:faker.Random.$RandomizerSubType($Min, $Max)
                     } elseif ($randSubType -eq 'bytes') {
-                        $faker.Random.Bytes($Max)
+                        $script:faker.Random.Bytes($Max)
                     } elseif ($randSubType -in 'string', 'string2') {
-                        $faker.Random.$RandomizerSubType($Min, $Max, $CharacterString)
+                        $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
+                    } elseif ($randSubType -eq 'shuffle') {
+                        $script:faker.Random.Shuffle($Value)
                     } else {
-                        $faker.Random.$RandomizerSubType()
+                        $script:faker.Random.$RandomizerSubType()
                     }
                 }
                 'rant' {
                     if ($randSubType -eq 'reviews') {
-                        $faker.Rant.Review($faker.Commerce.Product())
+                        $script:faker.Rant.Review($script:faker.Commerce.Product())
                     } elseif ($randSubType -eq 'reviews') {
-                        $faker.Rant.Reviews($faker.Commerce.Product(), $Max)
+                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max)
                     }
                 }
                 'system' {
-                    $faker.System.$RandomizerSubType()
+                    $script:faker.System.$RandomizerSubType()
                 }
             }
         }

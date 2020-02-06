@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabases', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabase', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -63,7 +63,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Executes with Exclude Parameters" {
         It "Should exclude databases when exporting" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Match '\nGo\r'
@@ -75,7 +75,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Match 'Job'
         }
         It "Should exclude Go when exporting" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -BatchSeparator '' -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -BatchSeparator '' -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Not Match 'Go'
@@ -113,25 +113,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Exports file to random and specified paths" {
         It "Should export file to the configured path" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabases -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.DirectoryName
             $allfiles += $file.FullName
             $results | Should Be $DefaultExportPath
         }
         It "Should export file to custom folder path" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -Path $AltExportPath -ExcludeDatabases -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Path $AltExportPath -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.DirectoryName
             $allfiles += $file.FullName
             $results | Should Be $AltExportPath
         }
         It "Should export file to custom file path" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabases -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.Name
             $allfiles += $file.FullName
             $results | Should Be "Dbatoolsci_login_CustomFile.sql"
         }
         It "Should export file to custom file path and Append" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabases -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabase -WarningAction SilentlyContinue
             $allfiles += $file.FullName
             $file.CreationTimeUtc.Ticks | Should BeLessThan $file.LastWriteTimeUtc.Ticks
         }

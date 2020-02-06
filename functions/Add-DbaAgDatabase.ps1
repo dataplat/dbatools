@@ -6,7 +6,7 @@ function Add-DbaAgDatabase {
     .DESCRIPTION
         Adds a database to an availability group on a SQL Server instance.
 
-        Before joining the replica databases to the availablity group, the databases will be initialized with automatic seeding or full/log backup.
+        Before joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -14,7 +14,11 @@ function Add-DbaAgDatabase {
         This should be the primary replica.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database or databases to add.
@@ -26,7 +30,11 @@ function Add-DbaAgDatabase {
         Not required - the command will figure this out. But if you'd like to be explicit about replicas, this will help.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
@@ -109,6 +117,11 @@ function Add-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
                 Stop-Function -Message "You must specify one or more databases and one Availability Group when using the SqlInstance parameter."

@@ -11,7 +11,11 @@ function Get-DbaDbExtentDiff {
         The target SQL Server instance
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -39,7 +43,7 @@ function Get-DbaDbExtentDiff {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-        http://dbatools.io/Get-DbaDbExtentDiff
+        https://dbatools.io/Get-DbaDbExtentDiff
 
     .EXAMPLE
         PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
@@ -148,7 +152,7 @@ function Get-DbaDbExtentDiff {
                             $pageID = $extentID + 6
                             $DBCCPageQuery = "DBCC PAGE ('$($results.dbname)', $($results.file_id), $pageID, 3)  WITH TABLERESULTS, NO_INFOMSGS"
                             $DBCCPageResults = $server.Query($DBCCPageQuery)
-                            $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*'}
+                            $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*' }
                             $extentID = $extentID + 511232
                         }
                     }

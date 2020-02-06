@@ -4,7 +4,7 @@ function Test-DbaMaxDop {
         Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
     .DESCRIPTION
-        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
+        Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator/),
         this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
         For SQL Server 2016 shows:
@@ -21,7 +21,11 @@ function Test-DbaMaxDop {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -116,12 +120,24 @@ function Test-DbaMaxDop {
                 }
             } else {
                 #Server with multiple NUMA nodes
-                if (($numberOfCores / $NumaNodes) -lt 8) {
-                    # Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
-                    $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                if ($server.VersionMajor -ge 13) {
+                    if (($numberOfCores / $NumaNodes) -lt 16) {
+                        # On SQL2016+ - Less than 16 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
+                        $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                    } else {
+                        # Greater than 16 logical processors per NUMA node - Keep MAXDOP at 16
+                        $recommendedMaxDop = 16
+                    }
                 } else {
                     # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
+                    if (($numberOfCores / $NumaNodes) -lt 8) {
+                        # On previous SQL Server versions - Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
+                        $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                    } else {
+                        # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
+                        $recommendedMaxDop = 8
+                    }
                 }
             }
 
@@ -165,7 +181,7 @@ function Test-DbaMaxDop {
                 #$hasScopedConfig = $true
                 Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
-                $databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
+                $databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 
                 foreach ($database in $databases) {
                     if ($database.IsAccessible -eq $false) {
@@ -188,7 +204,7 @@ function Test-DbaMaxDop {
                         NumaNodes             = $NumaNodes
                         NumberOfCores         = $numberOfCores
                         Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
-                    }  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
                 }
             }
         }

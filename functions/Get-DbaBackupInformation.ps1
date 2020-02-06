@@ -26,7 +26,11 @@ function Get-DbaBackupInformation {
         The SQL Server instance to be used to read the headers of the backup files
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DatabaseName
         An array of Database Names to filter by. If empty all databases are returned.
@@ -156,7 +160,7 @@ function Get-DbaBackupInformation {
             )
 
             $StringBuilder = New-Object System.Text.StringBuilder
-            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object {
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString)) | ForEach-Object {
                 [Void]$StringBuilder.Append($_.ToString("x2"))
             }
             return $StringBuilder.ToString()
@@ -176,7 +180,7 @@ function Get-DbaBackupInformation {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
         }
@@ -190,7 +194,7 @@ function Get-DbaBackupInformation {
         if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
             foreach ($f in $Path) {
                 if (Test-Path -Path $f) {
-                    $groupResults += Import-CliXml -Path $f
+                    $groupResults += Import-Clixml -Path $f
                     foreach ($group in  $groupResults) {
                         $group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
                         $group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
@@ -266,7 +270,7 @@ function Get-DbaBackupInformation {
 
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
-                $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
             }
 
             if ($Files.Count -gt 0) {
@@ -287,7 +291,7 @@ function Get-DbaBackupInformation {
                     $description = switch ($header.BackupType) {
                         1 { "Full" }
                         2 { "Differential" }
-                        3 { "Log"}
+                        3 { "Log" }
                     }
                 }
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
@@ -318,11 +322,11 @@ function Get-DbaBackupInformation {
             }
         }
         if (Test-Bound 'SourceInstance') {
-            $groupResults = $groupResults | Where-Object {$_.InstanceName -in $SourceInstance}
+            $groupResults = $groupResults | Where-Object { $_.InstanceName -in $SourceInstance }
         }
 
         if (Test-Bound 'DatabaseName') {
-            $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
+            $groupResults = $groupResults | Where-Object { $_.Database -in $DatabaseName }
         }
         if ($true -eq $Anonymise) {
             foreach ($group in $groupResults) {
@@ -334,12 +338,12 @@ function Get-DbaBackupInformation {
                 $group.Path = Get-HashString -InString  $group.Path
                 $group.FullName = Get-HashString -InString $group.FullName
                 $group.FileList = ($group.FileList | Select-Object Type,
-                    @{Name = "LogicalName"; Expression = {Get-HashString -InString $_."LogicalName"}},
-                    @{Name = "PhysicalName"; Expression = {Get-HashString -InString $_."PhysicalName"}})
+                    @{Name = "LogicalName"; Expression = { Get-HashString -InString $_."LogicalName" } },
+                    @{Name = "PhysicalName"; Expression = { Get-HashString -InString $_."PhysicalName" } })
             }
         }
         if ((Test-Bound -parameterName ExportPath) -and $null -ne $ExportPath) {
-            $groupResults | Export-CliXml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
+            $groupResults | Export-Clixml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
             if ($true -ne $PassThru) {
                 return
             }

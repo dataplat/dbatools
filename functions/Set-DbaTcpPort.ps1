@@ -93,7 +93,7 @@ function Set-DbaTcpPort {
             $tcp = $wmiinstance.ServerProtocols | Where-Object {
                 $_.DisplayName -eq 'TCP/IP'
             }
-            $IpAddress = $tcp.IpAddresses | where-object {
+            $IpAddress = $tcp.IpAddresses | Where-Object {
                 $_.IpAddress -eq $IpAddress
             }
             $tcpport = $IpAddress.IpAddressProperties | Where-Object {

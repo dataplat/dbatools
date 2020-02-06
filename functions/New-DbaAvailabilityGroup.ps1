@@ -6,18 +6,18 @@ function New-DbaAvailabilityGroup {
     .DESCRIPTION
         Automates the creation of availability groups.
 
-    	* Checks prerequisites
-    	* Creates Availability Group and adds primary replica
-    	* Grants cluster permissions if necessary
-    	* Adds secondary replica if supplied
-    	* Adds databases if supplied
-    		* Performs backup/restore if seeding mode is manual
-    		* Performs backup to NUL if seeding mode is automatic
-    	* Adds listener to primary if supplied
-    	* Joins secondaries to availability group
-    	* Grants endpoint connect permissions to service accounts
-    	* Grants CreateAnyDatabase permissions if seeding mode is automatic
-    	* Returns Availability Group object from primary
+        * Checks prerequisites
+        * Creates Availability Group and adds primary replica
+        * Grants cluster permissions if necessary
+        * Adds secondary replica if supplied
+        * Adds databases if supplied
+            * Performs backup/restore if seeding mode is manual
+            * Performs backup to NUL if seeding mode is automatic
+        * Adds listener to primary if supplied
+        * Joins secondaries to availability group
+        * Grants endpoint connect permissions to service accounts
+        * Grants CreateAnyDatabase permissions if seeding mode is automatic
+        * Returns Availability Group object from primary
 
         NOTE: If a backup / restore is performed, the backups will be left intact on the network share.
 
@@ -27,13 +27,21 @@ function New-DbaAvailabilityGroup {
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER PrimarySqlCredential
-        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Secondary
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the Availability Group.
@@ -146,6 +154,7 @@ function New-DbaAvailabilityGroup {
     .NOTES
         Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -254,7 +263,7 @@ function New-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         $stepCounter = $wait = 0

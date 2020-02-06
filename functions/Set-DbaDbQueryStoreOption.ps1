@@ -10,7 +10,11 @@ function Set-DbaDbQueryStoreOption {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object used to connect to the SQL Server as a different user.
+        SqlLogin to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -42,6 +46,24 @@ function Set-DbaDbQueryStoreOption {
     .PARAMETER StaleQueryThreshold
         Set the stale query threshold in days.
 
+    .PARAMETER MaxPlansPerQuery
+        Set the max plans per query captured and kept.
+
+    .PARAMETER WaitStatsCaptureMode
+        Set wait stats capture on or off.
+
+    .PARAMETER CustomCapturePolicyExecutionCount
+        Set the custom capture policy execution count. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyTotalCompileCPUTimeMS
+        Set the custom capture policy total compile CPU time. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyTotalExecutionCPUTimeMS
+        Set the custom capture policy total execution CPU time. Only available in SQL Server 2019 and above.
+
+    .PARAMETER CustomCapturePolicyStaleThresholdHours
+        Set the custom capture policy stale threshold. Only available in SQL Server 2019 and above.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
 
@@ -59,14 +81,14 @@ function Set-DbaDbQueryStoreOption {
 
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar (@evdlaar)
+        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @TracyBoggiano )
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaQueryStoreOptions
+        https://dbatools.io/Set-DbaDbQueryStoreOption
 
     .EXAMPLE
         PS C:\> Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
@@ -103,11 +125,18 @@ function Set-DbaDbQueryStoreOption {
         [int64]$FlushInterval,
         [int64]$CollectionInterval,
         [int64]$MaxSize,
-        [ValidateSet('Auto', 'All')]
+        [ValidateSet('Auto', 'All', 'None', 'Custom')]
         [string[]]$CaptureMode,
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
+        [int64]$MaxPlansPerQuery,
+        [ValidateSet('On', 'Off')]
+        [string[]]$WaitStatsCaptureMode,
+        [int64]$CustomCapturePolicyExecutionCount,
+        [int64]$CustomCapturePolicyTotalCompileCPUTimeMS,
+        [int64]$CustomCapturePolicyTotalExecutionCPUTimeMS,
+        [int64]$CustomCapturePolicyStaleThresholdHours,
         [switch]$EnableException
     )
     begin {
@@ -115,12 +144,12 @@ function Set-DbaDbQueryStoreOption {
     }
 
     process {
-        if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
+        if (-not $Database -and -not $ExcludeDatabase -and -not $AllDatabases) {
             Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
             return
         }
 
-        if (!$State -and !$FlushInterval -and !$CollectionInterval -and !$MaxSize -and !$CaptureMode -and !$CleanupMode -and !$StaleQueryThreshold) {
+        if (-not $State -and -not $FlushInterval -and -not $CollectionInterval -and -not $MaxSize -and -not $CaptureMode -and -not $CleanupMode -and -not $StaleQueryThreshold -and -not $MaxPlansPerQuery -and -not $WaitStatsCaptureMode -and -not $CustomCapturePolicyExecutionCount -and -not $CustomCapturePolicyTotalCompileCPUTimeMS -and -not $CustomCapturePolicyTotalExecutionCPUTimeMS -and -not $CustomCapturePolicyStaleThresholdHours) {
             Stop-Function -Message "You must specify something to change."
             return
         }
@@ -128,9 +157,16 @@ function Set-DbaDbQueryStoreOption {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-
             } catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($CaptureMode -contains "Custom" -and $server.VersionMajor -lt 15) {
+                Stop-Function -Message "Custom capture mode can onlly be set in SQL Server 2019 and above" -Continue
+            }
+
+            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and $server.VersionMajor -lt 15) {
+                Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -193,19 +229,67 @@ function Set-DbaDbQueryStoreOption {
                     }
                 }
 
+                $query = ""
+
+                if ($server.VersionMajor -ge 14) {
+                    if ($MaxPlansPerQuery) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxPlansPerQuery to $($MaxPlansPerQuery)")) {
+                            $query += "ALTER DATABASE $db SET QUERY_STORE = ON (MAX_PLANS_PER_QUERY = $($MaxPlansPerQuery)); "
+                        }
+                    }
+
+                    if ($WaitStatsCaptureMode) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing WaitStatsCaptureMode to $($WaitStatsCaptureMode)")) {
+                            if ($WaitStatsCaptureMode -eq "ON" -or $WaitStatsCaptureMode -eq "OFF") {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (WAIT_STATS_CAPTURE_MODE = $($WaitStatsCaptureMode)); "
+                            }
+                        }
+                    }
+                }
+
+                if ($server.VersionMajor -ge 15) {
+                    if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
+                        if ($CustomCapturePolicyStaleThresholdHours) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON ( QUERY_CAPTURE_POLICY = ( STALE_CAPTURE_POLICY_THRESHOLD = $($CustomCapturePolicyStaleThresholdHours))); "
+                            }
+                        }
+
+                        if ($CustomCapturePolicyExecutionCount) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyExecutionCount to $($CustomCapturePolicyExecutionCount)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (EXECUTION_COUNT = $($CustomCapturePolicyExecutionCount))); "
+                            }
+                        }
+                        if ($CustomCapturePolicyTotalCompileCPUTimeMS) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyTotalCompileCPUTimeMS to $($CustomCapturePolicyTotalCompileCPUTimeMS)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (TOTAL_COMPILE_CPU_TIME_MS = $($CustomCapturePolicyTotalCompileCPUTimeMS))); "
+                            }
+                        }
+
+                        if ($CustomCapturePolicyTotalExecutionCPUTimeMS) {
+                            if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyTotalExecutionCPUTimeMS to $($CustomCapturePolicyTotalExecutionCPUTimeMS)")) {
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON (QUERY_CAPTURE_POLICY = (TOTAL_EXECUTION_CPU_TIME_MS = $($CustomCapturePolicyTotalExecutionCPUTimeMS))); "
+                            }
+                        }
+                    }
+                }
+
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
                     try {
                         $db.QueryStoreOptions.Alter()
                         $db.Alter()
                         $db.Refresh()
+
+                        if ($query -ne "") {
+                            $db.Query($query, $db.Name)
+                        }
                     } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
                     }
                 }
 
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOption")) {
-                    # Display resulting changes
                     Get-DbaDbQueryStoreOption -SqlInstance $server -Database $db.name -Verbose:$false
                 }
             }

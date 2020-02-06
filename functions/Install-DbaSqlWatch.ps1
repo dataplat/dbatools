@@ -11,7 +11,11 @@ function Install-DbaSqlWatch {
         SQL Server name or SMO object representing the SQL Server to connect to.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database to install SqlWatch into. Defaults to SQLWATCH.
@@ -38,11 +42,14 @@ function Install-DbaSqlWatch {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SqlWatch
+        Tags: Community, SqlWatch
         Author: Ken K (github.com/koglerk)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://sqlwatch.io
 
     .LINK
         https://dbatools.io/Install-DbaSqlWatch
@@ -85,7 +92,7 @@ function Install-DbaSqlWatch {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $stepCounter = 0
 

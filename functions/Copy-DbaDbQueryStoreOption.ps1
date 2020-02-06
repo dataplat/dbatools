@@ -10,7 +10,11 @@ function Copy-DbaDbQueryStoreOption {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2016 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SourceDatabase
         Specifies the database to copy the Query Store configuration from.
@@ -19,7 +23,11 @@ function Copy-DbaDbQueryStoreOption {
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2016 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationDatabase
         Specifies a list of databases that will receive a copy of the Query Store configuration of the SourceDatabase.
@@ -43,14 +51,14 @@ function Copy-DbaDbQueryStoreOption {
 
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar (@evdlaar)
+        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @Tracy Boggiano)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-QueryStoreConfig
+        https://dbatools.io/Copy-DbaDbQueryStoreOption
 
     .EXAMPLE
         PS C:\> Copy-DbaDbQueryStoreOption -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
@@ -94,6 +102,14 @@ function Copy-DbaDbQueryStoreOption {
             # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
             $SourceQSConfig = Get-DbaDbQueryStoreOption -SqlInstance $sourceServer -Database $SourceDatabase
 
+            $db = Get-DbaDatabase -SqlInstance $sourceServer -Database $SourceDatabase
+
+            if ($sourceServer.VersionMajor -eq 14) {
+                $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $db.Name)
+            } elseif ($sourceServer.VersionMajor -ge 15) {
+                $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $db.Name)
+            }
+
             if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
                 Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases." -Continue
             }
@@ -103,7 +119,7 @@ function Copy-DbaDbQueryStoreOption {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -146,22 +162,56 @@ function Copy-DbaDbQueryStoreOption {
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     if ($PSCmdlet.ShouldProcess("$db", "Copying QueryStoreConfig")) {
                         try {
-
-                            $setDbaDbQueryStoreOptionParameters = @{
-
-                                SqlInstance         = $destinationServer;
-                                SqlCredential       = $DestinationSqlCredential;
-                                Database            = $db.name;
-                                State               = $SourceQSConfig.ActualState;
-                                FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds;
-                                CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes;
-                                MaxSize             = $SourceQSConfig.MaxStorageSizeInMB;
-                                CaptureMode         = $SourceQSConfig.QueryCaptureMode;
-                                CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode;
-                                StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays;
+                            if ($sourceServer.VersionMajor -eq 13) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance         = $destinationServer
+                                    SqlCredential       = $DestinationSqlCredential
+                                    Database            = $db.name
+                                    State               = $SourceQSConfig.ActualState
+                                    FlushInterval       = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval  = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize             = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode         = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays
+                                }
+                            } elseif ($sourceServer.VersionMajor -eq 14) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance          = $destinationServer
+                                    SqlCredential        = $DestinationSqlCredential
+                                    Database             = $db.name
+                                    State                = $SourceQSConfig.ActualState
+                                    FlushInterval        = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval   = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize              = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode          = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode          = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold  = $SourceQSConfig.StaleQueryThresholdInDays
+                                    MaxPlansPerQuery     = $QueryStoreOptions.MaxPlansPerQuery
+                                    WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode
+                                }
+                            } elseif ($sourceServer.VersionMajor -ge 15) {
+                                $setDbaDbQueryStoreOptionParameters = @{
+                                    SqlInstance                                = $destinationServer
+                                    SqlCredential                              = $DestinationSqlCredential
+                                    Database                                   = $db.name
+                                    State                                      = $SourceQSConfig.ActualState
+                                    FlushInterval                              = $SourceQSConfig.DataFlushIntervalInSeconds
+                                    CollectionInterval                         = $SourceQSConfig.StatisticsCollectionIntervalInMinutes
+                                    MaxSize                                    = $SourceQSConfig.MaxStorageSizeInMB
+                                    CaptureMode                                = $SourceQSConfig.QueryCaptureMode
+                                    CleanupMode                                = $SourceQSConfig.SizeBasedCleanupMode
+                                    StaleQueryThreshold                        = $SourceQSConfig.StaleQueryThresholdInDays
+                                    MaxPlansPerQuery                           = $QueryStoreOptions.MaxPlansPerQuery
+                                    WaitStatsCaptureMode                       = $QueryStoreOptions.WaitStatsCaptureMode
+                                    CustomCapturePolicyExecutionCount          = $QueryStoreOptions.CustomCapturePolicyExecutionCount
+                                    CustomCapturePolicyTotalCompileCPUTimeMS   = $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
+                                    CustomCapturePolicyTotalExecutionCPUTimeMS = $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
+                                    CustomCapturePolicyStaleThresholdHours     = $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
+                                }
                             }
 
-                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters;
+                            $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters
                             $copyQueryStoreStatus.Status = "Successful"
                         } catch {
                             $copyQueryStoreStatus.Status = "Failed"

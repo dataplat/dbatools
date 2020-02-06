@@ -65,7 +65,7 @@ function New-DbaClientAlias {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter[]]$ServerName,
+        [DbaInstanceParameter]$ServerName,
         [parameter(Mandatory)]
         [string]$Alias,
         [ValidateSet("TCPIP", "NamedPipes")]
@@ -86,10 +86,6 @@ function New-DbaClientAlias {
 
             foreach ($basekey in $basekeys) {
                 if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
-
-                if ((Test-Path $basekey) -eq $false) {
-                    throw "Base key ($basekey) does not exist. Quitting."
-                }
 
                 $client = "$basekey\Client"
 
@@ -139,8 +135,8 @@ function New-DbaClientAlias {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
             }
-        }
 
-        Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+            Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
+        }
     }
 }

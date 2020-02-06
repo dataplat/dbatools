@@ -43,6 +43,15 @@ Function Invoke-DbaAdvancedUpdate {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .NOTES
+        Tags: Instance, Update
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Invoke-DbaAdvancedUpdate
+
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions
 
@@ -111,11 +120,6 @@ Function Invoke-DbaAdvancedUpdate {
         }
         if ($Credential) {
             $execParams.Credential = $Credential
-        } else {
-            if (Test-Bound -Not Authentication) {
-                # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
-                $execParams.Authentication = "Default"
-            }
         }
 
         if (!$ExtractPath) {
@@ -177,7 +181,7 @@ Function Invoke-DbaAdvancedUpdate {
             try {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
                 $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
-                    if ($args[0] -like '*\dbatools_KB*_Extract' -and (Test-Path $args[0])) {
+                    if ($args[0] -like '*\dbatools_KB*_Extract*' -and (Test-Path $args[0])) {
                         Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
                     }
                 } -Raw -ArgumentList $spExtractPath

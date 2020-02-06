@@ -14,7 +14,11 @@ function Get-DbaAgentJobHistory {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
@@ -216,17 +220,17 @@ function Get-DbaAgentJobHistory {
                 }
 
                 if ($WithOutputFile) {
-                    $outmap = @{}
+                    $outmap = @{ }
                     $outfiles = Get-DbaAgentJobOutputFile -SqlInstance $Server -SqlCredential $SqlCredential -Job $Job
 
                     foreach ($out in $outfiles) {
                         if (!$outmap.ContainsKey($out.Job)) {
-                            $outmap[$out.Job] = @{}
+                            $outmap[$out.Job] = @{ }
                         }
                         $outmap[$out.Job][$out.StepId] = $out.OutputFileName
                     }
                 }
-                $outcome = [pscustomobject]@{}
+                $outcome = [pscustomobject]@{ }
                 foreach ($execution in $executions) {
                     $status = switch ($execution.RunStatus) {
                         0 { "Failed" }

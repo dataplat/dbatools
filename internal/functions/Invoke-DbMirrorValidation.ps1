@@ -60,7 +60,7 @@ function Invoke-DbMirrorValidation {
 
             Do things
 
-       #>
+    #>
     [CmdletBinding()]
     param (
         [DbaInstanceParameter]$Primary,

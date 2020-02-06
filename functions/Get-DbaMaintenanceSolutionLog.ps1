@@ -10,7 +10,11 @@ function Get-DbaMaintenanceSolutionLog {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogType
         Accepts 'IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck'. ATM only IndexOptimize parsing is available
@@ -19,7 +23,7 @@ function Get-DbaMaintenanceSolutionLog {
         Consider only files generated since this date
 
     .PARAMETER Path
-        Where to search for log files. By default it's the SQL instance errorlogpath path
+        Where to search for log files. By default it's the SQL instance error log path path
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -27,12 +31,14 @@ function Get-DbaMaintenanceSolutionLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Ola, Maintenance
+        Tags: Community, OlaHallengren
         Author: Klaas Vandenberghe (@powerdbaklaas) | Simone Bizzotto ( @niphlod )
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        https://ola.hallengren.com
 
     .LINK
         https://dbatools.io/Get-DbaMaintenanceSolutionLog

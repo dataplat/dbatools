@@ -93,3 +93,11 @@ GNUmakefile       text
 *.PDF   diff=astextplain
 *.rtf   diff=astextplain
 *.RTF   diff=astextplain
+
+
+# linguist overrides
+*.cs linguist-language=C#
+*.ps1 linguist-language=Powershell
+*.psd1 linguist-language=Powershell
+*.psm1 linguist-language=Powershell
+*.sql linguist-language=TSQL

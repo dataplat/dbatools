@@ -23,7 +23,11 @@ function Test-DbaBuild {
         Target any number of instances, in order to return their compliance state.
 
     .PARAMETER SqlCredential
-        When connecting to an instance, use the credentials specified.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Update
         Looks online for the most up to date reference, replacing the local one.
@@ -141,7 +145,7 @@ function Test-DbaBuild {
             $MaxBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>SP|CU)$'
             $pieces = $MaxBehind.Split(' ')	| Where-Object { $_ }
             try {
-                $ParsedMaxBehind = @{}
+                $ParsedMaxBehind = @{ }
                 foreach ($piece in $pieces) {
                     $pieceMatch = $MaxBehindValidator.Match($piece)
                     if ($pieceMatch.Success -ne $true) {

@@ -10,7 +10,11 @@ function Get-DbaAgentJobCategory {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
         The name of the category to filter out. If no category is used all categories will be returned.
@@ -57,7 +61,7 @@ function Get-DbaAgentJobCategory {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
@@ -76,43 +80,28 @@ function Get-DbaAgentJobCategory {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # get all the job categories
             $jobCategories = $server.JobServer.JobCategories |
                 Where-Object {
-                ($_.Name -in $Category -or !$Category) -and
-                ($_.CategoryType -in $CategoryType -or !$CategoryType)
-            }
+                    ($_.Name -in $Category -or !$Category) -and
+                    ($_.CategoryType -in $CategoryType -or !$CategoryType)
+                }
 
-            # Set the default output
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
 
-            # Loop through each of the categories
             try {
                 foreach ($cat in $jobCategories) {
+                    $jobCount = ($server.JobServer.Jobs | Where-Object { $_.CategoryID -eq $cat.ID }).Count
 
-                    # Get the jobs associated with the category
-                    $jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
-
-                    # Add new properties to the category object
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $jobCount
 
-                    # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
                 }
             } catch {
-                Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
+                Stop-Function -Message "Something went wrong getting the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
             }
-
-        } # for each instance
-
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished retrieving job category." -Level Verbose
+        }
     }
-
 }

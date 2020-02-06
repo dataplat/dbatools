@@ -11,7 +11,11 @@ function Get-DbaSchemaChangeHistory {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -102,28 +106,32 @@ function Get-DbaSchemaChangeHistory {
                     Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
                 }
 
-                $sql = "select SERVERPROPERTY('MachineName') AS ComputerName,
-                        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                        SERVERPROPERTY('ServerName') AS SqlInstance,
-                        tt.databasename as 'DatabaseName',
-                        starttime as 'DateModified',
-                        Sessionloginname as 'LoginName',
-                        NTusername as 'UserName',
-                        applicationname as 'ApplicationName',
-                        case eventclass
-                            When '46' Then 'Create'
-                            when '47' Then 'Drop'
-                            when '164' then 'Alter'
-                        end as 'DDLOperation',
-                        s.name+'.'+o.name as 'Object',
-                        o.type_desc as 'ObjectType'
-                        from
-                        sys.objects o  inner join
-                        sys.schemas s on s.schema_id=o.schema_id
-                        cross apply (select * from ::fn_trace_gettable('$($TraceFile.path)',default) where ObjectID=o.object_id ) tt
-                        where tt.objecttype not in (21587)
-                        and tt.DatabaseID=db_id()
-                        and tt.EventSubClass=0"
+                $sql = "SELECT  SERVERPROPERTY('MachineName') ComputerName
+                      , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') InstanceName
+                      , SERVERPROPERTY('ServerName') SqlInstance
+                      , tt.DatabaseName DatabaseName
+                      , tt.StartTime DateModified
+                      , tt.SessionLoginName LoginName
+                      , tt.NTUserName UserName
+                      , tt.ApplicationName ApplicationName
+                      , CASE tt.EventClass
+                             WHEN '46' THEN 'Create'
+                             WHEN '47' THEN 'Drop'
+                             WHEN '164' THEN 'Alter'
+                        END DDLOperation
+                      , s.name + '.' + o.name Object
+                      , o.type_desc ObjectType
+                FROM    sys.objects o
+                        INNER JOIN sys.schemas s ON
+                            s.schema_id = o.schema_id
+                        CROSS APPLY (
+                    SELECT  *
+                    FROM    ::fn_trace_gettable('$($TraceFile.path)',default)
+                    WHERE   ObjectID = o.object_id
+                ) tt
+                WHERE   tt.ObjectType NOT IN ( 21587 )
+                        AND tt.DatabaseID = DB_ID()
+                        AND tt.EventSubClass = 0"
 
                 if ($null -ne $since) {
                     $sql = $sql + " and tt.StartTime>'$Since' "

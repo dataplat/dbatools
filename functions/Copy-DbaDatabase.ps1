@@ -14,7 +14,11 @@ function Copy-DbaDatabase {
         Source SQL Server.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You may specify multiple servers.
@@ -24,7 +28,11 @@ function Copy-DbaDatabase {
         When using -DetachAttach with multiple servers, -Reattach must be specified.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Migrates only specified databases. This list is auto-populated from the server for tab completion. Multiple databases may be specified as a collection.
@@ -171,12 +179,12 @@ function Copy-DbaDatabase {
 
         It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
     .EXAMPLE
-        PS C:\ Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationCredential $cred -AllDatabases -SharedPath https://someblob.blob.core.windows.net/sql
+        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -AllDatabases -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql
 
         Migrate all user databases from instance sql2014 to the specified Azure SQL Manage Instance using the blob storage account https://someblob.blob.core.windows.net/sql using a Shared Access Signature (SAS) credential with a name matching the blob storage account
 
     .EXAMPLE
-        PS C:\ Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationCredential $cred -Database MyDb -NewName AzureDb -WithReplace -SharedPath https://someblob.blob.core.windows.net/sql -Azure Credential AzBlobCredential
+        PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -Database MyDb -NewName AzureDb -WithReplace -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql -AzureCredential AzBlobCredential
 
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
     #>
@@ -261,7 +269,7 @@ function Copy-DbaDatabase {
             return
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         function Join-Path {
             <#
@@ -738,7 +746,7 @@ function Copy-DbaDatabase {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -768,7 +776,7 @@ function Copy-DbaDatabase {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             if ($sourceServer.ComputerName -eq $destServer.ComputerName) {
@@ -847,7 +855,7 @@ function Copy-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."
-            if ($sourceServer.VersionMajor -lt 8 -and $destServer.VersionMajor -lt 8) {
+            if ($sourceServer.VersionMajor -lt 8 -or $destServer.VersionMajor -lt 8) {
                 Stop-Function -Message "This script can only be run on SQL Server 2000 and above. Quitting." -Continue
             }
 
@@ -1279,7 +1287,7 @@ function Copy-DbaDatabase {
 
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $dbName")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
                                 # needed because the newly restored database doesn't show up
                                 $destServer.Databases.Refresh()
                                 $dbOwner = $sourceServer.Databases[$dbName].Owner
@@ -1287,9 +1295,9 @@ function Copy-DbaDatabase {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
                                 try {
-                                    $null = $destServer.Query("ALTER DATABASE [$dbname] SET READ_WRITE")
+                                    $null = $destServer.Query("ALTER DATABASE [$destinationDbName] SET READ_WRITE")
                                 } catch {
-                                    Stop-Function -Message "Failure setting $dbname to read-write on destination server" -ErrorRecord $_
+                                    Stop-Function -Message "Failure setting $destinationDbName to read-write on destination server" -ErrorRecord $_
                                 }
                             }
                         }

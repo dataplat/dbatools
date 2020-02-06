@@ -98,7 +98,7 @@ function Stop-DbaService {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
         $processArray = @()
         if ($PsCmdlet.ParameterSetName -eq "Server") {
             $serviceParams = @{ ComputerName = $ComputerName }

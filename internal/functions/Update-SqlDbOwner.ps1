@@ -37,7 +37,7 @@ function Update-SqlDbOwner {
                 Write-Message -Level Output -Message "Database status not normal. Skipping dbowner update."
                 continue
             }
-            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName)) {
+            if ((Get-DbaAgDatabase -SqlInstance $DestServer -Database $dbName -ErrorAction Ignore -WarningAction SilentlyContinue)) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is part of an availability group. Skipping."
                 continue
             }

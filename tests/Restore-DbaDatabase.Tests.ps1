@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -381,7 +381,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         $warnvar
         It "Should not warn" {
-            $null -eq (Get-Variable | Where-Object {$_.Name -eq 'warnvar'}) -or '' -eq $warnvar | Should Be $True
+            $null -eq (Get-Variable | Where-Object { $_.Name -eq 'warnvar' }) -or '' -eq $warnvar | Should Be $True
         }
         It "Should have restored 4 files" {
             $results.count | Should be 4
@@ -499,18 +499,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have left the db in a norecovery state" {
-            (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
+            (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object { $_.Status -eq 'Recovering' }).count | Should Be 0
         }
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
-        $Results2 = $files | ? {$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
+        $Results2 = $files | ? { $_.PsIsContainer -eq $false } | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have recovered the database" {
-            (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
+            (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object { $_.Status -eq 'Recovering' }).count | Should Be 0
         }
     }
 
@@ -816,6 +816,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
         }
+    }
+    Context "Checking that WITH KEEP_REPLICATION gets properly added" {
+        $DatabaseName = 'reptestSO'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepReplication
+        It "Should output a script with keep replication clause" {
+            $results -match 'RESTORE DATABASE.*WITH.*KEEP_REPLICATION' | Should be $True
+        }
+    }
+
+    Context "Test restoring a Backup encrypted with Certificate" {
+        New-DbaDatabase -SqlInstance $script:instance2 -Name EncRestTest -Confirm:$false
+        $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
+        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database Master -Name RestoreTestCert -Subject RestoreTestCert
+        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert
+        It "Should encrypt the backup" {
+            $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
+            $encBackupResults.KeyAlgorithm | Should Be "aes_128"
+        }
+        $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $script:instance2 -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert -confirm:$false
+        It "Should have restored the backup" {
+            $results.RestoreComplete | Should Be $True
+        }
+        Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database Master -Certificate RestoreTestCert -Confirm:$false
+        Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest -confirm:$false
     }
 
     if ($env:azurepasswd) {

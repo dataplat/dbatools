@@ -10,7 +10,11 @@ function Export-DbaLogin {
         The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase, Get-DbaLogin and more.
@@ -27,7 +31,7 @@ function Export-DbaLogin {
     .PARAMETER ExcludeJobs
         If this switch is enabled, Agent job ownership will not be exported.
 
-    .PARAMETER ExcludeDatabases
+    .PARAMETER ExcludeDatabase
         If this switch is enabled, mappings for databases will not be exported.
 
     .PARAMETER ExcludePassword
@@ -35,7 +39,7 @@ function Export-DbaLogin {
 
    .PARAMETER DefaultDatabase
         If this switch is enabled, all logins will be scripted with specified default database,
-        that could help to successfuly import logins on server that is missing default database for login.
+        that could help to successfully import logins on server that is missing default database for login.
 
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
@@ -124,7 +128,8 @@ function Export-DbaLogin {
         Exports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting
 
     .EXAMPLE
-        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+        PS C:\> Set-DbatoolsConfig -FullName formatting.batchseparator -Value $null
+        PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql
 
         Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
@@ -155,7 +160,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [object[]]$Database,
         [switch]$ExcludeJobs,
-        [switch]$ExcludeDatabases,
+        [Alias("ExcludeDatabases")]
+        [switch]$ExcludeDatabase,
         [switch]$ExcludePassword,
         [string]$DefaultDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
@@ -222,12 +228,12 @@ function Export-DbaLogin {
                 }
             }
 
-            if ($ExcludeDatabases -eq $false -or $Database) {
+            if ($ExcludeDatabase -eq $false -or $Database) {
                 # if we got a database or a list of databases passed
                 # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
                 # the cool thing though is that database.enumloginmappings() is fast. A lot.
                 # if we get a list of databases passed (or even the default list of all the databases)
-                # we save outself a call to enumloginmappings if there is no map at all
+                # we save ourself a call to enumloginmappings if there is no map at all
                 $DbMapping = @()
                 $DbsToMap = $server.Databases
                 if ($Database) {
@@ -291,7 +297,7 @@ function Export-DbaLogin {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
-                    $outsql += "`r`nUSE master`n"
+                    $outsql += "`r`nUSE master`r`n"
                     # Getting some attributes
                     if ($DefaultDatabase) {
                         $defaultDb = $DefaultDatabase
@@ -397,7 +403,8 @@ function Export-DbaLogin {
                     $ownedJobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -eq $userName }
 
                     foreach ($ownedJob in $ownedJobs) {
-                        $outsql += "`n`rUSE msdb`n"
+                        $ownedJob = $ownedJob -replace ("'", "''")
+                        $outsql += "`r`nUSE msdb`r`n"
                         $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
                     }
                 }
@@ -407,7 +414,7 @@ function Export-DbaLogin {
                     # Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
 
                     $perms = $server.EnumServerPermissions($userName)
-                    $outsql += "`n`rUSE master`n"
+                    $outsql += "`r`nUSE master`r`n"
                     foreach ($perm in $perms) {
                         $permState = $perm.permissionstate
                         $permType = $perm.PermissionType
@@ -431,8 +438,8 @@ function Export-DbaLogin {
                     }
                 }
 
-                if ($ExcludeDatabases -eq $false) {
-                    $dbs = $sourceLogin.EnumDatabaseMappings()
+                if ($ExcludeDatabase -eq $false) {
+                    $dbs = $sourceLogin.EnumDatabaseMappings() | Sort-Object DBName
 
                     if ($Database) {
                         if ($Database[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Database') {
@@ -448,7 +455,7 @@ function Export-DbaLogin {
                         $sourceDb = $server.Databases[$dbName]
                         $dbUserName = $db.username
 
-                        $outsql += "`r`nUSE [$dbName]`n"
+                        $outsql += "`r`nUSE [$dbName]`r`n"
                         try {
                             $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
                             $outsql += $sql
@@ -503,7 +510,7 @@ function Export-DbaLogin {
             if ($NoPrefix) {
                 $prefix = $null
             } else {
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                $prefix = "/*`r`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`r`n`tSee https://dbatools.io/$commandName for more information`r`n*/"
             }
 
             if ($BatchSeparator) {

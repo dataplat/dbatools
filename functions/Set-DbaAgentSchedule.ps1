@@ -10,7 +10,11 @@ function Set-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job that has the schedule.
@@ -34,7 +38,7 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencyInterval
         The days that a job is executed
         Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwrites any other value that has been passed before.
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
@@ -152,7 +156,7 @@ function Set-DbaAgentSchedule {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {

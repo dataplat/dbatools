@@ -30,7 +30,7 @@ function Invoke-DbaQuery {
         Specifies the path to one or several files to be used as the query input.
 
     .PARAMETER SqlObject
-        Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
+        Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
     .PARAMETER As
         Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
@@ -167,7 +167,7 @@ function Invoke-DbaQuery {
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found" -Category ObjectNotFound
                             return
                         }
                         $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
@@ -175,18 +175,22 @@ function Invoke-DbaQuery {
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
-                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            Stop-Function -Message "Directory not found." -Category ObjectNotFound
                             return
                         }
 
                         $files += $item.FullName
                     }
                     "System.String" {
-                        $uri = [uri]$item
+                        if (Test-PsVersion -Is 3) {
+                            $uri = [uri]$item
+                        } else {
+                            $uri = [uri]::New($item)
+                        }
 
                         switch -regex ($uri.Scheme) {
                             "http" {
-                                $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                                $tempfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
                                     try {
                                         Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
@@ -212,9 +216,16 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (([uri]$path.FullName).Scheme -ne 'file') {
-                                            Stop-Function -Message "Could not resolve path $path as filesystem object"
-                                            return
+                                        if (Test-PsVersion -Is 3) {
+                                            if (([uri]$path.FullName).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
+                                        } else {
+                                            if ([uri]::New($path).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
                                         }
                                         $files += $path.FullName
                                     }
@@ -244,7 +255,7 @@ function Invoke-DbaQuery {
                 }
 
                 try {
-                    $newfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                    $newfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                     Set-Content -Value $code -Path $newfile -Force -ErrorAction Stop -Encoding UTF8
                     $files += $newfile
                     $temporaryFilesCount++
@@ -267,6 +278,10 @@ function Invoke-DbaQuery {
             Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
             return
         }
+        if (Test-Bound -ParameterName "SqlInstance", "InputObject" -Not) {
+            Stop-Function -Category InvalidArgument -Message "Please provide either SqlInstance or InputObject"
+            return
+        }
 
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
@@ -276,13 +291,14 @@ function Invoke-DbaQuery {
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
             if ($conncontext.DatabaseName -ne $db.Name) {
-                $conncontext = $server.ConnectionContext.Copy()
-                $conncontext.DatabaseName = $db.Name
+                #$conncontext = $server.ConnectionContext.Copy()
+                #$conncontext.DatabaseName = $db.Name
+                $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($db.Name)
             }
             try {
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
@@ -309,12 +325,13 @@ function Invoke-DbaQuery {
             $conncontext = $server.ConnectionContext
             try {
                 if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    $conncontext = $server.ConnectionContext.Copy()
-                    $conncontext.DatabaseName = $Database
+                    #$conncontext = $server.ConnectionContext.Copy()
+                    #$conncontext.DatabaseName = $Database
+                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        if ($null -eq $item) {continue}
+                        if ($null -eq $item) { continue }
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
                         Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile

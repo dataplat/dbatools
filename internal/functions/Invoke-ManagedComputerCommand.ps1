@@ -24,7 +24,7 @@ function Invoke-ManagedComputerCommand {
 
         .PARAMETER EnableException
             Left in for legacy reasons. This command will throw no matter what
-       #>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

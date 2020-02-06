@@ -23,49 +23,49 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $user2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
         $dbname = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname -Owner sa
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user1 -Username 'User1'
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user2 -Username 'User2'
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user1 -Username 'User1' -IncludeSystem
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user2 -Username 'User2' -IncludeSystem
+        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user1 -Username $user1
+        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user2 -Username $user2
+        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user1 -Username $user1 -IncludeSystem
+        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user2 -Username $user2 -IncludeSystem
         $null = $server.Query("CREATE ROLE $role", $dbname)
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = $server.Query("DROP USER User1", 'msdb')
-        $null = $server.Query("DROP USER User2", 'msdb')
+        $null = $server.Query("DROP USER $user1", 'msdb')
+        $null = $server.Query("DROP USER $user2", 'msdb')
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $user1, $user2 -confirm:$false
     }
 
     Context "Functionality" {
         It 'Adds User to Role' {
-            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User 'User1' -Database $dbname -confirm:$false
+            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User $user1 -Database $dbname -confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
 
             $roleDBAfter.Role | Should Be $role
             $roleDBAfter.Login | Should Be $user1
-            $roleDBAfter.UserName | Should Be 'User1'
+            $roleDBAfter.UserName | Should Be $user1
         }
 
         It 'Adds User to Multiple Roles' {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datareader, SQLAgentReaderRole -User 'User1' -Database msdb -confirm:$false
+            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datareader, SQLAgentReaderRole -User $user1 -Database msdb -confirm:$false
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDBAfter.Count | Should BeGreaterThan $roleDB.Count
-            $roleDB.UserName -contains 'User1'  | Should Be $false
-            $roleDBAfter.UserName -contains 'User1'  | Should Be $true
+            $roleDB.UserName -contains $user1 | Should Be $false
+            $roleDBAfter.UserName -contains $user1 | Should Be $true
 
         }
 
         It 'Adds User to Roles via piped input from Get-DbaDbRole' {
             $roleInput = Get-DbaDbRole -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleInput | Add-DbaDbRoleMember -User 'User2' -confirm:$false
+            $roleInput | Add-DbaDbRoleMember -User $user2 -confirm:$false
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleDB.UserName -contains 'User2'  | Should Be $false
-            $roleDBAfter.UserName -contains 'User2'  | Should Be $true
+            $roleDB.UserName -contains $user2 | Should Be $false
+            $roleDBAfter.UserName -contains $user2 | Should Be $true
         }
     }
 }

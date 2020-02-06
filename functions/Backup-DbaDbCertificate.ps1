@@ -10,7 +10,11 @@ function Backup-DbaDbCertificate {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Certificate
         Exports certificate that matches the name(s).
@@ -25,7 +29,7 @@ function Backup-DbaDbCertificate {
         A string value that specifies the system path to encrypt the private key.
 
     .PARAMETER DecryptionPassword
-        A string value that specifies the system path to decrypt the private key.
+        Secure string used to decrypt the private key.
 
     .PARAMETER Path
         The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
@@ -54,6 +58,9 @@ function Backup-DbaDbCertificate {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Backup-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> Backup-DbaDbCertificate -SqlInstance Server1

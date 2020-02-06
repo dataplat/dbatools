@@ -12,7 +12,11 @@ function Set-DbaTempDbConfig {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DataFileCount
         Specifies the number of data files to create. If this number is not specified, the number of logical cores of the host will be used.
@@ -56,7 +60,7 @@ function Set-DbaTempDbConfig {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Tempdb, Space, Configure, Configuration
+        Tags: Tempdb, Configuration
         Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
         Website: https://dbatools.io

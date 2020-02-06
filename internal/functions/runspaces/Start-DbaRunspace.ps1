@@ -49,7 +49,7 @@ function Start-DbaRunspace {
                     Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLowerInvariant() -Continue
             }
         }
 

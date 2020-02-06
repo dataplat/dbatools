@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $results = Get-DbaServerRole -SqlInstance $script:instance2
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerVersion,SqlInstance,State,Urn,UserData'.Split(',')
+            $ExpectedProps = 'ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerRole,ServerVersion,SqlInstance,State,Urn,UserData'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
 

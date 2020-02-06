@@ -10,7 +10,11 @@ function Remove-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Schedule
         The name of the job schedule.
@@ -42,7 +46,7 @@ function Remove-DbaAgentSchedule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentJobSchedule
+        https://dbatools.io/Remove-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
@@ -88,7 +92,7 @@ function Remove-DbaAgentSchedule {
         [switch]$Force
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
