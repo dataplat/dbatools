@@ -1,6 +1,10 @@
 ---
-name: ❤️ Say thank you
+name: "❤️ Say thank you"
 about: Tell us how you use dbatools & support our efforts in maintaining dbatools
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 # ❤️ I'm using dbatools
