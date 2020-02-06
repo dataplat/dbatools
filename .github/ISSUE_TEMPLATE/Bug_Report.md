@@ -8,7 +8,10 @@ assignees: ''
 ---
 
 <!--
-Please note, effective June 2019, we will begin closing bug reports that do not follow the bug report format. We ask only what is required to help us resolve the issue faster. We are constantly updating dbatools, so knowing what version you are using, for instance, saves us a ton of time.
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+The core team may close bug reports that do not follow our provided template.
+
+The information we ask for helps to better troubleshoot the report. We release frequently and often, this information helps to resolve the issue more efficiently.
 -->
 
 <!--
