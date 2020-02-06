@@ -14486,6 +14486,7 @@ function Export-DbaUser {
         $null = Test-ExportDirectory -Path $Path
 
         $outsql = $script:pathcollection = @()
+        $GenerateFilePerUser = $false
 
         $versions = @{
             'SQLServer2000'        = 'Version80'
@@ -14514,8 +14515,10 @@ function Export-DbaUser {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
+        # To keep the filenames generated and re-use (appedn) if needed
+        $usersProcessed = @{ }
+
         foreach ($db in $InputObject) {
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
 
             if ([string]::IsNullOrEmpty($destinationVersion)) {
                 #Get compatibility level for scripting the objects
@@ -14544,15 +14547,37 @@ function Export-DbaUser {
                 $users = $db.Users
             }
 
+            # Generate the file path
+            if (Test-Bound -ParameterName FilePath -Not) {
+                $GenerateFilePerUser = $true
+            } else {
+                # Generate a new file name with passed/default path
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
+                # Force append to have everything on same file
+                $Append = $true
+            }
+
             # Store roles between users so if we hit the same one we don't create it again
             $roles = @()
             $stepCounter = 0
             foreach ($dbuser in $users) {
-                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script for user $dbuser"
+
+                if ($GenerateFilePerUser) {
+                    if ($null -eq $usersProcessed[$dbuser.Name]) {
+                        # If user and not specific output file, create file name without database name.
+                        $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $("$($db.Parent.Name)-$($dbuser.Name)") -Unique
+                        $usersProcessed[$dbuser.Name] = $FilePath
+                    } else {
+                        $Append = $true
+                        $FilePath = $usersProcessed[$dbuser.Name]
+                    }
+                }
+
+                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script ($FilePath) for user $dbuser"
 
                 #setting database
                 if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
-                    $outsql += "USE [" + $db.Name + "]"
+                    $useDatabase = "USE [" + $db.Name + "]"
                 }
 
                 try {
@@ -14748,23 +14773,43 @@ function Export-DbaUser {
                 } catch {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
-            }
 
-            if ($ExcludeGoBatchSeparator) {
-                $sql = $outsql
-            } else {
-                $sql = $outsql -join "`r`nGO`r`n"
-                #add the final GO
-                $sql += "`r`nGO"
-            }
-            if (-not $Passthru) {
-                $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                Get-ChildItem -Path $FilePath
-            } else {
-                $sql
+                if (@($perms.Count) -gt 0) {
+                    if ($ExcludeGoBatchSeparator) {
+                        $sql = "$useDatabase $outsql"
+                    } else {
+                        if ($useDatabase) {
+                            $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                        } else {
+                            $sql = $outsql -join "`r`nGO`r`n"
+                        }
+                        #add the final GO
+                        $sql += "`r`nGO"
+                    }
+                }
+
+                if (-not $Passthru) {
+                    # If generate a file per user, clean the collection to populate with next one
+                    if ($GenerateFilePerUser) {
+                        if (-not [string]::IsNullOrEmpty($sql)) {
+                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            Get-ChildItem -Path $FilePath
+                        }
+                    } else {
+                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                    }
+                    # Clear variables for next user
+                    $outsql = @()
+                    $sql = ""
+                } else {
+                    $sql
+                }
             }
         }
-
+        # Just a single file, output path once here
+        if (-Not $GenerateFilePerUser) {
+            Get-ChildItem -Path $FilePath
+        }
     }
 }
 
