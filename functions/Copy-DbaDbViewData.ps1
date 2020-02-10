@@ -324,15 +324,19 @@ function Copy-DbaDbViewData {
                 $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
                 if (-not $desttable -and $AutoCreateTable) {
                     try {
-                        $tablescript = $sqlview | Export-DbaScript -Passthru | Out-String
+                        #select view into tempdb to generate script
+                        $tempTable = "$($sqlview.Name)_table"
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "SELECT * INTO tempdb..$tempTable FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
+                        $tablescript = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTable | Export-DbaScript -Passthru | Out-String
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTable"
                         #replacing table name
                         if ($newTableParts.Name) {
-                            $rX = "(CREATE TABLE \[$([regex]::Escape($sqlview.Schema))\]\.\[)$([regex]::Escape($sqlview.Name))(\]\()"
+                            $rX = "(CREATE TABLE \[$([regex]::Escape($tempTable.Schema))\]\.\[)$([regex]::Escape($tempTable.Name))(\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Name)`$2"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($sqlview.Schema))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
+                            $rX = "(CREATE TABLE \[)$([regex]::Escape($tempTable.Schema))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
                             $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
                         }
 
