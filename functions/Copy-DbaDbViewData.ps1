@@ -5,10 +5,6 @@ function Copy-DbaDbViewData {
 
     .DESCRIPTION
         Copies data from a SQL Server view to a table using SQL Bulk Copy.
-        The same can be achieved also doing
-        $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
-        but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
 
     .PARAMETER SqlInstance
@@ -287,7 +283,7 @@ function Copy-DbaDbViewData {
             } catch {
                 Stop-Function -Message "Unable to determine source view : $View"
                 $ex = $_.Exception
-            Write-Warning $ex.Message
+                Write-Message -Level warning $ex.Message
                 return
             }
         }
@@ -345,7 +341,7 @@ function Copy-DbaDbViewData {
                             Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "$tablescript" -EnableException # add some string assurance there
                             #table list was updated, let's grab a fresh one
                             $destServer.Databases[$DestinationDatabase].Tables.Refresh()
-                            $desttable = Get-DbaDbView -SqlInstance $destServer -View $DestinationTable -Database $DestinationDatabase -Verbose:$false
+                            $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false
                             Write-Message -Message "New table created: $desttable" -Level Verbose
                         }
                     } catch {
@@ -434,7 +430,7 @@ function Copy-DbaDbViewData {
                             SourceInstance      = $server.Name
                             SourceDatabase      = $Database
                             SourceSchema        = $sqlview.Schema
-                            SourceView         = $sqlview.Name
+                            SourceView          = $sqlview.Name
                             DestinationInstance = $destServer.Name
                             DestinationDatabase = $DestinationDatabase
                             DestinationSchema   = $desttable.Schema

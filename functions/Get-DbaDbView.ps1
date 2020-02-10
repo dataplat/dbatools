@@ -25,6 +25,9 @@ function Get-DbaDbView {
     .PARAMETER ExcludeSystemView
         This switch removes all system objects from the view collection.
 
+    .PARAMETER View
+        The view(s) to include - all views are selected if not populated
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
@@ -71,6 +74,11 @@ function Get-DbaDbView {
 
         Pipe the databases from Get-DbaDatabase into Get-DbaDbView
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbView -SqlInstance Server1 -Database db1 -View vw1
+
+        Gets the view vw1 for the db1 database
+
     #>
     [CmdletBinding()]
     param (
@@ -92,7 +100,7 @@ function Get-DbaDbView {
             foreach ($v in $View) {
                 $fqtn = Get-ObjectNameParts -ObjectName $v
 
-                if (!$fqtn.Parsed) {
+                if (-not $fqtn.Parsed) {
                     Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
                     Continue
                 }
@@ -104,7 +112,7 @@ function Get-DbaDbView {
                     InputValue = $fqtn.InputValue
                 }
             }
-            if (!$fqtns) {
+            if (-not $fqtns) {
                 Stop-Function -Message "No Valid View specified"  -ErrorRecord $_ -Target $instance -Continue
             }
         }
@@ -153,14 +161,14 @@ function Get-DbaDbView {
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
-            foreach ($v in $views) {
+            foreach ($sqlview in $views) {
 
-                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name ComputerName -value $v.Parent.ComputerName
-                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name InstanceName -value $v.Parent.InstanceName
-                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name SqlInstance -value $v.Parent.SqlInstance
-                Add-Member -Force -InputObject $v -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $sqlview.Parent.ComputerName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $sqlview.Parent.InstanceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $sqlview.Parent.SqlInstance
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -value $db.Name
 
-                Select-DefaultView -InputObject $v -Property $defaults
+                Select-DefaultView -InputObject $sqlview -Property $defaults
             }
         }
     }
