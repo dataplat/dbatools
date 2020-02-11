@@ -17,20 +17,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_example (id int);
-            INSERT dbo.dbatoolsci_view_example
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
+            INSERT dbo.dbatoolsci_example
             SELECT top 10 1
             FROM sys.objects")
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_example2 (id int)")
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_example3 (id int)")
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_example4 (id int);
-            INSERT dbo.dbatoolsci_view_example4
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example2 (id int)")
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example4 (id int);
+            INSERT dbo.dbatoolsci_example4
             SELECT top 13 1
             FROM sys.objects")
-        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_exview AS SELECT * FROM dbo.dbatoolsci_view_example")
-        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_exview2 AS SELECT * FROM dbo.dbatoolsci_view_example2")
-        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_exview3 AS SELECT * FROM dbo.dbatoolsci_view_example3")
-        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_exview4 AS SELECT * FROM dbo.dbatoolsci_view_example4")
+        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_example AS SELECT * FROM dbo.dbatoolsci_example")
+        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_example2 AS SELECT * FROM dbo.dbatoolsci_example2")
+        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_example3 AS SELECT * FROM dbo.dbatoolsci_example3")
+        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_example4 AS SELECT * FROM dbo.dbatoolsci_example4")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_view_example (id int)")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_view_example3 (id int)")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_view_example4 (id int);
@@ -40,14 +40,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_example")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_example2")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_example3")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_example4")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_exview")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_exview2")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_exview3")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_exview4")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
+            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example")
+            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example2")
+            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example3")
+            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example4")
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example3")
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example4")
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example")
@@ -58,38 +58,38 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "copies the table data" {
-        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview -DestinationTable dbatoolsci_view_example2
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view_exview")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_view_example2")
+        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
+        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
+        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
     }
 
     It "copies the table data to another instance" {
-        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -View dbatoolsci_view_exview -DestinationTable dbatoolsci_view_example3
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view_exview")
+        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
+        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
         $table1count.Count | Should -Be $table2count.Count
     }
 
     It "supports piping" {
-        $null = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview | Copy-DbaDbViewData -DestinationTable dbatoolsci_view_example2 -Truncate
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_view_example2")
+        $null = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
+        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
+        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
     }
 
     It "supports piping more than one table" {
-        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview2, dbatoolsci_view_exview | Copy-DbaDbViewData -DestinationTable dbatoolsci_view_example3
+        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_view_example3
         $results.Count | Should -Be 2
     }
 
     It "opens and closes connections properly" {
         #regression test, see #3468
-        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View 'dbo.dbatoolsci_view_exview', 'dbo.dbatoolsci_view_exview4' | Copy-DbaDbViewData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View 'dbo.dbatoolsci_view_example', 'dbo.dbatoolsci_view_example4' | Copy-DbaDbViewData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
         $results.Count | Should -Be 2
-        $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_exview")
+        $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_view_example4")
-        $table1db2count = $db.Query("select id from dbo.dbatoolsci_view_exview")
+        $table1db2count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table4db2count = $db2.Query("select id from dbo.dbatoolsci_view_example4")
         $table1dbcount.Count | Should -Be $table1db2count.Count
         $table4dbcount.Count | Should -Be $table4db2count.Count
@@ -100,17 +100,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Should return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview -Truncate
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate
         $result | Should Be $null
     }
 
     It "Should warn if the destinaton table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
         $tablewarning | Should -match Auto
     }
 
     It "automatically creates the table" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_exview -DestinationTable dbatoolsci_view_willexist -AutoCreateTable
-        $result.DestinationTable | Should -Be 'dbatoolsci_view_willexist'
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
+        $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
     }
 }
