@@ -125,6 +125,7 @@ function Get-DbaDbView {
 
         foreach ($db in $InputObject) {
 
+            $db.Views.Refresh($true) # This will ensure the list of views is up-to-date
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {
@@ -136,7 +137,7 @@ function Get-DbaDbView {
                         }
                     }
 
-                    $vw = $db.views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+                    $vw = $db.Views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
                     if (-not $vw) {
                         Write-Message -Level Verbose -Message "Could not find view $($fqtn.Name) in $db on $server"
@@ -144,7 +145,7 @@ function Get-DbaDbView {
                     $views += $vw
                 }
             } else {
-                $views = $db.views
+                $views = $db.Views
             }
 
             if (-not $db.IsAccessible) {
