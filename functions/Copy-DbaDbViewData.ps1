@@ -328,10 +328,6 @@ function Copy-DbaDbViewData {
                         $tempTableName = "$($sqlview.Name)_table"
                         $createquery = "SELECT * INTO tempdb..$tempTableName FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery
-                        if ($sqlview.Table -eq 'tempdb') {
-                            #refreshing table list to make sure get-dbadbtable will find the new table
-                            $server.Databases['tempdb'].Tables.Refresh($true)
-                        }
                         $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
                         $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName"
