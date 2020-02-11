@@ -325,10 +325,12 @@ function Copy-DbaDbViewData {
                 if (-not $desttable -and $AutoCreateTable) {
                     try {
                         #select view into tempdb to generate script
-                        $tempTable = "$($sqlview.Name)_table"
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "SELECT * INTO tempdb..$tempTable FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
-                        $tablescript = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTable | Export-DbaScript -Passthru | Out-String
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTable"
+                        $tempTableName = "$($sqlview.Name)_table"
+                        $createquery = "SELECT * INTO tempdb..$tempTableName FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery
+                        $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
+                        $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName"
                         #replacing table name
                         if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($tempTable.Schema))\]\.\[)$([regex]::Escape($tempTable.Name))(\]\()"
