@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example3")
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example4")
             $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example")
-            $null = $db.Query("DROP TABLE tempdb.dbo.dbatoolsci_view_willexist")
+            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_will_exist")
         } catch {
             $null = 1
         }
@@ -99,18 +99,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $table4db2check.Count | Should -Be 13
     }
 
-    It "Should return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate
+    It "Should warn and return nothing if Source and Destination are same" {
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning
         $result | Should Be $null
+        $tablewarning | Should -match "Cannot copy dbatoolsci_view_example into itself"
     }
 
-    It "Should warn if the destinaton table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+    It "Should warn if the destination table doesn't exist" {
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning
         $tablewarning | Should -match Auto
     }
 
     It "automatically creates the table" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
-        $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
+        $result.DestinationTable | Should -Be 'dbatoolsci_view_will_exist'
     }
 }
