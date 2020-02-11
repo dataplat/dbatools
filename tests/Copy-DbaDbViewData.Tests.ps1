@@ -79,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "supports piping more than one table" {
-        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_view_example3
+        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
     }
 
