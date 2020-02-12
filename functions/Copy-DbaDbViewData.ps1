@@ -222,7 +222,7 @@ function Copy-DbaDbViewData {
         Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
-                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
             } catch {
                 $null = 1
             }
@@ -327,10 +327,10 @@ function Copy-DbaDbViewData {
                         #select view into tempdb to generate script
                         $tempTableName = "$($sqlview.Name)_table"
                         $createquery = "SELECT * INTO tempdb..$tempTableName FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery -EnableException
                         $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
                         $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName"
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
                         #replacing table name
                         if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($tempTable.Schema))\]\.\[)$([regex]::Escape($tempTable.Name))(\]\()"

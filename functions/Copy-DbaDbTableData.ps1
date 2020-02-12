@@ -226,7 +226,7 @@ function Copy-DbaDbTableData {
         Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
-                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
             } catch {
                 $null = 1
             }
