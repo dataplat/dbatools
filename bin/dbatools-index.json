@@ -4299,6 +4299,205 @@
         "Syntax":  "Copy-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTable[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Copy-DbaDbViewData",
+        "Description":  "Copies data from a SQL Server view to a table using SQL Bulk Copy.\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
+        "Tags":  "Migration",
+        "Synopsis":  "Copies data from a SQL Server view to a table.",
+        "Alias":  "",
+        "Author":  "Stephen Swan (@jaxnoth)",
+        "CommandName":  "Copy-DbaDbViewData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Copy-DbaDbViewData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View dbo.test_view\nCopies all the data from view dbo.test_view in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from view [Schema].[test view] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -DestinationTable tb3\nCopies all data from Views vw1 and vw2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View test_view -KeepIdentity -Truncate\nCopies all the data in view test_view from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e View = \u0027[Schema].[View]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[View.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies all the data from view [Schema].[View] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027server1\u0027\r\n\u003e\u003e Destination = \u0027server1\u0027\r\n\u003e\u003e Database = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e DestinationDatabase = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e View = \u0027[Person].[EmailPromotion]\u0027\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e Query = \"SELECT * FROM [Person].[Person] where EmailPromotion = 1\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies data returned from the query on server1 into the AdventureWorks2017 on server1.\r\nCopy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Destination",
+                           "Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DestinationSqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database to copy the table from.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "DestinationDatabase",
+                           "The database to copy the table to. If not specified, it is assumed to be the same of Database",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "View",
+                           "Define a specific view you would like to use as source. You can specify a three-part name like db.sch.vw.\r\nIf the object has special characters please wrap them in square brackets [ ].\r\nThis dbo.First.View will try to find view named \u0027View\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to find view named \u0027First.View\u0027 on schema \u0027dbo\u0027 is passing dbo.[First.View]",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Query",
+                           "If you want to copy only a portion of a view or selected views, specify the query.\r\nEnsure to select all required columns. Calculated Columns or columns with default values may be excluded.\r\nThe tablename should be a full three-part name in form [Database].[Schema].[Table]",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AutoCreateTable",
+                           "Creates the destination table if it does not already exist, based off of the \"Export...\" script of the source table.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSize",
+                           "The BatchSize for the import defaults to 5000.",
+                           "",
+                           false,
+                           "false",
+                           "50000"
+                       ],
+                       [
+                           "NotifyAfter",
+                           "Sets the option to show the notification after so many rows of import",
+                           "",
+                           false,
+                           "false",
+                           "5000"
+                       ],
+                       [
+                           "DestinationTable",
+                           "The table you want to use as destination. If not specified, it is assumed to be the same of View",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoTableLock",
+                           "If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "CheckConstraints",
+                           "If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.\nPer Microsoft \"Check constraints while data is being inserted. By default, constraints are not checked.\"",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "FireTriggers",
+                           "If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.\nPer Microsoft \"When specified, cause the server to fire the insert triggers for the rows being inserted into the Database.\"",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "KeepIdentity",
+                           "If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.\nPer Microsoft \"Preserve source identity values. When not specified, identity values are assigned by the destination.\"",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "KeepNulls",
+                           "If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.\nPer Microsoft \"Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable.\"",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Truncate",
+                           "If this switch is enabled, the destination table will be truncated after prompting for confirmation.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "bulkCopyTimeOut",
+                           "Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.",
+                           "",
+                           false,
+                           "false",
+                           "5000"
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piping of View objects from Get-DbaDbView",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Copy-DbaDbViewData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-View] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cView[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Copy-DbaEndpoint",
         "Description":  "By default, all endpoints are copied.\n\nIf the endpoint already exists on the destination, it will be skipped unless -Force is used.",
         "Tags":  [
@@ -16030,7 +16229,7 @@
         "CommandName":  "Get-DbaDbView",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbView",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView\nPipe the databases from Get-DbaDatabase into Get-DbaDbView",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql2016\nGets all database views\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1\nGets the views for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1\nGets the views for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -ExcludeSystemView\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbView\nGets the views for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView\nPipe the databases from Get-DbaDatabase into Get-DbaDbView\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance Server1 -Database db1 -View vw1\nGets the view vw1 for the db1 database",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16073,6 +16272,14 @@
                            "False"
                        ],
                        [
+                           "View",
+                           "The view(s) to include - all views are selected if not populated",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaDatabase",
                            "",
@@ -16089,7 +16296,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbView [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbView [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemView] [[-View] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbVirtualLogFile",
