@@ -219,10 +219,16 @@ function Copy-DbaDbViewData {
             }
         }'
 
-        Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
         if (-not $script:core) {
             try {
                 Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } catch {
+                $null = 1
+            }
+        }
+        else {
+            try {
+                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
             } catch {
                 $null = 1
             }
