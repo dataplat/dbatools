@@ -229,8 +229,7 @@ function Copy-DbaDbTableData {
             } catch {
                 $null = 1
             }
-        }
-        else {
+        } else {
             try {
                 Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
             } catch {
