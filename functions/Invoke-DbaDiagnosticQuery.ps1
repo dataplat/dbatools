@@ -6,7 +6,7 @@ function Invoke-DbaDiagnosticQuery {
     .DESCRIPTION
         This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.
         The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
-        http://www.sqlskills.com/blogs/glenn/category/dmv-queries/
+        https://glennsqlperformance.com/resources/
 
         The most recent version of the diagnostic queries are included in the dbatools module.
         But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
