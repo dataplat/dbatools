@@ -159,10 +159,10 @@ Function Invoke-DbaAdvancedUpdate {
                 $instanceClause = '/allinstances'
             }
             if ($currentAction.Build -like "10.0.*") {
-				$argumentList = @('/quiet', $instanceClause)
-			} else {
-				$argumentList = @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
-			}
+                $argumentList = @('/quiet', $instanceClause)
+            } else {
+                $argumentList = @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
+            }
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
             Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
             $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList $argumentList -WorkingDirectory $spExtractPath -Fallback
