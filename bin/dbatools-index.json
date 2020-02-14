@@ -27933,7 +27933,7 @@
     },
     {
         "Name":  "Invoke-DbaDiagnosticQuery",
-        "Description":  "This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.\nThe diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:\nhttp://www.sqlskills.com/blogs/glenn/category/dmv-queries/\n\nThe most recent version of the diagnostic queries are included in the dbatools module.\nBut it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.\nIt will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object",
+        "Description":  "This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.\nThe diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:\nhttps://glennsqlperformance.com/resources/\n\nThe most recent version of the diagnostic queries are included in the dbatools module.\nBut it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.\nIt will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object",
         "Tags":  [
                      "Community",
                      "GlennBerry"
