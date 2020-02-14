@@ -75,7 +75,7 @@ function Invoke-DbaDiagnosticQuery {
 
     .NOTES
         Tags: Community, GlennBerry
-        Author: Andre Kamman (@AndreKamman), http://clouddba.io
+        Author: Andre Kamman (@AndreKamman), http://andrekamman.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -175,14 +175,14 @@ function Invoke-DbaDiagnosticQuery {
         }
 
         $scriptversions = @()
-        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*_*.sql"
+        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*.sql"
 
         if (!$scriptfiles) {
             Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
 
             $Path = Join-Path -Path $base -ChildPath "\bin\diagnosticquery"
 
-            $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
+            $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*.sql"
             if (!$scriptfiles) {
                 Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -ErrorRecord $_
                 return
