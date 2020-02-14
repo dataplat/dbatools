@@ -219,13 +219,24 @@ function Copy-DbaDbViewData {
             }
         }'
 
-        Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-        if (-not $script:core) {
-            try {
+        try {
+            if ($script:core) {
+                #.NET Core has moved most of the System.Data.SqlClient namespace to a separate assembly
+                $SqlClientPath = "$script:PSModuleRoot\bin\smo\coreclr\System.Data.SqlClient.dll"
+                if (Test-Path $SqlClientPath) {
+                    #Powershell 6 appears to include a version of System.Data.SqlClient.dll
+                    #that often precedes the following statement, but this enures that a version of
+                    #the assemble gets loaded before loading our custom class.
+                    Add-Type -Path $SqlClientPath
+                }
+                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } else {
                 Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            } catch {
-                $null = 1
             }
+            Write-Message -Level Verbose -Message "SqlBulkCopyExtension loaded."
+        } catch {
+            Stop-Function -Message 'Could not load a usable version of SqlBulkCopy.' -ErrorRecord $_
+            return
         }
 
         $bulkCopyOptions = 0
@@ -327,10 +338,10 @@ function Copy-DbaDbViewData {
                         #select view into tempdb to generate script
                         $tempTableName = "$($sqlview.Name)_table"
                         $createquery = "SELECT * INTO tempdb..$tempTableName FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery -EnableException
                         $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
                         $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName"
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
                         #replacing table name
                         if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($tempTable.Schema))\]\.\[)$([regex]::Escape($tempTable.Name))(\]\()"
@@ -388,7 +399,7 @@ function Copy-DbaDbViewData {
                 try {
                     if ($Truncate -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
-                            $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
+                            Invoke-DbaQuery -SqlInstance $destServer -Database $DestinationDatabase -Query "TRUNCATE TABLE $fqtndest" -EnableException
                         }
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
@@ -416,11 +427,7 @@ function Copy-DbaDbViewData {
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
-                        if ($script:core) {
-                            $RowsTotal = "Unsupported in Core"
-                        } else {
-                            $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
-                        }
+                        $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
                         if ($rowCount -is [int]) {
