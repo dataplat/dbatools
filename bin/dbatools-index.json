@@ -15035,7 +15035,7 @@
         "CommandName":  "Get-DbaDbPageInfo",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbPageInfo",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eet-DbaDbPageInfo -SqlInstance sql2017\nReturns page information for all databases on sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb\nReturns page information for the testdb on sql2017 and sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo\nReturns page information for the testdb on all $servers",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbPageInfo -SqlInstance sql2017\nReturns page information for all databases on sql2017\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb\nReturns page information for the testdb on sql2017 and sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo\nReturns page information for the testdb on all $servers",
         "Params":  [
                        [
                            "SqlInstance",
