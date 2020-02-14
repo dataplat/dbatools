@@ -46,7 +46,7 @@ function Get-DbaDbPageInfo {
         https://dbatools.io/Get-DbaDbPageInfo
 
     .EXAMPLE
-        PS C:\> et-DbaDbPageInfo -SqlInstance sql2017
+        PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017
 
         Returns page information for all databases on sql2017
 
