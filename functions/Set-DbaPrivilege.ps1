@@ -18,6 +18,9 @@ function Set-DbaPrivilege {
         Use this to choose the privilege(s) to which you want to add the SQL Service account.
         Accepts 'IFI', 'LPIM', 'BatchLogon', and/or 'SecAudit' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch', and 'Generate Security Audits'.
 
+    .PARAMETER User
+        If provided, will add requested permissions to this account instead of the the account under which the SQL service is running.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
