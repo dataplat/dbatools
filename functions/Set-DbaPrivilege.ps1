@@ -89,7 +89,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         }
 
                         $SQLServiceAccounts = @();
-                        if ([string]::IsNullOrEmpty($User) -eq $false) {
+                        if (Test-Bound 'User') {
                             $SQLServiceAccounts += $User;
                         }
                         else {
