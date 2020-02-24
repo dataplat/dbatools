@@ -57,6 +57,9 @@ function Invoke-DbaQuery {
     .PARAMETER ReadOnly
         Execute the query with ReadOnly application intent.
 
+    .PARAMETER CommandType
+        Specifies the type of command represented by the query string.  Default is Text
+
     .NOTES
         Tags: Database, Query
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -118,6 +121,7 @@ function Invoke-DbaQuery {
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
         [string]$As = "DataRow",
         [System.Collections.IDictionary]$SqlParameters,
+        [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
@@ -130,7 +134,8 @@ function Invoke-DbaQuery {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $splatInvokeDbaSqlAsync = @{
-            As = $As
+            As          = $As
+            CommandType = $CommandType
         }
 
         if (Test-Bound -ParameterName "SqlParameters") {
