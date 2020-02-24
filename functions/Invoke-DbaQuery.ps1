@@ -103,6 +103,11 @@ function Invoke-DbaQuery {
         PS C:\> Invoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query "select something from readonlydb.dbo.atable"
 
         Executes a query with ReadOnly application intent on aglistener1.
+
+    .EXAMPLE
+        PS C:\>Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
+
+        Executes a stored procedure Example_SP using SQL Parameters
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (

@@ -19,6 +19,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT @p1; END")
+    }
+    AfterAll {
+        try {
+            $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
+        } catch {
+            $null = 1
+        }
+    }
     It "supports pipable instances" {
         $results = $script:instance2, $script:instance3 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
         foreach ($result in $results) {
@@ -171,5 +182,9 @@ SELECT @@servername as dbname
         }
         $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
         ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+    }
+    It "Executes stored procedures with parameters" {
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{p1 = 1 } -CommandType StoredProcedure
+        $results.TestColumn | Should Be 1
     }
 }
