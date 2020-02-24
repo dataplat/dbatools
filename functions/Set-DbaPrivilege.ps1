@@ -91,8 +91,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         $SQLServiceAccounts = @();
                         if (Test-Bound 'User') {
                             $SQLServiceAccounts += $User;
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
                             $SQLServiceAccounts += (Get-DbaService -ComputerName $computer -Type Engine).StartName
                         }
@@ -103,7 +102,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
                                     $Type
-                                    )
+                                )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                                 $tempfile = "$temp\secpolByDbatools.cfg"
