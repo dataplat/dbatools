@@ -279,11 +279,15 @@ function Invoke-DbaDbDataMasking {
 
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
+                    $cleanupIdentityColumn = $false
+
                     if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
 
                         Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+
+                        $cleanupIdentityColumn = $true
 
                         $identityColumn = "MaskingID"
 
@@ -674,11 +678,24 @@ function Invoke-DbaDbDataMasking {
                         try {
                             Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                            $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)])"
+                            $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
 
                             Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
                         } catch {
                             Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                        }
+
+                        if($cleanupIdentityColumn){
+                            try{
+                                Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+
+                                $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
+
+                                Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            }
+                            catch{
+                                Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                            }
                         }
 
                         try {
