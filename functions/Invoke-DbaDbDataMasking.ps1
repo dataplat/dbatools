@@ -310,6 +310,7 @@ function Invoke-DbaDbDataMasking {
                     try {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
+                            $columnString += ",[$($identityColumn)]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
                         $data = $db.Query($query)
