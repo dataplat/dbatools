@@ -18,6 +18,9 @@ function Set-DbaPrivilege {
         Use this to choose the privilege(s) to which you want to add the SQL Service account.
         Accepts 'IFI', 'LPIM', 'BatchLogon', and/or 'SecAudit' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch', and 'Generate Security Audits'.
 
+    .PARAMETER User
+        If provided, will add requested permissions to this account instead of the the account under which the SQL service is running.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -60,7 +63,8 @@ function Set-DbaPrivilege {
         [Parameter(Mandatory)]
         [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit')]
         [string[]]$Type,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [string]$User
     )
 
     begin {
@@ -83,17 +87,22 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
                             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                         }
-                        Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                        $SQLServiceAccounts = (Get-DbaService -ComputerName $computer -Type Engine).StartName
+
+                        $SQLServiceAccounts = @();
+                        if (Test-Bound 'User') {
+                            $SQLServiceAccounts += $User;
+                        } else {
+                            Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
+                            $SQLServiceAccounts += (Get-DbaService -ComputerName $computer -Type Engine).StartName
+                        }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM -ScriptBlock {
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $Type -ScriptBlock {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
-                                    $BatchLogon,
-                                    $IFI,
-                                    $LPIM)
+                                    $Type
+                                )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                                 $tempfile = "$temp\secpolByDbatools.cfg"
