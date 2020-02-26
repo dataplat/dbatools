@@ -41,7 +41,7 @@ function Install-DbaMaintenanceSolution {
         If this switch is enabled, the corresponding SQL Agent Jobs will be created.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install Ola's solution from. This *should* be the zipfile as distributed by the maintainers.
+        Specifies the path to a local file to install Ola's solution from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
 
     .PARAMETER Force
@@ -59,15 +59,17 @@ function Install-DbaMaintenanceSolution {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Ola, Maintenance
+        Tags: Community, OlaHallengren
         Author: Viorel Ciucu, cviorel.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+        https://ola.hallengren.com
+
     .LINK
-        http://dbatools.io/Install-DbaMaintenanceSolution
+         https://dbatools.io/Install-DbaMaintenanceSolution
 
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
@@ -81,19 +83,18 @@ function Install-DbaMaintenanceSolution {
 
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
 
-
     .EXAMPLE
         PS C:\> $params = @{
-                >> SqlInstance = 'MyServer'
-                >> Database = 'maintenance'
-                >> ReplaceExisting = $true
-                >> InstallJobs = $true
-                >> LogToTable = $true
-                >> BackupLocation = 'C:\Data\Backup'
-                >> CleanupTime = 65
-                >> Verbose = $true
-                >> }
-                >> Install-DbaMaintenanceSolution @params
+        >> SqlInstance = 'MyServer'
+        >> Database = 'maintenance'
+        >> ReplaceExisting = $true
+        >> InstallJobs = $true
+        >> LogToTable = $true
+        >> BackupLocation = 'C:\Data\Backup'
+        >> CleanupTime = 65
+        >> Verbose = $true
+        >> }
+        >> Install-DbaMaintenanceSolution @params
 
         Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
 
@@ -120,7 +121,6 @@ function Install-DbaMaintenanceSolution {
         - 'CommandLog Cleanup'
         - 'DatabaseIntegrityCheck - USER_DATABASES'
         - 'DatabaseBackup - USER_DATABASES - DIFF'
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
@@ -141,7 +141,6 @@ function Install-DbaMaintenanceSolution {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 

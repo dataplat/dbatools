@@ -55,7 +55,7 @@ function Get-DbatoolsLog {
         Instead of log entries, the error entries will be retrieved
 
     .NOTES
-        Tags: Debug
+        Tags: Module, Support
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
@@ -84,7 +84,6 @@ function Get-DbatoolsLog {
         PS C:\> Get-DbatoolsLog -Tag "fail" -Last 5
 
         Returns all log entries within the last 5 executions that contained the tag "fail"
-
     #>
     [CmdletBinding()]
     param (
@@ -113,54 +112,52 @@ function Get-DbatoolsLog {
         }
 
         if (Test-Bound -ParameterName LastError) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            } | Select-Object -Last 1
-    }
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
+        }
 
-    if (Test-Bound -ParameterName Target) {
-        $messages = $messages | Where-Object TargetObject -eq $Target
-    }
+        if (Test-Bound -ParameterName Target) {
+            $messages = $messages | Where-Object TargetObject -eq $Target
+        }
 
-    if (Test-Bound -ParameterName Tag) {
-        $messages = $messages | Where-Object {
-            $_.Tags | Where-Object {
-                $_ -in $Tag
+        if (Test-Bound -ParameterName Tag) {
+            $messages = $messages | Where-Object {
+                $_.Tags | Where-Object {
+                    $_ -in $Tag
+                }
             }
         }
-    }
 
-    if (Test-Bound -ParameterName Runspace) {
-        $messages = $messages | Where-Object Runspace -eq $Runspace
-    }
+        if (Test-Bound -ParameterName Runspace) {
+            $messages = $messages | Where-Object Runspace -eq $Runspace
+        }
 
-    if (Test-Bound -ParameterName Last) {
-        $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
-        $start = $history[0].StartExecutionTime
-        $end = $history[-1].EndExecutionTime
+        if (Test-Bound -ParameterName Last) {
+            $history = Get-History | Where-Object CommandLine -NotLike "Get-DbatoolsLog*" | Select-Object -Last $Last -Skip $Skip
+            $start = $history[0].StartExecutionTime
+            $end = $history[-1].EndExecutionTime
 
-        $messages = $messages | Where-Object {
-            ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            $messages = $messages | Where-Object {
+                ($_.Timestamp -gt $start) -and ($_.Timestamp -lt $end) -and ($_.Runspace -eq ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            }
+        }
+
+        if (Test-Bound -ParameterName Level) {
+            $messages = $messages | Where-Object Level -In $Level
+        }
+
+        if ($Raw) {
+            return $messages
+        } else {
+            $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
+                Name       = "Message"
+                Expression = {
+                    $msg = ($_.Message.Split("`n") -join " ")
+                    do {
+                        $msg = $msg.Replace('  ', ' ')
+                    } until ($msg -notmatch '  ')
+                    $msg
+                }
+            }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
         }
     }
-
-    if (Test-Bound -ParameterName Level) {
-        $messages = $messages | Where-Object Level -In $Level
-    }
-
-    if ($Raw) {
-        return $messages
-    } else {
-        $messages | Select-Object -Property CallStack, ComputerName, File, FunctionName, Level, Line, @{
-            Name       = "Message"
-            Expression = {
-                $msg = ($_.Message.Split("`n") -join " ")
-                do {
-                    $msg = $msg.Replace('  ', ' ')
-                } until ($msg -notmatch '  ')
-                $msg
-            }
-        }, ModuleName, Runspace, Tags, TargetObject, Timestamp, Type, Username
-    }
-}
 }

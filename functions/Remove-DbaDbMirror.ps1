@@ -21,10 +21,10 @@ function Remove-DbaDbMirror {
         The target database.
 
     .PARAMETER Partner
-        The partner fqdn.
+        The partner Fully Qualified Domain Name.
 
     .PARAMETER Witness
-        The witness fqdn.
+        The witness Fully Qualified Domain Name.
 
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase.
@@ -41,14 +41,15 @@ function Remove-DbaDbMirror {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbMirror
+        https://dbatools.io/Remove-DbaDbMirror
 
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance localhost
@@ -59,7 +60,6 @@ function Remove-DbaDbMirror {
         PS C:\> Set-DbaDbMirror -SqlInstance localhost, sql2016
 
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -81,7 +81,7 @@ function Remove-DbaDbMirror {
 
         foreach ($db in $InputObject) {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Turning off mirror for $db")) {
-                # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                # use t-sql cuz $db.Alter() does not always work against restoring dbs
                 try {
                     try {
                         $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)

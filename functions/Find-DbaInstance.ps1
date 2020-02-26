@@ -542,7 +542,7 @@ function Find-DbaInstance {
                         }
                     }
 
-                    $masterList
+                    $masterList | Where-Object { $_.Confidence -ge $MinimumConfidence }
                 }
             }
         }
@@ -593,7 +593,7 @@ function Find-DbaInstance {
                 $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
 
                 $objSearcher.PageSize = 200
-                $objSearcher.Filter = "(&(objectcategory=computer)(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
+                $objSearcher.Filter = "(&(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
                 $objSearcher.SearchScope = 'Subtree'
 
                 $results = $objSearcher.FindAll()
@@ -601,10 +601,15 @@ function Find-DbaInstance {
                     if ($GetSPN) {
                         $computer.Properties["serviceprincipalname"] | Where-Object { $_ -like "MSSQLsvc*:*" }
                     } else {
-                        if ($computer.Properties["dnshostname"]) {
+                        if ($computer.Properties["dnshostname"] -and $computer.Properties["dnshostname"] -ne '') {
                             $computer.Properties["dnshostname"][0]
                         } else {
-                            $computer.Properties["name"][0]
+                            $computer.Properties["serviceprincipalname"][0] -match '(?<=/)[^:]*' > $null
+                            if ($matches) {
+                                $matches[0]
+                            } else {
+                                $computer.Properties["name"][0]
+                            }
                         }
                     }
                 }

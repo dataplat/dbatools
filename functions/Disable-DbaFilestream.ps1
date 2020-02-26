@@ -42,6 +42,9 @@ function Disable-DbaFilestream {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Disable-DbaFilestream
+
     .EXAMPLE
         PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2
 

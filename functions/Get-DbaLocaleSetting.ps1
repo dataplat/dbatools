@@ -20,7 +20,7 @@ function Get-DbaLocaleSetting {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: OS
+        Tags: Server, Management
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         Website: https://dbatools.io
@@ -41,10 +41,9 @@ function Get-DbaLocaleSetting {
         Gets the Locale settings on computers sql1, sql2 and sql3.
 
     .EXAMPLE
-        PS C:\> Get-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential | Out-Gridview
+        PS C:\> Get-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential
 
-        Gets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers, and shows them in a grid view.
-
+        Gets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers.
     #>
     [CmdletBinding()]
     param (
@@ -54,7 +53,6 @@ function Get-DbaLocaleSetting {
         [PSCredential] $Credential,
         [switch]$EnableException
     )
-
     begin {
         $ComputerName = $ComputerName | ForEach-Object { $_.split("\")[0] } | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
@@ -64,9 +62,6 @@ function Get-DbaLocaleSetting {
         [UInt32]$CIMHiveCU = 2147483649
     }
     process {
-        # uses cim commands
-
-
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
@@ -80,23 +75,19 @@ function Get-DbaLocaleSetting {
                 }
                 if ( $CIMSession ) {
                     Write-Message -Level Verbose -Message "Getting properties from Registry Key"
-                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname } |
-                        Select-Object -ExpandProperty snames
+                    $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname } | Select-Object -ExpandProperty snames
 
                     foreach ($Name in $PropNames) {
-                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } |
-                            Select-Object -ExpandProperty svalue
+                        $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } | Select-Object -ExpandProperty svalue
                         $props.add($Name, $sValue)
                     }
                     [PSCustomObject]$props
-                } #if CIMSession
-                else {
+                } else {
                     Write-Message -Level Warning -Message "Can't create CIMSession on $computer"
                 }
-            } #if computername
-            else {
+            } else {
                 Write-Message -Level Warning -Message "Can't connect to $computer"
             }
-        } #foreach computer
-    } #PROCESS
-} #function
+        }
+    }
+}

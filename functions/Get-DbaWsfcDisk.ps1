@@ -20,7 +20,7 @@ function Get-DbaWsfcDisk {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Cluster, WSFC, FCI, HA
+        Tags: WSFC, FCI, WindowsCluster, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -34,7 +34,6 @@ function Get-DbaWsfcDisk {
         PS C:\> Get-DbaWsfcDisk -ComputerName cluster01
 
         Gets disk information from the failover cluster cluster01
-
     #>
     [CmdletBinding()]
     param (

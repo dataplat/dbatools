@@ -18,7 +18,7 @@ function Get-DbaClientAlias {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Alias
+        Tags: Server, Management
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -47,7 +47,6 @@ function Get-DbaClientAlias {
         PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
 
         Gets all SQL Server client aliases on Server1 and Server2
-
     #>
     [CmdletBinding()]
     param (

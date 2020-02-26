@@ -24,12 +24,15 @@ function Get-DbatoolsConfig {
         Overrides the default behavior and also displays hidden configuration values.
 
     .NOTES
-        Tags: Config, Module
+        Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig 'Mail.To'
@@ -40,7 +43,6 @@ function Get-DbatoolsConfig {
         PS C:\> Get-DbatoolsConfig -Force
 
         Retrieve all configuration elements from all modules, even hidden ones.
-
     #>
     [CmdletBinding(DefaultParameterSetName = "FullName")]
     param (

@@ -25,7 +25,7 @@ function Test-DbaDbDataMaskingConfig {
         If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
-        Tags: Data masking, Testing
+        Tags: Masking, DataMasking
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io
@@ -42,16 +42,13 @@ function Test-DbaDbDataMaskingConfig {
 
         Test the configuration file
     #>
-
-    [cmdletbinding()]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory)]
         [string]$FilePath,
         [switch]$EnableException
     )
-
     begin {
-
         if (-not (Test-Path -Path $FilePath)) {
             Stop-Function -Message "Could not find masking config file $FilePath" -Target $FilePath
             return
@@ -74,13 +71,12 @@ function Test-DbaDbDataMaskingConfig {
             return
         }
 
-        $supportedDataTypes = 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         $randomizerTypes = Get-DbaRandomizedType
 
-        $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'SubType'
+        $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType'
     }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -179,7 +175,7 @@ function Test-DbaDbDataMaskingConfig {
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
-                                Error  = "The value for MinValue cannot be 'null' when using sub type 'Betweeen'"
+                                Error  = "The value for MinValue cannot be 'null' when using sub type 'Between'"
                             }
                         }
 
@@ -188,19 +184,12 @@ function Test-DbaDbDataMaskingConfig {
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = 'null'
-                                Error  = "The value for MaxValue cannot be 'null' when using sub type 'Betweeen'"
+                                Error  = "The value for MaxValue cannot be 'null' when using sub type 'Between'"
                             }
                         }
-
-                    } # End if sub type 'between'
-
-                } # End if column type date
-
-            } # End for each column
-
-        } # End for each table
-
-
-    } # End process
-
+                    }
+                }
+            }
+        }
+    }
 }

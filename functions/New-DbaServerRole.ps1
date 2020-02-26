@@ -47,9 +47,9 @@ function New-DbaServerRole {
         https://dbatools.io/New-DbaServerRole
 
     .EXAMPLE
-        PS C:\> New-DbaServerRole -SqlInstance sql2017a -Role 'dbExecuter' -Owner sa
+        PS C:\> New-DbaServerRole -SqlInstance sql2017a -ServerRole 'dbExecuter' -Owner sa
 
-        Will create a new role named dbExecuter and grant ownership to the login sa on sql2017a instance.
+        Will create a new server role named dbExecuter and grant ownership to the login sa on sql2017a instance.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]

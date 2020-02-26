@@ -32,7 +32,7 @@ function Export-DbaDiagnosticQuery {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Query
+        Tags: Community, GlennBerry
         Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
         Website: https://dbatools.io
@@ -52,7 +52,6 @@ function Export-DbaDiagnosticQuery {
         PS C:\> Export-DbaDiagnosticQuery -InputObject $output -ConvertTo Excel
 
         Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Documents folder
-
     #>
     [CmdletBinding()]
     param (

@@ -40,7 +40,7 @@ function Invoke-DbaCycleErrorLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaCycleLog
+        https://dbatools.io/Invoke-DbaCycleErrorLog
 
     .EXAMPLE
         PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016 -Type agent
