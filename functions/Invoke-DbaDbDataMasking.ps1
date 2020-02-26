@@ -258,24 +258,23 @@ function Invoke-DbaDbDataMasking {
 
                 $db = $server.Databases[$($dbName)]
 
-                $stepCounter = $nullmod = 0
+                $stepcounter = $nullmod = 0
 
-                foreach ($tableObject in $tables.Tables) {
-
+                foreach ($tableobject in $tables.Tables) {
                     $uniqueValues = @()
                     $uniqueValueColumns = @()
                     $stringBuilder = [System.Text.StringBuilder]''
 
-                    if ($tableObject.Name -in $ExcludeTable) {
-                        Write-Message -Level Verbose -Message "Skipping $($tableObject.Name) because it is explicitly excluded"
+                    if ($tableobject.Name -in $ExcludeTable) {
+                        Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
                         continue
                     }
 
-                    if ($tableObject.Name -notin $db.Tables.Name) {
-                        Stop-Function -Message "Table $($tableObject.Name) is not present in $db" -Target $db -Continue
+                    if ($tableobject.Name -notin $db.Tables.Name) {
+                        Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
                     }
 
-                    $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableObject.Schema -and $_.Name -eq $tableObject.Name }
+                    $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
                     $cleanupIdentityColumn = $false
 
@@ -309,26 +308,26 @@ function Invoke-DbaDbDataMasking {
                         if (-not (Test-Bound -ParameterName Query)) {
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
                             $columnString += ",[$($identityColumn)]"
-                            $query = "SELECT $($columnString) FROM [$($tableObject.Schema)].[$($tableObject.Name)]"
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
                         $data = $db.Query($query)
 
                     } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableObject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     # Check if the table contains unique indexes
-                    if ($tableObject.HasUniqueIndex) {
+                    if ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
-                        Write-Message -Level Verbose -Message "Generating unique values for $($tableObject.Name)"
+                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
 
                         for ($i = 0; $i -lt $data.Count; $i++) {
 
                             $rowValue = New-Object PSCustomObject
 
                             # Loop through each of the unique indexes
-                            foreach ($index in ($db.Tables[$($tableObject.Name)].Indexes | Where-Object IsUnique -eq $true )) {
+                            foreach ($index in ($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true )) {
 
                                 # Loop through the index columns
                                 foreach ($indexColumn in $index.IndexedColumns) {
@@ -336,7 +335,7 @@ function Invoke-DbaDbDataMasking {
                                     if (-not $dbTable.Columns[$indexColumn.Name].Identity) {
 
                                         # Get the column mask info
-                                        $columnMaskInfo = $tableObject.Columns | Where-Object Name -eq $indexColumn.Name
+                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                         if ($columnMaskInfo) {
                                             # Generate a new value
@@ -366,7 +365,7 @@ function Invoke-DbaDbDataMasking {
                                             foreach ($indexColumn in $index.IndexedColumns) {
 
                                                 # Get the column mask info
-                                                $columnMaskInfo = $tableObject.Columns | Where-Object Name -eq $indexColumn.Name
+                                                $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                                 if ($columnMaskInfo) {
                                                     # Generate a new value
@@ -398,7 +397,7 @@ function Invoke-DbaDbDataMasking {
 
                     $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
-                    $tablecolumns = $tableObject.Columns
+                    $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
                         $tablecolumns = $tablecolumns | Where-Object Name -in $Column
@@ -413,34 +412,31 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if (-not $tablecolumns) {
-                        Write-Message -Level Verbose "No columns to process in $($dbName).$($tableObject.Schema).$($tableObject.Name), moving on"
+                        Write-Message -Level Verbose "No columns to process in $($dbName).$($tableobject.Schema).$($tableobject.Name), moving on"
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableObject.Schema).$($tableObject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
-                        if ((($stepCounter++) % 100) -eq 0) {
-                            $progressParams = @{
-                                StepNumber = $stepCounter
-                                TotalSteps = $data.Count
-                                Message    = "Masking data"
-                                Activity   = "Masking $($data.Count) rows in $($tableObject.Schema).$($tableObject.Name) in $($dbName) on $instance"
+                        $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
+                        $rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
+
+                        # Loop through each of the rows and change them
+                        foreach ($row in $data) {
+                            if ((($stepcounter++) % 100) -eq 0) {
+                                $progressParams = @{
+                                    StepNumber = $stepcounter
+                                    TotalSteps = $data.Count
+                                    Activity   = "Masking data"
+                                    Message    = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                }
+
+                                Write-ProgressHelper @progressParams
                             }
 
-                            Write-ProgressHelper @progressParams
-                        }
-
-                        $totalBatches = [math]::ceiling($dbTable.RowCount / $BatchSize)
-
-                        $rowNumber = $stepCounter = $batchrowcounter = 0
-
-                        foreach ($row in $data) {
                             $updates = @()
                             $newValue = $null
-
-                            $stepCounter++
-                            $batchrowcounter++
 
                             foreach ($columnobject in $tablecolumns) {
 
@@ -458,10 +454,10 @@ function Invoke-DbaDbDataMasking {
 
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                     $newValue = $null
-                                } elseif ($tableObject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
                                     if ($uniqueValues.Count -lt 1) {
-                                        Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableObject
+                                        Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
                                         return
                                     }
 
@@ -585,43 +581,23 @@ function Invoke-DbaDbDataMasking {
                                 }
                             }
 
-                            $null = $stringBuilder.AppendLine("UPDATE [$($tableObject.Schema)].[$($tableObject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
+                            $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
 
-                            <# if ((($stepCounter++) % 100) -eq 0) {
-                                $progressParams = @{
-                                    StepNumber = $stepCounter
-                                    TotalSteps = $data.Count
-                                    Message    = "Batch $($batchCounter)/$($totalBatches)"
-                                    Activity   = "Masking $($data.Count) rows in $($tableObject.Schema).$($tableObject.Name) in $($dbName) on $instance"
-                                }
+                            $batchRowCounter++
 
-                                Write-ProgressHelper @progressParams
-                            } #>
-
-                            if ($batchrowcounter -eq $BatchSize) {
-
+                            if ($batchRowCounter -eq $BatchSize) {
                                 $batchCounter++
 
-                                Write-Message -Level Verbose -Message "Executing batch $($batchCounter)/$($totalBatches)"
-
-                                $progressParams = @{
-                                    StepNumber = $stepCounter
-                                    TotalSteps = $data.Count
-                                    Message    = "Batch $($batchCounter)/$($totalBatches)"
-                                    Activity   = "Masking $($data.Count) rows in $($tableObject.Schema).$($tableObject.Name) in $($dbName) on $instance"
-                                }
-
-                                if ((($stepCounter++) % 100) -eq 0) {
-                                    Write-ProgressHelper @progressParams
-                                }
+                                Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
 
                                 try {
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 } catch {
-                                    Stop-Function -Message "Error updating $($tableObject.Schema).$($tableObject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                 }
 
                                 $null = $stringBuilder.Clear()
+                                $batchRowCounter = 0
                             }
 
                             # Increase the row number
@@ -629,33 +605,17 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         if ($stringBuilder.Length -ge 1) {
-                            $batchCounter++
-
-                            $progressParams = @{
-                                StepNumber = $stepCounter
-                                TotalSteps = $data.Count
-                                Message    = "Batch $($batchCounter)/$($totalBatches)"
-                                Activity   = "Masking $($data.Count) rows in $($tableObject.Schema).$($tableObject.Name) in $($dbName) on $instance"
-                            }
-
-
-                            if ((($stepCounter++) % 100) -eq 0) {
-                                Write-ProgressHelper @progressParams
-                            }
-
-                            Write-Message -Level Verbose -Message "Executing batch $($batchCounter)/$($totalBatches)"
-
                             try {
                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                             } catch {
-                                Stop-Function -Message "Error updating $($tableObject.Schema).$($tableObject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                             }
                         }
 
                         $null = $stringBuilder.Clear()
 
                         $columnsWithComposites = @()
-                        $columnsWithComposites += $tableObject.Columns | Where-Object Composite -ne $null
+                        $columnsWithComposites += $tableobject.Columns | Where-Object Composite -ne $null
 
                         if ($columnsWithComposites.Count -ge 1) {
                             foreach ($columnObject in $columnsWithComposites) {
@@ -699,13 +659,13 @@ function Invoke-DbaDbDataMasking {
 
                                 $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
-                                $null = $stringBuilder.AppendLine("UPDATE [$($tableObject.Schema)].[$($tableObject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
+                                $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
                             }
 
                             try {
                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                             } catch {
-                                Stop-Function -Message "Error updating $($tableObject.Schema).$($tableObject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                             }
                         }
 
@@ -738,15 +698,15 @@ function Invoke-DbaDbDataMasking {
                                 InstanceName = $db.Parent.ServiceName
                                 SqlInstance  = $db.Parent.DomainInstanceName
                                 Database     = $dbName
-                                Schema       = $tableObject.Schema
-                                Table        = $tableObject.Name
-                                Columns      = $tableObject.Columns.Name
+                                Schema       = $tableobject.Schema
+                                Table        = $tableobject.Name
+                                Columns      = $tableobject.Columns.Name
                                 Rows         = $($data.Rows.Count)
                                 Elapsed      = [prettytimespan]$elapsed.Elapsed
                                 Status       = "Masked"
                             }
                         } catch {
-                            Stop-Function -Message "Error updating $($tableObject.Schema).$($tableObject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
 
