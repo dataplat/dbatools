@@ -428,8 +428,8 @@ function Invoke-DbaDbDataMasking {
                                 $progressParams = @{
                                     StepNumber = $stepcounter
                                     TotalSteps = $data.Count
-                                    Activity   = "Masking data"
-                                    Message    = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                    Message    = "Generating Updates"
                                 }
 
                                 Write-ProgressHelper @progressParams
@@ -588,6 +588,15 @@ function Invoke-DbaDbDataMasking {
                             if ($batchRowCounter -eq $BatchSize) {
                                 $batchCounter++
 
+                                $progressParams = @{
+                                    StepNumber = $stepcounter
+                                    TotalSteps = $data.Count
+                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                    Message    = "Executing Batch $batchCounter/$totalBatches"
+                                }
+
+                                Write-ProgressHelper @progressParams
+
                                 Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
 
                                 try {
@@ -605,6 +614,17 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         if ($stringBuilder.Length -ge 1) {
+                            $batchCounter++
+
+                            $progressParams = @{
+                                StepNumber = $stepcounter
+                                TotalSteps = $data.Count
+                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                Message    = "Executing Batch $batchCounter/$totalBatches"
+                            }
+
+                            Write-ProgressHelper @progressParams
+
                             try {
                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                             } catch {
