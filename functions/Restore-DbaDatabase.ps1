@@ -231,11 +231,9 @@ function Restore-DbaDatabase {
 
     .EXAMPLE
         PS C:\> $result = Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly
-        PS C:\> $result | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\scripts\restore.sql
+        PS C:\> $result | Out-File -Filepath c:\scripts\restore.sql
 
-        Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
-        filters them and generate the T-SQL Scripts to restore the database to the latest point in time,
-        and then stores the output in a file for later retrieval
+        Scans all the backup files in \\server2\backups, filters them and generate the T-SQL Scripts to restore the database to the latest point in time, and then stores the output in a file for later retrieval
 
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
@@ -383,9 +381,9 @@ function Restore-DbaDatabase {
 
         #region Validation
         try {
-            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
 

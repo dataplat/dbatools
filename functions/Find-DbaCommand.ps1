@@ -36,7 +36,7 @@ function Find-DbaCommand {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Find, Help, Command
+        Tags: Module, Find
         Author: Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
@@ -80,7 +80,6 @@ function Find-DbaCommand {
         PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
 
         Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -107,7 +106,12 @@ function Find-DbaCommand {
             if ($commandName -in $script:noncoresmo -or $commandName -in $script:windowsonly) {
                 $availability = 'Windows only'
             }
-            $thishelp = Get-Help $commandName -Full
+            try {
+                $thishelp = Get-Help $commandName -Full
+            } catch {
+                Stop-Function -Message "Issue getting help for $commandName" -Target $commandName -ErrorRecord $_ -Continue
+            }
+
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
@@ -176,7 +180,8 @@ function Find-DbaCommand {
         function Get-DbaIndex() {
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
                 $dbamodule = Get-Module -Name dbatools
-                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -EQ 'Function'
+                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -In 'Function', 'Cmdlet' | Sort-Object -Property Name | Select-Object -Unique
+                #Had to add Unique because Select-DbaObject was getting populated twice once written to the index file
 
                 $helpcoll = New-Object System.Collections.Generic.List[System.Object]
                 foreach ($command in $allCommands) {

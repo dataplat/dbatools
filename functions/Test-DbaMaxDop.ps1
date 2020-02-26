@@ -120,12 +120,24 @@ function Test-DbaMaxDop {
                 }
             } else {
                 #Server with multiple NUMA nodes
-                if (($numberOfCores / $NumaNodes) -lt 8) {
-                    # Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
-                    $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                if ($server.VersionMajor -ge 13) {
+                    if (($numberOfCores / $NumaNodes) -lt 16) {
+                        # On SQL2016+ - Less than 16 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
+                        $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                    } else {
+                        # Greater than 16 logical processors per NUMA node - Keep MAXDOP at 16
+                        $recommendedMaxDop = 16
+                    }
                 } else {
                     # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
                     $recommendedMaxDop = 8
+                    if (($numberOfCores / $NumaNodes) -lt 8) {
+                        # On previous SQL Server versions - Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
+                        $recommendedMaxDop = [int]($numberOfCores / $NumaNodes)
+                    } else {
+                        # Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
+                        $recommendedMaxDop = 8
+                    }
                 }
             }
 

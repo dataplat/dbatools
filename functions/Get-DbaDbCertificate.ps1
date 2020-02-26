@@ -44,6 +44,9 @@ function Get-DbaDbCertificate {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbCertificate
+
     .EXAMPLE
         PS C:\> Get-DbaDbCertificate -SqlInstance sql2016
 
@@ -62,7 +65,7 @@ function Get-DbaDbCertificate {
     .EXAMPLE
         PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Subject 'Availability Group Cert'
 
-        Gets the cert1 certificate within the db1 database
+        Gets the certificate within the db1 database that has the subject 'Availability Group Cert'
 
     #>
     [CmdletBinding()]
@@ -88,8 +91,6 @@ function Get-DbaDbCertificate {
                 continue
             }
 
-            #Variable marked as unused by PSScriptAnalyzer
-            #$dbName = $db.Name
             $certs = $db.Certificates
 
             if ($null -eq $certs) {

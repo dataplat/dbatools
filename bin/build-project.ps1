@@ -31,7 +31,7 @@ function Get-DotNetPath {
     param ()
     process {
         if (Get-Command dotnet.exe -CommandType Application -ErrorAction SilentlyContinue) { return (Get-Command dotnet.exe -CommandType Application | Select-Object -First 1).Source }
-        "$($env:ProgramFiles)\dotnet\dotnet.exe" | Select-Object -First 1
+        "$([System.Environment]::GetFolderPath("ProgramFiles"))\dotnet\dotnet.exe" | Select-Object -First 1
     }
 }
 

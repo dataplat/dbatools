@@ -61,7 +61,6 @@ function Start-DbaEndpoint {
         PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Start-DbaEndpoint
 
         Starts the endpoints returned from the Get-Endpoint function.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -73,7 +72,6 @@ function Start-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."

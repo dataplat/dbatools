@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.50'
+    ModuleVersion          = '1.0.98'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -492,6 +492,9 @@
         'Export-DbaDbRole',
         'Export-DbaServerRole',
         'Add-DbaServerRoleMember',
+        'Get-DbaDbAsymmetricKey',
+        'New-DbaDbAsymmetricKey',
+        'Remove-DbaDbAsymmetricKey',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -595,10 +598,15 @@
         'Enable-DbaForceNetworkEncryption',
         'Disable-DbaForceNetworkEncryption',
         'Get-DbaForceNetworkEncryption',
+        'Get-DbaHideInstance',
+        'Enable-DbaHideInstance',
+        'Disable-DbaHideInstance',
+        'New-DbaComputerCertificateSigningRequest',
         'Remove-DbaComputerCertificate',
         'New-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
         'Add-DbaComputerCertificate',
+        'Backup-DbaComputerCertificate',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Invoke-DbaDbLogShipping',
@@ -646,10 +654,14 @@
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
         'Register-DbatoolsConfig',
+        # Managed Path Commands
+        'Get-DbatoolsPath',
+        'Set-DbatoolsPath',
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
-        'Test-DbaManagementObject'
+        'Test-DbaManagementObject',
+        'Copy-DbaDbViewData'
     )
 
     # Cmdlets to export from this module

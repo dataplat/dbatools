@@ -30,7 +30,7 @@ function Get-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Hadr, HA, AG, AvailabilityGroup
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
@@ -64,7 +64,6 @@ function Get-DbaAvailabilityGroup {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
         Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
-
     #>
     [CmdletBinding()]
     param (

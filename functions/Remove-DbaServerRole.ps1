@@ -40,15 +40,18 @@ function Remove-DbaServerRole {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Remove-DbaServerRole
+
     .EXAMPLE
         PS C:\> Remove-DbaServerRole -SqlInstance Server1 -ServerRole 'serverExecuter'
 
         Server-role 'serverExecuter' on Server1 will be removed if it exists.
 
     .EXAMPLE
-        PS C:\> Remove-DbaServerRole -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> Remove-DbaServerRole -SqlInstance Server1 -ServerRole 'serverExecuter' -Confirm:$false
 
-        Suppresses all prompts to remove the server-role in the 'Server1'.
+        Suppresses all prompts to remove the server-role 'serverExecuter' on 'Server1'.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]

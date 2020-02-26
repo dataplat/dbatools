@@ -51,6 +51,9 @@ function Enable-DbaFilestream {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Enable-DbaFilestream
+
     .EXAMPLE
         PS C:\> Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel TSql
         PS C:\> Enable-DbaFilestream -SqlInstance server1\instance2 -FileStreamLevel 1

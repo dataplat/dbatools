@@ -204,7 +204,7 @@ function Export-DbaServerRole {
                     ON ag.replica_metadata_id = SPerm.major_id
                     AND SPerm.class = 108
                 where sp.type='R'
-                and sp.name=N'<#RoleName#>'"
+                and sp.name=N'/*RoleName*/'"
 
         if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
             $ScriptingOptionsObject = New-DbaScriptingOption
@@ -269,7 +269,7 @@ function Export-DbaServerRole {
                     if ($server.VersionMajor -ge 11) {
                         $outsql += $role.Script($ScriptingOptionsObject)
 
-                        $query = $roleSQL.Replace('<#RoleName#>', "$($role.Name)")
+                        $query = $roleSQL.Replace('/*RoleName*/', "$($role.Name)")
                         $rolePermissions = $server.Query($query)
 
                         foreach ($rolePermission in $rolePermissions) {

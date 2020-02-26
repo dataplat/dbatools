@@ -38,6 +38,9 @@ function Get-DbaDbCheckConstraint {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbCheckConstraint
+
     .EXAMPLE
         PS C:\> Get-DbaDbCheckConstraint -SqlInstance sql2016
 

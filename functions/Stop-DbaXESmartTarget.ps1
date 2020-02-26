@@ -24,13 +24,14 @@ function Stop-DbaXESmartTarget {
         Tags: ExtendedEvent, XE, XEvent
         Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
+        Please check the wiki - https://github.com/spaghettidba/XESmartTarget/wiki
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Stop-DbaXESmartTarget
-        https://github.com/spaghettidba/XESmartTarget/wiki
 
     .EXAMPLE
         PS C:\> Get-DbaXESmartTarget | Stop-DbaXESmartTarget

@@ -47,7 +47,7 @@ function Get-DbaRandomizedDataset {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRandomizedDataSet
+        https://dbatools.io/Get-DbaRandomizedDataset
 
     .EXAMPLE
         Get-DbaRandomizedDataset -Template Personaldata

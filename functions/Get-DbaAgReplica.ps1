@@ -31,7 +31,7 @@ function Get-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, AG, HA, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
@@ -55,7 +55,6 @@ function Get-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
 
         Returns full object properties on all availability group replicas found on sql2017a
-
     #>
     [CmdletBinding()]
     param (
@@ -68,6 +67,11 @@ function Get-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }

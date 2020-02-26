@@ -32,6 +32,9 @@ function Backup-DbaDatabase {
 
         Passing in NUL as the FilePath will backup to the NUL: device
 
+    .PARAMETER IncrementPrefix
+        If enables, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platorms
+
     .PARAMETER TimeStampFormat
         By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
 
@@ -120,6 +123,14 @@ function Backup-DbaDatabase {
     .PARAMETER OutputScriptOnly
         Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
 
+    .PARAMETER EncryptionAlgorithm
+        Specified the Encryption Algorithm to used. Must be one of 'AES128','AES192','AES256' or 'TRIPLEDES'
+        Must specify one of EncryptionCertificate or EncryptionKey as well.
+
+    .PARAMETER EncryptionCertificate
+        The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
+        Is mutually exclusive with the EncryptionKey option
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -138,6 +149,9 @@ function Backup-DbaDatabase {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Backup-DbaDatabase
 
     .EXAMPLE
         PS C:\> Backup-DbaDatabase -SqlInstance Server1 -Database HR, Finance
@@ -175,9 +189,14 @@ function Backup-DbaDatabase {
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 
     .EXAMPLE
-        PS C:\ Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql
 
         Performs a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that Shared Access Signature credentials for both containers exist on the source instance
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert
+
+        Backs up the master database using the BackupCert certificate and the AES256 algorithm.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -191,6 +210,7 @@ function Backup-DbaDatabase {
         [string[]]$Path,
         [Alias('BackupFileName')]
         [string]$FilePath,
+        [switch]$IncrementPrefix,
         [switch]$ReplaceInName,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
@@ -215,10 +235,16 @@ function Backup-DbaDatabase {
         [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
+        [ValidateSet('AES128', 'AES192', 'AES256', 'TRIPLEDES')]
+        [String]$EncryptionAlgorithm,
+        [String]$EncryptionCertificate,
         [switch]$EnableException
     )
 
     begin {
+        # This is here ready to go when get EKM working so we can do encrption with asymmetric encryption.
+        $EncryptionKey = $null
+
         if (-not (Test-Bound 'TimeStampFormat')) {
             Write-Message -Message 'Setting Default timestampformat' -Level Verbose
             $TimeStampFormat = "yyyyMMddHHmm"
@@ -308,6 +334,38 @@ function Backup-DbaDatabase {
                 $Path = $AzureBaseUrl
             }
 
+            if (Test-Bound 'EncryptionAlgorithm') {
+                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                    return
+                } else {
+                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                    if (Test-Bound 'EncryptionCertificate') {
+                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                        if ($null -eq $tCertCheck) {
+                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                            $encryptionOptions.encryptorName = $EncryptionCertificate
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                    if (Test-Bound 'EncryptionKey') {
+                        # Should not end up here until Key encryption in implemented
+                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                        if ($null -eq $tKeyCheck) {
+                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                            $encryptionOptions.encryptorName = $EncryptionKey
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                }
+            }
+
             if ($OutputScriptOnly) {
                 $IgnoreFileChecks = $true
             }
@@ -328,6 +386,10 @@ function Backup-DbaDatabase {
 
         if ($ExcludeDatabase) {
             $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
+        }
+
+        if ($InputObject.count -eq 0) {
+            Write-Message -Level Warning -Message "No databases match the request for backups"
         }
 
         foreach ($db in $InputObject) {
@@ -384,6 +446,10 @@ function Backup-DbaDatabase {
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             $Suffix = "bak"
+
+            if ($null -ne $encryptionOptions) {
+                $backup.EncryptionOption = $encryptionOptions
+            }
 
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
@@ -468,10 +534,11 @@ function Backup-DbaDatabase {
             } else {
                 $slash = "\"
             }
+
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + ("$($i+1)-" * $IncrementPrefix.ToBool() ) + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             } elseif ($FinalBackupPath[0] -ne 'NUL:') {
                 $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
@@ -603,8 +670,10 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-                                }
-                                $verifiedresult | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
+                                    EncryptorName        = $encryptionOptions.EncryptorName
+                                    KeyAlgorithm         = $encryptionOptions.Algorithm
+                                    EncruptorType        = $encryptionOptions.encryptorType
+                                } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
                                     $Verified = $true
@@ -642,9 +711,11 @@ function Backup-DbaDatabase {
                 }
             }
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+
             if ($failures.Count -eq 0) {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
+
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
             $FilePath = $null
         }
