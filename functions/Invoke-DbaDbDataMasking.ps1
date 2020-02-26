@@ -255,12 +255,9 @@ function Invoke-DbaDbDataMasking {
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
                 }
+
                 $db = $server.Databases[$($dbName)]
 
-                $connstring = New-DbaConnectionString -SqlInstance $instance -SqlCredential $SqlCredential -Database $dbName -Whatif:$false -ConnectTimeout $ConnectionTimeout
-                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
-                $sqlconn.Open()
-                $transaction = $sqlconn.BeginTransaction()
                 $stepcounter = $nullmod = 0
 
                 foreach ($tableobject in $tables.Tables) {
@@ -423,8 +420,9 @@ function Invoke-DbaDbDataMasking {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         # Loop through each of the rows and change them
-                        $rowNumber = $stepcounter = $batchrowcounter = 0
+                        $rowNumber = $stepcounter = $batchrowcounter = $batchcount = 0
                         $rowItems = $data | Get-Member -MemberType Properties | Select-Object Name -ExpandProperty Name
+
                         foreach ($row in $data) {
                             if ((($stepcounter++) % 100) -eq 0) {
                                 Write-ProgressHelper -StepNumber $stepcounter -TotalSteps $data.Count -Activity "Masking data" -Message "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
@@ -581,17 +579,14 @@ function Invoke-DbaDbDataMasking {
                             $batchrowcounter++
 
                             if ($batchrowcounter -eq $BatchSize) {
-                                Write-Message -Level Verbose -Message "Executing batch"
+                                $batchcounter++
+
+                                Write-Message -Level Verbose -Message "Executing batch $batchcounter"
 
                                 try {
-                                    Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                    $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
-                                    $sqlcmd.CommandTimeout = $CommandTimeout
-                                    $null = $sqlcmd.ExecuteNonQuery()
+                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringbuilder.ToString()
                                 } catch {
-                                    Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
-                                    $errormessage = $_.Exception.Message.ToString()
-                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringbuilder -Continue -ErrorRecord $_
                                 }
 
                                 $null = $stringbuilder.Clear()
@@ -602,15 +597,12 @@ function Invoke-DbaDbDataMasking {
                             $rowNumber++
                         }
 
-                        try {
-                            Write-ProgressHelper -ExcludePercent -Activity "Masking data" -Message "Updating $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
-                            $sqlcmd.CommandTimeout = $CommandTimeout
-                            $null = $sqlcmd.ExecuteNonQuery()
-                        } catch {
-                            Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
-                            $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                        if ($stringbuilder.Length -ge 1) {
+                            try {
+                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringbuilder.ToString()
+                            } catch {
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringbuilder -Continue -ErrorRecord $_
+                            }
                         }
 
                         $null = $stringbuilder.Clear()
@@ -635,7 +627,6 @@ function Invoke-DbaDbDataMasking {
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype  -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
                                             }
-
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
                                         }
@@ -652,7 +643,6 @@ function Invoke-DbaDbDataMasking {
                                             $newValue = ($newValue).Tostring().Replace("'", "''")
                                             $compositeItems += "'$newValue'"
                                         }
-
                                     } elseif ($columnComposite.Type -eq 'Static') {
                                         $compositeItems += "'$($columnComposite.Value)'"
                                     } else {
@@ -666,13 +656,9 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             try {
-                                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand(($stringbuilder.ToString()), $sqlconn, $transaction)
-                                $sqlcmd.CommandTimeout = $CommandTimeout
-                                $null = $sqlcmd.ExecuteNonQuery()
+                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringbuilder.ToString()
                             } catch {
-                                Write-Message -Level VeryVerbose -Message "$($stringbuilder.ToString())"
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $errormessage.`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringbuilder -Continue -ErrorRecord $_
                             }
                         }
 
@@ -681,7 +667,7 @@ function Invoke-DbaDbDataMasking {
 
                             $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
                         } catch {
                             Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
@@ -692,7 +678,8 @@ function Invoke-DbaDbDataMasking {
 
                                 $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
 
-                                Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+
                             } catch {
                                 Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                             }
@@ -718,14 +705,6 @@ function Invoke-DbaDbDataMasking {
 
                     # Empty the unique values array
                     $uniqueValues = $null
-                }
-
-                # Commit the transaction and close it
-                try {
-                    $null = $transaction.Commit()
-                    $sqlconn.Close()
-                } catch {
-                    Stop-Function -Message "Failure" -Continue -ErrorRecord $_
                 }
 
                 # Export the dictionary when needed
