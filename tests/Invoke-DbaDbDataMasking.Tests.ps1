@@ -30,9 +30,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                                     [lname] [varchar](50) NULL,
                                     [dob] [datetime] NULL
                                 ) ON [PRIMARY]
-                                GO
-                                INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
-                                INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
+                GO
+                INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
+                INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
         New-DbaDatabase -SqlInstance $script:instance2 -Name $db
         Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
     }
