@@ -507,7 +507,7 @@ function New-DbaAvailabilityGroup {
 
         if ($IPAddress) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress[0] -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
         } elseif ($Dhcp) {
             if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
