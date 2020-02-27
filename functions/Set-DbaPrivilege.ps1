@@ -110,7 +110,13 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
-                                        if ($BLline -notmatch $SID) {
+                                        if (-not $BLline) {
+                                            $BLline = "SeBatchLogonRight = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$BLline" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
+                                        } elseif ($BLline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -125,7 +131,13 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
-                                        if ($IFIline -notmatch $SID) {
+                                        if (-not $IFIline) {
+                                            $IFIline = "SeManageVolumePrivilege = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$IFIline" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
+                                        } elseif ($IFIline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -140,7 +152,13 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
-                                        if ($LPIMline -notmatch $SID) {
+                                        if (-not $LPIMline) {
+                                            $LPIMline = "SeLockMemoryPrivilege = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$LPIMline" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
+                                        } elseif ($LPIMline -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -155,7 +173,13 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $Line = Get-Content $tempfile | Where-Object { $_ -match "SeAuditPrivilege" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
-                                        if ($Line -notmatch $SID) {
+                                        if (-not $Line) {
+                                            $Line = "SeAuditPrivilege = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$Line" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Security Log Privileges on $env:ComputerName"
+                                        } elseif ($Line -notmatch $SID) {
                                             (Get-Content $tempfile) -replace "SeAuditPrivilege = ", "SeAuditPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
