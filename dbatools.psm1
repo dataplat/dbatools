@@ -5,7 +5,6 @@ param(
     $Option = @{ }
 )
 
-
 $start = [DateTime]::Now
 
 if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
@@ -96,6 +95,8 @@ function Write-ImportTime {
 }
 
 Write-ImportTime -Text "Start" -Timestamp $start
+Write-ImportTime -Text "Loading System.Security"
+Add-Type -AssemblyName System.Security
 Write-ImportTime -Text "Loading import helper functions"
 #endregion Import helper functions
 
@@ -561,6 +562,7 @@ $script:xplat = @(
     'Select-DbaBackupInformation',
     'Publish-DbaDacPackage',
     'Copy-DbaDbTableData',
+    'Copy-DbaDbViewData',
     'Invoke-DbaQuery',
     'Remove-DbaLogin',
     'Get-DbaAgentJobCategory',
@@ -869,8 +871,9 @@ $script:windowsonly = @(
     'Enable-DbaForceNetworkEncryption',
     'Disable-DbaForceNetworkEncryption',
     'Get-DbaForceNetworkEncryption',
-    'Disable-DbaHideInstance',
+    'Get-DbaHideInstance',
     'Enable-DbaHideInstance',
+    'Disable-DbaHideInstance',
     'New-DbaComputerCertificateSigningRequest',
     'Remove-DbaComputerCertificate',
     'New-DbaComputerCertificate',

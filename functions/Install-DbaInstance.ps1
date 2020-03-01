@@ -1,11 +1,9 @@
 function Install-DbaInstance {
     <#
     .SYNOPSIS
-
         This function will help you to quickly install a SQL Server instance.
 
     .DESCRIPTION
-
         This function will help you to quickly install a SQL Server instance on one or many computers.
         Some of the things this function will do for you:
         * Add your login as an admin to the new instance
@@ -124,7 +122,7 @@ function Install-DbaInstance {
         Path to the folder(s) with SQL Server installation media downloaded. It will be scanned recursively for a corresponding setup.exe.
         Path should be available from the remote server.
         If a setup.exe file is missing in the repository, the installation will fail.
-        Consider setting the following configuration if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\installations'`
+        Consider setting the following configuration in your session if you want to omit this parameter: `Set-DbatoolsConfig -Name Path.SQLServerSetup -Value '\\path\to\installations'`
 
     .PARAMETER PerformVolumeMaintenanceTasks
         Allow SQL Server service account to perform Volume Maintenance tasks.
@@ -138,9 +136,6 @@ function Install-DbaInstance {
 
     .PARAMETER Restart
         Restart computer automatically if a restart is required before or after the installation.
-
-    .PARAMETER DotNetPath
-        Path to the .Net 3.5 installation folder (Windows installation media) for offline installations. Might be required for SQL2012/2014
 
     .PARAMETER AuthenticationMode
         Chooses between Mixed and Windows authentication.
@@ -163,6 +158,9 @@ function Install-DbaInstance {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Install-DbaInstance
+
     .Example
         C:\PS> Install-DbaInstance -Version 2017 -Feature All
 
@@ -180,7 +178,7 @@ function Install-DbaInstance {
         Install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer -UpdateSourcePath \\my\updates
+        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer -UpdateSourcePath '\\my\updates'
 
         Run the installation locally with default settings apart from the application volume, this will be redirected to G:\SQLServer.
         The installation procedure would search for SQL Server updates in \\my\updates and slipstream them into the installation.
@@ -194,17 +192,16 @@ function Install-DbaInstance {
 
     .Example
         C:\PS> $config = @{
-            AGTSVCSTARTUPTYPE     = "Manual"
-            SQLCOLLATION          = "Latin1_General_CI_AS"
-            BROWSERSVCSTARTUPTYPE = "Manual"
-            FILESTREAMLEVEL       = 1
-        }
+        >>    AGTSVCSTARTUPTYPE     = "Manual"
+        >>    SQLCOLLATION          = "Latin1_General_CI_AS"
+        >>    BROWSERSVCSTARTUPTYPE = "Manual"
+        >>    FILESTREAMLEVEL       = 1
+        >> }
         C:\PS> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -Configuration $config
 
         Run the installation locally with default settings overriding the value of specific configuration items.
         Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
-
-       #>
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias('ComputerName')]
@@ -248,7 +245,6 @@ function Install-DbaInstance {
         [pscredential]$FTCredential,
         [pscredential]$PBEngineCredential,
         [string]$SaveConfiguration,
-        # [string]$DotNetPath,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$EnableException
@@ -294,7 +290,19 @@ function Install-DbaInstance {
                 $output += "[$key]"
                 if ($Content.$key -is [hashtable]) {
                     foreach ($sectionKey in $Content.$key.Keys) {
-                        $output += "$sectionKey=`"$($Content.$key.$sectionKey -join ',')`""
+                        $origVal = $Content.$key.$sectionKey
+                        if ($origVal -is [array]) {
+                            $output += "$sectionKey=`"$($origVal -join ',')`""
+                        } else {
+                            if ($origVal -is [int]) {
+                                $origVal = "$origVal"
+                            }
+                            if ($origVal -ne $origVal.Trim('"')) {
+                                $output += "$sectionKey=$origVal"
+                            } else {
+                                $output += "$sectionKey=`"$origVal`""
+                            }
+                        }
                     }
                 }
             }
@@ -536,8 +544,6 @@ function Install-DbaInstance {
                         ISSVCSTARTUPTYPE      = "Automatic"
                         QUIET                 = "True"
                         QUIETSIMPLE           = "False"
-                        RSINSTALLMODE         = "DefaultNativeMode"
-                        RSSVCSTARTUPTYPE      = "Automatic"
                         SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
                         SQLSVCSTARTUPTYPE     = "Automatic"
                         SQLSYSADMINACCOUNTS   = $defaultAdminAccount
@@ -568,6 +574,11 @@ function Install-DbaInstance {
                     $execParams += '/IACCEPTROPENLICENSETERMS '
                     break
                 }
+            }
+            # Reporting Services
+            if ('RS' -in $featureList) {
+                if (-Not $configNode.RSINSTALLMODE) { $configNode.RSINSTALLMODE = "DefaultNativeMode" }
+                if (-Not $configNode.RSSVCSTARTUPTYPE) { $configNode.RSSVCSTARTUPTYPE = "Automatic" }
             }
             # version-specific stuff
             if ($canonicVersion -gt '10.0') {
@@ -620,7 +631,7 @@ function Install-DbaInstance {
                 $configNode.SQLBACKUPDIR = $BackupPath
             }
             if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = $AdminAccount
+                $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
             }
             if (Test-Bound -ParameterName UpdateSourcePath) {
                 $configNode.UPDATESOURCE = $UpdateSourcePath

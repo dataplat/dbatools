@@ -14,6 +14,14 @@ function Get-DbatoolsPath {
     .PARAMETER Name
         Name of the path to retrieve.
 
+    .NOTES
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbatoolsPath
+
     .EXAMPLE
         PS C:\> Get-DbatoolsPath -Name 'temp'
 

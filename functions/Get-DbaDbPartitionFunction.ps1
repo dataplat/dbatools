@@ -35,6 +35,9 @@ function Get-DbaDbPartitionFunction {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbPartitionFunction
+
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionFunction -SqlInstance sql2016
 

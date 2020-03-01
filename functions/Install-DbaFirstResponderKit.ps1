@@ -22,7 +22,7 @@ function Install-DbaFirstResponderKit {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database to instal the First Responder Kit stored procedures into
+        Specifies the database to install the First Responder Kit stored procedures into
 
     .PARAMETER Branch
         Specifies an alternate branch of the First Responder Kit to install. (master or dev)

@@ -38,6 +38,9 @@ function Get-DbaDbFile {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbFile
+
     .EXAMPLE
         PS C:\> Get-DbaDbFile -SqlInstance sql2016
 

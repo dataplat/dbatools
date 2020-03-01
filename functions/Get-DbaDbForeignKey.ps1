@@ -38,6 +38,9 @@ function Get-DbaDbForeignKey {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbForeignKey
+
     .EXAMPLE
         PS C:\> Get-DbaDbForeignKey -SqlInstance sql2016
 

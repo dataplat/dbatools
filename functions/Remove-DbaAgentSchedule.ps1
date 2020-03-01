@@ -46,7 +46,7 @@ function Remove-DbaAgentSchedule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentJobSchedule
+        https://dbatools.io/Remove-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
