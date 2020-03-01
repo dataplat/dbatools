@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.91'
+    ModuleVersion          = '1.0.100'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -660,7 +660,8 @@
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
-        'Test-DbaManagementObject'
+        'Test-DbaManagementObject',
+        'Copy-DbaDbViewData'
     )
 
     # Cmdlets to export from this module

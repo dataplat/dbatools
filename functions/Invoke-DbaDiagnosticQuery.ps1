@@ -6,7 +6,7 @@ function Invoke-DbaDiagnosticQuery {
     .DESCRIPTION
         This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.
         The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
-        http://www.sqlskills.com/blogs/glenn/category/dmv-queries/
+        https://glennsqlperformance.com/resources/
 
         The most recent version of the diagnostic queries are included in the dbatools module.
         But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
@@ -75,7 +75,7 @@ function Invoke-DbaDiagnosticQuery {
 
     .NOTES
         Tags: Community, GlennBerry
-        Author: Andre Kamman (@AndreKamman), http://clouddba.io
+        Author: Andre Kamman (@AndreKamman), http://andrekamman.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -175,14 +175,14 @@ function Invoke-DbaDiagnosticQuery {
         }
 
         $scriptversions = @()
-        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*_*.sql"
+        $scriptfiles = Get-ChildItem -Path "$Path\SQLServerDiagnosticQueries_*.sql"
 
         if (!$scriptfiles) {
             Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
 
             $Path = Join-Path -Path $base -ChildPath "\bin\diagnosticquery"
 
-            $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
+            $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*.sql"
             if (!$scriptfiles) {
                 Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -ErrorRecord $_
                 return
