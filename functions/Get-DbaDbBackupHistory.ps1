@@ -258,7 +258,7 @@ function Get-DbaDbBackupHistory {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
                     } else {
-                        $AgResults += $AgLoopResult
+                        $AgResults += $AgLoopResults
                     }
                     # Results are already in the correct format so drop to output
                     $agresults
