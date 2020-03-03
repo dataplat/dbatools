@@ -43854,7 +43854,7 @@
         "CommandName":  "Set-DbaPowerPlan",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sql2017\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Set-DbaPowerPlan -PowerPlan Balanced\nSets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$cred = Get-Credential \u0027Domain\\User\u0027\nPS C:\\\u003e Set-DbaPowerPlan -ComputerName sql2017 -Credential $cred\nConnects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sql2017\nSets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sql2017 -PowerPlan HÃ¶chstleistung\nSets the PowerPlan on a German system to HÃ¶chstleistung.\nWe use the English phrase \"High Performance\" by default. To specify Power Plans in another language, use the -PowerPlan parameter.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027Server1\u0027, \u0027Server2\u0027 | Set-DbaPowerPlan -PowerPlan Balanced\nSets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential \u0027Domain\\User\u0027\nPS C:\\\u003e Set-DbaPowerPlan -ComputerName sql2017 -Credential $cred\nConnects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan \u0027Maximum Performance\u0027\nSets the Power Plan to the custom power plan called \"Maximum Performance\". Skips it if its already set.",
         "Params":  [
                        [
                            "ComputerName",
@@ -43874,7 +43874,7 @@
                        ],
                        [
                            "PowerPlan",
-                           "Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of \"Power Saver\", \"Balanced\", and \"High Performance\".",
+                           "Specifies the Power Plan that you wish to use.\nWe use the English phrase \"High Performance\" by default. To specify Power Plans in another language, use this parameter (-PowerPlan HÃ¶chstleistung).",
                            "",
                            false,
                            "false",

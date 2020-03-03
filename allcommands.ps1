@@ -17495,7 +17495,7 @@ function Find-DbaOrphanedFile {
         }
 
         $FileType += "mdf", "ldf", "ndf"
-        $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
+        $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf", "model_msdbdata.mdf", "model_msdblog.ldf", "model_replicatedmaster.mdf", "model_replicatedmaster.ldf"
 
         $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
     }
@@ -21299,7 +21299,7 @@ function Get-DbaComputerSystem {
                         $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ArgumentList $ProxiedFunc -ScriptBlock {
                             Param( $ProxiedFunc )
                             . ([ScriptBlock]::Create($ProxiedFunc))
-                            ((Invoke-TlsRestMethod2 -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200
+                            ((Invoke-TlsRestMethod -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200
                         } -Raw
                     } catch [System.Net.WebException] {
                         $isAws = $false
@@ -21363,6 +21363,7 @@ function Get-DbaComputerSystem {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaConnection {
@@ -22083,7 +22084,7 @@ function Get-DbaDbBackupHistory {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
                     } else {
-                        $AgResults += $AgLoopResult
+                        $AgResults += $AgLoopResults
                     }
                     # Results are already in the correct format so drop to output
                     $agresults
@@ -22592,6 +22593,7 @@ function Get-DbaDbBackupHistory {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbccHelp {
@@ -40343,36 +40345,36 @@ function Install-DbaMaintenanceSolution {
 
                 # Backup location
                 if ($BackupLocation) {
-                    $findBKP = 'SET @BackupDirectory     = NULL'
-                    $replaceBKP = 'SET @BackupDirectory     = N''' + $BackupLocation + ''''
+                    $findBKP = 'DECLARE @BackupDirectory nvarchar(max)     = NULL'
+                    $replaceBKP = 'DECLARE @BackupDirectory nvarchar(max)     = N''' + $BackupLocation + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findBKP, $replaceBKP)
                 }
 
                 # CleanupTime
                 if ($CleanupTime -ne 0) {
-                    $findCleanupTime = 'SET @CleanupTime         = NULL'
-                    $replaceCleanupTime = 'SET @CleanupTime         = ' + $CleanupTime
+                    $findCleanupTime = 'DECLARE @CleanupTime int                   = NULL'
+                    $replaceCleanupTime = 'DECLARE @CleanupTime int                   = ' + $CleanupTime
                     $fileContents[$file] = $fileContents[$file].Replace($findCleanupTime, $replaceCleanupTime)
                 }
 
                 # OutputFileDirectory
                 if ($OutputFileDirectory) {
-                    $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
-                    $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
+                    $findOutputFileDirectory = 'DECLARE @OutputFileDirectory nvarchar(max) = NULL'
+                    $replaceOutputFileDirectory = 'DECLARE @OutputFileDirectory nvarchar(max) = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
                 }
 
                 # LogToTable
                 if (!$LogToTable) {
-                    $findLogToTable = "SET @LogToTable          = 'Y'"
-                    $replaceLogToTable = "SET @LogToTable          = 'N'"
+                    $findLogToTable = "DECLARE @LogToTable nvarchar(max)          = 'Y'"
+                    $replaceLogToTable = "DECLARE @LogToTable nvarchar(max)          = 'N'"
                     $fileContents[$file] = $fileContents[$file].Replace($findLogToTable, $replaceLogToTable)
                 }
 
                 # Create Jobs
                 if (-not $InstallJobs) {
-                    $findCreateJobs = "SET @CreateJobs          = 'Y'"
-                    $replaceCreateJobs = "SET @CreateJobs          = 'N'"
+                    $findCreateJobs = "DECLARE @CreateJobs nvarchar(max)          = 'Y'"
+                    $replaceCreateJobs = "DECLARE @CreateJobs nvarchar(max)          = 'N'"
                     $fileContents[$file] = $fileContents[$file].Replace($findCreateJobs, $replaceCreateJobs)
                 }
             }
@@ -40515,6 +40517,7 @@ function Install-DbaMaintenanceSolution {
         Write-ProgressHelper -ExcludePercent -Message "Installation complete"
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Install-DbaSqlWatch {
@@ -47634,6 +47637,7 @@ function Invoke-DbatoolsRenameHelper {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Invoke-DbaWhoIsActive {
