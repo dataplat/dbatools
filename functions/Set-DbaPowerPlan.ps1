@@ -19,7 +19,9 @@ function Set-DbaPowerPlan {
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER PowerPlan
-        Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
+        Specifies the Power Plan that you wish to use.
+
+        We use the English phrase "High Performance" by default. To specify Power Plans in another language, use this parameter (-PowerPlan Höchstleistung).
 
     .PARAMETER CustomPowerPlan
         Specifies the name of a custom Power Plan to use.
@@ -55,6 +57,11 @@ function Set-DbaPowerPlan {
         PS C:\> Set-DbaPowerPlan -ComputerName sql2017
 
         Sets the Power Plan to High Performance. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> Set-DbaPowerPlan -ComputerName sql2017 -PowerPlan Höchstleistung
+
+        We use the English phrase "High Performance" by default. To specify Power Plans in another language, use the -PowerPlan parameter.
 
     .EXAMPLE
         PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -PowerPlan Balanced
