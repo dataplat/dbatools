@@ -61,6 +61,8 @@ function Set-DbaPowerPlan {
     .EXAMPLE
         PS C:\> Set-DbaPowerPlan -ComputerName sql2017 -PowerPlan Höchstleistung
 
+        Sets the PowerPlan on a German system to Höchstleistung.
+
         We use the English phrase "High Performance" by default. To specify Power Plans in another language, use the -PowerPlan parameter.
 
     .EXAMPLE
