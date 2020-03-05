@@ -31,6 +31,9 @@ function Get-DbaAgentJob {
     .PARAMETER Category
         Return jobs associated with specific category
 
+    .PARAMETER ExcludeCategory
+        Categories to exclude - jobs associated with these categories will not be returned.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -90,6 +93,7 @@ function Get-DbaAgentJob {
         [string[]]$ExcludeJob,
         [string[]]$Database,
         [string[]]$Category,
+        [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
         [switch]$EnableException
     )
@@ -121,6 +125,9 @@ function Get-DbaAgentJob {
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
+            }
+            if ($ExcludeCategory) {
+                $jobs = $jobs | Where-Object Category -notin $ExcludeCategory
             }
 
             foreach ($agentJob in $jobs) {
