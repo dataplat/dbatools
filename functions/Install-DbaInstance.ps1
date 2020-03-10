@@ -69,7 +69,30 @@ function Install-DbaInstance {
         Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
 
     .PARAMETER Feature
-        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components.
+        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components. Full list of features:
+
+        Default
+        All
+        Engine
+        Tools
+        Replication
+        FullText
+        DataQuality
+        PolyBase
+        MachineLearning
+        AnalysisServices
+        ReportingServices
+        ReportingForSharepoint
+        SharepointAddin
+        IntegrationServices
+        MasterDataServices
+        PythonPackages
+        RPackages
+        ReplayController
+        ReplayClient
+        SDK
+        BIDS
+        SSMS
 
     .PARAMETER InstancePath
         Root folder for instance components. Includes SQL Server logs, system databases, etc.
