@@ -21,10 +21,10 @@ function Get-DbaDbAssembly {
         Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked
 
     .PARAMETER Name
-        Specify an Assembly to be fetched. If not specified all Assemblys will be returned
+        Specify an Assembly to be fetched. If not specified all Assemblies will be returned
 
     .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        By default, when something goes wrong, we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
@@ -52,7 +52,7 @@ function Get-DbaDbAssembly {
     .EXAMPLE
         PS C:\> Get-DbaDbAssembly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR
 
-        Will fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance
+        Will fetch details for the MyTechCo.Houids.SQLCLR assembly in the MyDb Database on the Server1 instance
 
     #>
     [CmdletBinding()]
@@ -79,7 +79,7 @@ function Get-DbaDbAssembly {
             foreach ($db in $databases) {
                 try {
                     if (Test-Bound 'Name') {
-                        $assemblies = $assemblies | Where-Object Name -in  $Name
+                        $assemblies = $assemblies | Where-Object Name -in $Name
                     } else {
                         $assemblies = $db.assemblies
                     }
