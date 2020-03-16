@@ -50,7 +50,7 @@ function Get-DbaDbAssembly {
         Returns all Database Assembly for the local and sql2016 SQL Server instances
 
     .EXAMPLE
-        PS C:\> Get-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR
+        PS C:\> Get-DbaDbAssembly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR
 
         Will fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance
 
