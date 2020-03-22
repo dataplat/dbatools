@@ -76,9 +76,9 @@ function Get-SQLInstanceComponent {
 
         $regScript = {
             Param (
-                [ValidateSet('SSDS', 'SSAS', 'SSRS')]
-                [string[]]$Component = @('SSDS', 'SSAS', 'SSRS')
+                $ComponentObject
             )
+            $Component = $ComponentObject.Component
             $componentNameMap = @(
                 [pscustomobject]@{
                     ComponentName = 'SSAS';
@@ -287,7 +287,7 @@ function Get-SQLInstanceComponent {
             } elseif ($regKey.GetValueNames() -contains 'InstalledInstances') {
                 $isCluster = $false;
                 $regKey.GetValue('InstalledInstances') | ForEach-Object {
-                    Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_;
+                    Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_
                 };
             } else {
                 throw "Failed to find any instance names on $env:computername"
@@ -296,7 +296,8 @@ function Get-SQLInstanceComponent {
     }
     process {
         foreach ($computer in $ComputerName) {
-            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component) -RequiredPSVersion 3.0
+            $arguments = @{ Component = $Component }
+            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList $arguments -RequiredPSVersion 3.0
 
             # Log is stored in the log property, pile it all into the debug log
             foreach ($logEntry in $results.Log) {
