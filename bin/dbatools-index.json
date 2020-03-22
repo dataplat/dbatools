@@ -12623,7 +12623,7 @@
         "CommandName":  "Get-DbaDbAssembly",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assembly in the MyDb Database on the Server1 instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12651,7 +12651,7 @@
                        ],
                        [
                            "Name",
-                           "Specify an Assembly to be fetched. If not specified all Assemblys will be returned",
+                           "Specify an Assembly to be fetched. If not specified all Assemblies will be returned",
                            "",
                            false,
                            "false",
@@ -12659,7 +12659,7 @@
                        ],
                        [
                            "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "By default, when something goes wrong, we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
                            false,
                            "false",
@@ -24324,7 +24324,7 @@
                        ],
                        [
                            "Version",
-                           "SQL Server version you wish to install.",
+                           "SQL Server version you wish to install.\r\nThis is the year version (e.g. \"2008R2\", \"2017\", \"2019\")",
                            "",
                            true,
                            "false",
@@ -24356,7 +24356,7 @@
                        ],
                        [
                            "Authentication",
-                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "Chooses an authentication protocol for remote connections.\r\nAllowed values: \u0027Default\u0027, \u0027Basic\u0027, \u0027Negotiate\u0027, \u0027NegotiateWithImplicitCredential\u0027, \u0027Credssp\u0027, \u0027Digest\u0027, \u0027Kerberos\u0027\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
                            "",
                            false,
                            "false",
@@ -24388,7 +24388,7 @@
                        ],
                        [
                            "Feature",
-                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components.",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault\r\nAll\r\nEngine\r\nTools\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS",
                            "",
                            false,
                            "false",
@@ -24396,7 +24396,7 @@
                        ],
                        [
                            "AuthenticationMode",
-                           "Chooses between Mixed and Windows authentication.",
+                           "Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.",
                            "",
                            false,
                            "false",

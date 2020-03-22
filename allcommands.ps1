@@ -15071,7 +15071,7 @@ function Export-DbaUser {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
 
-                if (@($perms.Count) -gt 0) {
+                if (@($outsql.Count) -gt 0) {
                     if ($ExcludeGoBatchSeparator) {
                         $sql = "$useDatabase $outsql"
                     } else {
@@ -21907,7 +21907,7 @@ function Get-DbaDbAssembly {
             foreach ($db in $databases) {
                 try {
                     if (Test-Bound 'Name') {
-                        $assemblies = $assemblies | Where-Object Name -in  $Name
+                        $assemblies = $assemblies | Where-Object Name -in $Name
                     } else {
                         $assemblies = $db.assemblies
                     }
@@ -21927,6 +21927,7 @@ function Get-DbaDbAssembly {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbAsymmetricKey {
@@ -40223,6 +40224,7 @@ function Install-DbaInstance {
     }
 }
 
+
 #.ExternalHelp dbatools-Help.xml
 function Install-DbaMaintenanceSolution {
     
@@ -42730,7 +42732,19 @@ function Invoke-DbaDbDataMasking {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        $supportedDataTypes = @('bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar')
+        $supportedDataTypes = @(
+            'bit', 'bigint', 'bool',
+            'char', 'date',
+            'datetime', 'datetime2', 'decimal',
+            'float',
+            'int',
+            'money',
+            'nchar', 'ntext', 'nvarchar',
+            'smalldatetime', 'smallint',
+            'text', 'time', 'tinyint',
+            'uniqueidentifier', 'userdefineddatatype',
+            'varchar'
+        )
 
         $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
 
@@ -52479,7 +52493,19 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = @(
+            'bit', 'bigint', 'bool',
+            'char', 'date',
+            'datetime', 'datetime2', 'decimal',
+            'float',
+            'int',
+            'money',
+            'nchar', 'ntext', 'nvarchar',
+            'smalldatetime', 'smallint',
+            'text', 'time', 'tinyint',
+            'uniqueidentifier', 'userdefineddatatype',
+            'varchar'
+        )
 
         $maskingconfig = @()
     }
