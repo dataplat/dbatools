@@ -395,13 +395,24 @@ function Import-DbaCsv {
         }
     '
 
-        # Enable compiling the SqlBulkCopyExtension on powershell core
-        # https://github.com/PowerShell/PowerShell/issues/11112
-
         try {
-            Add-Type -ReferencedAssemblies Runtime, System.Data, System.Data.SqlClient -TypeDefinition $sourcecode -ErrorAction Stop -WarningAction Ignore -IgnoreWarnings
+            if ($script:core) {
+                #.NET Core has moved most of the System.Data.SqlClient namespace to a separate assembly
+                $SqlClientPath = "$script:PSModuleRoot\bin\smo\coreclr\System.Data.SqlClient.dll"
+                if (Test-Path $SqlClientPath) {
+                    #Powershell 6 appears to include a version of System.Data.SqlClient.dll
+                    #that often precedes the following statement, but this enures that a version of
+                    #the assemble gets loaded before loading our custom class.
+                    Add-Type -Path $SqlClientPath
+                }
+                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } else {
+                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            }
+            Write-Message -Level Verbose -Message "SqlBulkCopyExtension loaded."
         } catch {
-            $null = 1
+            Stop-Function -Message 'Could not load a usable version of SqlBulkCopy.' -ErrorRecord $_
+            return
         }
     }
     process {
