@@ -394,12 +394,14 @@ function Import-DbaCsv {
             }
         }
     '
-        if (-not $script:core) {
-            try {
-                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            } catch {
-                $null = 1
-            }
+
+        # Enable compiling the SqlBulkCopyExtension on powershell core
+        # https://github.com/PowerShell/PowerShell/issues/11112
+
+        try {
+            Add-Type -ReferencedAssemblies Runtime, System.Data, System.Data.SqlClient -TypeDefinition $sourcecode -ErrorAction Stop -WarningAction Ignore -IgnoreWarnings
+        } catch {
+            $null = 1
         }
     }
     process {
@@ -671,13 +673,8 @@ function Import-DbaCsv {
                         if (-not $NoTransaction) {
                             $null = $transaction.Commit()
                         }
-                        if ($script:core) {
-                            $rowscopied = "Unsupported in Core"
-                            $rps = $null
-                        } else {
-                            $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
-                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
-                        }
+                        $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                        $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
