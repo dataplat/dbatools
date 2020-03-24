@@ -167,9 +167,11 @@ function Get-DbaBuildReference {
                         $webdata_content = $WebContent.Content | ConvertFrom-Json
                         $webdata_time = Get-Date $webdata_content.LastUpdated
                         if ($webdata_time -gt $offline_time) {
-                            Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
-                            $WebContent.Content | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
+                            $WebContent.Content | Out-File $writable_idxfile -Encoding utf8 -Force -ErrorAction Stop
                             $result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
+                            Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
+                        } else {
+                            Write-Message -Level Output -Message "Current index file is latest: Last Updated on $(Get-Date -Date $offline_time -Format s)"
                         }
                     }
                 }
@@ -322,7 +324,7 @@ function Get-DbaBuildReference {
 
         #region verifying parameters
         $ComplianceSpec = @()
-        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance')
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance','Update')
         foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
             foreach ($exclParam in $exclParamGroup) {
                 if (Test-Bound -Parameter $exclParam) {
