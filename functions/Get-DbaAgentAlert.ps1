@@ -1,7 +1,7 @@
 function Get-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Returns all SQL Agent alerts on a SQL Server Agent.
+        Returns SQL Agent alerts on a SQL Server Agent.
 
     .DESCRIPTION
         This function returns SQL Agent alerts.
@@ -15,6 +15,9 @@ function Get-DbaAgentAlert {
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Name
+        The name of the alerts to return. If null, will get all alerts from the server.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,6 +41,11 @@ function Get-DbaAgentAlert {
         Returns all SQL Agent alerts on serverA and serverB\instanceB
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Name MyAlert
+
+        Returns the MyAlert SQL Agent alert on serverA and serverB\instanceB
+
+    .EXAMPLE
         PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
 
         Returns all SQL Agent alerts  on serverA and serverB\instanceB
@@ -49,6 +57,7 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
+        [string[]]$Name,
         [switch]$EnableException
     )
 
@@ -70,6 +79,10 @@ function Get-DbaAgentAlert {
             $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
 
             $alerts = $server.Jobserver.Alerts
+
+            if (Test-Bound 'Name') {
+                $alerts = $alerts | where Name -in $Name;
+            }
 
             foreach ($alert in $alerts) {
                 $lastraised = [dbadatetime]$alert.LastOccurrenceDate
