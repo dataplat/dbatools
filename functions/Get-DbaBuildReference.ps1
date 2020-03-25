@@ -337,7 +337,7 @@ function Get-DbaBuildReference {
             Stop-Function -Category InvalidArgument -Message "$($ComplianceSpec -join ', ') are mutually exclusive. Please choose one or the other. Quitting."
             return
         }
-        if ($ComplianceSpec.Length -eq 0) {
+        if ($ComplianceSpec.Length -eq 0 -and (Test-Bound Update -Not)) {
             Stop-Function -Category InvalidArgument -Message "You need to choose at least one parameter."
             return
         }
