@@ -16,7 +16,7 @@ function Get-DbaAgentAlert {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
+    .PARAMETER Alert
         The name of the alerts to return. If null, will get all alerts from the server.
 
     .PARAMETER EnableException
@@ -41,7 +41,7 @@ function Get-DbaAgentAlert {
         Returns all SQL Agent alerts on serverA and serverB\instanceB
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Name MyAlert
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Alert MyAlert
 
         Returns the MyAlert SQL Agent alert on serverA and serverB\instanceB
 
@@ -57,7 +57,10 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [string[]]$Name,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
+        [string]$AlertPattern,
+        [string]$ExcludeAlertPattern,
         [switch]$EnableException
     )
 
@@ -80,20 +83,29 @@ function Get-DbaAgentAlert {
 
             $alerts = $server.Jobserver.Alerts
 
-            if (Test-Bound 'Name') {
-                $alerts = $alerts | where Name -in $Name;
+            if (Test-Bound 'Alert') {
+                $alerts = $alerts | where Name -in $Alert;
+            } elseif (Test-Bound 'AlertPattern') {
+                $alerts = $alerts | where Name -like $AlertPattern;
             }
 
-            foreach ($alert in $alerts) {
-                $lastraised = [dbadatetime]$alert.LastOccurrenceDate
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+            if (Test-Bound 'ExcludeAlert') {
+                $alerts = $alerts | where Name -notin $Alert;
+            } elseif (Test-Bound 'ExcludeAlertPattern') {
+                $alerts = $alerts | where Name -notlike $ExcludeAlertPattern;
+            }
 
-                Select-DefaultView -InputObject $alert -Property $defaults
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
             }
         }
     }
