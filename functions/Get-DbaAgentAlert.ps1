@@ -17,16 +17,10 @@ function Get-DbaAgentAlert {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
-        The name of the alerts to return. If null, will get all alerts from the server.
+        The name of the alerts to return. If null, will get all alerts from the server. Note - this parameter accepts wildcards.
 
     .PARAMETER ExcludeAlert
-        The name of the alerts to exclude. If not provided, no alerts will be excluded.
-
-    .PARAMETER AlertPattern
-        A wildcard expression for alerts to return.
-
-    .PARAMETER ExcludeAlertPattern
-        A wildcard expression for alerts to exclude.
+        The name of the alerts to exclude. If not provided, no alerts will be excluded. Note - this parameter accepts wildcards.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,9 +44,9 @@ function Get-DbaAgentAlert {
         Returns all SQL Agent alerts on serverA and serverB\instanceB
 
     .EXAMPLE
-        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Alert MyAlert
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Alert MyAlert*
 
-        Returns the MyAlert SQL Agent alert on serverA and serverB\instanceB
+        Returns SQL Agent alert on serverA and serverB\instanceB whose names match 'MyAlert*'
 
     .EXAMPLE
         PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
@@ -68,8 +62,6 @@ function Get-DbaAgentAlert {
         $SqlCredential,
         [string[]]$Alert,
         [string[]]$ExcludeAlert,
-        [string]$AlertPattern,
-        [string]$ExcludeAlertPattern,
         [switch]$EnableException
     )
 
@@ -93,16 +85,12 @@ function Get-DbaAgentAlert {
             $alerts = $server.Jobserver.Alerts
 
             if (Test-Bound 'Alert') {
-                $alerts = $alerts | where Name -in $Alert;
-            } elseif (Test-Bound 'AlertPattern') {
-                $alerts = $alerts | where Name -like $AlertPattern;
+                $alerts = $alerts | where Name -like $Alert;
             }
 
 
             if (Test-Bound 'ExcludeAlert') {
-                $alerts = $alerts | where Name -notin $Alert;
-            } elseif (Test-Bound 'ExcludeAlertPattern') {
-                $alerts = $alerts | where Name -notlike $ExcludeAlertPattern;
+                $alerts = $alerts | where Name -notlike $ExcludeAlert;
             }
 
             foreach ($alrt in $alerts) {
