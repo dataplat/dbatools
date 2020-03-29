@@ -410,6 +410,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
             }
             $resolvedComputers += $resolvedComputer.FullComputerName
+            # Mock invoke-parallel to prevent runspace-based execution
+            Mock -CommandName Invoke-Parallel -ModuleName dbatools -MockWith {
+                $InputObject | ForEach-Object -Process $ScriptBlock
+            }
         }
         AfterAll {
             if (Test-Path $exeDir) {
