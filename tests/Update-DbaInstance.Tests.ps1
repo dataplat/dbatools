@@ -358,6 +358,87 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
+    Context "Validate upgrades of a specific Major version" {
+        BeforeAll {
+            #this is our 'currently installed' versions
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                @(
+                    [pscustomobject]@{InstanceName = 'LAB'; Version = [pscustomobject]@{
+                            "SqlInstance" = $null
+                            "Build"       = "13.0.4435"
+                            "NameLevel"   = "2016"
+                            "SPLevel"     = "SP1"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "4019916"
+                            "BuildLevel"  = [version]'13.0.4435'
+                            "MatchType"   = "Exact"
+                        }
+                    }
+                    [pscustomobject]@{InstanceName = 'LAB2'; Version = [pscustomobject]@{
+                            "SqlInstance" = $null
+                            "Build"       = "10.0.4279"
+                            "NameLevel"   = "2008"
+                            "SPLevel"     = "SP2"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "2498535"
+                            "BuildLevel"  = [version]'10.0.4279'
+                            "MatchType"   = "Exact"
+                        }
+                    }
+                )
+            }
+            if (-Not(Test-Path $exeDir)) {
+                $null = New-Item -ItemType Directory -Path $exeDir
+            }
+            #Create dummy files for specific patch versions
+            $kbs = @(
+                'SQLServer2008SP3-KB2546951-x64-ENU.exe'
+                'SQLServer2008-KB2555408-x64-ENU.exe'
+                'SQLServer2008-KB2738350-x64-ENU.exe'
+                'SQLServer2016-KB4040714-x64.exe'
+                'SQLServer2016SP2-KB4052908-x64-ENU.exe'
+                'SQLServer2008-KB2738350-x64-ENU.exe'
+                'SQLServer2016-KB4024305-x64-ENU.exe'
+            )
+            foreach ($kb in $kbs) {
+                $null = New-Item -ItemType File -Path (Join-Path $exeDir $kb) -Force
+            }
+            # Mock computer names to test multiple computers
+            Mock -CommandName Resolve-DbaNetworkName -ParameterFilter { $ComputerName -in 'localhost', '127.0.0.1' } -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullComputerName = $ComputerName
+                }
+            }
+            $resolvedComputers += $resolvedComputer.FullComputerName
+            # Mock invoke-parallel to prevent runspace-based execution
+            Mock -CommandName Invoke-Parallel -ModuleName dbatools -MockWith {
+                $InputObject | ForEach-Object -Process $ScriptBlock
+            }
+        }
+        AfterAll {
+            if (Test-Path $exeDir) {
+                Remove-Item $exeDir -Force -Recurse
+            }
+        }
+        It "Should mock-upgrade two SQL2016 servers to SP2" {
+            $results = Update-DbaInstance -ComputerName 'localhost', '127.0.0.1' -Version SQL2016SP2 -Path $exeDir -Restart -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
+
+            foreach ($result in $results) {
+                $result | Should -Not -BeNullOrEmpty
+                $result.MajorVersion | Should -Be 2016
+                $result.TargetLevel | Should -Be SP2
+                $result.KB | Should -Be 4052908
+                $result.Successful | Should -Be $true
+                $result.Restarted | Should -Be $true
+                $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2016SP2-KB4052908-x64-ENU.exe')
+                $result.Notes | Should -BeNullOrEmpty
+                $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+            }
+        }
+    }
     Context "Validate upgrade to the same version when installation failed" {
         BeforeAll {
             #this is our 'currently installed' versions
