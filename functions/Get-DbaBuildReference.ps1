@@ -324,7 +324,7 @@ function Get-DbaBuildReference {
 
         #region verifying parameters
         $ComplianceSpec = @()
-        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance','Update')
+        $ComplianceSpecExclusiveParams = @('Build', 'Kb', @( 'MajorVersion', 'ServicePack', 'CumulativeUpdate'), 'SqlInstance', 'Update')
         foreach ($exclParamGroup in $ComplianceSpecExclusiveParams) {
             foreach ($exclParam in $exclParamGroup) {
                 if (Test-Bound -Parameter $exclParam) {
