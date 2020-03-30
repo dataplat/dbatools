@@ -394,12 +394,25 @@ function Import-DbaCsv {
             }
         }
     '
-        if (-not $script:core) {
-            try {
+
+        try {
+            if ($script:core) {
+                #.NET Core has moved most of the System.Data.SqlClient namespace to a separate assembly
+                $SqlClientPath = "$script:PSModuleRoot\bin\smo\coreclr\System.Data.SqlClient.dll"
+                if (Test-Path $SqlClientPath) {
+                    #Powershell 6 appears to include a version of System.Data.SqlClient.dll
+                    #that often precedes the following statement, but this enures that a version of
+                    #the assemble gets loaded before loading our custom class.
+                    Add-Type -Path $SqlClientPath
+                }
+                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
+            } else {
                 Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            } catch {
-                $null = 1
             }
+            Write-Message -Level Verbose -Message "SqlBulkCopyExtension loaded."
+        } catch {
+            Stop-Function -Message 'Could not load a usable version of SqlBulkCopy.' -ErrorRecord $_
+            return
         }
     }
     process {
@@ -676,13 +689,8 @@ function Import-DbaCsv {
                         if (-not $NoTransaction) {
                             $null = $transaction.Commit()
                         }
-                        if ($script:core) {
-                            $rowscopied = "Unsupported in Core"
-                            $rps = $null
-                        } else {
-                            $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
-                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
-                        }
+                        $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                        $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 
