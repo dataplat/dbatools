@@ -2,7 +2,7 @@
 name: "\U0001F41B Bug report"
 about: Found errors or unexpected behavior using dbatools module
 title: "[Bug]"
-labels: ''
+labels: bugs_life
 assignees: ''
 
 ---
@@ -33,7 +33,7 @@ Run below command, paste results below:
 ```
 
 
-#### SQL Server: 
+#### SQL Server:
 <!-- Paste output of `SELECT @@VERSION` -->
 ```sql
 /* REPLACE WITH output of @@VERSION */
@@ -53,7 +53,7 @@ Things to consider:
 - Have you tried the same command using powershell.exe instead of a hosted powershell instance like ISE or VS Code?
 - If this refers to Copy-DbaDatabase can you replace the problem with Backup-DbaDatabase and Restore-DbaDatabase?
 - Copy-DbaDatabase will not work in every environment and every situation. Instead, we try to ensure Backup & Restore work in your environment.
---> 
+-->
 
 
 #### Host used
@@ -69,7 +69,7 @@ If anything other than powershell.exe was used, please confirm that you can dupl
 
 #### Errors Received
 
-<!-- 
+<!--
 Run this command and paste below:
 & {"``````";$error[0] | select *;"``````"} | clip
 -->
