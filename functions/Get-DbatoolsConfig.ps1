@@ -31,6 +31,9 @@ function Get-DbatoolsConfig {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbatoolsConfig
+
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig 'Mail.To'
 

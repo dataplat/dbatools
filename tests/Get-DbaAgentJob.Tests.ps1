@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Database', 'Category', 'ExcludeDisabledJobs', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Database', 'Category', 'ExcludeDisabledJobs', 'EnableException', 'ExcludeCategory'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -56,6 +56,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeJob dbatoolsci_testjob  | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should not return excluded job" {
             $results.name -contains "dbatoolsci_testjob" | Should Be $False
+        }
+    }
+    Context "Command doesn't get excluded category" {
+        BeforeAll {
+            $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat1'
+            $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat2'
+
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1 -Category 'Cat1'
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat2 -Category 'Cat2'
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat1', 'Cat2'
+
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2
+        }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeCategory 'Cat2'  | Where-Object {$_.Name -match "dbatoolsci"}
+        It "Should not return excluded job" {
+            $results.name -contains "dbatoolsci_testjob_cat2" | Should Be $False
         }
     }
 }

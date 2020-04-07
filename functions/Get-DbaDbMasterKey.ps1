@@ -44,6 +44,9 @@ function Get-DbaDbMasterKey {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaDbMasterKey
+
     .EXAMPLE
         PS C:\> Get-DbaDbMasterKey -SqlInstance sql2016
 

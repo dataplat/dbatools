@@ -1,8 +1,8 @@
 ---
-name: 🙋 Feature request
+name: "\U0001F64B Feature request"
 about: Suggest an idea for this project
 title: ''
-labels: ''
+labels: Feature
 assignees: ''
 
 ---

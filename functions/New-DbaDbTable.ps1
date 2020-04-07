@@ -26,36 +26,7 @@ function New-DbaDbTable {
         The schema for the table, defaults to dbo
 
     .PARAMETER ColumnMap
-        Hashtable for easy column creation. Looks like this:
-
-        # Create collection
-        $cols = @()
-
-        # Add columns to collection
-        $cols += @{
-            Name      = 'test'
-            Type      = 'varchar'
-            MaxLength = 20
-            Nullable  = $true
-        }
-        $cols += @{
-            Name      = 'test2'
-            Type      = 'int'
-            Nullable  = $false
-        }
-        $cols += @{
-            Name      = 'test3'
-            Type      = 'decimal'
-            MaxLength = 9
-            Nullable  = $true
-        }
-        $cols += @{
-            Name      = 'test4'
-            Type      = 'decimal'
-            Precision = 8
-            Scale = 2
-            Nullable  = $false
-        }
+        Hashtable for easy column creation. See Examples for details
 
     .PARAMETER ColumnObject
         If you want to get fancy, you can build your own column objects and pass them in
@@ -226,18 +197,51 @@ function New-DbaDbTable {
        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-       https://dbatools.io/Get-Table
+       https://dbatools.io/New-DbaDbTable
 
     .EXAMPLE
        PS C:\> $col = @{
-        >> Name      = 'test'
-        >> Type      = 'varchar'
-        >> MaxLength = 20
-        >> Nullable  = $true
-        >> }
+       >> Name      = 'test'
+       >> Type      = 'varchar'
+       >> MaxLength = 20
+       >> Nullable  = $true
+       >> }
        PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col
 
-       Creates a new table on sql2017 in tempdb witht he name testtable and one column
+       Creates a new table on sql2017 in tempdb with the name testtable and one column
+
+    .EXAMPLE
+        PS C:\> # Create collection
+        >> $cols = @()
+
+        >> # Add columns to collection
+        >> $cols += @{
+        >>     Name      = 'test'
+        >>     Type      = 'varchar'
+        >>     MaxLength = 20
+        >>     Nullable  = $true
+        >> }
+        PS C:\> $cols += @{
+        >>     Name      = 'test2'
+        >>     Type      = 'int'
+        >>     Nullable  = $false
+        >> }
+        PS C:\> $cols += @{
+        >>     Name      = 'test3'
+        >>     Type      = 'decimal'
+        >>     MaxLength = 9
+        >>     Nullable  = $true
+        >> }
+        PS C:\> $cols += @{
+        >>     Name      = 'test4'
+        >>     Type      = 'decimal'
+        >>     Precision = 8
+        >>     Scale = 2
+        >>     Nullable  = $false
+        >> }
+        PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
+
+        Creates a new table on sql2017 in tempdb with the name testtable and four columns
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

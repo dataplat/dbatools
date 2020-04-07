@@ -49,7 +49,7 @@ function Remove-DbaDbMirror {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbMirror
+        https://dbatools.io/Remove-DbaDbMirror
 
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance localhost

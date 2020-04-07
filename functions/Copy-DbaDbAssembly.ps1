@@ -61,7 +61,7 @@ function Copy-DbaDbAssembly {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        http://dbatools.io/Get-SqlDatabaseAssembly
+        https://dbatools.io/Copy-DbaDbAssembly
 
     .EXAMPLE
         PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster

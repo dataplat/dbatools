@@ -109,7 +109,7 @@ function Set-DbaCmConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/set-DbaCmConnection
+        https://dbatools.io/Set-DbaCmConnection
 
     .EXAMPLE
         PS C:\> Get-DbaCmConnection sql2014 | Set-DbaCmConnection -ClearBadCredential -UseWindowsCredentials

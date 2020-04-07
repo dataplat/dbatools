@@ -25,6 +25,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public string SqlInstance;
 
         /// <summary>
+        /// The full Instance name as seen from outside
+        /// </summary>
+        public string AvailabilityGroupName;
+
+        /// <summary>
         /// The Database that was backed up
         /// </summary>
         public string Database;

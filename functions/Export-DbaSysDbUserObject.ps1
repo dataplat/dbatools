@@ -50,6 +50,9 @@ function Export-DbaSysDbUserObject {
 
     .NOTES
     General notes
+
+    .LINK
+        https://dbatools.io/Export-DbaSysDbUserObject
     #>
 
     [CmdletBinding()]
