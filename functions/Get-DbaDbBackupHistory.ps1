@@ -349,7 +349,7 @@ function Get-DbaDbBackupHistory {
                     if ($null -eq (Get-PSCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PSCallStack)[1].Command) {
                         $forkCheckSql = "
                                 SELECT
-                                    database_name,
+                                    database_name as 'name',
                                     MIN(database_backup_lsn) as 'FirstLsn',
                                     MAX(database_backup_lsn) as 'FinalLsn',
                                     MIN(backup_start_date) as 'MinDate',
@@ -429,7 +429,7 @@ function Get-DbaDbBackupHistory {
                     if ((Get-PSCallStack)[1].Command -notlike ' Get-DbaDbBackupHistory*') {
                         $forkCheckSql = "
                             SELECT
-                                database_name,
+                                database_name as 'name',
                                 MIN(database_backup_lsn) as 'FirstLsn',
                                 MAX(database_backup_lsn) as 'FinalLsn',
                                 MIN(backup_start_date) as 'MinDate',
