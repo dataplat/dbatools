@@ -16,7 +16,7 @@ if ($ise) {
     return "PowerShell ISE found in use. Please close this program before using this script."
 }
 
-$installedVersion = Get-InstalledModule $module -AllVersions | Select-Object Version,InstalledLocation
+$installedVersion = Get-InstalledModule $module -AllVersions | Select-Object Version, InstalledLocation
 Write-Output "The currently installed version(s) of $module is/are: "
 $installedVersion.Version
 
@@ -36,7 +36,7 @@ foreach ($v in $installedVersion) {
 $newestVersion = Find-Module $module | Select-Object Version
 Write-Output "`nThe latest version of $module in the PSGallery is: $($newestVersion.Version)"
 if ($installedVersion.Count -gt 1) {
-    $olderVersions = $installedVersion | Where-Object [version]Version -lt [version]$newestVersion.Version
+    $olderVersions = @($installedVersion | Where-Object { [version]$_.Version -lt [version]$newestVersion.Version })
 }
 
 if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVersion.Version ) {
