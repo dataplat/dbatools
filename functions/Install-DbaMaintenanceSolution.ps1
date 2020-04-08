@@ -152,7 +152,7 @@ function Install-DbaMaintenanceSolution {
         if ($Force) { $ConfirmPreference = 'none' }
 
         if ($Solution -contains 'All') {
-            $Solution -eq @('All');
+            $Solution = @('All');
         }
 
         if ($InstallJobs -and $Solution -notcontains 'All') {
@@ -318,29 +318,30 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if ($Solution -notcontains 'All') {
-                $required = @('CommandExecute.sql')
-            }
-
-            if ($LogToTable) {
-                $required += 'CommandLog.sql'
-            }
-
-            if ($Solution -contains 'Backup') {
-                $required += 'DatabaseBackup.sql'
-            }
-
-            if ($Solution -contains 'IntegrityCheck') {
-                $required += 'DatabaseIntegrityCheck.sql'
-            }
-
-            if ($Solution -contains 'IndexOptimize') {
-                $required += 'IndexOptimize.sql'
-            }
 
             if ($Solution -contains 'All') {
-                $required += 'MaintenanceSolution.sql'
+                $required = @('MaintenanceSolution.sql')
+            } else {
+
+                $required = @('CommandExecute.sql')
+
+                if ($LogToTable) {
+                    $required += 'CommandLog.sql'
+                }
+
+                if ($Solution -contains 'Backup') {
+                    $required += 'DatabaseBackup.sql'
+                }
+
+                if ($Solution -contains 'IntegrityCheck') {
+                    $required += 'DatabaseIntegrityCheck.sql'
+                }
+
+                if ($Solution -contains 'IndexOptimize') {
+                    $required += 'IndexOptimize.sql'
+                }
             }
+
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
@@ -356,7 +357,7 @@ function Install-DbaMaintenanceSolution {
                     [string]$CleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 exec sp_rename '[dbo].[CommandLog]', 'CommandLog_{0:yyyy-MM-dd}T{0:HH:mm:ss}Z';
-                            IF OBJECT_ID('[dbo].[PK_CommandLog]', 'U') IS NOT NULL
+                            IF OBJECT_ID('[dbo].[PK_CommandLog]', 'PK') IS NOT NULL
                                 exec sp_rename 'PK_CommandLog', 'PK_CommandLog_{0:yyyy-MM-dd}T{0:HH:mm:ss}Z'
                     ") -f ((get-date).ToUniversalTime());
                 } else {
@@ -376,7 +377,7 @@ function Install-DbaMaintenanceSolution {
                             IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
-                write-host -message $CleanupQuery;
+
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
                     $null = $db.Query($CleanupQuery)
