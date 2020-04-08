@@ -126,14 +126,6 @@ function Remove-DbaDbOrphanUser {
                 $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            $CallStack = Get-PSCallStack | Select-Object -Property *
-            if ($CallStack.Count -eq 1) {
-                $StackSource = $CallStack[0].Command
-            } else {
-                #-2 because index base is 0 and we want the one before the last (the last is the actual command)
-                $StackSource = $CallStack[($CallStack.Count - 2)].Command
-            }
-
             if ($DatabaseCollection) {
                 foreach ($db in $DatabaseCollection) {
                     try {
@@ -145,24 +137,17 @@ function Remove-DbaDbOrphanUser {
                             }
                         }
 
-                        if ($StackSource -eq "Repair-DbaDbOrphanUser") {
-                            Write-Message -Level Verbose -Message "Call origin: Repair-DbaDbOrphanUser."
-                            #Will use collection from parameter ($User)
+                        Write-Message -Level Verbose -Message "Validating users on database $db."
+
+                        $users = @()
+                        if ($User.Count -eq 0) {
+                            #the third validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
+                            $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                            $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                         } else {
-                            Write-Message -Level Verbose -Message "Validating users on database $db."
-
-                            $users = @()
-                            if ($User.Count -eq 0) {
-                                #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
-                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
-                            } else {
-
-                                Write-Message -Level Verbose -Message "Validating users on database $db."
-                                #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
-                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
-                            }
+                            #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
+                            $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User.Name -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                            $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User.Name -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
                         }
 
                         if ($users.Count -gt 0) {
@@ -172,14 +157,11 @@ function Remove-DbaDbOrphanUser {
 
                                 $ExistLogin = $null
 
-                                if ($StackSource -ne "Repair-DbaDbOrphanUser") {
-                                    #Need to validate Existing Login because the call does not came from Repair-DbaDbOrphanUser
-                                    $ExistLogin = $server.logins | Where-Object {
-                                        $_.Isdisabled -eq $False -and
-                                        $_.IsSystemObject -eq $False -and
-                                        $_.IsLocked -eq $False -and
-                                        $_.Name -eq $dbuser.Name
-                                    }
+                                $ExistLogin = $server.logins | Where-Object {
+                                    $_.Isdisabled -eq $False -and
+                                    $_.IsSystemObject -eq $False -and
+                                    $_.IsLocked -eq $False -and
+                                    $_.Name -eq $dbuser.Name
                                 }
 
                                 #Schemas only appears on SQL Server 2005 (v9.0)
