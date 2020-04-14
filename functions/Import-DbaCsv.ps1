@@ -373,47 +373,6 @@ function Import-DbaCsv {
         }
 
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
-
-        # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
-        # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
-
-        $sourcecode = 'namespace System.Data.SqlClient
-        {
-            using Reflection;
-
-            public static class SqlBulkCopyExtension
-            {
-                const String _rowsCopiedFieldName = "_rowsCopied";
-                static FieldInfo _rowsCopiedField = null;
-
-                public static int RowsCopiedCount(this SqlBulkCopy bulkCopy)
-                {
-                    if (_rowsCopiedField == null) _rowsCopiedField = typeof(SqlBulkCopy).GetField(_rowsCopiedFieldName, BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
-                    return (int)_rowsCopiedField.GetValue(bulkCopy);
-                }
-            }
-        }
-    '
-
-        try {
-            if ($script:core) {
-                #.NET Core has moved most of the System.Data.SqlClient namespace to a separate assembly
-                $SqlClientPath = "$script:PSModuleRoot\bin\smo\coreclr\System.Data.SqlClient.dll"
-                if (Test-Path $SqlClientPath) {
-                    #Powershell 6 appears to include a version of System.Data.SqlClient.dll
-                    #that often precedes the following statement, but this enures that a version of
-                    #the assemble gets loaded before loading our custom class.
-                    Add-Type -Path $SqlClientPath
-                }
-                Add-Type -ReferencedAssemblies System.Data.SqlClient.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            } else {
-                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            }
-            Write-Message -Level Verbose -Message "SqlBulkCopyExtension loaded."
-        } catch {
-            Stop-Function -Message 'Could not load a usable version of SqlBulkCopy.' -ErrorRecord $_
-            return
-        }
     }
     process {
         foreach ($filename in $Path) {
@@ -689,7 +648,7 @@ function Import-DbaCsv {
                         if (-not $NoTransaction) {
                             $null = $transaction.Commit()
                         }
-                        $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
+                        $rowscopied = Get-BulkRowsCopiedCount $bulkcopy
                         $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
