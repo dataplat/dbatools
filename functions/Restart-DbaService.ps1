@@ -19,7 +19,7 @@ function Restart-DbaService {
 
     .PARAMETER Type
         Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+        Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
 
     .PARAMETER Timeout
         How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
@@ -87,7 +87,7 @@ function Restart-DbaService {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [Alias("Instance")]
         [string[]]$InstanceName,
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
@@ -104,7 +104,7 @@ function Restart-DbaService {
             if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
             if ($Type) { $serviceParams.Type = $Type }
             if ($Credential) { $serviceParams.Credential = $Credential }
-            if ($EnableException) { $serviceParams.Silent = $EnableException }
+            if ($EnableException) { $serviceParams.EnableException = $EnableException }
             $InputObject = Get-DbaService @serviceParams
         }
     }
@@ -115,17 +115,22 @@ function Restart-DbaService {
     end {
         $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
         foreach ($service in $processArray) {
-            if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
-                Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
-                #Construct parameters to call Get-DbaService
-                $serviceParams = @{
-                    ComputerName = $service.ComputerName
-                    InstanceName = $service.InstanceName
-                    Type         = 'Agent'
+            if ($Force -and $service.ServiceType -eq 'Engine') {
+                foreach ($dependentService in @("Agent", "PolyBase", "Launchpad")) {
+                    if (!($processArray | Where-Object { $_.ServiceType -eq $dependentService -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+                        Write-Message -Level Verbose -Message "Adding $dependentService service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
+                        #Construct parameters to call Get-DbaService
+                        $serviceParams = @{
+                            ComputerName  = $service.ComputerName
+                            InstanceName  = $service.InstanceName
+                            Type          = $dependentService
+                            WarningAction = 'SilentlyContinue'
+                        }
+                        if ($Credential) { $serviceParams.Credential = $Credential }
+                        if ($EnableException) { $serviceParams.EnableException = $EnableException }
+                        $processArray += @(Get-DbaService @serviceParams)
+                    }
                 }
-                if ($Credential) { $serviceParams.Credential = $Credential }
-                if ($EnableException) { $serviceParams.Silent = $EnableException }
-                $processArray += @(Get-DbaService @serviceParams)
             }
         }
         if ($processArray) {
