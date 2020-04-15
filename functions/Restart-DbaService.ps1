@@ -116,20 +116,25 @@ function Restart-DbaService {
         $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
         foreach ($service in $processArray) {
             if ($Force -and $service.ServiceType -eq 'Engine') {
+                $dependentServices = @()
                 foreach ($dependentService in @("Agent", "PolyBase", "Launchpad")) {
                     if (!($processArray | Where-Object { $_.ServiceType -eq $dependentService -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
                         Write-Message -Level Verbose -Message "Adding $dependentService service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
-                        #Construct parameters to call Get-DbaService
-                        $serviceParams = @{
-                            ComputerName  = $service.ComputerName
-                            InstanceName  = $service.InstanceName
-                            Type          = $dependentService
-                            WarningAction = 'SilentlyContinue'
-                        }
-                        if ($Credential) { $serviceParams.Credential = $Credential }
-                        if ($EnableException) { $serviceParams.EnableException = $EnableException }
-                        $processArray += @(Get-DbaService @serviceParams)
+                        $dependentServices += $dependentService
                     }
+                }
+                if ($dependentServices.Count -gt 0) {
+                    #Construct parameters to call Get-DbaService
+                    $serviceParams = @{
+                        ComputerName  = $service.ComputerName
+                        InstanceName  = $service.InstanceName
+                        Type          = $dependentServices
+                        WarningAction = 'SilentlyContinue'
+
+                    }
+                    if ($Credential) { $serviceParams.Credential = $Credential }
+                    if ($EnableException) { $serviceParams.EnableException = $EnableException }
+                    $processArray += @(Get-DbaService @serviceParams)
                 }
             }
         }
