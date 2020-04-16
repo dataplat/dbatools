@@ -177,7 +177,7 @@ function Copy-DbaDatabase {
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
-        It also includes the support databases (ReportServer, ReportServerTempDb, distribution).
+        It also includes the support databases (ReportServer, ReportServerTempDb, SSISDB, distribution).
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -AllDatabases -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql
 
@@ -930,7 +930,7 @@ function Copy-DbaDatabase {
 
             Write-Message -Level Verbose -Message "Building database list."
             $databaseList = New-Object System.Collections.ArrayList
-            $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
+            $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
             foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
