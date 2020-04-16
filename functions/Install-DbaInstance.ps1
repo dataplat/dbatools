@@ -53,6 +53,7 @@ function Install-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'
         If the protocol fails to establish a connection
 
         Defaults:
@@ -62,12 +63,36 @@ function Install-DbaInstance {
 
     .PARAMETER Version
         SQL Server version you wish to install.
+        This is the year version (e.g. "2008R2", "2017", "2019")
 
     .PARAMETER InstanceName
         Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
 
     .PARAMETER Feature
-        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components.
+        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components. Full list of features:
+
+        Default
+        All
+        Engine
+        Tools
+        Replication
+        FullText
+        DataQuality
+        PolyBase
+        MachineLearning
+        AnalysisServices
+        ReportingServices
+        ReportingForSharepoint
+        SharepointAddin
+        IntegrationServices
+        MasterDataServices
+        PythonPackages
+        RPackages
+        ReplayController
+        ReplayClient
+        SDK
+        BIDS
+        SSMS
 
     .PARAMETER InstancePath
         Root folder for instance components. Includes SQL Server logs, system databases, etc.
@@ -138,7 +163,7 @@ function Install-DbaInstance {
         Restart computer automatically if a restart is required before or after the installation.
 
     .PARAMETER AuthenticationMode
-        Chooses between Mixed and Windows authentication.
+        Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

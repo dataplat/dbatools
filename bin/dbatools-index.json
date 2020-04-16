@@ -10739,6 +10739,14 @@
                            ""
                        ],
                        [
+                           "ExcludeCategory",
+                           "Categories to exclude - jobs associated with these categories will not be returned.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ExcludeDisabledJobs",
                            "Switch will exclude disabled jobs from the output.",
                            "",
@@ -10755,7 +10763,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Category] \u003cString[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Category] \u003cString[]\u003e] [[-ExcludeCategory] \u003cString[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentJobCategory",
@@ -12623,7 +12631,7 @@
         "CommandName":  "Get-DbaDbAssembly",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbAssembly",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssemly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assemlby in the MyDb Database on the Server1 instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost\nReturns all Database Assembly on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance localhost, sql2016\nReturns all Database Assembly for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbAssembly -SqlInstance Server1 -Database MyDb -Name MyTechCo.Houids.SQLCLR\nWill fetch details for the MyTechCo.Houids.SQLCLR assembly in the MyDb Database on the Server1 instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12651,7 +12659,7 @@
                        ],
                        [
                            "Name",
-                           "Specify an Assembly to be fetched. If not specified all Assemblys will be returned",
+                           "Specify an Assembly to be fetched. If not specified all Assemblies will be returned",
                            "",
                            false,
                            "false",
@@ -12659,7 +12667,7 @@
                        ],
                        [
                            "EnableException",
-                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "By default, when something goes wrong, we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
                            false,
                            "false",
@@ -16948,6 +16956,64 @@
                        ]
                    ],
         "Syntax":  "Get-DbaExecutionPlan [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-SinceCreation] \u003cDateTime\u003e] [[-SinceLastExecution] \u003cDateTime\u003e] [-ExcludeEmptyQueryPlan] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaExtendedProtection",
+        "Description":  "Get the Extended Protection setting of the SQL Server network configuration.\n\nThis setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "Instance",
+                     "Security"
+                 ],
+        "Synopsis":  "Get the Extended Protection setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "ClÃ¡udio Silva (@claudioessilva), https://claudioessilva.eu",
+        "CommandName":  "Get-DbaExtendedProtection",
+        "Availability":  "Windows only",
+        "Links":  "https://dbatools.io/Get-DbaExtendedProtection",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaExtendedProtection\nGets Extended Protection on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaExtendedProtection -SqlInstance sql01\\SQL2008R2SP2\nSet Extended Protection of SQL Engine for the SQL2008R2SP2 on sql01 to \"Off\". Uses Windows Credentials to both connect and modify the registry.\r\nGets Extended Protection for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Get-DbaExtendedProtection [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaFeature",
@@ -24324,7 +24390,7 @@
                        ],
                        [
                            "Version",
-                           "SQL Server version you wish to install.",
+                           "SQL Server version you wish to install.\r\nThis is the year version (e.g. \"2008R2\", \"2017\", \"2019\")",
                            "",
                            true,
                            "false",
@@ -24356,7 +24422,7 @@
                        ],
                        [
                            "Authentication",
-                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "Chooses an authentication protocol for remote connections.\r\nAllowed values: \u0027Default\u0027, \u0027Basic\u0027, \u0027Negotiate\u0027, \u0027NegotiateWithImplicitCredential\u0027, \u0027Credssp\u0027, \u0027Digest\u0027, \u0027Kerberos\u0027\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
                            "",
                            false,
                            "false",
@@ -24388,7 +24454,7 @@
                        ],
                        [
                            "Feature",
-                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components.",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault\r\nAll\r\nEngine\r\nTools\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS",
                            "",
                            false,
                            "false",
@@ -24396,7 +24462,7 @@
                        ],
                        [
                            "AuthenticationMode",
-                           "Chooses between Mixed and Windows authentication.",
+                           "Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.",
                            "",
                            false,
                            "false",
@@ -43429,6 +43495,72 @@
                        ]
                    ],
         "Syntax":  "Set-DbaErrorLogConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-LogCount] \u003cInt32\u003e] [[-LogSize] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbaExtendedProtection",
+        "Description":  "Set the Extended Protection setting of the SQL Server network configuration.\n\nThis setting requires access to the Windows Server and not the SQL Server instance. The setting is found in SQL Server Configuration Manager under the properties of SQL Server Network Configuration \u003e Protocols for \"InstanceName\".",
+        "Tags":  [
+                     "Instance",
+                     "Security"
+                 ],
+        "Synopsis":  "Set the Extended Protection setting of the SQL Server network configuration.",
+        "Alias":  "",
+        "Author":  "ClÃ¡udio Silva (@claudioessilva), https://claudioessilva.eu",
+        "CommandName":  "Set-DbaExtendedProtection",
+        "Availability":  "Windows only",
+        "Links":  "https://dbatools.io/Set-DbaExtendedProtection",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaExtendedProtection\nSet Extended Protection of SQL Engine on the default (MSSQLSERVER) instance on localhost to \"Off\". Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaExtendedProtection -Value Required\nSet Extended Protection of SQL Engine on the default (MSSQLSERVER) instance on localhost to \"Required\". Requires (and checks for) RunAs admin.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaExtendedProtection -SqlInstance sql01\\SQL2008R2SP2\nSet Extended Protection of SQL Engine for the SQL2008R2SP2 on sql01 to \"Off\". Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaExtendedProtection -SqlInstance sql01\\SQL2008R2SP2 -Value Allowed\nSet Extended Protection of SQL Engine for the SQL2008R2SP2 on sql01 to \"Allowed\". Uses Windows Credentials to both connect and modify the registry.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaExtendedProtection -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\nShows what would happen if the command were executed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "$env:COMPUTERNAME"
+                       ],
+                       [
+                           "Credential",
+                           "Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Value",
+                           "Posible values are Off, Allowed and Always.",
+                           "",
+                           false,
+                           "false",
+                           "Off"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaExtendedProtection [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Value] \u003cObject\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaLogin",
