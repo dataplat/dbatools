@@ -79,8 +79,9 @@ if ($IsLinux -or $IsMacOs) {
 #region User Shared
 if ($IsLinux -or $IsMacOs) {
     # Defaults to the first value in $Env:XDG_CONFIG_DIRS on Linux or MacOS (or $HOME/.local/share/)
-    $fileUserShared = @($Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator))[0]
-    if (-not $fileUserShared) { $fileUserShared = Join-Path $HOME .local/share/ }
+    # Defaults to $HOME .local/share/
+    # It previously was picking the first value in $Env:XDG_CONFIG_DIRS, but was causing and exception with ubuntu and xdg, saying that access to path /etc/xdg/xdg-ubuntu is denied.
+    $fileUserShared = Join-Path $HOME .local/share/
 
     $script:path_FileUserShared = Join-DbaPath $fileUserShared $psVersionName "dbatools/"
     $script:AppData = $fileUserShared
