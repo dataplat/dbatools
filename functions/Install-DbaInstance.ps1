@@ -615,7 +615,7 @@ function Install-DbaInstance {
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                if ($cores) {
+                if ($cores -and $configNode.ACTION -ne "AddNode") {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
             }
