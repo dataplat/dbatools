@@ -5567,7 +5567,7 @@ function Copy-DbaDatabase {
 
             Write-Message -Level Verbose -Message "Building database list."
             $databaseList = New-Object System.Collections.ArrayList
-            $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
+            $SupportDBs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
             foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
@@ -34289,7 +34289,7 @@ function Get-DbaService {
         [string[]]$InstanceName,
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Search")]
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
@@ -34308,6 +34308,7 @@ function Get-DbaService {
             @{ Name = "SSRS"; Id = 6 },
             @{ Name = "Browser"; Id = 7 },
             @{ Name = "PolyBase"; Id = 10, 11 },
+            @{ Name = "Launchpad"; Id = 12 },
             @{ Name = "Unknown"; Id = 8 }
         )
         if ($PsCmdlet.ParameterSetName -match 'Search') {
@@ -34380,10 +34381,10 @@ function Get-DbaService {
                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
 
-                    if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
+                    if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService", "MSSQLFDLauncher", "SQLPBDMS", "SQLPBENGINE", "MSSQLLAUNCHPAD")) {
                         $instance = "MSSQLSERVER"
                     } else {
-                        if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
+                        if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS", "FullText", "PolyBase", "Launchpad")) {
                             if ($service.ServiceName.indexof('$') -ge 0) {
                                 $instance = $service.ServiceName.split('$')[1]
                             } else {
@@ -40106,7 +40107,7 @@ function Install-DbaInstance {
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                if ($cores) {
+                if ($cores -and $configNode.ACTION -ne "AddNode") {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
             }
@@ -60709,7 +60710,7 @@ function Restart-DbaService {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [Alias("Instance")]
         [string[]]$InstanceName,
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
@@ -60726,7 +60727,7 @@ function Restart-DbaService {
             if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
             if ($Type) { $serviceParams.Type = $Type }
             if ($Credential) { $serviceParams.Credential = $Credential }
-            if ($EnableException) { $serviceParams.Silent = $EnableException }
+            if ($EnableException) { $serviceParams.EnableException = $EnableException }
             $InputObject = Get-DbaService @serviceParams
         }
     }
@@ -60737,17 +60738,27 @@ function Restart-DbaService {
     end {
         $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
         foreach ($service in $processArray) {
-            if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
-                Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
-                #Construct parameters to call Get-DbaService
-                $serviceParams = @{
-                    ComputerName = $service.ComputerName
-                    InstanceName = $service.InstanceName
-                    Type         = 'Agent'
+            if ($Force -and $service.ServiceType -eq 'Engine') {
+                $dependentServices = @()
+                foreach ($dependentService in @("Agent", "PolyBase", "Launchpad")) {
+                    if (!($processArray | Where-Object { $_.ServiceType -eq $dependentService -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+                        Write-Message -Level Verbose -Message "Adding $dependentService service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
+                        $dependentServices += $dependentService
+                    }
                 }
-                if ($Credential) { $serviceParams.Credential = $Credential }
-                if ($EnableException) { $serviceParams.Silent = $EnableException }
-                $processArray += @(Get-DbaService @serviceParams)
+                if ($dependentServices.Count -gt 0) {
+                    #Construct parameters to call Get-DbaService
+                    $serviceParams = @{
+                        ComputerName  = $service.ComputerName
+                        InstanceName  = $service.InstanceName
+                        Type          = $dependentServices
+                        WarningAction = 'SilentlyContinue'
+
+                    }
+                    if ($Credential) { $serviceParams.Credential = $Credential }
+                    if ($EnableException) { $serviceParams.EnableException = $EnableException }
+                    $processArray += @(Get-DbaService @serviceParams)
+                }
             }
         }
         if ($processArray) {
