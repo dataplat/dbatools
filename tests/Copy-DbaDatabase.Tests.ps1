@@ -20,6 +20,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
+        $supportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
 
         $server = Connect-DbaInstance -SqlInstance $script:instance3
@@ -29,10 +30,23 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        foreach ($db in $supportDbs) {
+            $server.Query("CREATE DATABASE [$db]; ALTER DATABASE [$db] SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE;")
+        }
         $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $supportDbs
+    }
+
+    Context "Support databases are excluded when AllDatabase selected" {
+        $SupportDbs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
+        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -AllDatabase -BackupRestore -UseLastBackup
+       
+        It "Support databases should not be migrated" {
+            $SupportDbs | Should -Not -BeIn $results.Name
+        }
     }
 
     # if failed Disable-NetFirewallRule -DisplayName 'Core Networking - Group Policy (TCP-Out)'
