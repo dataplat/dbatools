@@ -31,7 +31,7 @@ function Test-DbaTempDbConfig {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: tempdb, configuration
+        Tags: Tempdb, Configuration
         Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
         Website: https://dbatools.io
@@ -41,7 +41,7 @@ function Test-DbaTempDbConfig {
         Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
     .LINK
-        https://dbatools.io/Test-DbaTempddbConfig
+        https://dbatools.io/Test-DbaTempDbConfig
 
     .EXAMPLE
         PS C:\> Test-DbaTempDbConfig -SqlInstance localhost

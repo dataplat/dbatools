@@ -25,6 +25,9 @@ function Get-DbaDbStoredProcedure {
     .PARAMETER ExcludeSystemSp
         This switch removes all system objects from the Stored Procedure collection
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -37,6 +40,9 @@ function Get-DbaDbStoredProcedure {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaDbStoredProcedure
 
     .EXAMPLE
         PS C:\> Get-DbaDbStoredProcedure -SqlInstance sql2016
@@ -63,59 +69,53 @@ function Get-DbaDbStoredProcedure {
 
         Gets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbStoredProcedure
+
+        Pipe the databases from Get-DbaDatabase into Get-DbaDbStoredProcedure
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
+            }
+            if ($db.StoredProcedures.Count -eq 0) {
+                Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+                continue
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-
-            foreach ($db in $databases) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-                    continue
-                }
-                if ($db.StoredProcedures.Count -eq 0) {
-                    Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output
+            foreach ($proc in $db.StoredProcedures) {
+                if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
                     continue
                 }
 
-                foreach ($proc in $db.StoredProcedures) {
-                    if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
-                        continue
-                    }
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $proc.Parent.ComputerName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $proc.Parent.InstanceName
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $proc.Parent.SqlInstance
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
-
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
-                    'DateLastModified', 'Name', 'ImplementationType', 'Startup'
-                    Select-DefaultView -InputObject $proc -Property $defaults
-                }
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
+                'DateLastModified', 'Name', 'ImplementationType', 'Startup'
+                Select-DefaultView -InputObject $proc -Property $defaults
             }
         }
     }

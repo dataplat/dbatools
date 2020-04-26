@@ -9,7 +9,7 @@ function Watch-DbatoolsUpdate {
         Anyone know how to make it clickable so that it opens an URL?
 
     .NOTES
-        Tags: JustForFun, Module
+        Tags: Module, Watcher
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -23,9 +23,8 @@ function Watch-DbatoolsUpdate {
         PS C:\> Watch-DbatoolsUpdate
 
         Watches the gallery for updates to dbatools.
-
     #>
-    [cmdletbinding()]
+    [CmdletBinding()]
     param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
@@ -50,7 +49,7 @@ function Watch-DbatoolsUpdate {
 
         if ($galleryVersion -le $localVersion) { return }
 
-        $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+        $file = "$(Get-DbatoolsPath -Name localappdata)\dbatools\watchupdate.xml"
 
         $new = [PSCustomObject]@{
             NotifyVersion = $galleryVersion

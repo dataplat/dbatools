@@ -119,7 +119,7 @@ function Get-DbaRegServer {
     }
     process {
         if (-not $PSBoundParameters.SqlInstance -and -not ($IsLinux -or $IsMacOs)) {
-            $null = Get-ChildItem -Recurse "$env:APPDATA\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $null = Get-ChildItem -Recurse "$(Get-DbatoolsPath -Name appdata)\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
         $servers = @()
@@ -171,7 +171,7 @@ function Get-DbaRegServer {
                             if (-not $connname) {
                                 $connname = $server.Options['server']
                             }
-                            $adsconn = $adsconnection | Where-Object server -eq $server.Options['server']
+                            $adsconn = $adsconnection | Where-Object { $_.server -eq $server.Options['server'] -and -not $_.database }
 
                             $tempserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $tempgroup, $connname
                             $tempserver.Description = $server.Options['Description']

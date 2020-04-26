@@ -55,7 +55,7 @@ function Test-DbaPowerPlan {
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [pscustomobject[]]$InputObject,
         [switch]$EnableException
     )
 

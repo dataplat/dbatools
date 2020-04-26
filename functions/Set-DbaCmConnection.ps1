@@ -109,7 +109,7 @@ function Set-DbaCmConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/set-DbaCmConnection
+        https://dbatools.io/Set-DbaCmConnection
 
     .EXAMPLE
         PS C:\> Get-DbaCmConnection sql2014 | Set-DbaCmConnection -ClearBadCredential -UseWindowsCredentials
@@ -130,77 +130,36 @@ function Set-DbaCmConnection {
 
         In this example, the configuration settings will also be reset, since after re-import those will be set to explicit, rather than deriving them from the global settings.
         In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
-
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
-
         [Parameter(ParameterSetName = "Credential")]
-        [PSCredential]
-        $Credential,
-
+        [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Windows")]
-        [switch]
-        $UseWindowsCredentials,
-
-        [switch]
-        $OverrideExplicitCredential,
-
-        [switch]
-        $OverrideConnectionPolicy,
-
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]
-        $DisabledConnectionTypes = 'None',
-
-        [switch]
-        $DisableBadCredentialCache,
-
-        [switch]
-        $DisableCimPersistence,
-
-        [switch]
-        $DisableCredentialAutoRegister,
-
-        [switch]
-        $EnableCredentialFailover,
-
+        [switch]$UseWindowsCredentials,
+        [switch]$OverrideExplicitCredential,
+        [switch]$OverrideConnectionPolicy,
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$DisabledConnectionTypes = 'None',
+        [switch]$DisableBadCredentialCache,
+        [switch]$DisableCimPersistence,
+        [switch]$DisableCredentialAutoRegister,
+        [switch]$EnableCredentialFailover,
         [Parameter(ParameterSetName = "Credential")]
-        [switch]
-        $WindowsCredentialsAreBad,
-
-        [Microsoft.Management.Infrastructure.Options.WSManSessionOptions]
-        $CimWinRMOptions,
-
-        [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
-        $CimDCOMOptions,
-
-        [System.Management.Automation.PSCredential[]]
-        $AddBadCredential,
-
-        [System.Management.Automation.PSCredential[]]
-        $RemoveBadCredential,
-
-        [switch]
-        $ClearBadCredential,
-
-        [switch]
-        $ClearCredential,
-
-        [switch]
-        $ResetCredential,
-
-        [switch]
-        $ResetConnectionStatus,
-
-        [switch]
-        $ResetConfiguration,
-
+        [switch]$WindowsCredentialsAreBad,
+        [Microsoft.Management.Infrastructure.Options.WSManSessionOptions]$CimWinRMOptions,
+        [Microsoft.Management.Infrastructure.Options.DComSessionOptions]$CimDCOMOptions,
+        [System.Management.Automation.PSCredential[]]$AddBadCredential,
+        [System.Management.Automation.PSCredential[]]$RemoveBadCredential,
+        [switch]$ClearBadCredential,
+        [switch]$ClearCredential,
+        [switch]$ResetCredential,
+        [switch]$ResetConnectionStatus,
+        [switch]$ResetConfiguration,
         [switch]$EnableException
     )
-
     begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"

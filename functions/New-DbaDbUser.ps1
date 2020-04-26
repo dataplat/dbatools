@@ -86,7 +86,7 @@ function New-DbaDbUser {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystem,
         [parameter(ParameterSetName = "Login")]
-        [string[]]$Login,
+        [string]$Login,
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
@@ -145,7 +145,7 @@ function New-DbaDbUser {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -198,7 +198,6 @@ function New-DbaDbUser {
                             Write-Message -Level Verbose -Message "Using LoginName: $Name"
                         }
 
-                        $Login = $smoLogin
                         $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
                     }
 
@@ -238,7 +237,7 @@ function New-DbaDbUser {
                 }
 
                 #Display Results
-                Get-DbaDbUser -SqlInstance $instance -SqlCredential $sqlcredential -Database $db.Name | Where-Object name -eq $smoUser.Name
+                Get-DbaDbUser -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name | Where-Object name -eq $smoUser.Name
             }
         }
     }

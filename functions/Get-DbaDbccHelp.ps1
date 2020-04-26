@@ -42,7 +42,7 @@ function Get-DbaDbccHelp {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccUserOptions
+        https://dbatools.io/Get-DbaDbccHelp
 
     .EXAMPLE
         PS C:\> Get-DbaDbccHelp -SqlInstance SQLInstance -Statement FREESYSTEMCACHE -Verbose | Format-List

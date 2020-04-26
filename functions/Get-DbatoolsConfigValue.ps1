@@ -20,12 +20,15 @@ function Get-DbatoolsConfigValue {
         By specifying this parameter, the function will throw an error if no value was found at all.
 
     .NOTES
-        Tags: Config, Module
+        Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbatoolsConfigValue
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfigValue -Name 'System.MailServer'
@@ -36,7 +39,6 @@ function Get-DbatoolsConfigValue {
         PS C:\> Get-DbatoolsConfigValue -Name 'Default.CoffeeMilk' -Fallback 0
 
         Returns the configured value for 'Default.CoffeeMilk'. If no such value is configured, it returns '0' instead.
-
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]

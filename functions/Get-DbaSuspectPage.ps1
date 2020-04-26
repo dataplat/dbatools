@@ -32,6 +32,9 @@ function Get-DbaSuspectPage {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaSuspectPage
+
     .EXAMPLE
         PS C:\> Get-DbaSuspectPage -SqlInstance sql2016
 
@@ -66,7 +69,7 @@ function Get-DbaSuspectPage {
             file_id,
             page_id,
             CASE event_type
-            WHEN 1 THEN '823 or 824 or Torn Page'
+            WHEN 1 THEN '823 or 824'
             WHEN 2 THEN 'Bad Checksum'
             WHEN 3 THEN 'Torn Page'
             WHEN 4 THEN 'Restored'

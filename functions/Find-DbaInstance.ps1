@@ -209,7 +209,9 @@ function Find-DbaInstance {
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.
 
     .EXAMPLE
-        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup | Format-Table -Wrap
+        PS C:\> $databases = Find-DbaInstance -ComputerName localhost | Get-DbaDatabase
+        PS C:\> $results = $databases | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup
+        PS C:\> $results | Format-Table -Wrap
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 
@@ -542,7 +544,7 @@ function Find-DbaInstance {
                         }
                     }
 
-                    $masterList
+                    $masterList | Where-Object { $_.Confidence -ge $MinimumConfidence }
                 }
             }
         }
@@ -593,7 +595,7 @@ function Find-DbaInstance {
                 $objSearcher = New-Object -TypeName System.DirectoryServices.DirectorySearcher -ArgumentList $entry
 
                 $objSearcher.PageSize = 200
-                $objSearcher.Filter = "(&(objectcategory=computer)(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
+                $objSearcher.Filter = "(&(servicePrincipalName=MSSQLsvc*)(|(name=$ComputerName)(dnshostname=$ComputerName)))"
                 $objSearcher.SearchScope = 'Subtree'
 
                 $results = $objSearcher.FindAll()
@@ -601,10 +603,15 @@ function Find-DbaInstance {
                     if ($GetSPN) {
                         $computer.Properties["serviceprincipalname"] | Where-Object { $_ -like "MSSQLsvc*:*" }
                     } else {
-                        if ($computer.Properties["dnshostname"]) {
+                        if ($computer.Properties["dnshostname"] -and $computer.Properties["dnshostname"] -ne '') {
                             $computer.Properties["dnshostname"][0]
                         } else {
-                            $computer.Properties["name"][0]
+                            $computer.Properties["serviceprincipalname"][0] -match '(?<=/)[^:]*' > $null
+                            if ($matches) {
+                                $matches[0]
+                            } else {
+                                $computer.Properties["name"][0]
+                            }
                         }
                     }
                 }

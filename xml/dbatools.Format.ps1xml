@@ -47,10 +47,15 @@
               </TableColumnHeader>
               <TableColumnHeader>
               </TableColumnHeader>
+              <TableColumnHeader>
+              </TableColumnHeader>
             </TableHeaders>
             <TableRowEntries>
               <TableRowEntry>
                 <TableColumnItems>
+                  <TableColumnItem>
+                    <PropertyName>ComputerName</PropertyName>
+                  </TableColumnItem>
                   <TableColumnItem>
                     <PropertyName>Name</PropertyName>
                   </TableColumnItem>
@@ -61,7 +66,7 @@
                     <PropertyName>Version</PropertyName>
                   </TableColumnItem>
                   <TableColumnItem>
-                    <PropertyName>Platform</PropertyName>
+                    <PropertyName>HostPlatform</PropertyName>
                   </TableColumnItem>
                   <TableColumnItem>
                     <PropertyName>IsAzure</PropertyName>
@@ -133,7 +138,7 @@
                 </TableRowEntries>
             </TableControl>
         </View>
-        
+
         <!-- Sqlcollaborative.Dbatools.Computer.PageFileSetting -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Computer.PageFileSetting</Name>

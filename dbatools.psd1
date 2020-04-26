@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.52'
+    ModuleVersion          = '1.0.106'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -492,6 +492,9 @@
         'Export-DbaDbRole',
         'Export-DbaServerRole',
         'Add-DbaServerRoleMember',
+        'Get-DbaDbAsymmetricKey',
+        'New-DbaDbAsymmetricKey',
+        'Remove-DbaDbAsymmetricKey',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -536,6 +539,8 @@
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
         'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
+        'Get-DbaExtendedProtection',
+        'Set-DbaExtendedProtection',
         'Install-DbaInstance',
         'Invoke-DbaAdvancedInstall',
         'Update-DbaInstance',
@@ -595,6 +600,10 @@
         'Enable-DbaForceNetworkEncryption',
         'Disable-DbaForceNetworkEncryption',
         'Get-DbaForceNetworkEncryption',
+        'Get-DbaHideInstance',
+        'Enable-DbaHideInstance',
+        'Disable-DbaHideInstance',
+        'New-DbaComputerCertificateSigningRequest',
         'Remove-DbaComputerCertificate',
         'New-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
@@ -647,10 +656,14 @@
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
         'Register-DbatoolsConfig',
+        # Managed Path Commands
+        'Get-DbatoolsPath',
+        'Set-DbatoolsPath',
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
-        'Test-DbaManagementObject'
+        'Test-DbaManagementObject',
+        'Copy-DbaDbViewData'
     )
 
     # Cmdlets to export from this module

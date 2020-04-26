@@ -41,6 +41,9 @@ function Remove-DbaTrace {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Remove-DbaTrace
+
     .EXAMPLE
         PS C:\> Remove-DbaTrace -SqlInstance sql2008
 

@@ -30,7 +30,7 @@ function Add-DbaDbMirrorMonitor {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -44,7 +44,6 @@ function Add-DbaDbMirrorMonitor {
         PS C:\> Add-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012
 
         Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on sql2008 and sql2012.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

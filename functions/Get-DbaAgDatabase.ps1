@@ -35,7 +35,7 @@ function Get-DbaAgDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Database
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io
@@ -59,7 +59,6 @@ function Get-DbaAgDatabase {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint -Database Sharepoint_Config | Get-DbaAgDatabase
 
         Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
-
     #>
     [CmdletBinding()]
     param (
@@ -72,6 +71,11 @@ function Get-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }

@@ -47,7 +47,7 @@ function Remove-DbaDbMasterKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaMasterKey
+        https://dbatools.io/Remove-DbaDbMasterKey
 
     .EXAMPLE
         PS C:\> Remove-DbaDbMasterKey -SqlInstance sql2017, sql2016 -Database pubs

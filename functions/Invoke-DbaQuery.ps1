@@ -57,6 +57,9 @@ function Invoke-DbaQuery {
     .PARAMETER ReadOnly
         Execute the query with ReadOnly application intent.
 
+    .PARAMETER CommandType
+        Specifies the type of command represented by the query string.  Default is Text
+
     .NOTES
         Tags: Database, Query
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -100,6 +103,11 @@ function Invoke-DbaQuery {
         PS C:\> Invoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query "select something from readonlydb.dbo.atable"
 
         Executes a query with ReadOnly application intent on aglistener1.
+
+    .EXAMPLE
+        PS C:\>Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
+
+        Executes a stored procedure Example_SP using SQL Parameters
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -118,6 +126,7 @@ function Invoke-DbaQuery {
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
         [string]$As = "DataRow",
         [System.Collections.IDictionary]$SqlParameters,
+        [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
@@ -130,7 +139,8 @@ function Invoke-DbaQuery {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $splatInvokeDbaSqlAsync = @{
-            As = $As
+            As          = $As
+            CommandType = $CommandType
         }
 
         if (Test-Bound -ParameterName "SqlParameters") {
@@ -182,11 +192,15 @@ function Invoke-DbaQuery {
                         $files += $item.FullName
                     }
                     "System.String" {
-                        $uri = [uri]$item
+                        if (Test-PsVersion -Is 3) {
+                            $uri = [uri]$item
+                        } else {
+                            $uri = [uri]::New($item)
+                        }
 
                         switch -regex ($uri.Scheme) {
                             "http" {
-                                $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                                $tempfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {
                                     try {
                                         Invoke-TlsWebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
@@ -212,9 +226,16 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (([uri]$path.FullName).Scheme -ne 'file') {
-                                            Stop-Function -Message "Could not resolve path $path as filesystem object"
-                                            return
+                                        if (Test-PsVersion -Is 3) {
+                                            if (([uri]$path.FullName).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
+                                        } else {
+                                            if ([uri]::New($path).Scheme -ne 'file') {
+                                                Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                                return
+                                            }
                                         }
                                         $files += $path.FullName
                                     }
@@ -244,7 +265,7 @@ function Invoke-DbaQuery {
                 }
 
                 try {
-                    $newfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                    $newfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                     Set-Content -Value $code -Path $newfile -Force -ErrorAction Stop -Encoding UTF8
                     $files += $newfile
                     $temporaryFilesCount++

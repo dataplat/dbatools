@@ -57,9 +57,9 @@ function Copy-DbaSysDbUserObject {
         https://dbatools.io/Copy-DbaSysDbUserObject
 
     .EXAMPLE
-        PS C:\> Copy-DbaSysDbUserObject -Source $sourceServer -Destination $destserver
+        PS C:\> Copy-DbaSysDbUserObject -Source sqlserver2014a -Destination sqlcluster
 
-        Copies user objects from source to destination
+        Copies user objects found in system databases master, msdb and model from sqlserver2014a instance to the sqlcluster instance.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
@@ -97,7 +97,7 @@ function Copy-DbaSysDbUserObject {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -111,7 +111,7 @@ function Copy-DbaSysDbUserObject {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {

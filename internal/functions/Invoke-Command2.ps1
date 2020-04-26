@@ -30,6 +30,9 @@ function Invoke-Command2 {
             Name of the remote PSSessionConfiguration to use.
             Should be registered already using Register-PSSessionConfiguration or internal Register-RemoteSessionConfiguration.
 
+        .PARAMETER UseSSL
+            Enables SSL
+
         .PARAMETER ArgumentList
             Any arguments to pass to the scriptblock being run
 
@@ -58,6 +61,7 @@ function Invoke-Command2 {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
+        [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )

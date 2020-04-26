@@ -97,42 +97,44 @@ function Export-DbaDbRole {
     .EXAMPLE
         PS C:\> Export-DbaDbRole -SqlInstance sql2005 -Path C:\temp
 
-        Exports the Database Roles for all  for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
+        Exports all the Database Roles for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
     .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -ExcludeLogin realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -ExcludeRole realcajun -SqlCredential $scred -Path C:\temp\roles.sql -Append
 
-        Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
-
-    .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
-
-        Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
+        Authenticates to sqlserver2014a using SQL Authentication. Exports all roles except for realcajun to C:\temp\roles.sql, and appends to the file if it exists. If not, the file will be created.
 
     .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -Role realcajun,netnerds -Path C:\temp\roles.sql
 
-        Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2014a to the file C:\temp\roles.sql
+
+    .EXAMPLE
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2014a -Role realcajun,netnerds -Database HR, Accounting
+
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR, Accounting | Export-DbaDbRole
 
-        Exports ONLY logins FROM sqlserver2014a with permissions on databases HR and Accounting
+        Exports ONLY roles FROM sqlserver2014a with permissions on databases HR and Accounting
 
     .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+        PS C:\> Set-DbatoolsConfig -FullName formatting.batchseparator -Value $null
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\temp\roles.sql
 
-        Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
-
-    .EXAMPLE
-        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql
-
-        Exports login realcajun from sqlserver2008 to the file C:\temp\users.sql
+        Sets the BatchSeparator configuration to null, removing the default "GO" value.
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file, without the "GO" batch separator.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 -Login realcajun | Export-DbaDbRole
+        PS C:\> Export-DbaDbRole -SqlInstance sqlserver2008 -Role realcajun,netnerds -Path C:\temp\roles.sql -BatchSeparator $null
 
-        Exports login realcajun from sqlserver2008
+        Exports ONLY roles netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\roles.sql file, without the "GO" batch separator.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2008 | Export-DbaDbRole -Role realcajun
+
+        Exports role realcajun for all databases on sqlserver2008
 
     .EXAMPLE
         PS C:\> Get-DbaDbRole -SqlInstance sqlserver2008 -ExcludeFixedRole | Export-DbaDbRole
@@ -174,7 +176,7 @@ function Export-DbaDbRole {
         $commandName = $MyInvocation.MyCommand.Name
 
         $roleSQL = "SELECT
-                        N'<#RoleName#>' as RoleName,
+                        N'/*RoleName*/' as RoleName,
                         CASE dp.state
                             WHEN 'D' THEN 'DENY'
                             WHEN 'G' THEN 'GRANT'
@@ -191,7 +193,7 @@ function Export-DbaDbRole {
                                     CASE WHEN MAX(dp.minor_id) > 0 THEN ' (['
                                         + REPLACE((SELECT name + '], [' FROM sys.columns
                                                 WHERE object_id = dp.major_id
-                                                AND column_id IN (SELECT minor_id FROM sys.database_permissions WHERE major_id = dp.major_id AND USER_NAME(grantee_principal_id) = N'<#RoleName#>')
+                                                AND column_id IN (SELECT minor_id FROM sys.database_permissions WHERE major_id = dp.major_id AND USER_NAME(grantee_principal_id) = N'/*RoleName*/')
                                         FOR XML PATH('')) + '])', ', []', '')
                                         ELSE ''
                                     END
@@ -212,18 +214,18 @@ function Export-DbaDbRole {
                         END COLLATE DATABASE_DEFAULT  as Type,
                         CASE dp.state WHEN 'W' THEN ' WITH GRANT OPTION' ELSE '' END as GrantType
                     FROM sys.database_permissions dp
-                    WHERE USER_NAME(dp.grantee_principal_id) = N'<#RoleName#>'
+                    WHERE USER_NAME(dp.grantee_principal_id) = N'/*RoleName*/'
                     GROUP BY dp.state, dp.major_id, dp.permission_name, dp.class
                     UNION ALL
                     SELECT
-                        N'<#RoleName#>' as RoleName,
+                        N'/*RoleName*/' as RoleName,
                         'ALTER' as GrantState,
                         'AUTHORIZATION' as permission_name,
                         'SCHEMA::['+s.[name]+']' as Type,
                         '' as GrantType
                     from sys.schemas s
                     join sys.sysusers u on s.principal_id = u.[uid]
-                    where u.[name] = N'<#RoleName#>'"
+                    where u.[name] = N'/*RoleName*/'"
 
         $userSQL = "SELECT roles.name as RoleName, users.name as Member
                     FROM sys.database_principals users
@@ -231,7 +233,7 @@ function Export-DbaDbRole {
                         ON link.member_principal_id = users.principal_id
                     INNER JOIN sys.database_principals roles
                         ON roles.principal_id = link.role_principal_id
-                    WHERE roles.name = N'<#RoleName#>'"
+                    WHERE roles.name = N'/*RoleName*/'"
 
         if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
             $ScriptingOptionsObject = New-DbaScriptingOption
@@ -268,15 +270,15 @@ function Export-DbaDbRole {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $databaseRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $databaseRoles = $input | Get-DbaDBRole -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $databaseRoles = $input | Get-DbaDbRole -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
                     Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
@@ -301,7 +303,7 @@ function Export-DbaDbRole {
 
                     $outsql += $dbRole.Script($ScriptingOptionsObject)
 
-                    $query = $roleSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
+                    $query = $roleSQL.Replace('/*RoleName*/', "$($dbRole.Name)")
                     $rolePermissions = $($dbRole.Parent).Query($query)
 
                     foreach ($rolePermission in $rolePermissions) {
@@ -321,7 +323,7 @@ function Export-DbaDbRole {
                     }
 
                     if ($IncludeRoleMember) {
-                        $query = $userSQL.Replace('<#RoleName#>', "$($dbRole.Name)")
+                        $query = $userSQL.Replace('/*RoleName*/', "$($dbRole.Name)")
                         $roleUsers = $($dbRole.Parent).Query($query)
 
                         foreach ($roleUser in $roleUsers) {

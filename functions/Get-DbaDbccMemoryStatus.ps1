@@ -34,7 +34,7 @@ function Get-DbaDbccMemoryStatus {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaMemoryStatus
+        https://dbatools.io/Get-DbaDbccMemoryStatus
 
     .EXAMPLE
         PS C:\> Get-DbaDbccMemoryStatus -SqlInstance sqlcluster, sqlserver2012
