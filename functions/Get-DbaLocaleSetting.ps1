@@ -41,7 +41,7 @@ function Get-DbaLocaleSetting {
         Gets the Locale settings on computers sql1, sql2 and sql3.
 
     .EXAMPLE
-        PS C:\> Get-DbaLocaleSetting -ComputerName sql1,sql2 -SqlCredential $credential
+        PS C:\> Get-DbaLocaleSetting -ComputerName sql1,sql2 -Credential $credential
 
         Gets the Locale settings on computers sql1 and sql2 using SQL Authentication to authenticate to the servers.
     #>
