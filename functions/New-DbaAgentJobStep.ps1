@@ -141,7 +141,7 @@ function New-DbaAgentJobStep {
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
 
     .EXAMPLE
-        PS C:\> New-DbaAgentJobStep -SqlInstance sq1 -Job Job1 -StepName StepA -Datavase msdb -StepId 2 -Insert
+        PS C:\> New-DbaAgentJobStep -SqlInstance sq1 -Job Job1 -StepName StepA -Database msdb -StepId 2 -Insert
 
         Assuming Job1 already has steps Step1 and Step2, will create a new step Step A and set the step order as Step1, StepA, Step2
         Internal StepIds will be updated, and any specific OnSuccess/OnFailure step references will also be updated
