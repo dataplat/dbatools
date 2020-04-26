@@ -116,7 +116,7 @@ function Copy-DbaDbViewData {
         Copies all the data from view dbo.test_view in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]
+        PS C:\> Copy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -DestinationTable [Schema].[test table]
 
         Copies all the data from view [Schema].[test view] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2
 
