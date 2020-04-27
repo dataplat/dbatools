@@ -26350,7 +26350,6 @@ function Get-DbaDbView {
 }
 
 
-#.ExternalHelp dbatools-Help.xml
 function Get-DbaDbVirtualLogFile {
     
     [CmdletBinding()]
@@ -75041,6 +75040,7 @@ function Write-DbaDbTableData {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Connect-AsServer {
