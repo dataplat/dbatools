@@ -99,10 +99,10 @@ function Copy-DbaAgentProxy {
         }
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
         if ($ProxyAccount) {
-            $serverProxyAccounts | Where-Object Name -in $ProxyAccount
+            $serverProxyAccounts = $serverProxyAccounts | Where-Object Name -in $ProxyAccount
         }
         if ($ExcludeProxyAccount) {
-            $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
+            $serverProxyAccounts = $serverProxyAccounts | Where-Object Name -notin $ExcludeProxyAccount
         }
         if ($Force) { $ConfirmPreference = 'none' }
     }
