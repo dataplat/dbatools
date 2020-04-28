@@ -4,7 +4,7 @@ function Set-DbaTempDbConfig {
         Sets tempdb data and log files according to best practices.
 
     .DESCRIPTION
-        Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.
+        Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user.
 
         Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
 
@@ -25,7 +25,7 @@ function Set-DbaTempDbConfig {
         Specifies the total data file size in megabytes. This is distributed across the total number of data files.
 
     .PARAMETER LogFileSize
-        Specifies the log file size in megabytes. If not specified, this will be set to 25% of total data file size.
+        Specifies the log file size in megabytes. If not specified, no change will be made.
 
     .PARAMETER DataFileGrowth
         Specifies the growth amount for the data file(s) in megabytes. The default is 512 MB.
@@ -201,15 +201,16 @@ function Set-DbaTempDbConfig {
                 }
             }
 
-            if (-not $LogFileSize) {
-                $LogFileSize = [Math]::Floor($DataFileSize / 4)
-            }
+            $logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName, size/128 as Size FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
 
-            $logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
-            $Filename = Split-Path $logfile.FileName -Leaf
-            $LogicalName = $logfile.Name
-            $NewPath = "$LogPath\$Filename"
-            $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
+            if ($LogFileSize) {
+                $Filename = Split-Path $logfile.FileName -Leaf
+                $LogicalName = $logfile.Name
+                $NewPath = "$LogPath\$Filename"
+                $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
+            } else {
+                $LogFileSize = $logfile.Size
+            }
 
             Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
             Write-Message -Message ($sql -join "`n`n") -Level Verbose
