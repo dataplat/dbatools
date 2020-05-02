@@ -44,7 +44,8 @@ function Enable-DbaTraceFlag {
         PS C:\> Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118
 
         Enable multiple trace flags on SQL Server instance sql2016
-        
+
+    .EXAMPLE
         PS C:\> Disable-DbaTraceFlag -SqlInstance sql2016_1, sql2016_2 -TraceFlag 6532,7314
 
         Disable more than 1 globally running trace flags on more than 1 SQL Server instances sql2016_1 and sql2016_2
