@@ -44,12 +44,6 @@ function Install-DbaMaintenanceSolution {
         Specifies the path to a local file to install Ola's solution from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
 
-    .PARAMETER NoDataLoss
-        Normally, when the ReplaceExisting flag is used, it will drop the
-        CommandLog table and re-create it. When this flag is also passed, it
-        will instead rename the old table with a time stamp which will allow
-        you to do a migration of existing data to the new table.
-
     .PARAMETER Force
         If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
 
@@ -144,7 +138,6 @@ function Install-DbaMaintenanceSolution {
         [string[]]$Solution = 'All',
         [switch]$InstallJobs,
         [string]$LocalFile,
-        [switch]$NoDataLoss,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -318,30 +311,29 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-
-            if ($Solution -contains 'All') {
-                $required = @('MaintenanceSolution.sql')
-            } else {
-
+            if ($Solution -notcontains 'All') {
                 $required = @('CommandExecute.sql')
-
-                if ($LogToTable) {
-                    $required += 'CommandLog.sql'
-                }
-
-                if ($Solution -contains 'Backup') {
-                    $required += 'DatabaseBackup.sql'
-                }
-
-                if ($Solution -contains 'IntegrityCheck') {
-                    $required += 'DatabaseIntegrityCheck.sql'
-                }
-
-                if ($Solution -contains 'IndexOptimize') {
-                    $required += 'IndexOptimize.sql'
-                }
             }
 
+            if ($LogToTable) {
+                $required += 'CommandLog.sql'
+            }
+
+            if ($Solution -contains 'Backup') {
+                $required += 'DatabaseBackup.sql'
+            }
+
+            if ($Solution -contains 'IntegrityCheck') {
+                $required += 'DatabaseIntegrityCheck.sql'
+            }
+
+            if ($Solution -contains 'IndexOptimize') {
+                $required += 'IndexOptimize.sql'
+            }
+
+            if ($Solution -contains 'All') {
+                $required += 'MaintenanceSolution.sql'
+            }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
@@ -352,22 +344,9 @@ function Install-DbaMaintenanceSolution {
 
             $CleanupQuery = $null
             if ($ReplaceExisting) {
-
-                if ($NoDataLoss -eq $true) {
-                    [string]$CleanupQuery = $("
-                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
-                                exec sp_rename '[dbo].[CommandLog]', 'CommandLog_{0:yyyy-MM-dd}T{0:HH:mm:ss}Z';
-                            IF OBJECT_ID('[dbo].[PK_CommandLog]', 'PK') IS NOT NULL
-                                exec sp_rename 'PK_CommandLog', 'PK_CommandLog_{0:yyyy-MM-dd}T{0:HH:mm:ss}Z'
-                    ") -f ((get-date).ToUniversalTime());
-                } else {
-                    [string]$CleanupQuery = $("
+                [string]$CleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
-                ");
-                }
-
-                $CleanupQuery += $("
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
                             IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
