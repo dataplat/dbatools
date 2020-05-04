@@ -81,7 +81,8 @@ function New-DbaDiagnosticAdsNotebook {
         if (-not $TargetVersion -and -not $SqlInstance) {
             Stop-Function -Message "At least one of $SqlInstance and $TargetVersion must be provided"
             return
-        } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
+        }
+        elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
             Stop-Function -Message "Cannot provide both $SqlInstance and $TargetVersion"
             return
         }
@@ -106,14 +107,16 @@ function New-DbaDiagnosticAdsNotebook {
 
             try {
                 $ServerInfo = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Query $versionQuery
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
                 return
             }
 
             if ($ServerInfo.Edition -eq "SQL Azure") {
                 $TargetVersion = "AzureSQLDatabase"
-            } else {
+            }
+            else {
                 $TargetVersion = $versions["$($ServerInfo.ProductMajorVersion).$($ServerInfo.ProductMinorVersion)"]
 
                 if ($TargetVersion -eq "2016" -and $ServerInfo.ProductLevel -eq "SP2") {
@@ -122,7 +125,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion).sql" | Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
