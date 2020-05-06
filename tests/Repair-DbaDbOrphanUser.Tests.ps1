@@ -24,7 +24,6 @@ CREATE DATABASE dbatoolsci_orphan;
 '@
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
         $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
         $usersq = @'
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
@@ -45,10 +44,11 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
     }
+
     It "shows time taken for preparation" {
         1 | Should -Be 1
     }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan -RemoveNotExisting
     It "Finds two orphans" {
         $results.Count | Should -Be 2
         foreach ($user in $Users) {
@@ -62,7 +62,8 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status'.Split(',')
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+
+    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan -RemoveNotExisting
     It "does not find any other orphan" {
         $results | Should -BeNullOrEmpty
     }
