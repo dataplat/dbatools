@@ -81,8 +81,7 @@ function New-DbaDiagnosticAdsNotebook {
         if (-not $TargetVersion -and -not $SqlInstance) {
             Stop-Function -Message "At least one of $SqlInstance and $TargetVersion must be provided"
             return
-        }
-        elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
+        } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
             Stop-Function -Message "Cannot provide both $SqlInstance and $TargetVersion"
             return
         }
@@ -107,16 +106,14 @@ function New-DbaDiagnosticAdsNotebook {
 
             try {
                 $ServerInfo = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Query $versionQuery
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
                 return
             }
 
             if ($ServerInfo.Edition -eq "SQL Azure") {
                 $TargetVersion = "AzureSQLDatabase"
-            }
-            else {
+            } else {
                 $TargetVersion = $versions["$($ServerInfo.ProductMajorVersion).$($ServerInfo.ProductMinorVersion)"]
 
                 if ($TargetVersion -eq "2016" -and $ServerInfo.ProductLevel -eq "SP2") {
