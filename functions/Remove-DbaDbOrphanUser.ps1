@@ -294,6 +294,14 @@ function Remove-DbaDbOrphanUser {
                                         if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
                                             $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
                                             Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name)."
+                                            [pscustomobject]@{
+                                                ComputerName = $server.ComputerName
+                                                InstanceName = $server.ServiceName
+                                                SqlInstance  = $server.DomainInstanceName
+                                                DatabaseName = $db.Name
+                                                User         = $dbuser.name
+                                                Status       = "Success"
+                                            }
                                         }
                                     }
                                 }
