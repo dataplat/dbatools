@@ -36,7 +36,7 @@ foreach ($v in $installedVersion) {
 $newestVersion = Find-Module $module | Select-Object Version
 Write-Output "`nThe latest version of $module in the PSGallery is: $($newestVersion.Version)"
 if ($installedVersion.Count -gt 1) {
-    $olderVersions = $installedVersion | Where-Object Version -lt $newestVersion.Version
+    $olderVersions = $installedVersion | Where-Object [version]Version -lt [version]$newestVersion.Version
 }
 
 if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVersion.Version ) {
