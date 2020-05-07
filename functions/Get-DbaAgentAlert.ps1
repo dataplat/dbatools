@@ -85,12 +85,19 @@ function Get-DbaAgentAlert {
             $alerts = $server.Jobserver.Alerts
 
             if (Test-Bound 'Alert') {
-                $alerts = $alerts | where Name -like $Alert;
+                $tempAlerts = @();
+
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
+
+                $alerts = $tempAlerts;
             }
 
-
             if (Test-Bound 'ExcludeAlert') {
-                $alerts = $alerts | where Name -notlike $ExcludeAlert;
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
             }
 
             foreach ($alrt in $alerts) {
