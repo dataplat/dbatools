@@ -6816,7 +6816,7 @@
         "CommandName":  "Enable-DbaTraceFlag",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Enable-DbaTraceFlag",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eDisable-DbaTraceFlag -SqlInstance sql2016_1, sql2016_2 -TraceFlag 6532,7314\nDisable more than 1 globally running trace flags on more than 1 SQL Server instances sql2016_1 and sql2016_2",
         "Params":  [
                        [
                            "SqlInstance",
@@ -24791,7 +24791,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString[]\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaSqlWatch",
@@ -44557,7 +44557,7 @@
     },
     {
         "Name":  "Set-DbaTempDbConfig",
-        "Description":  "Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.\n\nOther parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is \"smaller\" than what the function will size it to before running the function.",
+        "Description":  "Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user.\n\nOther parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is \"smaller\" than what the function will size it to before running the function.",
         "Tags":  [
                      "Tempdb",
                      "Configuration"
@@ -44604,7 +44604,7 @@
                        ],
                        [
                            "LogFileSize",
-                           "Specifies the log file size in megabytes. If not specified, this will be set to 25% of total data file size.",
+                           "Specifies the log file size in megabytes. If not specified, no change will be made.",
                            "",
                            false,
                            "false",
