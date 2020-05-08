@@ -25,86 +25,143 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
         # Create the database
-        if($primaryServer.Databases.Name -notcontains $dbname){
+        if ($primaryServer.Databases.Name -notcontains $dbname) {
             $query = "CREATE DATABASE [$dbname]"
             Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
         }
 
-        if(-not (Test-Path -Path $localPath)){
+        if (-not (Test-Path -Path $localPath)) {
             $null = New-Item -Path $localPath -ItemType Directory
         }
     }
 
-    Context "Remove database from log shipping with remove secondary database"{
+    Context "Remove database from log shipping with remove secondary database" {
         $params = @{
-            SourceSqlInstance = $script:instance1
-            DestinationSqlInstance = $script:instance2
-            Database = $dbname
-            BackupNetworkPath = $networkPath
-            BackupLocalPath = $localPath
-            GenerateFullBackup = $true
-            CompressBackup = $true
+            SourceSqlInstance       = $script:instance1
+            DestinationSqlInstance  = $script:instance2
+            Database                = $dbname
+            BackupNetworkPath       = $networkPath
+            BackupLocalPath         = $localPath
+            GenerateFullBackup      = $true
+            CompressBackup          = $true
             SecondaryDatabaseSuffix = "_LS"
-            Force = $true
+            Force                   = $true
         }
 
-        $results = Invoke-DbaDbLogShipping @params
+        # Run the log shipping
+        Invoke-DbaDbLogShipping @params
+
+        It "Should have the database information" {
+            $query = "SELECT pd.primary_database AS PrimaryDatabase,
+                    ps.secondary_server AS SecondaryServer,
+                    ps.secondary_database AS SecondaryDatabase
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON [pd].[primary_id] = [ps].[primary_id]
+                WHERE pd.[primary_database] = '$dbname';"
+
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+
+            $results.PrimaryDatabase | Should -Be $dbname
+        }
 
         # Remove the log shipping
         $params = @{
-            PrimarySqlInstance = $script:instance1
+            PrimarySqlInstance   = $script:instance1
             SecondarySqlInstance = $script:instance2
-            Database = $dbname
+            Database             = $dbname
         }
 
         Remove-DbaDbLogShipping @params
 
-        $primaryServer.Databases.refresh()
-        $secondaryserver.Databases.refresh()
+        $primaryServer.Databases.Refresh()
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
-        It "Should still have the primary database"{
+        It "Should still have the primary database" {
             $dbname | Should -BeIn $primaryServer.Databases.Name
         }
 
-        It "Should still longer have the secondary database" {
-            $dbname | Should -BeIn $secondaryserver.Databases.Name
+        It "Should still have the secondary database" {
+            "$($dbname)_LS" | Should -BeIn $secondaryserver.Databases.Name
+        }
+
+        It "Should no longer have log shipping information" {
+            $query = "SELECT pd.primary_database AS PrimaryDatabase,
+                    ps.secondary_server AS SecondaryServer,
+                    ps.secondary_database AS SecondaryDatabase
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON [pd].[primary_id] = [ps].[primary_id]
+                WHERE pd.[primary_database] = '$dbname';"
+
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+
+            $results.PrimaryDatabase | Should -Be $null
         }
     }
 
-    Context "Remove database from log shipping with remove secondary database"{
+    Context "Remove database from log shipping with remove secondary database" {
         $params = @{
-            SourceSqlInstance = $script:instance1
-            DestinationSqlInstance = $script:instance2
-            Database = $dbname
-            BackupNetworkPath = $networkPath
-            BackupLocalPath = $localPath
-            GenerateFullBackup = $true
-            CompressBackup = $true
+            SourceSqlInstance       = $script:instance1
+            DestinationSqlInstance  = $script:instance2
+            Database                = $dbname
+            BackupNetworkPath       = $networkPath
+            BackupLocalPath         = $localPath
+            GenerateFullBackup      = $true
+            CompressBackup          = $true
             SecondaryDatabaseSuffix = "_LS"
-            Force = $true
+            Force                   = $true
         }
 
         $results = Invoke-DbaDbLogShipping @params
 
+        It "Should have the database information" {
+            $query = "SELECT pd.primary_database AS PrimaryDatabase,
+                    ps.secondary_server AS SecondaryServer,
+                    ps.secondary_database AS SecondaryDatabase
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON [pd].[primary_id] = [ps].[primary_id]
+                WHERE pd.[primary_database] = '$dbname';"
+
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+
+            $results.PrimaryDatabase | Should -Be $dbname
+        }
+
         # Remove the log shipping
         $params = @{
-            PrimarySqlInstance = $script:instance1
-            SecondarySqlInstance = $script:instance2
-            Database = $dbname
+            PrimarySqlInstance      = $script:instance1
+            SecondarySqlInstance    = $script:instance2
+            Database                = $dbname
             RemoveSecondaryDatabase = $true
         }
 
         Remove-DbaDbLogShipping @params
 
         $primaryServer.Databases.Refresh()
-        $secondaryserver.Databases.Refresh()
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
-        It "Should still have the primary database"{
+        It "Should still have the primary database" {
             $dbname | Should -BeIn $primaryServer.Databases.Name
         }
 
         It "Should no longer have the secondary database" {
             "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
+        }
+
+        It "Should no longer have log shipping information" {
+            $query = "SELECT pd.primary_database AS PrimaryDatabase,
+                    ps.secondary_server AS SecondaryServer,
+                    ps.secondary_database AS SecondaryDatabase
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON [pd].[primary_id] = [ps].[primary_id]
+                WHERE pd.[primary_database] = '$dbname';"
+
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+
+            $results.PrimaryDatabase | Should -Be $null
         }
     }
 
