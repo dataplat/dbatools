@@ -62,9 +62,24 @@
         https://dbatools.io/Remove-DbaDbLogShipping
 
     .EXAMPLE
+        Remove-DbaDbLogShipping -PrimarySqlInstance sql1 -SecondarySqlInstance sql2 -Database DB1
 
+        Remove the log shipping for database DB1
 
     .EXAMPLE
+        Remove-DbaDbLogShipping -PrimarySqlInstance sql1 -Database DB1
+
+        Remove the log shipping for database DB1 and let the command figure out the secondary instance
+
+    .EXAMPLE
+        Remove-DbaDbLogShipping -PrimarySqlInstance localhost -SecondarySqlInstance sql2 -Database DB1, DB2
+
+        Remove the log shipping for multiple database
+
+    .EXAMPLE
+        Remove-DbaDbLogShipping -PrimarySqlInstance localhost -SecondarySqlInstance localhost -Database DB2 -RemoveSecondaryDatabase
+
+        Remove the log shipping for database DB2 and remove the database from the secondary instance
 
 
     #>
