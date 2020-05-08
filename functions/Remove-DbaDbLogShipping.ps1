@@ -184,10 +184,9 @@ function Remove-DbaDbLogShipping {
             if ($RemoveSecondaryDatabase) {
                 if ($PSCmdlet.ShouldProcess("Removing the secondary database from [$($logshippingInfo.SecondaryDatabase)]")) {
                     Write-Message -Level verbose -Message "Removing the secondary database [$($logshippingInfo.SecondaryDatabase)]"
-                    try{
-                    $null = Remove-DbaDatabase -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database $logshippingInfo.SecondaryDatabase -Confirm:$false
-                    }
-                    catch{
+                    try {
+                        $null = Remove-DbaDatabase -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database $logshippingInfo.SecondaryDatabase -Confirm:$false
+                    } catch {
                         Stop-Function -Message "Could not remove [$($logshippingInfo.SecondaryDatabase)] from $secondaryServer" -Target $secondaryServer -ErrorRecord $_ -Continue
                     }
                 }
