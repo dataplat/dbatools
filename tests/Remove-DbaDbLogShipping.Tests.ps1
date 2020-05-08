@@ -18,17 +18,30 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_logshipping"
 
-        $primaryServer = Connect-DbaInstance -SqlInstance $script:instance2
-        $secondaryerver = Connect-DbaInstance -SqlInstance $script:instance
+        $localPath = 'C:\temp\logshipping'
+        $networkPath = '\\localhost\c$\temp\logshipping'
+
+        $primaryServer = Connect-DbaInstance -SqlInstance $script:instance1
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
+
+        # Create the database
+        if($primaryServer.Databases.Name -notcontains $dbname){
+            $query = "CREATE DATABASE [$dbname]"
+            Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+        }
+
+        if(-not (Test-Path -Path $localPath)){
+            $null = New-Item -Path $localPath -ItemType Directory
+        }
     }
 
     Context "Remove database from log shipping with remove secondary database"{
         $params = @{
-            SourceSqlInstance = $script:instance2
-            DestinationSqlInstance = $script:instance
+            SourceSqlInstance = $script:instance1
+            DestinationSqlInstance = $script:instance2
             Database = $dbname
-            BackupNetworkPath = 'C:\temp'
-            BackupLocalPath = "C:\temp\logshipping\backup"
+            BackupNetworkPath = $networkPath
+            BackupLocalPath = $localPath
             GenerateFullBackup = $true
             CompressBackup = $true
             SecondaryDatabaseSuffix = "_LS"
@@ -37,37 +50,34 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $results = Invoke-DbaDbLogShipping @params
 
-        It "Database should be set up for log shipping" {
-            $results.Status -eq 'Success' | Should Be $true
-        }
-
+        # Remove the log shipping
         $params = @{
-            PrimarySqlInstance = $script:instance2
-            SecondarySqlInstance = $script:instance
+            PrimarySqlInstance = $script:instance1
+            SecondarySqlInstance = $script:instance2
             Database = $dbname
         }
 
         Remove-DbaDbLogShipping @params
 
         $primaryServer.Databases.refresh()
-        $secondaryerver.Databases.refresh()
+        $secondaryserver.Databases.refresh()
 
         It "Should still have the primary database"{
             $dbname | Should -BeIn $primaryServer.Databases.Name
         }
 
         It "Should still longer have the secondary database" {
-            $dbname | Should -BeIn $secondaryerver.Databases.Name
+            $dbname | Should -BeIn $secondaryserver.Databases.Name
         }
     }
 
     Context "Remove database from log shipping with remove secondary database"{
         $params = @{
-            SourceSqlInstance = $script:instance2
-            DestinationSqlInstance = $script:instance
+            SourceSqlInstance = $script:instance1
+            DestinationSqlInstance = $script:instance2
             Database = $dbname
-            BackupNetworkPath = 'C:\temp'
-            BackupLocalPath = "C:\temp\logshipping\backup"
+            BackupNetworkPath = $networkPath
+            BackupLocalPath = $localPath
             GenerateFullBackup = $true
             CompressBackup = $true
             SecondaryDatabaseSuffix = "_LS"
@@ -76,27 +86,25 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $results = Invoke-DbaDbLogShipping @params
 
-        It "Database should be set up for log shipping" {
-            $results.Status -eq 'Success' | Should Be $true
-        }
-
+        # Remove the log shipping
         $params = @{
-            PrimarySqlInstance = $script:instance2
-            SecondarySqlInstance = $script:instance
+            PrimarySqlInstance = $script:instance1
+            SecondarySqlInstance = $script:instance2
             Database = $dbname
+            RemoveSecondaryDatabase = $true
         }
 
         Remove-DbaDbLogShipping @params
 
-        $primaryServer.Databases.refresh()
-        $secondaryerver.Databases.refresh()
+        $primaryServer.Databases.Refresh()
+        $secondaryserver.Databases.Refresh()
 
         It "Should still have the primary database"{
             $dbname | Should -BeIn $primaryServer.Databases.Name
         }
 
         It "Should no longer have the secondary database" {
-            $dbname | Should -Not -BeIn $secondaryerver.Databases.Name
+            "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
         }
     }
 
