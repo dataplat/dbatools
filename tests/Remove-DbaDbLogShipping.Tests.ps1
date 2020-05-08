@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Database should be set up for log shipping" {
             $results.Status -eq 'Success' | Should Be $true
-        ]
+        }
 
         $params = @{
             PrimarySqlInstance = $script:instance2
