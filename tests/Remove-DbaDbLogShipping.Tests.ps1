@@ -77,10 +77,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $primaryServer.Databases.Refresh()
         $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance1
 
-        It "Should still have the primary database" {
-            $dbname | Should -BeIn $primaryServer.Databases.Name
-        }
-
         It "Should still have the secondary database" {
             "$($dbname)_LS" | Should -BeIn $secondaryserver.Databases.Name
         }
@@ -141,10 +137,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $primaryServer.Databases.Refresh()
         $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance1
-
-        It "Should still have the primary database" {
-            $dbname | Should -BeIn $primaryServer.Databases.Name
-        }
 
         It "Should no longer have the secondary database" {
             "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
