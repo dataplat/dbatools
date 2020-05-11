@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -297,10 +297,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.count | Should be 5
         }
         It "Should have restored from 2019-05-02 21:00:55" {
-            $sqlResults.mindt | Should be (get-date "2019-05-02 21:00:55")
+            $sqlResults.mindt | Should be (Get-Date "2019-05-02 21:00:55")
         }
         It "Should have restored to 2019-05-02 13:28:43" {
-            $sqlResults.maxdt | Should be (get-date "2019-05-02 21:30:26")
+            $sqlResults.maxdt | Should be (Get-Date "2019-05-02 21:30:26")
         }
     }
 
@@ -318,16 +318,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
         It "Should have restored from 2019-05-02 21:00:55" {
-            $sqlResults.mindt | Should be (get-date "2019-05-02 21:00:55")
+            $sqlResults.mindt | Should be (Get-Date "2019-05-02 21:00:55")
         }
         It "Should have restored to 2019-05-02 21:12:26" {
-            $sqlResults.maxdt | Should be (get-date "2019-05-02 21:12:26")
+            $sqlResults.maxdt | Should be (Get-Date "2019-05-02 21:12:26")
         }
     }
 
@@ -342,17 +342,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time with Simple Model" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (Get-Date "2018-04-06 10:37:44")
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
 
         It "Should have restored 2 files" {
             $results.count | Should be 2
         }
         It "Should have restored from 2018-04-06 10:30:32" {
-            $sqlResults.mindt | Should be (get-date "2018-04-06 10:30:32")
+            $sqlResults.mindt | Should be (Get-Date "2018-04-06 10:30:32")
         }
         It "Should have restored to 2018-04-06 10:35:02" {
-            $sqlResults.maxdt | Should be (get-date "2018-04-06 10:35:02")
+            $sqlResults.maxdt | Should be (Get-Date "2018-04-06 10:35:02")
         }
     }
 
@@ -377,7 +377,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:12:27") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         $warnvar
         It "Should not warn" {
@@ -387,11 +387,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.count | Should be 4
         }
         It "Should have restored from 05/02/2019 21:00:55" {
-            $sqlResults.mindt | Should be (get-date "02 May 2019 21:00:55")
+            $sqlResults.mindt | Should be (Get-Date "02 May 2019 21:00:55")
         }
         # Note, actual time is lower than target time due to how the db was built.
         It "Should have restored to 05/02/2019 21:12:26" {
-            $sqlResults.maxdt | Should be (get-date "02 May 2019 21:12:26")
+            $sqlResults.maxdt | Should be (Get-Date "02 May 2019 21:12:26")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
@@ -399,10 +399,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results2.count | Should be 4
         }
         It "Should have restored from 02 May 2019 21:00:55" {
-            $sqlResults2.mindt | Should be (get-date "02 May 2019 21:00:55")
+            $sqlResults2.mindt | Should be (Get-Date "02 May 2019 21:00:55")
         }
         It "Should have restored to 02 May 2019 21:30:26" {
-            $sqlResults2.maxdt | Should be (get-date "02 May 2019 21:30:26")
+            $sqlResults2.maxdt | Should be (Get-Date "02 May 2019 21:30:26")
         }
 
     }
@@ -418,16 +418,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (get-date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
         $sqlResults = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
         It "Should have restored from 05/02/2019 21:00:55" {
-            $sqlResults.mindt | Should be (get-date "02 May 2019 21:00:55")
+            $sqlResults.mindt | Should be (Get-Date "02 May 2019 21:00:55")
         }
         It "Should have restored to 05/02/2019 21:23:56" {
-            $sqlResults.maxdt | Should be (get-date "02 May 2019 21:23:56")
+            $sqlResults.maxdt | Should be (Get-Date "02 May 2019 21:23:56")
         }
         $results2 = Restore-DbaDatabase -SqlInstance $script:instance2 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
@@ -435,10 +435,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results2.count | Should be 2
         }
         It "Should have restored from 02 May 2019 21:00:55" {
-            $sqlResults2.mindt | Should be (get-date "02 May 2019 21:00:55")
+            $sqlResults2.mindt | Should be (Get-Date "02 May 2019 21:00:55")
         }
         It "Should have restored to 02 May 2019 21:30:26" {
-            $sqlResults2.maxdt | Should be (get-date "02 May 2019 21:30:26")
+            $sqlResults2.maxdt | Should be (Get-Date "02 May 2019 21:30:26")
         }
     }
 
@@ -504,7 +504,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
-        $Results2 = $files | ? { $_.PsIsContainer -eq $false } | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
+        $Results2 = $files | Where-Object { $_.PsIsContainer -eq $false } | Restore-DbaDatabase -SqlInstance $script:instance2 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -574,7 +574,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            (($results | measure-Object).count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
         $check = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName
         It "Should return 1 database" {
@@ -590,7 +590,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Recover -DatabaseName $DatabaseName
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            (($results | measure-Object).count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
         $check = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName
         It "Should return 1 database" {
@@ -606,7 +606,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            (($results | measure-Object).count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
         $check = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName
         It "Should return 1 database" {
@@ -622,7 +622,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance2 -Recover
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            (($results | measure-Object).count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
         $check = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName
         It "Should return 1 database" {
@@ -638,7 +638,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance2_detailed -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            (($results | measure-Object).count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
     }
 
@@ -782,13 +782,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
         It "Should have warned about corruption" {
             ($errvar -match "SQL Server detected a logical consistency-based I/O error: incorrect checksum \(expected") | Should be $True
-            ($null -eq $sqlResults2) | SHould be $True
+            ($null -eq $sqlResults2) | Should be $True
         }
         $null = Get-DbaDbBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
         $sqlResults3 = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
         It -Skip "Should work after page restore" {
             #($null -eq $errvar3) | Should Be $True
-            ($null -eq $sqlResults3) | SHould be $False
+            ($null -eq $sqlResults3) | Should be $False
         }
 
 
