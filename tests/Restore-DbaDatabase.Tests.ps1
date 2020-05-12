@@ -844,6 +844,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest -confirm:$false
     }
 
+    Context "Test restoring with StopAt"{
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recovery
+        $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
+        It "Should have stoped at mark" {
+            $sqlOut.ms | Should -Be 9876
+        }
+    }
+
+    Context "Test restoring with StopAtBefore"{
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace -StopBefore
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recovery
+        $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
+        It "Should have stoped at mark" {
+            $sqlOut.ms | Should -Be 8764
+        }
+    }
+
+    Context "Test restoring with StopAt and StopAfterDate" {
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (get-date '2020-05-12 13:33:35') -WithReplace
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recovery
+        $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
+        It "Should have stoped at mark" {
+            $sqlOut.ms | Should -Be 29876
+        }
+    }
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {
             BeforeAll {

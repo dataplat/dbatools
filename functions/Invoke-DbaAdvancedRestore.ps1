@@ -222,20 +222,19 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $Restore.NoRecovery = $False
                 }
-                # if ($null -ne $StopMark) {
-                #     if ($StopBefore -eq $True) {
-                #         $Restore.StopBeforeMarkName = $StopMark
-                #         if ($null -ne $StopAfterDate) {
-                #             $Restore.StopBeforeMarkAfterDate = $StopAfterDate
-                #         }
-                #     } else {
-                #         $Restore.StopAtMarkName = $StopMark
-                #         if ($null -ne $StopAfterDate) {
-                #             $Restore.StopAtMarkAfterDate = $StopAfterDate
-                #         }
-                #     }
-                # } else
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                if ('' -ne $StopMark) {
+                    if ($StopBefore -eq $True) {
+                        $Restore.StopBeforeMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopBeforeMarkAfterDate = $StopAfterDate
+                        }
+                    } else {
+                        $Restore.StopAtMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopAtMarkAfterDate = $StopAfterDate
+                        }
+                    }
+                } elseif ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
                 } else {
                     if ($RestoreTime -ne $Restore.RestoreTime) {
