@@ -82,6 +82,9 @@ function Restore-DbaDatabase {
     .PARAMETER IgnoreLogBackup
         This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 
+    .PARAMETER IgnoreDiffBackup
+        This switch tells the function to ignore differential log backups. The process will restore to the latest full and onwards with transaction log backups only
+
     .PARAMETER UseDestinationDefaultDirectories
         Switch that tells the restore to use the default Data and Log locations on the target server. If they don't exist, the function will try to create them
 
@@ -360,6 +363,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
         [parameter(ParameterSetName = "Restore")][hashtable]$FileMapping,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreLogBackup,
+        [parameter(ParameterSetName = "Restore")][switch]$IgnoreDiffBackup,
         [parameter(ParameterSetName = "Restore")][switch]$UseDestinationDefaultDirectories,
         [parameter(ParameterSetName = "Restore")][switch]$ReuseSourceFolderStructure,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFilePrefix = '',
@@ -661,7 +665,7 @@ function Restore-DbaDatabase {
             if ($VerifyOnly) {
                 $FilteredBackupHistory = $BackupHistory
             } else {
-                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -IgnoreDiffs:$IgnoreDiffBackup -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose

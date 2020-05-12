@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -844,7 +844,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest -confirm:$false
     }
 
-    Context "Test restoring with StopAt"{
+    Context "Test restoring with StopAt" {
         $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
@@ -853,7 +853,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Test restoring with StopAtBefore"{
+    Context "Test restoring with StopAtBefore" {
         $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace -StopBefore
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
