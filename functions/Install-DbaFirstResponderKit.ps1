@@ -232,24 +232,36 @@ function Install-DbaFirstResponderKit {
 
                 # Install/Update each FRK stored procedure
                 foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
-                    $scriptname = $script.Name
+                    $scriptName = $script.Name
                     $scriptError = $false
-                    if ($scriptname -eq "sp_BlitzQueryStore.sql") {
-                        if ($server.VersionMajor -lt 13) { continue }
+
+                    $baseres = [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $Database
+                        Name         = $script.BaseName
+                        Status       = $null
                     }
-                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
+
+                    if ($scriptName -eq "sp_BlitzQueryStore.sql" -and ($server.VersionMajor -lt 13)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2016, skipping sp_BlitzQueryStore.sql"
+                        $baseres['Status'] = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($scriptName -eq "sp_BlitzInMemoryOLTP.sql" -and ($server.VersionMajor -lt 12)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2014, not installing sp_BlitzQueryStore.sql"
+                        $baseres['Status'] = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database.")) {
                         try {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
                         } catch {
-                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
-                        }
-                        $baseres = @{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Name         = $script.BaseName
                         }
                         if ($scriptError) {
                             $baseres['Status'] = 'Error'
@@ -258,7 +270,7 @@ function Install-DbaFirstResponderKit {
                         } else {
                             $baseres['Status'] = 'Installed'
                         }
-                        [PSCustomObject]$baseres
+                        $baseres
                     }
                 }
             }
