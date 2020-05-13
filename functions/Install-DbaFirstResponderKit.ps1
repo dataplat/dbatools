@@ -109,17 +109,20 @@ function Install-DbaFirstResponderKit {
             $DbatoolsData = [System.IO.Path]::GetTempPath()
         }
         $temp = [System.IO.Path]::GetTempPath()
-        $FRKLocation = "FRK_$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
-
         if ($Branch -eq 'master') {
             $url = 'https://api.github.com/repos/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases/latest'
             $zipFile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-latest.zip"
+            $FRKLocation = "FRK_Latest"
         } elseif ($Branch -eq 'dev') {
             $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/dev.zip"
             $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-dev.zip"
+            $FRKLocation = "FRK_dev"
         } else {
             Write-Message -Level Warning -Message "Unknown value provided for Branch parameter"
+        }
+
+        if ($FRKLocation) {
+            $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
         }
 
         if ($LocalFile) {
@@ -184,7 +187,7 @@ function Install-DbaFirstResponderKit {
                             Unblock-File $zipfile -ErrorAction SilentlyContinue
                         }
 
-                        Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
+                        Expand-Archive -Path $zipfile -DestinationPath $temp -Force
                         Remove-Item -Path $zipfile
                     }
                 } catch {
@@ -206,7 +209,9 @@ function Install-DbaFirstResponderKit {
                 } else {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
-                Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
+
+                $tempFolder = Get-ChildItem $temp -Filter "SQL-Server-First-Responder-Kit*" -Directory
+                Copy-Item -Path $tempFolder -Destination $LocalCachedCopy -Recurse
             }
         }
     }
@@ -246,13 +251,13 @@ function Install-DbaFirstResponderKit {
 
                     if ($scriptName -eq "sp_BlitzQueryStore.sql" -and ($server.VersionMajor -lt 13)) {
                         Write-Message -Level Warning -Message "$instance found to be below SQL Server 2016, skipping sp_BlitzQueryStore.sql"
-                        $baseres['Status'] = 'Skipped'
+                        $baseres.Status = 'Skipped'
                         $baseres
                         continue
                     }
                     if ($scriptName -eq "sp_BlitzInMemoryOLTP.sql" -and ($server.VersionMajor -lt 12)) {
                         Write-Message -Level Warning -Message "$instance found to be below SQL Server 2014, not installing sp_BlitzQueryStore.sql"
-                        $baseres['Status'] = 'Skipped'
+                        $baseres.Status = 'Skipped'
                         $baseres
                         continue
                     }
@@ -264,11 +269,11 @@ function Install-DbaFirstResponderKit {
                             $scriptError = $true
                         }
                         if ($scriptError) {
-                            $baseres['Status'] = 'Error'
+                            $baseres.Status = 'Error'
                         } elseif ($script.BaseName -in $allprocedures) {
-                            $baseres['Status'] = 'Updated'
+                            $baseres.Status = 'Updated'
                         } else {
-                            $baseres['Status'] = 'Installed'
+                            $baseres.Status = 'Installed'
                         }
                         $baseres
                     }
