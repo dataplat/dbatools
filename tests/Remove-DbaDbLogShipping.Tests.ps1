@@ -21,13 +21,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $localPath = 'C:\temp\logshipping'
         $networkPath = '\\localhost\c$\temp\logshipping'
 
-        $primaryServer = Connect-DbaInstance -SqlInstance $script:instance1
-        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance1
+        $primaryServer = Connect-DbaInstance -SqlInstance $script:instance2
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
         # Create the database
         if ($primaryServer.Databases.Name -notcontains $dbname) {
             $query = "CREATE DATABASE [$dbname]"
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
         }
 
         if (-not (Test-Path -Path $localPath)) {
@@ -37,8 +37,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Remove database from log shipping with remove secondary database" {
         $params = @{
-            SourceSqlInstance       = $script:instance1
-            DestinationSqlInstance  = $script:instance1
+            SourceSqlInstance       = $script:instance2
+            DestinationSqlInstance  = $script:instance2
             Database                = $dbname
             BackupNetworkPath       = $networkPath
             BackupLocalPath         = $localPath
@@ -60,22 +60,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbname';"
 
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $dbname
         }
 
         # Remove the log shipping
         $params = @{
-            PrimarySqlInstance   = $script:instance1
-            SecondarySqlInstance = $script:instance1
+            PrimarySqlInstance   = $script:instance2
+            SecondarySqlInstance = $script:instance2
             Database             = $dbname
         }
 
         Remove-DbaDbLogShipping @params
 
         $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance1
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
         It "Should still have the secondary database" {
             "$($dbname)_LS" | Should -BeIn $secondaryserver.Databases.Name
@@ -90,7 +90,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbname';"
 
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $null
         }
@@ -98,8 +98,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Remove database from log shipping with remove secondary database" {
         $params = @{
-            SourceSqlInstance       = $script:instance1
-            DestinationSqlInstance  = $script:instance1
+            SourceSqlInstance       = $script:instance2
+            DestinationSqlInstance  = $script:instance2
             Database                = $dbname
             BackupNetworkPath       = $networkPath
             BackupLocalPath         = $localPath
@@ -120,15 +120,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbname';"
 
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $dbname
         }
 
         # Remove the log shipping
         $params = @{
-            PrimarySqlInstance      = $script:instance1
-            SecondarySqlInstance    = $script:instance1
+            PrimarySqlInstance      = $script:instance2
+            SecondarySqlInstance    = $script:instance2
             Database                = $dbname
             RemoveSecondaryDatabase = $true
         }
@@ -136,7 +136,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDbLogShipping @params
 
         $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance1
+        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
         It "Should no longer have the secondary database" {
             "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
@@ -151,7 +151,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                         ON [pd].[primary_id] = [ps].[primary_id]
                 WHERE pd.[primary_database] = '$dbname';"
 
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
 
             $results.PrimaryDatabase | Should -Be $null
         }
