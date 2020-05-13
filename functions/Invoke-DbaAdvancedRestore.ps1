@@ -222,7 +222,7 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $Restore.NoRecovery = $False
                 }
-                if ('' -ne $StopMark) {
+                if (-not [string]::IsNullOrEmpty($StopMark)) {
                     if ($StopBefore -eq $True) {
                         $Restore.StopBeforeMarkName = $StopMark
                         if ($null -ne $StopAfterDate) {

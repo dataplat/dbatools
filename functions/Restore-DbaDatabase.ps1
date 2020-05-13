@@ -83,7 +83,7 @@ function Restore-DbaDatabase {
         This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 
     .PARAMETER IgnoreDiffBackup
-        This switch tells the function to ignore differential log backups. The process will restore to the latest full and onwards with transaction log backups only
+        This switch tells the function to ignore differential backups. The process will restore to the latest full and onwards with transaction log backups only
 
     .PARAMETER UseDestinationDefaultDirectories
         Switch that tells the restore to use the default Data and Log locations on the target server. If they don't exist, the function will try to create them
@@ -341,7 +341,9 @@ function Restore-DbaDatabase {
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -DatabaseName database -StopMark OvernightStart -StopBefore -StopAfterDate Get-Date('21:00 10/05/2020')
 
-        Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStop' mark that occurs after '21:00 10/05/2020'
+        Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStop' mark that occurs after '21:00 10/05/2020'.
+
+        Note that Date time needs to be specified in your local SQL Server culture
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
