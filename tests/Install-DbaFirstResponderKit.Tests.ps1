@@ -19,12 +19,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $database = "dbatoolsci_frk_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance lab-sql-01 -SqlCredential $labAdminSqlCred
             $server.Query("CREATE DATABASE $database")
+
+            $results = Install-DbaFirstResponderKit -SqlInstance $server -Database $database -Branch master -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
         }
-
-        $results = Install-DbaFirstResponderKit -SqlInstance $server -Database $database -Branch master -Force
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should -Be $true
