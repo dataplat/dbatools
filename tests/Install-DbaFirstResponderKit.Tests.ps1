@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
         }
 
-        $results = Install-DbaFirstResponderKit -SqlInstance $server -Database $database -Branch master -Force
+        $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master -Force
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true
