@@ -229,38 +229,36 @@ function Install-DbaFirstResponderKit {
                 Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
                 $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
+
                 # Install/Update each FRK stored procedure
                 foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
                     $scriptname = $script.Name
                     $scriptError = $false
-                    if ($scriptname -ne "sp_BlitzRS.sql") {
-
-                        if ($scriptname -eq "sp_BlitzQueryStore.sql") {
-                            if ($server.VersionMajor -lt 13) { continue }
+                    if ($scriptname -eq "sp_BlitzQueryStore.sql") {
+                        if ($server.VersionMajor -lt 13) { continue }
+                    }
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                        } catch {
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
+                            $scriptError = $true
                         }
-                        if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
-                            try {
-                                Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
-                            } catch {
-                                Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
-                                $scriptError = $true
-                            }
-                            $baseres = @{
-                                ComputerName = $server.ComputerName
-                                InstanceName = $server.ServiceName
-                                SqlInstance  = $server.DomainInstanceName
-                                Database     = $Database
-                                Name         = $script.BaseName
-                            }
-                            if ($scriptError) {
-                                $baseres['Status'] = 'Error'
-                            } elseif ($script.BaseName -in $allprocedures) {
-                                $baseres['Status'] = 'Updated'
-                            } else {
-                                $baseres['Status'] = 'Installed'
-                            }
-                            [PSCustomObject]$baseres
+                        $baseres = @{
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $Database
+                            Name         = $script.BaseName
                         }
+                        if ($scriptError) {
+                            $baseres['Status'] = 'Error'
+                        } elseif ($script.BaseName -in $allprocedures) {
+                            $baseres['Status'] = 'Updated'
+                        } else {
+                            $baseres['Status'] = 'Installed'
+                        }
+                        [PSCustomObject]$baseres
                     }
                 }
             }
