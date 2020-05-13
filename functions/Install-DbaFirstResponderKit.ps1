@@ -201,12 +201,9 @@ function Install-DbaFirstResponderKit {
             $LocalCachedCopy = Join-Path $dbatoolsData -Child (Split-Path $tempFolder -Leaf)
             if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
                 if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                    Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-                } else {
-                    $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                    Remove-Item -Path $LocalCachedCopy -Recurse -ErrorAction SilentlyContinue
                 }
-
-                Copy-Item -Path $tempFolder -Destination $LocalCachedCopy -Recurse
+                Copy-Item -Path $tempFolder -Destination $dbatoolsData -Recurse
                 Remove-Item $tempFolder -Recurse -Force -ErrorAction SilentlyContinue -Confirm:$false
             }
         }
@@ -232,7 +229,7 @@ function Install-DbaFirstResponderKit {
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
                 # Install/Update each FRK stored procedure
-                foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
+                foreach ($script in (Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql")) {
                     $scriptName = $script.Name
                     $scriptError = $false
 
