@@ -94,7 +94,6 @@ function Install-DbaFirstResponderKit {
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet('master', 'dev')]
         [string]$Branch = "master",
         [object]$Database = "master",
         [string]$LocalFile,
@@ -109,76 +108,108 @@ function Install-DbaFirstResponderKit {
         if (-not $DbatoolsData) {
             $DbatoolsData = [System.IO.Path]::GetTempPath()
         }
-
-        $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
-
         $temp = [System.IO.Path]::GetTempPath()
-        $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
-        $zipfolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
         $FRKLocation = "FRK_$Branch"
         $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
+
+        if ($Branch -eq 'master') {
+            $url = 'https://api.github.com/repos/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases/latest'
+            $zipFile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-latest.zip"
+        } elseif ($Branch -eq 'dev') {
+            $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/dev.zip"
+            $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-dev.zip"
+        } else {
+            Write-Message -Level Warning -Message "Unknown value provided for Branch parameter"
+        }
+
         if ($LocalFile) {
             if (-not(Test-Path $LocalFile)) {
-                Stop-Function -Message "$LocalFile doesn't exist"
-                return
+                if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
+                    Stop-Function -Message "$LocalFile doesn't exist"
+                    return
+                }
             }
             if (-not($LocalFile.EndsWith('.zip'))) {
-                Stop-Function -Message "$LocalFile should be a zip file"
-                return
+                if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
+                    Stop-Function -Message "$LocalFile should be a zip file"
+                    return
+                }
             }
         }
 
         if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
             if ($zipfile | Test-Path) {
-                Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
-            }
-            if ($zipfolder | Test-Path) {
-                Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
+                if ($PSCmdlet.ShouldProcess($zipfile, "File found, dropping $zipfile")) {
+                    Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
+                }
             }
 
-            $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
+            # $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
                 if (Test-Windows -NoWarn) {
-                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
+                        Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    }
                 }
-                Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
+                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
+                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
+                }
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
-
                 try {
-
-                    try {
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    } catch {
-                        # Try with default proxy and usersettings
-                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
+                        try {
+                            if ($Branch -eq 'master') {
+                                $zipball = (Invoke-TlsWebRequest $url | ConvertFrom-Json).zipball_url
+                                Invoke-TlsWebRequest $zipball -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            } else {
+                                Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            }
+                        } catch {
+                            # Try with default proxy and usersettings
+                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                            if ($Branch -eq 'master') {
+                                $zipball = (Invoke-TlsWebRequest $url | ConvertFrom-Json).zipball_url
+                                Invoke-TlsWebRequest $zipball -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            } else {
+                                Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                            }
+                        }
                     }
 
                     # Unblock if there's a block
-                    if (Test-Windows -NoWarn) {
-                        Unblock-File $zipfile -ErrorAction SilentlyContinue
-                    }
+                    if ($PSCmdlet.ShouldProcess($zipfile, "Expanding archive file")) {
+                        if (Test-Windows -NoWarn) {
+                            Unblock-File $zipfile -ErrorAction SilentlyContinue
+                        }
 
-                    Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
-                    Remove-Item -Path $zipfile
+                        Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
+                        Remove-Item -Path $zipfile
+                    }
                 } catch {
-                    Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
+                    $message =
+                    if ($Branch -eq 'master') {
+                        "Could not download the file. You may need to manually download from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases"
+                    } else {
+                        "Could not download the file. You may need to manually download from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+                    }
+                    Stop-Function -Message $message -ErrorRecord $_
                     return
                 }
             }
 
             ## Copy it into local area
-            if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            } else {
-                $null = New-Item -Path $LocalCachedCopy -ItemType Container
+            if ($PSCmdlet.ShouldProcess($LocalCachedCopy, "Copying extracted files to the local module cache")) {
+                if (Test-Path -Path $LocalCachedCopy -PathType Container) {
+                    Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
+                } else {
+                    $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                }
+                Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
             }
-            Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
         }
     }
-
 
     process {
         if (Test-FunctionInterrupt) {
@@ -186,46 +217,50 @@ function Install-DbaFirstResponderKit {
         }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
             }
 
-            Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
-            $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-            $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
-            # Install/Update each FRK stored procedure
-            foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
-                $scriptname = $script.Name
-                $scriptError = $false
-                if ($scriptname -ne "sp_BlitzRS.sql") {
+            if ($PSCmdlet.ShouldProcess($database, "Installing FRK procedures in $database on $instance")) {
+                Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
+                $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+                $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
+                # Install/Update each FRK stored procedure
+                foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
+                    $scriptname = $script.Name
+                    $scriptError = $false
+                    if ($scriptname -ne "sp_BlitzRS.sql") {
 
-                    if ($scriptname -eq "sp_BlitzQueryStore.sql") {
-                        if ($server.VersionMajor -lt 13) { continue }
-                    }
-                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
-                        try {
-                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
-                        } catch {
-                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
-                            $scriptError = $true
+                        if ($scriptname -eq "sp_BlitzQueryStore.sql") {
+                            if ($server.VersionMajor -lt 13) { continue }
                         }
-                        $baseres = @{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Name         = $script.BaseName
+                        if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
+                            try {
+                                Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                            } catch {
+                                Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
+                                $scriptError = $true
+                            }
+                            $baseres = @{
+                                ComputerName = $server.ComputerName
+                                InstanceName = $server.ServiceName
+                                SqlInstance  = $server.DomainInstanceName
+                                Database     = $Database
+                                Name         = $script.BaseName
+                            }
+                            if ($scriptError) {
+                                $baseres['Status'] = 'Error'
+                            } elseif ($script.BaseName -in $allprocedures) {
+                                $baseres['Status'] = 'Updated'
+                            } else {
+                                $baseres['Status'] = 'Installed'
+                            }
+                            [PSCustomObject]$baseres
                         }
-                        if ($scriptError) {
-                            $baseres['Status'] = 'Error'
-                        } elseif ($script.BaseName -in $allprocedures) {
-                            $baseres['Status'] = 'Updated'
-                        } else {
-                            $baseres['Status'] = 'Installed'
-                        }
-                        [PSCustomObject]$baseres
                     }
                 }
             }
