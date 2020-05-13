@@ -112,17 +112,11 @@ function Install-DbaFirstResponderKit {
         if ($Branch -eq 'master') {
             $url = 'https://api.github.com/repos/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases/latest'
             $zipFile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-latest.zip"
-            $FRKLocation = "FRK_Latest"
         } elseif ($Branch -eq 'dev') {
             $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/dev.zip"
             $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-dev.zip"
-            $FRKLocation = "FRK_dev"
         } else {
             Write-Message -Level Warning -Message "Unknown value provided for Branch parameter"
-        }
-
-        if ($FRKLocation) {
-            $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
         }
 
         if ($LocalFile) {
@@ -203,14 +197,15 @@ function Install-DbaFirstResponderKit {
             }
 
             ## Copy it into local area
-            if ($PSCmdlet.ShouldProcess($LocalCachedCopy, "Copying extracted files to the local module cache")) {
+            $tempFolder = Get-ChildItem $temp -Filter "*SQL-Server-First-Responder-Kit*" -Directory
+            $LocalCachedCopy = Join-Path $dbatoolsData -Child (Split-Path $tempFolder -Leaf)
+            if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
                 if (Test-Path -Path $LocalCachedCopy -PathType Container) {
                     Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
                 } else {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
 
-                $tempFolder = Get-ChildItem $temp -Filter "SQL-Server-First-Responder-Kit*" -Directory
                 Copy-Item -Path $tempFolder -Destination $LocalCachedCopy -Recurse
             }
         }
