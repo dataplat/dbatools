@@ -207,6 +207,7 @@ function Install-DbaFirstResponderKit {
                 }
 
                 Copy-Item -Path $tempFolder -Destination $LocalCachedCopy -Recurse
+                Remove-Item $tempFolder -Recurse -Force -ErrorAction SilentlyContinue -Confirm:$false
             }
         }
     }
