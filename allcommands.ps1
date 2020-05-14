@@ -14157,8 +14157,10 @@ function Export-DbaScript {
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
                                 foreach ($scriptpart in $scripter.EnumScript($object)) {
-                                    if ($scriptBatchTerminator) {
+                                    if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    } else {
+                                        $scriptpart = "$scriptpart`r`n"
                                     }
                                     $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 }
@@ -14191,6 +14193,7 @@ function Export-DbaScript {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Export-DbaServerRole {
@@ -18672,6 +18675,8 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
         [switch]$EnableException
     )
 
@@ -18694,20 +18699,37 @@ function Get-DbaAgentAlert {
 
             $alerts = $server.Jobserver.Alerts
 
-            foreach ($alert in $alerts) {
-                $lastraised = [dbadatetime]$alert.LastOccurrenceDate
+            if (Test-Bound 'Alert') {
+                $tempAlerts = @();
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
 
-                Select-DefaultView -InputObject $alert -Property $defaults
+                $alerts = $tempAlerts;
+            }
+
+            if (Test-Bound 'ExcludeAlert') {
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
+            }
+
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaAgentAlertCategory {
@@ -61828,7 +61850,7 @@ function Select-DbaBackupInformation {
                 }
                 # Get Last T-log
 
-                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
+                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -ge $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
                 if ($null -ne $lastlog) {
                     $lastLog.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $lastLog.BackupSetID }).Fullname
                 }

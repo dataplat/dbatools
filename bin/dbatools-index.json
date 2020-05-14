@@ -10589,13 +10589,13 @@
                      "Agent",
                      "SMO"
                  ],
-        "Synopsis":  "Returns all SQL Agent alerts on a SQL Server Agent.",
+        "Synopsis":  "Returns SQL Agent alerts on a SQL Server Agent.",
         "Alias":  "",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
         "CommandName":  "Get-DbaAgentAlert",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentAlert",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentAlert -SqlInstance ServerA,ServerB\\instanceB\nReturns all SQL Agent alerts on serverA and serverB\\instanceB\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027serverA\u0027,\u0027serverB\\instanceB\u0027 | Get-DbaAgentAlert\nReturns all SQL Agent alerts  on serverA and serverB\\instanceB",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentAlert -SqlInstance ServerA,ServerB\\instanceB\nReturns all SQL Agent alerts on serverA and serverB\\instanceB\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentAlert -SqlInstance ServerA,ServerB\\instanceB -Alert MyAlert*\nReturns SQL Agent alert on serverA and serverB\\instanceB whose names match \u0027MyAlert*\u0027\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027serverA\u0027,\u0027serverB\\instanceB\u0027 | Get-DbaAgentAlert\nReturns all SQL Agent alerts  on serverA and serverB\\instanceB",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10614,6 +10614,22 @@
                            ""
                        ],
                        [
+                           "Alert",
+                           "The name of the alerts to return. If null, will get all alerts from the server. Note - this parameter accepts wildcards.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeAlert",
+                           "The name of the alerts to exclude. If not provided, no alerts will be excluded. Note - this parameter accepts wildcards.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -10622,7 +10638,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentAlert [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentAlert [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Alert] \u003cString[]\u003e] [[-ExcludeAlert] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentAlertCategory",
