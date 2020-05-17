@@ -81,6 +81,15 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER Confirm
         Prompts you for confirmation before running the cmdlet.
 
+    .PARAMETER StopMark
+        Mark in the transaction log to stop the restore at
+
+    .PARAMETER StopBefore
+        Switch to indicate the restore should stop before StopMark
+
+    .PARAMETER StopAfterDate
+        By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime
+
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
@@ -131,6 +140,9 @@ function Invoke-DbaAdvancedRestore {
         [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
+        [switch]$StopBefore,
+        [string]$StopMark,
+        [datetime]$StopAfterDate,
         [switch]$EnableException
     )
     begin {
@@ -210,7 +222,19 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $Restore.NoRecovery = $False
                 }
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                if (-not [string]::IsNullOrEmpty($StopMark)) {
+                    if ($StopBefore -eq $True) {
+                        $Restore.StopBeforeMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopBeforeMarkAfterDate = $StopAfterDate
+                        }
+                    } else {
+                        $Restore.StopAtMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopAtMarkAfterDate = $StopAfterDate
+                        }
+                    }
+                } elseif ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
                 } else {
                     if ($RestoreTime -ne $Restore.RestoreTime) {

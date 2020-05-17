@@ -209,7 +209,9 @@ function Find-DbaInstance {
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.
 
     .EXAMPLE
-        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup | Format-Table -Wrap
+        PS C:\> $databases = Find-DbaInstance -ComputerName localhost | Get-DbaDatabase
+        PS C:\> $results = $databases | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup
+        PS C:\> $results | Format-Table -Wrap
 
         Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
 

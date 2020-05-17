@@ -138,7 +138,7 @@ function Write-DbaDbTableData {
         PS C:\> $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
         PS C:\> $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
-        PS C:\> Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
+        PS C:\> Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -SqlCredential $AzureCredential -BulkCopyTimeOut 300
 
         This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 

@@ -4096,10 +4096,10 @@ function Copy-DbaAgentProxy {
         }
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
         if ($ProxyAccount) {
-            $serverProxyAccounts | Where-Object Name -in $ProxyAccount
+            $serverProxyAccounts = $serverProxyAccounts | Where-Object Name -in $ProxyAccount
         }
         if ($ExcludeProxyAccount) {
-            $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
+            $serverProxyAccounts = $serverProxyAccounts | Where-Object Name -notin $ExcludeProxyAccount
         }
         if ($Force) { $ConfirmPreference = 'none' }
     }
@@ -4163,7 +4163,8 @@ function Copy-DbaAgentProxy {
                         $copyAgentProxyAccountStatus.Status = "Skipped"
                         $copyAgentProxyAccountStatus.Notes = "Already exists on destination"
                         $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate." -Continue
+                        Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
+                        Continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
                             try {
@@ -11677,6 +11678,7 @@ function Enable-DbaTraceFlag {
     }
 }
 
+
 #.ExternalHelp dbatools-Help.xml
 function Expand-DbaDbLogFile {
     
@@ -14155,8 +14157,10 @@ function Export-DbaScript {
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
                                 foreach ($scriptpart in $scripter.EnumScript($object)) {
-                                    if ($scriptBatchTerminator) {
+                                    if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    } else {
+                                        $scriptpart = "$scriptpart`r`n"
                                     }
                                     $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 }
@@ -14189,6 +14193,7 @@ function Export-DbaScript {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Export-DbaServerRole {
@@ -18670,6 +18675,8 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
         [switch]$EnableException
     )
 
@@ -18692,20 +18699,37 @@ function Get-DbaAgentAlert {
 
             $alerts = $server.Jobserver.Alerts
 
-            foreach ($alert in $alerts) {
-                $lastraised = [dbadatetime]$alert.LastOccurrenceDate
+            if (Test-Bound 'Alert') {
+                $tempAlerts = @();
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
 
-                Select-DefaultView -InputObject $alert -Property $defaults
+                $alerts = $tempAlerts;
+            }
+
+            if (Test-Bound 'ExcludeAlert') {
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
+            }
+
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaAgentAlertCategory {
@@ -26350,7 +26374,6 @@ function Get-DbaDbView {
 }
 
 
-#.ExternalHelp dbatools-Help.xml
 function Get-DbaDbVirtualLogFile {
     
     [CmdletBinding()]
@@ -40234,7 +40257,7 @@ function Install-DbaMaintenanceSolution {
         [switch]$ReplaceExisting,
         [switch]$LogToTable,
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
-        [string]$Solution = 'All',
+        [string[]]$Solution = 'All',
         [switch]$InstallJobs,
         [string]$LocalFile,
         [switch]$Force,
@@ -40243,7 +40266,11 @@ function Install-DbaMaintenanceSolution {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        if ($InstallJobs -and $Solution -ne 'All') {
+        if ($Solution -contains 'All') {
+            $Solution = @('All');
+        }
+
+        if ($InstallJobs -and $Solution -notcontains 'All') {
             Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
             return
         }
@@ -40406,7 +40433,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not ($Solution -match 'All')) {
+            if ($Solution -notcontains 'All') {
                 $required = @('CommandExecute.sql')
             }
 
@@ -40414,19 +40441,19 @@ function Install-DbaMaintenanceSolution {
                 $required += 'CommandLog.sql'
             }
 
-            if ($Solution -match 'Backup') {
+            if ($Solution -contains 'Backup') {
                 $required += 'DatabaseBackup.sql'
             }
 
-            if ($Solution -match 'IntegrityCheck') {
+            if ($Solution -contains 'IntegrityCheck') {
                 $required += 'DatabaseIntegrityCheck.sql'
             }
 
-            if ($Solution -match 'IndexOptimize') {
+            if ($Solution -contains 'IndexOptimize') {
                 $required += 'IndexOptimize.sql'
             }
 
-            if ($Solution -match 'All') {
+            if ($Solution -contains 'All') {
                 $required += 'MaintenanceSolution.sql'
             }
 
@@ -53660,7 +53687,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion).sql" | Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
@@ -61823,7 +61850,7 @@ function Select-DbaBackupInformation {
                 }
                 # Get Last T-log
 
-                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
+                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -ge $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
                 if ($null -ne $lastlog) {
                     $lastLog.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $lastLog.BackupSetID }).Fullname
                 }
@@ -66582,7 +66609,7 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message "$datapath is an invalid path." -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables[0].Rows[0].FileName
+                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
                 $DataPath = Split-Path $Filepath
             }
 
@@ -66593,7 +66620,7 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message "$LogPath is an invalid path." -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables[0].Rows[0].FileName
+                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 2').PhysicalName
                 $LogPath = Split-Path $Filepath
             }
             Write-Message -Message "Using log path: $LogPath." -Level Verbose
@@ -66605,27 +66632,27 @@ function Set-DbaTempDbConfig {
             }
 
             # Check current tempdb. Throw an error if current tempdb is larger than config.
-            $CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
-            $TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Tables[0].Rows[0].Size
+            $CurrentFileCount = $server.Databases['tempdb'].Query('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').FileCount
+            $TooBigCount = $server.Databases['tempdb'].Query("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Size
 
             if ($CurrentFileCount -gt $DataFileCount) {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue
             }
 
             if ($TooBigCount) {
-                Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb ($TooBigCount MB) is larger than the calculated individual file configuration ($DataFilesizeSingle MB)." -Continue
+                Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has files with a size ($TooBigCount MB) larger than the calculated individual file configuration ($DataFilesizeSingle MB)." -Continue
             }
 
             Write-Message -Message "tempdb configuration validated." -Level Verbose
 
-            $DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
+            $DataFiles = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 0 | Select-Object LogicalName, PhysicalName
 
             #Checks passed, process reconfiguration
             for ($i = 0; $i -lt $DataFileCount; $i++) {
-                $File = $DataFiles.Rows[$i]
+                $File = $DataFiles[$i]
                 if ($File) {
-                    $Filename = Split-Path $File.FileName -Leaf
-                    $LogicalName = $File.Name
+                    $Filename = Split-Path $File.PhysicalName -Leaf
+                    $LogicalName = $File.LogicalName
                     $NewPath = "$datapath\$Filename"
                     $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 } else {
@@ -66635,15 +66662,16 @@ function Set-DbaTempDbConfig {
                 }
             }
 
-            if (-not $LogFileSize) {
-                $LogFileSize = [Math]::Floor($DataFileSize / 4)
-            }
+            $logfile = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 1 | Select-Object LogicalName, PhysicalName, @{L = "SizeMb"; E = { $_.Size.Megabyte } }
 
-            $logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
-            $Filename = Split-Path $logfile.FileName -Leaf
-            $LogicalName = $logfile.Name
-            $NewPath = "$LogPath\$Filename"
-            $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
+            if ($LogFileSize) {
+                $Filename = Split-Path $logfile.PhysicalName -Leaf
+                $LogicalName = $logfile.LogicalName
+                $NewPath = "$LogPath\$Filename"
+                $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
+            } else {
+                $LogFileSize = $logfile.SizeMb
+            }
 
             Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
             Write-Message -Message ($sql -join "`n`n") -Level Verbose
@@ -75041,6 +75069,7 @@ function Write-DbaDbTableData {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Connect-AsServer {
