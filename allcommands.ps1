@@ -19904,6 +19904,7 @@ function Get-DbaBackupInformation {
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
         [switch]$IgnoreLogBackup,
+        [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Import")]
@@ -20031,6 +20032,11 @@ function Get-DbaBackupInformation {
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
+            }
+
+            if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreDiffBackup) {
+                Write-Message -Level Verbose -Message "Skipping Differential Backups as requested"
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' }
             }
 
             if ($Files.Count -gt 0) {
@@ -32511,6 +32517,10 @@ function Get-DbaProductKey {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                     $sqlversion = "SQL Server 2017 $servicePack"
                 }
+                15 {
+                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
+                    $sqlversion = "SQL Server 2019 $servicePack"
+                }
                 default {
                     Stop-Function -Message "SQL version not currently supported." -Continue
                 }
@@ -41445,6 +41455,9 @@ function Invoke-DbaAdvancedRestore {
                                 RestoreDirectory       = $RestoreDirectory
                                 BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count) } else { $null }
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count) } else { $null }
+                                BackupStartTime        = $backup.Start
+                                BackupEndTime          = $backup.End
+                                RestoreTargetTime      = if ($RestoreTime -lt (Get-Date)) { $RestoreTime } else { 'Latest' }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
@@ -61075,7 +61088,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {

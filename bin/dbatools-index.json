@@ -11739,6 +11739,14 @@
                            "False"
                        ],
                        [
+                           "IgnoreDiffBackup",
+                           "This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the DIFF folder contains only differential backups and skip it.\r\nFor all other scenarios we need to read the file headers to be sure.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "ExportPath",
                            "If specified the output will export via CliXml format to the specified file. This allows you to store the backup history object for later usage, or move it between computers",
                            "",
@@ -11787,7 +11795,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaBackupInformation -Path \u003cObject[]\u003e -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-NoXpDirTree] [-DirectoryRecurse] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]\nGet-DbaBackupInformation -Path \u003cObject[]\u003e [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Import] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBackupInformation -Path \u003cObject[]\u003e -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-NoXpDirTree] [-DirectoryRecurse] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-IgnoreDiffBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]\nGet-DbaBackupInformation -Path \u003cObject[]\u003e [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-IgnoreDiffBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Import] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaBuildReference",
