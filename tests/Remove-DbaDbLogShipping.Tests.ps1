@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+<# Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     # This is a placeholder until we decide on sql2016/sql2017
     BeforeAll {
         $dbname = "dbatoolsci_logshipping"
@@ -156,5 +156,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.PrimaryDatabase | Should -Be $null
         }
     }
-
-}
+} #>
