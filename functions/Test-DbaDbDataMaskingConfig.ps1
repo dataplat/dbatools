@@ -205,7 +205,16 @@ function Test-DbaDbDataMaskingConfig {
                 if ($column.Action) {
                     # General checks
 
-                    if ($column.Action.Type -notin $allowedActionTypes) {
+                    if ($null -ne $column.Action.Category -and $column.Action.Category -notin $allowedActionCategories) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action category '$($column.Action.Category)' is not allowed"
+                        }
+                    }
+
+                    if ($null -ne $column.Action.Category -and $column.Action.Type -notin $allowedActionTypes) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
@@ -311,8 +320,8 @@ function Test-DbaDbDataMaskingConfig {
                             }
                         }
                     }
-                }
-            } # End column action
-        } # End for each column
-    } # End for each table
+                }# End column action
+            } # End for each column
+        } # End for each table
+    }
 }
