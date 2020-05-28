@@ -220,9 +220,16 @@ function Invoke-DbaDbDataMasking {
         } else {
             # Test the configuration file
             try {
-                Test-DbaDbDataMaskingConfig -FilePath $FilePath -EnableException
+                $configErrors = @()
+
+                $configErrors += Test-DbaDbDataMaskingConfig -FilePath $FilePath -EnableException
+
+                if ($configErrors.Count -ge 1) {
+                    Stop-Function -Message "Errors found testing the configuration file." -Target $FilePath
+                    return $configErrors
+                }
             } catch {
-                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
+                Stop-Function -Message "Something went wrong testing the configuration file" -ErrorRecord $_ -Target $FilePath
                 return
             }
 
@@ -436,45 +443,57 @@ function Invoke-DbaDbDataMasking {
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object Action -ne $null
 
-                        # Loop through each of the rows and change them
-                        foreach ($columnobject in $tablecolumns) {
-                            # Go through the actions
-                            if ($columnsWithActions.Count -ge 1) {
-                                # When an action needs to be performed, no masking should be generated
-                                if ($columnobject.Name -in $columnsWithActions.Name) {
-                                    foreach ($columnAction in $columnObject.Action) {
-                                        $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+                        # Go through the composites
+                        if ($columnsWithActions.Count -ge 1) {
+                            foreach ($columnObject in $columnsWithActions) {
+                                foreach ($columnAction in $columnObject.Action) {
+                                    $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
 
-                                        if ($columnAction.Category -eq 'DateTime') {
-                                            switch ($columnAction.Type) {
-                                                "Add" {
-                                                    $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
-                                                }
-                                                "Subtract" {
-                                                    $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
-                                                }
+                                    if ($columnAction.Category -eq 'DateTime') {
+                                        switch ($columnAction.Type) {
+                                            "Add" {
+                                                $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
                                             }
-                                        } elseif ($columnAction.Category -eq 'Number') {
-                                            switch ($columnAction.Type) {
-                                                "Add" {
-                                                    $query += "[$($columnObject.Name)] + $($columnAction.Value);"
-                                                }
-                                                "Divide" {
-                                                    $query += "[$($columnObject.Name)] / $($columnAction.Value);"
-                                                }
-                                                "Multiply" {
-                                                    $query += "[$($columnObject.Name)] * $($columnAction.Value);"
-                                                }
-                                                "Subtract" {
-                                                    $query += "[$($columnObject.Name)] - $($columnAction.Value);"
-                                                }
+                                            "Subtract" {
+                                                $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
                                             }
                                         }
-                                        # Add the query to the rest
-                                        $null = $stringBuilder.AppendLine($query)
+                                    } elseif ($columnAction.Category -eq 'Number') {
+                                        switch ($columnAction.Type) {
+                                            "Add" {
+                                                $query += "[$($columnObject.Name)] + $($columnAction.Value);"
+                                            }
+                                            "Divide" {
+                                                $query += "[$($columnObject.Name)] / $($columnAction.Value);"
+                                            }
+                                            "Multiply" {
+                                                $query += "[$($columnObject.Name)] * $($columnAction.Value);"
+                                            }
+                                            "Subtract" {
+                                                $query += "[$($columnObject.Name)] - $($columnAction.Value);"
+                                            }
+                                        }
                                     }
+                                    # Add the query to the rest
+                                    $null = $stringBuilder.AppendLine($query)
                                 }
-                            } else {
+                            }
+
+                            try {
+                                if ($stringBuilder.Length -ge 1) {
+                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
+                                }
+                            } catch {
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                            }
+
+                            $null = $stringBuilder.Clear()
+                        }
+
+                        # Loop through each of the rows and change them
+                        foreach ($columnobject in $tablecolumns) {
+                            # Check if column is does not contain an action
+                            if ($columnobject.Name -notin $columnsWithActions.Name) {
                                 foreach ($row in $data) {
                                     if ((($stepcounter++) % 100) -eq 0) {
                                         $progressParams = @{
@@ -489,7 +508,6 @@ function Invoke-DbaDbDataMasking {
 
                                     $updates = @()
                                     $newValue = $null
-
 
                                     # Generate a unique value for the row
                                     if ($columnobject.ColumnType -notin $supportedDataTypes) {
@@ -773,8 +791,6 @@ function Invoke-DbaDbDataMasking {
                                 Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                             }
                         }
-
-
 
                         try {
                             [pscustomobject]@{
