@@ -204,14 +204,6 @@ function Test-DbaDbDataMaskingConfig {
                 # Test actions
                 if ($column.Action) {
                     # General checks
-                    if ($column.Action.Category -notin $allowedActionCategories) {
-                        [PSCustomObject]@{
-                            Table  = $table.Name
-                            Column = $column.Name
-                            Value  = $column.Action.Category
-                            Error  = "The action category '$($column.Action.Category)' is not allowed"
-                        }
-                    }
 
                     if ($column.Action.Type -notin $allowedActionTypes) {
                         [PSCustomObject]@{
@@ -231,8 +223,41 @@ function Test-DbaDbDataMaskingConfig {
                         }
                     }
 
+                    if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $allowedActionSubCategories) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action subcategory cannot be empty"
+                        }
+                    }
+
+                    $actionProperties = $column.Action | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
+
                     # Date checks
                     if ($column.Action.Category -eq 'datetime' ) {
+
+                        $compareResult = Compare-Object -ReferenceObject $requiredDateTimeActionProperties -DifferenceObject $actionProperties
+
+                        if ($null -ne $compareResult) {
+                            if ($compareResult.SideIndicator -contains "<=") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                                    Error  = "The action does not contain all the required properties. Please check the action "
+                                }
+                            }
+
+                            if ($compareResult.SideIndicator -contains "=>") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                                    Error  = "The action contains a property that is not in the required properties. Please check the column"
+                                }
+                            }
+                        }
 
                         if ($column.ColumnType -notin $allowedDateTimeTypes) {
                             [PSCustomObject]@{
@@ -243,34 +268,47 @@ function Test-DbaDbDataMaskingConfig {
                             }
                         }
 
-                        if ($column.Action.SubCategory -notin $requiredDateTimeActionProperties) {
+                        <# if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $allo) {
                             [PSCustomObject]@{
                                 Table  = $table.Name
                                 Column = $column.Name
                                 Value  = $column.Action.Category
                                 Error  = "The action subcategory '$($column.Action.SubCategory)' is not allowed"
                             }
-                        }
-                    }
-                }
-
-                # Number checks
-                if ($column.Action.Category -eq 'number' ) {
-                    if ($column.ColumnType -notin $allowedNumberTypes) {
-                        [PSCustomObject]@{
-                            Table  = $table.Name
-                            Column = $column.Name
-                            Value  = $column.Action.Category
-                            Error  = "The category is not valid with data type $($column.ColumnType)"
-                        }
+                        } #>
                     }
 
-                    if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $requiredNumberActionProperties) {
-                        [PSCustomObject]@{
-                            Table  = $table.Name
-                            Column = $column.Name
-                            Value  = $column.Action.Category
-                            Error  = "The action subcategory '$($column.Action.SubCategory)' is not allowed"
+                    # Number checks
+                    if ($column.Action.Category -eq 'number' ) {
+                        $compareResult = Compare-Object -ReferenceObject $requiredNumberActionProperties -DifferenceObject $actionProperties
+
+                        if ($null -ne $compareResult) {
+                            if ($compareResult.SideIndicator -contains "<=") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                                    Error  = "The action does not contain all the required properties. Please check the action "
+                                }
+                            }
+
+                            <# if ($compareResult.SideIndicator -contains "=>") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                                    Error  = "The action contains a property that is not in the required properties. Please check the column"
+                                }
+                            } #>
+                        }
+
+                        if ($column.ColumnType -notin $allowedNumberTypes) {
+                            [PSCustomObject]@{
+                                Table  = $table.Name
+                                Column = $column.Name
+                                Value  = $column.Action.Category
+                                Error  = "The category is not valid with data type $($column.ColumnType)"
+                            }
                         }
                     }
                 }
