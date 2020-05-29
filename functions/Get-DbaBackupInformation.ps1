@@ -64,6 +64,10 @@ function Get-DbaBackupInformation {
         This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
         For all other scenarios we need to read the file headers to be sure.
 
+    .PARAMETER IgnoreDiffBackup
+        This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the DIFF folder contains only differential backups and skip it.
+        For all other scenarios we need to read the file headers to be sure.
+
     .PARAMETER AzureCredential
         The name of the SQL Server credential to be used if restoring from an Azure hosted backup
 
@@ -144,6 +148,7 @@ function Get-DbaBackupInformation {
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
         [switch]$IgnoreLogBackup,
+        [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Import")]
@@ -271,6 +276,11 @@ function Get-DbaBackupInformation {
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
+            }
+
+            if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreDiffBackup) {
+                Write-Message -Level Verbose -Message "Skipping Differential Backups as requested"
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' }
             }
 
             if ($Files.Count -gt 0) {

@@ -125,6 +125,10 @@ function Get-DbaProductKey {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                     $sqlversion = "SQL Server 2017 $servicePack"
                 }
+                15 {
+                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
+                    $sqlversion = "SQL Server 2019 $servicePack"
+                }
                 default {
                     Stop-Function -Message "SQL version not currently supported." -Continue
                 }
