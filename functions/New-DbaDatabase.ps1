@@ -31,7 +31,7 @@ function New-DbaDatabase {
         The database collation, if not supplied the default server collation will be used.
 
     .PARAMETER Recoverymodel
-        The recovery model for the database, if not supplied the recovery model from the model database will be used.
+        The recovery model for the database, if not supplied the recovery model from the model database will be used. Valid options are 'Simple', 'Full', 'BulkLogged'.
 
     .PARAMETER Owner
         The login that will be used as the database owner.
@@ -120,6 +120,7 @@ function New-DbaDatabase {
         [Alias('Database')]
         [string[]]$Name,
         [string]$Collation,
+        [ValidateSet('Simple', 'Full', 'BulkLogged')]
         [string]$Recoverymodel,
         [string]$Owner,
         [string]$DataFilePath,
