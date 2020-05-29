@@ -15,20 +15,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
+        $DestBackupDir = $script:appveyorlabrepo
         if (-Not (Test-Path $DestBackupDir)) {
             New-Item -ItemType Container -Path $DestBackupDir
         }
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
+        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -Type Full
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
     }
 
