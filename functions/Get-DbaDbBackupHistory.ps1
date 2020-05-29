@@ -199,8 +199,7 @@ function Get-DbaDbBackupHistory {
         foreach ($devType in $DeviceType) {
             if ($devType -in $deviceTypeMapping.Keys) {
                 $deviceTypeFilter += $deviceTypeMapping[$devType]
-            }
-            else {
+            } else {
                 $deviceTypeFilter += $devType
             }
         }
@@ -247,23 +246,19 @@ function Get-DbaDbBackupHistory {
                     if ($Last) {
                         Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
                         $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
-                    }
-                    elseif ($LastFull) {
+                    } elseif ($LastFull) {
                         Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
-                    }
-                    elseif ($LastDiff) {
+                    } elseif ($LastDiff) {
                         Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
-                    }
-                    elseif ($LastLog) {
+                    } elseif ($LastLog) {
                         Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
                             $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
                         }
-                    }
-                    else {
+                    } else {
                         $AgResults += $AgLoopResults
                     }
                     # Results are already in the correct format so drop to output
@@ -284,8 +279,7 @@ function Get-DbaDbBackupHistory {
                 encryptor_type as EncryptorType,
                 key_algorithm AS KeyAlgorithm"
 
-            }
-            elseif ($server.VersionMajor -ge 10 -and $server.VersionMajor -lt 12) {
+            } elseif ($server.VersionMajor -ge 10 -and $server.VersionMajor -lt 12) {
                 $compressedFlag = $true
                 # 2008 introduced compressed_backup_size
                 $backupCols = "
@@ -294,8 +288,7 @@ function Get-DbaDbBackupHistory {
                 NULL as EncryptorThumbprint,
                 NULL as EncryptorType,
                 NULL AS KeyAlgorithm"
-            }
-            else {
+            } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
@@ -310,8 +303,7 @@ function Get-DbaDbBackupHistory {
                 foreach ($db in $Database) {
                     $databases += [PSCustomObject]@{ name = $db }
                 }
-            }
-            else {
+            } else {
                 $databases = $server.Databases
             }
             if ($ExcludeDatabase) {
@@ -395,8 +387,7 @@ function Get-DbaDbBackupHistory {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
                         $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "No Diff found"
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
@@ -408,8 +399,7 @@ function Get-DbaDbBackupHistory {
                     if ($IncludeCopyOnly -eq $true) {
                         Write-Message -Level Verbose -Message 'Copy Only check'
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
-                    }
-                    else {
+                    } else {
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     }
                     #This line does the output for -Last!!!
@@ -591,12 +581,10 @@ function Get-DbaDbBackupHistory {
                     "
                 }
                 $sql = $sql -join "; "
-            }
-            else {
+            } else {
                 if ($Force -eq $true) {
                     $select = "SELECT * "
-                }
-                else {
+                } else {
                     $select = "
                     SELECT
                         backupset.database_name AS [Database],
@@ -700,8 +688,7 @@ function Get-DbaDbBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
                 $results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
                 Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
-            }
-            else {
+            } else {
                 Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
                 $groupedResults = $results | Group-Object -Property BackupsetId
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
@@ -715,8 +702,7 @@ function Get-DbaDbBackupHistory {
                     AND [state] <> 8;" #Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
-                }
-                else {
+                } else {
                     $fileListResults = @()
                 }
                 $fileListHash = @{ }
@@ -733,8 +719,7 @@ function Get-DbaDbBackupHistory {
                         $start = $commonFields.Start
                         $end = $commonFields.End
                         $duration = New-TimeSpan -Seconds $commonFields.Duration
-                    }
-                    else {
+                    } else {
                         $start = ($group.Group.Start | Measure-Object -Minimum).Minimum
                         $end = ($group.Group.End | Measure-Object -Maximum).Maximum
                         $duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
@@ -742,8 +727,7 @@ function Get-DbaDbBackupHistory {
                     $compressedBackupSize = $commonFields.CompressedBackupSize
                     if ($compressedFlag -eq $true) {
                         $ratio = [Math]::Round(($commonFields.TotalSize) / ($compressedBackupSize), 2)
-                    }
-                    else {
+                    } else {
                         $compressedBackupSize = $null
                         $ratio = 1
                     }
