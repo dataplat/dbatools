@@ -8,7 +8,7 @@ function Get-DbaDbBackupHistory {
 
         You can even get detailed information (including file path) for latest full, differential and log files.
 
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availabity Group listener or a database in an Availability Group
+        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group
 
         If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history
 
@@ -20,7 +20,7 @@ function Get-DbaDbBackupHistory {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+        Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -73,7 +73,7 @@ function Get-DbaDbBackupHistory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER AgCheck
-        Internal parameter used for getting history from AvailabilityGroups. If set, this will disable  Availability Group support
+        Internal parameter used for getting history from AvailabilityGroups. If set, this will disable Availability Group support
 
     .NOTES
         Tags: DisasterRecovery, Backup
@@ -277,7 +277,7 @@ function Get-DbaDbBackupHistory {
             if ($server.VersionMajor -ge 12) {
                 $compressedFlag = $true
                 $encryptedFlag = $true
-                # 2014 introducted encryption
+                # 2014 introduced encryption
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize,
@@ -319,7 +319,7 @@ function Get-DbaDbBackupHistory {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
             if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
-                $adbs = $databases | Where-Object Name -In  $server.AvailabilityGroups.AvailabilityDatabases.Name
+                $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
                 $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
                 ForEach ($adb in $adbs) {
                     Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
@@ -336,7 +336,7 @@ function Get-DbaDbBackupHistory {
                     }
                     # Results already in the right format, drop straight to output
                     $AgLoopResults
-                    # Remove database from collection as it's now done with
+                    # Remove database from collection as it is now done with
                     $databases = $databases | Where-Object Name -ne $adb.name
                 }
             }
