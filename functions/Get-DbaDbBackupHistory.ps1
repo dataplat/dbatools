@@ -223,8 +223,7 @@ function Get-DbaDbBackupHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $AgResults = @()
@@ -391,8 +390,7 @@ function Get-DbaDbBackupHistory {
                         Write-Message -Level Verbose -Message "No Diff found"
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                        }
-                        catch {
+                        } catch {
                             continue
                         }
                     }
