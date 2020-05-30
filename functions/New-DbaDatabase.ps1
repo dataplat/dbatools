@@ -171,8 +171,7 @@ function New-DbaDatabase {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -196,8 +195,7 @@ function New-DbaDatabase {
                 try {
                     Write-Message -Message "Creating directory $LogFilePath" -Level Verbose
                     $null = New-DbaDirectory -SqlInstance $server -Path $LogFilePath -EnableException
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error creating log file directory $LogFilePath" -Target $instance -Continue
                 }
             }
@@ -206,8 +204,7 @@ function New-DbaDatabase {
                 try {
                     Write-Message -Message "Creating directory $DataFilePath" -Level Verbose
                     $null = New-DbaDirectory -SqlInstance $server -Path $DataFilePath -EnableException
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error creating secondary file directory $DataFilePath on $instance" -Target $instance -Continue
                 }
             }
@@ -217,9 +214,7 @@ function New-DbaDatabase {
             foreach ($dbname in $Name) {
                 if ($server.Databases[$dbname].Name) {
                     Stop-Function -Message "Database $dbname already exists on $instance" -Target $instance -Continue
-                }
-
-                try {
+                } try {
                     Write-Message -Message "Creating smo object for new database $dbname" -Level Verbose
                     $newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbname)
                 }
@@ -242,8 +237,7 @@ function New-DbaDatabase {
                         Write-Message -Message "Creating PRIMARY filegroup" -Level Verbose
                         $primaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, "PRIMARY")
                         $newdb.Filegroups.Add($primaryfg)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Error creating Primary filegroup object" -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -280,8 +274,7 @@ function New-DbaDatabase {
 
                         #add the file to the filegroup
                         $primaryfg.Files.Add($primaryfile)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Error adding file to Primary filegroup" -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -308,8 +301,7 @@ function New-DbaDatabase {
 
                         #add the log to the db
                         $newdb.LogFiles.Add($tlog)
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Error adding log file to database." -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -350,8 +342,7 @@ function New-DbaDatabase {
                                 }
 
                                 $secondaryfg.Files.Add($secondaryfile)
-                            }
-                            catch {
+                            } catch {
                                 $bail = $true
                                 Stop-Function -Message "Error adding file $secondaryfg to $secondaryfilegroupname" -ErrorRecord $_ -Target $instance
                                 return
@@ -364,8 +355,7 @@ function New-DbaDatabase {
                 if ($PSCmdlet.ShouldProcess($instance, "Creating the database $dbname on instance $instance")) {
                     try {
                         $newdb.Create()
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Message "Error creating Database $dbname on server $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -373,8 +363,7 @@ function New-DbaDatabase {
                         Write-Message -Message "Setting database owner to $Owner" -Level Verbose
                         try {
                             $newdb.SetOwner($Owner)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Error setting Database Owner to $Owner" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
@@ -383,8 +372,7 @@ function New-DbaDatabase {
                         Write-Message -Message "Setting default filegroup to $secondaryfilegroupname" -Level Verbose
                         try {
                             $newdb.SetDefaultFileGroup($secondaryfilegroupname)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Error setting default filegorup to $secondaryfilegroupname" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
