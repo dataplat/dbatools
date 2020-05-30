@@ -14,15 +14,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $dbname = 'dbatoolsci_newdb', 'dbatoolsci_newdb1', 'dbatoolsci_newdb2'
-        $null = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-    }
-
-    AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-    }
-
     Context "commands work as expected" {
         $null = Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $results = New-DbaDatabase -SqlInstance $script:instance2
