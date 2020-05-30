@@ -214,11 +214,12 @@ function New-DbaDatabase {
             foreach ($dbname in $Name) {
                 if ($server.Databases[$dbname].Name) {
                     Stop-Function -Message "Database $dbname already exists on $instance" -Target $instance -Continue
-                } try {
+                }
+
+                try {
                     Write-Message -Message "Creating smo object for new database $dbname" -Level Verbose
                     $newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbname)
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Error creating database object for $dbname on server $server" -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -313,8 +314,7 @@ function New-DbaDatabase {
 
                             $secondaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, $secondaryfilegroupname)
                             $newdb.Filegroups.Add($secondaryfg)
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Error creating Secondary filegroup" -ErrorRecord $_ -Target $instance -Continue
                         }
 
