@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $DestBackupDir = $script:appveyorlabrepo
+        $DestBackupDir = 'C:\Temp\backups'
         if (-Not (Test-Path $DestBackupDir)) {
             New-Item -ItemType Container -Path $DestBackupDir
         }
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -Type Full
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
     }
 
