@@ -14157,8 +14157,10 @@ function Export-DbaScript {
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
                                 foreach ($scriptpart in $scripter.EnumScript($object)) {
-                                    if ($scriptBatchTerminator) {
+                                    if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    } else {
+                                        $scriptpart = "$scriptpart`r`n"
                                     }
                                     $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 }
@@ -14191,6 +14193,7 @@ function Export-DbaScript {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Export-DbaServerRole {
@@ -18672,6 +18675,8 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
         [switch]$EnableException
     )
 
@@ -18694,20 +18699,37 @@ function Get-DbaAgentAlert {
 
             $alerts = $server.Jobserver.Alerts
 
-            foreach ($alert in $alerts) {
-                $lastraised = [dbadatetime]$alert.LastOccurrenceDate
+            if (Test-Bound 'Alert') {
+                $tempAlerts = @();
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
 
-                Select-DefaultView -InputObject $alert -Property $defaults
+                $alerts = $tempAlerts;
+            }
+
+            if (Test-Bound 'ExcludeAlert') {
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
+            }
+
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
             }
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaAgentAlertCategory {
@@ -19882,6 +19904,7 @@ function Get-DbaBackupInformation {
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
         [switch]$IgnoreLogBackup,
+        [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Import")]
@@ -20009,6 +20032,11 @@ function Get-DbaBackupInformation {
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object { $_.FullName -notlike '*\LOG\*' }
+            }
+
+            if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreDiffBackup) {
+                Write-Message -Level Verbose -Message "Skipping Differential Backups as requested"
+                $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' }
             }
 
             if ($Files.Count -gt 0) {
@@ -21713,7 +21741,19 @@ function Get-DbaDatabase {
                     if ($server.isAzure) {
                         $server.Query("SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db INNER JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid")
                     } elseif ($server.VersionMajor -eq 8) {
-                        $server.Query("SELECT name, state, SUSER_SNAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+                        $server.Query("
+                            SELECT name,
+                                CASE DATABASEPROPERTYEX(name,'status')
+                                    WHEN 'ONLINE'     THEN 0
+                                    WHEN 'RESTORING'  THEN 1
+                                    WHEN 'RECOVERING' THEN 2
+                                    WHEN 'SUSPECT'    THEN 4
+                                    WHEN 'EMERGENCY'  THEN 5
+                                    WHEN 'OFFLINE'    THEN 6
+                                END AS state,
+                                SUSER_SNAME(sid) AS [Owner]
+                            FROM master.dbo.sysdatabases
+                        ")
                     } else {
                         $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
                     }
@@ -32477,6 +32517,10 @@ function Get-DbaProductKey {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                     $sqlversion = "SQL Server 2017 $servicePack"
                 }
+                15 {
+                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
+                    $sqlversion = "SQL Server 2019 $servicePack"
+                }
                 default {
                     Stop-Function -Message "SQL version not currently supported." -Continue
                 }
@@ -41169,6 +41213,9 @@ function Invoke-DbaAdvancedRestore {
         [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
+        [switch]$StopBefore,
+        [string]$StopMark,
+        [datetime]$StopAfterDate,
         [switch]$EnableException
     )
     begin {
@@ -41248,7 +41295,19 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $Restore.NoRecovery = $False
                 }
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                if (-not [string]::IsNullOrEmpty($StopMark)) {
+                    if ($StopBefore -eq $True) {
+                        $Restore.StopBeforeMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopBeforeMarkAfterDate = $StopAfterDate
+                        }
+                    } else {
+                        $Restore.StopAtMarkName = $StopMark
+                        if ($null -ne $StopAfterDate) {
+                            $Restore.StopAtMarkAfterDate = $StopAfterDate
+                        }
+                    }
+                } elseif ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
                 } else {
                     if ($RestoreTime -ne $Restore.RestoreTime) {
@@ -41396,6 +41455,9 @@ function Invoke-DbaAdvancedRestore {
                                 RestoreDirectory       = $RestoreDirectory
                                 BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count) } else { $null }
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count) } else { $null }
+                                BackupStartTime        = $backup.Start
+                                BackupEndTime          = $backup.End
+                                RestoreTargetTime      = if ($RestoreTime -lt (Get-Date)) { $RestoreTime } else { 'Latest' }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
@@ -46531,6 +46593,7 @@ function Invoke-DbaDiagnosticQuery {
                     12 { "2014" }
                     13 { "2016" }
                     14 { "2017" }
+                    15 { "2019" }
                 }
             }
 
@@ -60806,6 +60869,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
         [parameter(ParameterSetName = "Restore")][hashtable]$FileMapping,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreLogBackup,
+        [parameter(ParameterSetName = "Restore")][switch]$IgnoreDiffBackup,
         [parameter(ParameterSetName = "Restore")][switch]$UseDestinationDefaultDirectories,
         [parameter(ParameterSetName = "Restore")][switch]$ReuseSourceFolderStructure,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFilePrefix = '',
@@ -60833,6 +60897,9 @@ function Restore-DbaDatabase {
         [switch]$StopAfterTestBackupInformation,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][object]$PageRestore,
         [parameter(Mandatory, ParameterSetName = "RestorePage")][string]$PageRestoreTailFolder,
+        [switch]$StopBefore,
+        [string]$StopMark,
+        [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
         [int]$StatementTimeout = 0
     )
     begin {
@@ -60843,7 +60910,7 @@ function Restore-DbaDatabase {
         try {
             $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
 
@@ -60963,7 +61030,9 @@ function Restore-DbaDatabase {
                 $bound['Path'] = $bh
                 Restore-DbaDatabase @bound
             }
-            break
+            # Flag function interrupt to silently not execute end
+            ${__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r} = $true
+            return
         }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($PipeDatabaseName -eq $true) {
@@ -61019,7 +61088,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
@@ -61104,7 +61173,7 @@ function Restore-DbaDatabase {
             if ($VerifyOnly) {
                 $FilteredBackupHistory = $BackupHistory
             } else {
-                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -IgnoreDiffs:$IgnoreDiffBackup -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -61147,7 +61216,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
@@ -61828,7 +61897,7 @@ function Select-DbaBackupInformation {
                 }
                 # Get Last T-log
 
-                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
+                $lastLog = $DatabaseHistory | Where-Object { $_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -ge $Full.CheckpointLSN } | Sort-Object -Property LastLsn, FirstLsn | Select-Object -First 1
                 if ($null -ne $lastlog) {
                     $lastLog.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $lastLog.BackupSetID }).Fullname
                 }
