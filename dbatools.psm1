@@ -884,6 +884,7 @@ $script:windowsonly = @(
     'Backup-DbaComputerCertificate',
     'Get-DbaNetworkCertificate',
     'Set-DbaNetworkCertificate',
+    'Remove-DbaDbLogshipping',
     'Invoke-DbaDbLogShipping',
     'New-DbaCmConnection',
     'Get-DbaCmConnection',

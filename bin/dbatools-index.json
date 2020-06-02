@@ -12773,7 +12773,7 @@
     },
     {
         "Name":  "Get-DbaDbBackupHistory",
-        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availabity Group listener or a database in an Availability Group\n\nIf an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history\n\nIf a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
+        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group\n\nIf an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history\n\nIf a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup"
@@ -12796,7 +12796,7 @@
                        ],
                        [
                            "SqlCredential",
-                           "Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you \r\nare intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.",
+                           "Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you \r\nare intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.",
                            "",
                            false,
                            "false",
@@ -12884,7 +12884,7 @@
                        ],
                        [
                            "DeviceType",
-                           "Specifies a filter for backup sets based on DeviceTypes. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027, in addition \r\nto custom integers for your own DeviceTypes.",
+                           "Specifies a filter for backup sets based on DeviceType. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027,\u0027URL\u0027, in \r\naddition to custom integers for your own DeviceType.",
                            "",
                            false,
                            "false",
@@ -12924,7 +12924,7 @@
                        ],
                        [
                            "AgCheck",
-                           "Internal parameter used for getting history from AvailabilityGroups. If set, this will disable  Availability Group support",
+                           "Internal parameter used for getting history from AvailabilityGroups. If set, this will disable Availability Group support",
                            "",
                            false,
                            "false",
@@ -31886,7 +31886,7 @@
                        ],
                        [
                            "Recoverymodel",
-                           "The recovery model for the database, if not supplied the recovery model from the model database will be used.",
+                           "The recovery model for the database, if not supplied the recovery model from the model database will be used.\r\nValid options are: Simple, Full, BulkLogged.",
                            "",
                            false,
                            "false",
@@ -37117,6 +37117,93 @@
         "Syntax":  "Remove-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Certificate] \u003cString[]\u003e] [[-InputObject] \u003cCertificate[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaDbLogShipping",
+        "Description":  "The command Remove-DbaDbLogShipping will remove one or more databases from log shipping\n\nAfter running the command it will remove all the jobs, configurations set up for log shipping\n\nBy default the secondary database will NOT be removed.\nUse -RemoveSecondaryDatabase to make the command the secondary database",
+        "Tags":  "LogShipping",
+        "Synopsis":  "Remove-DbaDbLogShipping will remove one or more databases from log shipping",
+        "Alias":  "",
+        "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
+        "CommandName":  "Remove-DbaDbLogShipping",
+        "Availability":  "Windows only",
+        "Links":  "https://dbatools.io/Remove-DbaDbLogShipping",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbLogShipping -PrimarySqlInstance sql1 -SecondarySqlInstance sql2 -Database DB1\nRemove the log shipping for database DB1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbLogShipping -PrimarySqlInstance sql1 -Database DB1\nRemove the log shipping for database DB1 and let the command figure out the secondary instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDbLogShipping -PrimarySqlInstance localhost -SecondarySqlInstance sql2 -Database DB1, DB2\nRemove the log shipping for multiple database\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaDbLogShipping -PrimarySqlInstance localhost -SecondarySqlInstance localhost -Database DB2 -RemoveSecondaryDatabase\nRemove the log shipping for database DB2 and remove the database from the secondary instance",
+        "Params":  [
+                       [
+                           "PrimarySqlInstance",
+                           "Primary SQL Server instance which contains the primary database(s).\r\nYou must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           true,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlInstance",
+                           "Secondary SQL Server instance which contains the secondary database(s)\r\nYou must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "PrimarySqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Database to remove from log shipping.\nThis is the name of the database located on the primary instance",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "RemoveSecondaryDatabase",
+                           "By default the command will not remove the database from the secondary instance.\r\nUse this parameter to make the command remove that database",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "Use this switch to disable any kind of verbose messages",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbLogShipping [-PrimarySqlInstance] \u003cDbaInstanceParameter\u003e [[-SecondarySqlInstance] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Database] \u003cObject[]\u003e [-RemoveSecondaryDatabase] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaDbMasterKey",
         "Description":  "Deletes specified database master key",
         "Tags":  [
@@ -41568,7 +41655,7 @@
                            "",
                            false,
                            "false",
-                           "0"
+                           ""
                        ],
                        [
                            "FrequencySubdayType",
@@ -41667,7 +41754,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cInt32\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-ScheduleName] \u003cString\u003e [[-NewName] \u003cString\u003e] [-Enabled] [-Disabled] [[-FrequencyType] \u003cObject\u003e] [[-FrequencyInterval] \u003cObject[]\u003e] [[-FrequencySubdayType] \u003cObject\u003e] [[-FrequencySubdayInterval] \u003cInt32\u003e] [[-FrequencyRelativeInterval] \u003cObject\u003e] [[-FrequencyRecurrenceFactor] \u003cInt32\u003e] [[-StartDate] \u003cString\u003e] [[-EndDate] \u003cString\u003e] [[-StartTime] \u003cString\u003e] [[-EndTime] \u003cString\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentServer",
