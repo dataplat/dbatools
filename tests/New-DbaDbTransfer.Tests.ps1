@@ -143,7 +143,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $transfer.DestinationServer | Should -Be foo
         }
     }
-    Context "Testing transfer parameters" {
+    Context "Testing function parameters" {
         It "Should script all objects" {
             $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -CopyAllObjects
             $transfer.CopyData | Should -Be $true
@@ -211,7 +211,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
             $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
         }
-        It "Should script all tables with just schemas" {
+        It "Should transfer two tables with just schemas" {
             $sourceTables = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test, transfer_test2
             $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -SchemaOnly
             $transfer.TransferData()
@@ -219,7 +219,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $tables.Count | Should -Be 2
             $db2.Query("select id from dbo.transfer_test").id | Should -BeNullOrEmpty
         }
-        It "Should script one table with just data" {
+        It "Should transfer two tables without copying schema" {
             $null = $db2.Query("CREATE TABLE dbo.transfer_test (id int)")
             $null = $db2.Query("CREATE TABLE dbo.transfer_test2 (id int)")
             $sourceTables = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test, transfer_test2
