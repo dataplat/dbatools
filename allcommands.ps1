@@ -22068,7 +22068,7 @@ function Get-DbaDbBackupHistory {
             if ($server.VersionMajor -ge 12) {
                 $compressedFlag = $true
                 $encryptedFlag = $true
-                # 2014 introducted encryption
+                # 2014 introduced encryption
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize,
@@ -22107,7 +22107,7 @@ function Get-DbaDbBackupHistory {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
             if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
-                $adbs = $databases | Where-Object Name -In  $server.AvailabilityGroups.AvailabilityDatabases.Name
+                $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
                 $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
                 ForEach ($adb in $adbs) {
                     Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
@@ -22124,7 +22124,7 @@ function Get-DbaDbBackupHistory {
                     }
                     # Results already in the right format, drop straight to output
                     $AgLoopResults
-                    # Remove database from collection as it's now done with
+                    # Remove database from collection as it is now done with
                     $databases = $databases | Where-Object Name -ne $adb.name
                 }
             }
@@ -22193,7 +22193,7 @@ function Get-DbaDbBackupHistory {
                         }
                     }
                     if ($IncludeCopyOnly -eq $true) {
-                        Write-Message -Level Verbose -Message 'Copy Only chekc'
+                        Write-Message -Level Verbose -Message 'Copy Only check'
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     } else {
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
@@ -22565,7 +22565,6 @@ function Get-DbaDbBackupHistory {
         }
     }
 }
-
 
 #.ExternalHelp dbatools-Help.xml
 function Get-DbaDbccHelp {
@@ -23566,7 +23565,7 @@ function Get-DbaDbEncryption {
                 Write-Message -Level Verbose -Message "Processing $db"
 
                 if ($db.EncryptionEnabled -eq $true) {
-                    [PSCustomObject]@{
+                    $returnCertificate = [PSCustomObject]@{
                         ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
@@ -23582,6 +23581,24 @@ function Get-DbaDbEncryption {
                         ExpirationDate           = $null
                     }
 
+                    if ($db.DatabaseEncryptionKey.EncryptionType -eq 'ServerCertificate') {
+                        $serverCertificate = $server.Databases['master'].Certificates | Where-Object {
+                            (Compare-Object -ReferenceObject $db.DatabaseEncryptionKey.Thumbprint -DifferenceObject $_.Thumbprint -SyncWindow 0).Length -eq 0
+                        }
+
+                        if (-not $serverCertificate) {
+                            Stop-Function -Message "Could not locate TDE server certificate $($db.DatabaseEncryptionKey.Name)" -Target $instance -Continue
+                        }
+
+                        $returnCertificate.Name = $serverCertificate.Name
+                        $returnCertificate.LastBackup = $serverCertificate.LastBackupDate
+                        $returnCertificate.PrivateKeyEncryptionType = $serverCertificate.PrivateKeyEncryptionType
+                        $returnCertificate.Owner = $serverCertificate.Owner
+                        $returnCertificate.Object = $serverCertificate
+                        $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
+                    }
+
+                    $returnCertificate
                 }
 
                 foreach ($cert in $db.Certificates) {
@@ -51586,6 +51603,7 @@ function New-DbaDatabase {
         [Alias('Database')]
         [string[]]$Name,
         [string]$Collation,
+        [ValidateSet('Simple', 'Full', 'BulkLogged')]
         [string]$Recoverymodel,
         [string]$Owner,
         [string]$DataFilePath,
@@ -57446,6 +57464,133 @@ function Remove-DbaDbCertificate {
     }
 }
 
+function Remove-DbaDbLogShipping {
+
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+
+    param(
+        [parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [DbaInstanceParameter]$PrimarySqlInstance,
+        [DbaInstanceParameter]$SecondarySqlInstance,
+        [System.Management.Automation.PSCredential]
+        $PrimarySqlCredential,
+        [System.Management.Automation.PSCredential]
+        $SecondarySqlCredential,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object[]]$Database,
+        [switch]$RemoveSecondaryDatabase,
+        [switch]$EnableException
+    )
+
+    begin {
+        if (-not $Database) {
+            Stop-Function -Message "Please enter one or more databases"
+        }
+
+        # Try connecting to the source instance
+        try {
+            $primaryServer = Connect-SqlInstance -SqlInstance $PrimarySqlInstance -SqlCredential $PrimarySqlCredential
+        } catch {
+            Stop-Function -Message "Could not connect to Sql Server instance $PrimarySqlInstance" -ErrorRecord $_ -Target $PrimarySqlInstance
+            return
+        }
+    }
+
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        foreach ($db in $Database) {
+            if ($db -notin $primaryServer.Databases.Name) {
+                Stop-Function -Message "Database [$db] does not exists on $primaryServer" -Target $db -Continue
+            }
+
+            # Get the log shipping information
+            $query = "SELECT pd.primary_database AS PrimaryDatabase,
+                    ps.secondary_server AS SecondaryServer,
+                    ps.secondary_database AS SecondaryDatabase
+                FROM msdb.dbo.log_shipping_primary_secondaries AS ps
+                    INNER JOIN msdb.dbo.log_shipping_primary_databases AS pd
+                        ON [pd].[primary_id] = [ps].[primary_id]
+                WHERE pd.[primary_database] = '$db';"
+
+            try {
+                [array]$logshippingInfo = Invoke-DbaQuery -SqlInstance $primaryServer -SqlCredential $PrimarySqlCredential -Database msdb -Query $query
+            } catch {
+                Stop-Function -Message "Something went wrong retrieving the log shipping information" -Target $primaryServer -ErrorRecord $_
+            }
+
+            if ($logshippingInfo.Count -lt 1) {
+                Stop-Function -Message "Could not retrieve log shipping information for [$db]" -Target $db -Continue
+            }
+
+            # Get the secondary server if it's not set
+            if (-not $SecondarySqlInstance) {
+                $SecondarySqlInstance = $logshippingInfo.SecondaryServer
+            }
+
+            # Try connecting to the destination instance
+            try {
+                $secondaryServer = Connect-SqlInstance -SqlInstance $SecondarySqlInstance -SqlCredential $SecondarySqlCredential
+            } catch {
+                Stop-Function -Message "Could not connect to Sql Server instance $SecondarySqlInstance" -ErrorRecord $_ -Target $SecondarySqlInstance
+                return
+            }
+
+            # Remove the primary secondaries log shipping
+            if ($PSCmdlet.ShouldProcess("Removing the primary and secondaries from log shipping")) {
+                $query = "EXEC dbo.sp_delete_log_shipping_primary_secondary
+                    @primary_database = N'$($logshippingInfo.PrimaryDatabase)',
+                    @secondary_server = N'$($logshippingInfo.SecondaryServer)',
+                    @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
+
+                try {
+                    Write-Message -Level verbose -Message "Removing the primary and secondaries from log shipping"
+                    Invoke-DbaQuery -SqlInstance $primaryServer -SqlCredential $PrimarySqlCredential -Database master -Query $query
+                } catch {
+                    Stop-Function -Message "Something went wrong removing the primaries and secondaries" -Target $primaryServer -ErrorRecord $_
+                }
+            }
+
+            # Remove the primary database log shipping info
+            if ($PSCmdlet.ShouldProcess("Removing the primary database from log shipping")) {
+                $query = "EXEC sp_delete_log_shipping_primary_database @database = N'$($logshippingInfo.PrimaryDatabase)'"
+
+                try {
+                    Write-Message -Level verbose -Message "Removing the primary database from log shipping"
+                    Invoke-DbaQuery -SqlInstance $primaryServer -SqlCredential $PrimarySqlCredential -Database master -Query $query
+                } catch {
+                    Stop-Function -Message "Something went wrong removing the primary database from log shipping" -Target $primaryServer -ErrorRecord $_
+                }
+            }
+
+            # Remove the secondary database log shipping
+            if ($PSCmdlet.ShouldProcess("Removing the secondary database from log shipping")) {
+                $query = "EXEC sp_delete_log_shipping_secondary_database @secondary_database = N'$($logshippingInfo.SecondaryDatabase)'"
+
+                try {
+                    Write-Message -Level verbose -Message "Removing the secondary database from log shipping"
+                    Invoke-DbaQuery -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database master -Query $query
+                } catch {
+                    Stop-Function -Message "Something went wrong removing the secondary database from log shipping" -Target $secondaryServer -ErrorRecord $_
+                }
+            }
+
+            # Remove the secondary database if needed
+            if ($RemoveSecondaryDatabase) {
+                if ($PSCmdlet.ShouldProcess("Removing the secondary database from [$($logshippingInfo.SecondaryDatabase)]")) {
+                    Write-Message -Level verbose -Message "Removing the secondary database [$($logshippingInfo.SecondaryDatabase)]"
+                    try {
+                        $null = Remove-DbaDatabase -SqlInstance $secondaryServer -SqlCredential $SecondarySqlCredential -Database $logshippingInfo.SecondaryDatabase -Confirm:$false
+                    } catch {
+                        Stop-Function -Message "Could not remove [$($logshippingInfo.SecondaryDatabase)] from $secondaryServer" -Target $secondaryServer -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+        }
+    }
+}
+
 #.ExternalHelp dbatools-Help.xml
 function Remove-DbaDbMasterKey {
     
@@ -62906,7 +63051,8 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [int]$FrequencyInterval,
+        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
+        [object[]]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
@@ -62926,12 +63072,28 @@ function Set-DbaAgentSchedule {
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
-            [int]$FrequencyType = switch ($FrequencyType) { "Once" { 1 } "Daily" { 4 } "Weekly" { 8 } "Monthly" { 16 } "MonthlyRelative" { 32 } "AgentStart" { 64 } "IdleComputer" { 128 } }
+            [int]$FrequencyType =
+            switch ($FrequencyType) {
+                "Once" { 1 }
+                "Daily" { 4 }
+                "Weekly" { 8 }
+                "Monthly" { 16 }
+                "MonthlyRelative" { 32 }
+                "AgentStart" { 64 }
+                "IdleComputer" { 128 }
+            }
         }
 
         # Check of the FrequencySubdayType value is of type string and set the integer value
         if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default { 0 } }
+            [int]$FrequencySubdayType =
+            switch ($FrequencySubdayType) {
+                "Time" { 1 }
+                "Seconds" { 2 }
+                "Minutes" { 4 }
+                "Hours" { 8 }
+                default { 0 }
+            }
         }
 
         # Check if the interval is valid
@@ -62941,7 +63103,7 @@ function Set-DbaAgentSchedule {
         }
 
         # Check if the recurrence factor is set for weekly or monthly interval
-        if (($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
+        if ($FrequencyRecurrenceFactor -and ($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
@@ -62960,13 +63122,26 @@ function Set-DbaAgentSchedule {
             return
         }
 
+
         # Check of the FrequencyInterval value is of type string and set the integer value
         if (($null -ne $FrequencyType)) {
             # Create the interval to hold the value(s)
             [int]$Interval = 0
 
+            # If the FrequencyInterval is set for the daily FrequencyType
+            if ($FrequencyType -in 4, 'Daily') {
+                # Create the interval to hold the value(s)
+                [int]$Interval = 0
+
+                # Create the interval to hold the value(s)
+                switch ($FrequencyInterval) {
+                    "EveryDay" { $Interval = 1 }
+                    default { $Interval = 1 }
+                }
+            }
+
             # If the FrequencyInterval is set for the weekly FrequencyType
-            if ($FrequencyType -eq 8) {
+            if ($FrequencyType -in 8, 'Weekly') {
                 # Loop through the array
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
@@ -62995,7 +63170,7 @@ function Set-DbaAgentSchedule {
             }
 
             # If the FrequencyInterval is set for the relative monthly FrequencyInterval
-            if ($FrequencyType -eq 32) {
+            if ($FrequencyType -in 32, 'MonthlyRelative') {
                 # Loop through the array
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
@@ -63025,11 +63200,18 @@ function Set-DbaAgentSchedule {
         }
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
-        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $null -ne $FrequencyRelativeInterval) {
-            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 } }
+        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and ($null -ne $FrequencyRelativeInterval)) {
+            [int]$FrequencyRelativeInterval =
+            switch ($FrequencyRelativeInterval) {
+                "First" { 1 }
+                "Second" { 2 }
+                "Third" { 4 }
+                "Fourth" { 8 }
+                "Last" { 16 }
+                "Unused" { 0 }
+                default { 0 }
+            }
         }
-
-
 
         # Setup the regex
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
