@@ -33,9 +33,6 @@ function New-DbaDbTransfer {
     .PARAMETER BatchSize
         The BatchSize for the data copy defaults to 5000.
 
-    .PARAMETER CreateDestinationDatabase
-        Creates destination database
-
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
@@ -80,10 +77,10 @@ function New-DbaDbTransfer {
         Logins
         ExternalLibraries
 
-        .PARAMETER SchemaOnly
+    .PARAMETER SchemaOnly
         Transfers only object schema.
 
-        .PARAMETER DataOnly
+    .PARAMETER DataOnly
         Transfers only data without copying schema.
 
     .PARAMETER EnableException
@@ -173,8 +170,6 @@ function New-DbaDbTransfer {
 
         [switch]$DataOnly,
 
-        [switch]$CreateDestinationDatabase,
-
         [switch]$EnableException
     )
     begin {
@@ -248,7 +243,6 @@ function New-DbaDbTransfer {
         }
         if (Test-Bound -Parameter SchemaOnly) { $transfer.CopyData = -not $SchemaOnly }
         if (Test-Bound -Parameter DataOnly) { $transfer.CopySchema = -not $DataOnly }
-        $transfer.CreateTargetDatabase = $CreateDestinationDatabase
 
         # add event handling
         Register-ObjectEvent -InputObject $transfer -EventName DataTransferEvent -Action {

@@ -20,8 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             'CopyAll',
             'SchemaOnly',
             'DataOnly',
-            'ScriptingOption',
-            'CreateDestinationDatabase'
+            'ScriptingOption'
         )
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -230,25 +229,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $tables.Count | Should -Be 2
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-        }
-    }
-    Context "Automatic DB creation" {
-        BeforeEach {
-            $newDb = $dbName + '_new'
-        }
-        AfterEach {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $newDb -Confirm:$false
-        }
-        It "Should transfer all tables and create a new database" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -DestinationDatabase $newDb -CopyAll Tables -CreateDestinationDatabase
-            $transfer.TransferData()
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $newDb
-            $tables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $newDb -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
-            $tables.Count | Should -Be 4
-            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
         }
     }
 }
