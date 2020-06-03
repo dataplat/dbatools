@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$knownParameters = @(
             'SqlInstance',
             'SqlCredential',
-            'Destination',
+            'DestinationSqlInstance',
             'DestinationSqlCredential',
             'Database',
             'DestinationDatabase',
@@ -19,7 +19,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             'CopyAllObjects',
             'CopyAll',
             'SchemaOnly',
-            'DataOnly'
+            'DataOnly',
+            'ScriptingOption',
+            'CreateDestinationDatabase'
         )
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -31,8 +33,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        $dbName = 'dbatools_transfer'
+        $source = Connect-DbaInstance -SqlInstance $script:instance1
+        $destination = Connect-DbaInstance -SqlInstance $script:instance2
+        $source.Query("CREATE DATABASE $dbName")
+        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbName
         $null = $db.Query("CREATE TABLE dbo.transfer_test (id int);
             INSERT dbo.transfer_test
             SELECT top 10 1
@@ -87,24 +92,25 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch {
             $null = 1
         }
+        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
     }
     Context "Testing connection parameters" {
         It "Should create a transfer object" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName
             $transfer | Should -BeOfType Microsoft.SqlServer.Management.Smo.Transfer
             $transfer.BatchSize | Should -Be 50000
             $transfer.BulkCopyTimeout | Should -Be 5000
-            $transfer.Database.Name | Should -Be tempdb
+            $transfer.Database.Name | Should -Be $dbName
             $transfer.ObjectList | Should -BeNullOrEmpty
             $transfer.CopyAllObjects | Should -Be $false
-            $allowedObjects | Foreach-Object { $transfer.$_ | Should -BeNullOrEmpty }
+            $allowedObjects | ForEach-Object { $transfer.$_ | Should -BeNullOrEmpty }
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $true
-            $transfer.DestinationDatabase | Should -Be tempdb
+            $transfer.DestinationDatabase | Should -Be $dbName
             $transfer.DestinationServer | Should -BeNullOrEmpty
         }
         It "Should properly assign dest server parameters from full connstring" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -Destination 'Data Source=foo;User=bar;password=foobar;Initial Catalog=hog'
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -DestinationSqlInstance 'Data Source=foo;User=bar;password=foobar;Initial Catalog=hog'
             $transfer.DestinationDatabase | Should -Be hog
             $transfer.DestinationLoginSecure | Should -Be $false
             $transfer.DestinationLogin | Should -Be bar
@@ -112,8 +118,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $transfer.DestinationServer | Should -Be foo
         }
         It "Should properly assign dest server parameters from trusted connstring" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -Destination 'Data Source=foo;Integrated Security=True'
-            $transfer.DestinationDatabase | Should -Be tempdb
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -DestinationSqlInstance 'Data Source=foo;Integrated Security=True'
+            $transfer.DestinationDatabase | Should -Be $dbName
             $transfer.DestinationLoginSecure | Should -Be $true
             $transfer.DestinationLogin | Should -BeNullOrEmpty
             $transfer.DestinationPassword | Should -BeNullOrEmpty
@@ -122,7 +128,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should properly assign dest server parameters from server object" {
             $dest = Connect-DbaInstance -SqlInstance $script:instance2 -Database msdb
             $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $dest.ConnectionContext.ConnectionString
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -Destination $dest
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -DestinationSqlInstance $dest
             $transfer.DestinationDatabase | Should -Be $connStringBuilder['Initial Catalog']
             $transfer.DestinationLoginSecure | Should -Be $connStringBuilder['Integrated Security']
             $transfer.DestinationLogin | Should -Be $connStringBuilder['User ID']
@@ -130,7 +136,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $transfer.DestinationServer | Should -Be $connStringBuilder['Data Source']
         }
         It "Should properly assign dest server parameters from plaintext params" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -Destination foo -DestinationDatabase bar -DestinationSqlCredential $creds
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -DestinationSqlInstance foo -DestinationDatabase bar -DestinationSqlCredential $creds
             $transfer.DestinationDatabase | Should -Be bar
             $transfer.DestinationLoginSecure | Should -Be $false
             $transfer.DestinationLogin | Should -Be $creds.UserName
@@ -140,7 +146,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Testing transfer parameters" {
         It "Should script all objects" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -CopyAllObjects
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -CopyAllObjects
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $true
             $script = $transfer.ScriptTransfer() -join "`n"
@@ -150,7 +156,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
         }
         It "Should script all tables with just schemas" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -CopyAll Tables -SchemaOnly
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -CopyAll Tables -SchemaOnly
             $transfer.CopyData | Should -Be $false
             $transfer.CopySchema | Should -Be $true
             $script = $transfer.ScriptTransfer() -join "`n"
@@ -160,25 +166,89 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
         }
         It "Should script one table with just data" {
-            $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table transfer_test
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -InputObject $table -DataOnly
+            $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -InputObject $table -DataOnly
             $transfer.ObjectList.Count | Should -Be 1
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $false
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb -InputObject $table
             # # data only ScriptTransfer still creates schema
             $script = $transfer.ScriptTransfer() -join "`n"
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
         }
         It "Should script two tables from pipeline" {
-            $tables = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table transfer_test2, transfer_test4
-            $transfer = $tables | New-DbaDbTransfer -SqlInstance $script:instance1 -Database tempdb
+            $tables = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test2, transfer_test4
+            $transfer = $tables | New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName
             $transfer.ObjectList.Count | Should -Be 2
             $script = $transfer.ScriptTransfer() -join "`n"
             $script | Should -Not -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test2`]*'
             $script | Should -Not -BeLike '*CREATE TABLE `[dbo`].`[transfer_test3`]*'
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
+        }
+        It "Should accept script options object" {
+            $options = New-DbaScriptingOption
+            $options.ScriptDrops = $true
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -CopyAll Tables -ScriptingOption $options
+            $transfer.Options.ScriptDrops | Should -BeTrue
+            $script = $transfer.ScriptTransfer() -join "`n"
+            $script | Should -BeLike '*DROP TABLE `[dbo`].`[transfer_test`]*'
+        }
+    }
+    Context "Testing object transfer" {
+        BeforeEach {
+            $destination.Query("CREATE DATABASE $dbname")
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbName
+        }
+        AfterEach {
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+        }
+        It "Should transfer all tables" {
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -CopyAll Tables
+            $transfer.TransferData()
+            $tables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
+            $tables.Count | Should -Be 4
+            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
+            $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
+            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
+            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
+        }
+        It "Should script all tables with just schemas" {
+            $sourceTables = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test, transfer_test2
+            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -SchemaOnly
+            $transfer.TransferData()
+            $tables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbName -Table transfer_test, transfer_test2
+            $tables.Count | Should -Be 2
+            $db2.Query("select id from dbo.transfer_test").id | Should -BeNullOrEmpty
+        }
+        It "Should script one table with just data" {
+            $null = $db2.Query("CREATE TABLE dbo.transfer_test (id int)")
+            $null = $db2.Query("CREATE TABLE dbo.transfer_test2 (id int)")
+            $sourceTables = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbName -Table transfer_test, transfer_test2
+            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -DataOnly
+            $transfer.TransferData()
+            $tables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbName -Table transfer_test, transfer_test2
+            $tables.Count | Should -Be 2
+            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
+            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
+        }
+    }
+    Context "Automatic DB creation" {
+        BeforeEach {
+            $newDb = $dbName + '_new'
+        }
+        AfterEach {
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $newDb -Confirm:$false
+        }
+        It "Should transfer all tables and create a new database" {
+            $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -DestinationSqlInstance $script:instance2 -Database $dbName -DestinationDatabase $newDb -CopyAll Tables -CreateDestinationDatabase
+            $transfer.TransferData()
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $newDb
+            $tables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $newDb -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
+            $tables.Count | Should -Be 4
+            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
+            $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
+            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
+            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
         }
     }
 }
