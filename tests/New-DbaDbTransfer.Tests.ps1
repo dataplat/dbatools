@@ -24,8 +24,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         )
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            $knownParameters | Where-Object {$_} | Should -BeIn $params
-            $params | Should -BeIn ($knownParameters | Where-Object {$_})
+            $knownParameters | Where-Object { $_ } | Should -BeIn $params
+            $params | Should -BeIn ($knownParameters | Where-Object { $_ })
         }
     }
 }

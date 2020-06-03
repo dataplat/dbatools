@@ -224,7 +224,7 @@ function New-DbaDbTransfer {
         if ($connString) {
             $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $connString
             if ($srv = $connStringBuilder['Data Source']) { $transfer.DestinationServer = $srv }
-            else { $transfer.DestinationServer = 'localhost'}
+            else { $transfer.DestinationServer = 'localhost' }
             if ($uName = $connStringBuilder['User ID']) { $transfer.DestinationLogin = $uName }
             if ($pwd = $connStringBuilder['Password']) { $transfer.DestinationPassword = $pwd }
             if (($db = $connStringBuilder['Initial Catalog']) -and (Test-Bound -Not -Parameter DestinationDatabase)) {
