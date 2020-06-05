@@ -159,7 +159,7 @@ function Export-DbaUser {
             'SQLServer2012'        = 'Version110'
             'SQLServer2014'        = 'Version120'
             'SQLServer2016'        = 'Version130'
-            'SQLServer2017'	       = 'Version140'
+            'SQLServer2017'        = 'Version140'
             'SQLServer2019'        = 'Version150'
         }
 
