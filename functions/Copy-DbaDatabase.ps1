@@ -1398,7 +1398,7 @@ function Copy-DbaDatabase {
                         }
 
                         if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $dbName")) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $DestinationDbName")) {
                                 try {
                                     $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
                                     $NewDatabase.Alter()
