@@ -31,7 +31,7 @@ CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUser -Database master
     }
 
-    Context "Partition Functions are correctly located" {
+    Context "Users are correctly located" {
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database master | Where-object {$_.name -eq "$DBUserName"} | Select-Object *
         $results2 = Get-DbaDbUser -SqlInstance $script:instance2
 
