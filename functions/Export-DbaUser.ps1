@@ -159,8 +159,8 @@ function Export-DbaUser {
             'SQLServer2012'        = 'Version110'
             'SQLServer2014'        = 'Version120'
             'SQLServer2016'        = 'Version130'
-			'SQLServer2017'	       = 'Version140'
-			'SQLServer2019'        = 'Version150'
+            'SQLServer2017'	       = 'Version140'
+            'SQLServer2019'        = 'Version150'
         }
 
         $versionName = @{
@@ -170,8 +170,8 @@ function Export-DbaUser {
             'Version110' = 'SQLServer2012'
             'Version120' = 'SQLServer2014'
             'Version130' = 'SQLServer2016'
-			'Version140' = 'SQLServer2017'
-			'Version150' = 'SQLServer2019'
+            'Version140' = 'SQLServer2017'
+            'Version150' = 'SQLServer2019'
         }
     }
     process {
