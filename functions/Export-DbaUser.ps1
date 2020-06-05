@@ -132,7 +132,7 @@ function Export-DbaUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$User,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019')]
         [string]$DestinationVersion,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -160,6 +160,7 @@ function Export-DbaUser {
             'SQLServer2014'        = 'Version120'
             'SQLServer2016'        = 'Version130'
             'SQLServer2017'        = 'Version140'
+            'SQLServer2019'        = 'Version150'
         }
 
         $versionName = @{
@@ -170,6 +171,7 @@ function Export-DbaUser {
             'Version120' = 'SQLServer2014'
             'Version130' = 'SQLServer2016'
             'Version140' = 'SQLServer2017'
+            'Version150' = 'SQLServer2019'
         }
     }
     process {
@@ -179,7 +181,7 @@ function Export-DbaUser {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
-        # To keep the filenames generated and re-use (appedn) if needed
+        # To keep the filenames generated and re-use (append) if needed
         $usersProcessed = @{ }
 
         foreach ($db in $InputObject) {
