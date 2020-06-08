@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.name | Should Be "dbatoolsci_testjob"
         }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -Job *dbatoolsci* -Exclude dbatoolsci_testjob_disabled
-        It "Should find a specific job but not an excldued job" {
+        It "Should find a specific job but not an excluded job" {
             $results.name | Should Not Be "dbatoolsci_testjob_disabled"
         }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -StepName 'dbatoolsci Test Step'
@@ -48,9 +48,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should find jobs disabled from running" {
             $results.name | Should be "dbatoolsci_testjob_disabled"
         }
+        $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsDisabled
+        It "Should find 1 job disabled from running" {
+            $results.count | Should be 1
+        }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsNotScheduled
         It "Should find jobs that have not been scheduled" {
             $results | Should not be null
+        }
+        $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsNotScheduled
+        It "Should find 11 jobs that have no schedule" {
+            $results.count | Should be 11
         }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsNoEmailNotification
         It "Should find jobs that have no email notification" {
