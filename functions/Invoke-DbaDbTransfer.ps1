@@ -104,7 +104,7 @@ function Invoke-DbaDbTransfer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbTransfer
+        https://dbatools.io/Invoke-DbaDbTransfer
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbTransfer -SqlInstance sql1 -DestinationSqlInstance sql2 -Database mydb -CopyAll Tables -DestinationDatabase newdb
