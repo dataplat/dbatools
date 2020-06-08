@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsNotScheduled
         It "Should find 11 jobs that have no schedule" {
-            $results.count | Should be 11
+            $results.count | Should be 13
         }
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsNoEmailNotification
         It "Should find jobs that have no email notification" {
