@@ -317,12 +317,16 @@ function Copy-DbaLogin {
 
                             $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid) }
                             Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
-                            # just in case the kill didn't work, it'll leave behind a disabled account
-                            if ($disabled) { $destServer.Logins.Item($newUserName).Enable() }
                         } elseif ($activeConnections) {
                             Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $newUserName. Utilize -KillActiveConnection with -Force to kill the connections."
                         }
-                        $destServer.Logins.Item($newUserName).Drop()
+                        try {
+                            $destServer.Logins.Item($newUserName).Drop()
+                        } catch {
+                            # just in case the kill didn't work, it'll leave behind a disabled account
+                            if ($disabled) { $destServer.Logins.Item($newUserName).Enable() }
+                            throw $_
+                        }
 
                         Write-Message -Level Verbose -Message "Successfully dropped $newUserName on $destinstance."
                     } catch {
@@ -349,17 +353,6 @@ function Copy-DbaLogin {
                     Stop-Function -Message "Failed to add $newUserName to $destinstance." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
                 }
 
-                if ($Login.DenyWindowsLogin) {
-                    try {
-                        $destLogin.DenyWindowsLogin = $true
-                    } catch {
-                        $copyLoginStatus.Status = "Successful - but could not deny login on destination"
-                        $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
-                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "$newUserName denied login on source, could not be denied login on $destinstance." -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
-                    }
-                }
                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                 if (-not $ExcludePermissionSync) {
