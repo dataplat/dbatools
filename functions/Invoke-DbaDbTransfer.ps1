@@ -90,6 +90,12 @@ function Invoke-DbaDbTransfer {
     .PARAMETER ScriptOnly
         Generate the script without moving any objects. Does not include any data - just object definitions.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -133,7 +139,7 @@ function Invoke-DbaDbTransfer {
         Copies procedures from database mydb on sql1 to database mydb on sql2 using custom scripting parameters.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [Parameter(ParameterSetName = "Default")]
         [DbaInstanceParameter]$SqlInstance,
@@ -234,25 +240,27 @@ function Invoke-DbaDbTransfer {
             "[$(Get-Date)] [$($args[1].DataTransferEventType)] $($args[1].Message)"
         }
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-        try {
-            if ($ScriptOnly) {
-                return $transfer.ScriptTransfer()
-            } else {
-                $transfer.TransferData()
+        if ($PSCmdlet.ShouldProcess("Begin transfer")) {
+            try {
+                if ($ScriptOnly) {
+                    return $transfer.ScriptTransfer()
+                } else {
+                    $transfer.TransferData()
+                }
+            } catch {
+                Stop-Function -ErrorRecord $_ -Message "Transfer failed"
+                return
             }
-        } catch {
-            Stop-Function -ErrorRecord $_ -Message "Transfer failed"
-            return
-        }
 
-        return [pscustomobject]@{
-            SourceInstance      = $transfer.Database.Parent.Name
-            SourceDatabase      = $transfer.Database.Name
-            DestinationInstance = $transfer.DestinationServer
-            DestinationDatabase = $transfer.DestinationDatabase
-            Status              = 'Success'
-            Elapsed             = [prettytimespan]$elapsed.Elapsed
-            Log                 = $events.Output
+            return [pscustomobject]@{
+                SourceInstance      = $transfer.Database.Parent.Name
+                SourceDatabase      = $transfer.Database.Name
+                DestinationInstance = $transfer.DestinationServer
+                DestinationDatabase = $transfer.DestinationDatabase
+                Status              = 'Success'
+                Elapsed             = [prettytimespan]$elapsed.Elapsed
+                Log                 = $events.Output
+            }
         }
     }
     end { }

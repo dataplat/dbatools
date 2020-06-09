@@ -104,6 +104,10 @@ function New-DbaDbTransfer {
 
         Creates a transfer object that, when invoked, would copy all tables from database sql1.mydb to sql2.mydb
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database MyDb -Table a, b, c | New-DbaDbTransfer -SqlInstance sql1 -Destination sql2 -Database mydb
+
+        Creates a transfer object to copy specific tables from database sql1.mydb to sql2.mydb
     #>
     [OutputType([Microsoft.SqlServer.Management.Smo.Transfer])]
     [CmdletBinding(DefaultParameterSetName = "Default")]
