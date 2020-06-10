@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'NewSid', 'EnableException'
+        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'NewSid', 'EnableException', 'ObjectLevel'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params | Write-Host
@@ -163,7 +163,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login | Should -Not -BeNullOrEmpty
             $role = $i2.Roles['sysadmin']
             $role.EnumMemberNames() | Should -Contain $results.Name
-            $login | Remove-DbaLogin -Force
+        }
+        It "clones the one tester login with object permissions" {
+            $results = Copy-DbaLogin -Source $script:instance1 -Login tester -Destination $script:instance2 -LoginRenameHashtable @{ tester = 'tester_new' } -ObjectLevel
+            $results.Name | Should -Be "tester_new"
+            $results.Status | Should -Be "Successful"
+            $i2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $login = $i2.Logins['tester_new']
+            $login | Should -Not -BeNullOrEmpty
+            $permissions = Export-DbaUser -SqlInstance $script:instance2 -Database tempdb -User tester_new -Passthru
+            $permissions | Should -BeLike '*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester_new`]*'
         }
     }
 }

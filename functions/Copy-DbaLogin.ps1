@@ -57,6 +57,9 @@ function Copy-DbaLogin {
     .PARAMETER LoginRenameHashtable
         Pass a hash table into this parameter to be passed into Rename-DbaLogin to update the Login and mappings after the Login is completed.
 
+    .PARAMETER ObjectLevel
+        Include object-level permissions for each user associated with copied login.
+
     .PARAMETER KillActiveConnection
         If this switch and -Force are enabled, all active connections and sessions on Destination will be killed.
 
@@ -166,6 +169,7 @@ function Copy-DbaLogin {
         [switch]$KillActiveConnection,
         [switch]$NewSid,
         [switch]$Force,
+        [switch]$ObjectLevel,
         [switch]$ExcludePermissionSync,
         [switch]$EnableException
     )
@@ -357,7 +361,7 @@ function Copy-DbaLogin {
 
                 if (-not $ExcludePermissionSync) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $newUserName permissions")) {
-                        Update-SqlPermission -SourceServer $sourceServer -SourceLogin $Login -DestServer $destServer -DestLogin $destLogin
+                        Update-SqlPermission -SourceServer $sourceServer -SourceLogin $Login -DestServer $destServer -DestLogin $destLogin -ObjectLevel:$ObjectLevel
                     }
                 }
             }
