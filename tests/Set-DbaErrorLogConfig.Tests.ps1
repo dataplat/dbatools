@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Apply LogCount to multiple instances" {
         $results = Set-DbaErrorLogConfig -SqlInstance $script:instance2, $script:instance1 -LogCount 8
         foreach ($result in $results) {
-            It 'Returns LogCount set to 3 for each instance' {
+            It 'Returns LogCount set to 8 for each instance' {
                 $result.LogCount | Should Be 8
             }
         }
