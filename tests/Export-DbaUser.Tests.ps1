@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'DestinationVersion', 'Path', 'FilePath', 'InputObject', 'NoClobber', 'Append', 'EnableException', 'ScriptingOptionsObject', 'ExcludeGoBatchSeparator', 'Passthru'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'DestinationVersion', 'Path', 'FilePath', 'InputObject', 'NoClobber', 'Append', 'EnableException', 'ScriptingOptionsObject', 'ExcludeGoBatchSeparator', 'Passthru', 'Template'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -26,6 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $user = "dbatoolsci_exportdbauser_user"
             $user2 = "dbatoolsci_exportdbauser_user2"
             $table = "dbatoolsci_exportdbauser_table"
+            $role = "dbatoolsci_exportdbauser_role"
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("CREATE DATABASE [$dbname]")
 
@@ -36,9 +37,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
             $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
             $null = $db.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
+            $null = $db.Query("CREATE ROLE [$role]")
 
             $null = $db.Query("CREATE TABLE $table (C1 INT);")
             $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user];")
+            $null = $db.Query("EXEC sp_addrolemember '$role', '$user';")
             $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user2];")
         } catch { } # No idea why appveyor can't handle this
     }
@@ -85,6 +88,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
             (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
+        }
+        It 'Exports as template' {
+            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -Template -WarningAction SilentlyContinue -Passthru
+            $results | Should BeLike "*CREATE USER ``[{templateUser}``] FOR LOGIN ``[{templateLogin}``]*"
+            $results | Should BeLike "*GRANT SELECT ON OBJECT::``[dbo``].``[$table``] TO ``[{templateUser}``]*"
+            $results | Should BeLike "*ALTER ROLE ``[$role``] ADD MEMBER ``[{templateUser}``]*"
         }
     }
 
