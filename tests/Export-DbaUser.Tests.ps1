@@ -90,7 +90,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
         It 'Exports as template' {
-            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -Template -WarningAction SilentlyContinue -Passthru
+            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -Template -DestinationVersion SQLServer2016 -WarningAction SilentlyContinue -Passthru
             $results | Should BeLike "*CREATE USER ``[{templateUser}``] FOR LOGIN ``[{templateLogin}``]*"
             $results | Should BeLike "*GRANT SELECT ON OBJECT::``[dbo``].``[$table``] TO ``[{templateUser}``]*"
             $results | Should BeLike "*ALTER ROLE ``[$role``] ADD MEMBER ``[{templateUser}``]*"
