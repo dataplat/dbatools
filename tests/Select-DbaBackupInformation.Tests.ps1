@@ -193,7 +193,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             It "Should return 1 Diff backups" {
                 ($Output | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 1
             }
-            It "Should return 191 log backups" {
+            It "Should return 192 log backups" {
                 ($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 192
             }
             It "Should not contain the Log backup with LastLsn 17126786000011867500001 " {
