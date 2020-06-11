@@ -456,7 +456,8 @@ function Write-DbaDbTableData {
                 return
             }
 
-            $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
+            $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
+            $tableExists = $targetTable.Count -eq 1
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
