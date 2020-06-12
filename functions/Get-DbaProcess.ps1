@@ -94,7 +94,7 @@ function Get-DbaProcess {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlSnstance) {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -126,43 +126,43 @@ function Get-DbaProcess {
                 $results = $null
             }
 
-            $allsessions = @()
+            $allSessions = @()
 
             $processes = $server.EnumProcesses()
 
             if ($Login) {
-                $allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Spid) {
-                $allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Hostname) {
-                $allsessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Program) {
-                $allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Database) {
-                $allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
             }
 
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
-                $allsessions = $processes
+                $allSessions = $processes
             }
 
             if ($ExcludeSystemSpids -eq $true) {
-                $allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
+                $allSessions = $allSessions | Where-Object { $_.Spid -gt 50 }
             }
 
             if ($Exclude) {
-                $allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
+                $allSessions = $allSessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allSessions.Spid }
             }
 
-            foreach ($session in $allsessions) {
+            foreach ($session in $allSessions) {
 
                 if ($session.Status -eq "") {
                     $status = "sleeping"
