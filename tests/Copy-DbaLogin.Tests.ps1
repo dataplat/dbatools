@@ -35,8 +35,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Should retain its same properties" {
 
-            $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login Tester
-            $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login Tester
+            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login Tester
+            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login Tester
 
             $login2 | Should Not BeNullOrEmpty
 

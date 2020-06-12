@@ -87,7 +87,7 @@ function Set-DbaNetworkCertificate {
             $Thumbprint = $Certificate.Thumbprint
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -104,30 +104,30 @@ function Set-DbaNetworkCertificate {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            $computername = $instance.ComputerName
-            $instancename = $instance.instancename
+            $computerName = $instance.ComputerName
+            $instanceName = $instance.instancename
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
             if (-not $sqlwmi) {
-                Stop-Function -Message "Cannot find $instancename on $computerName" -Continue -Category ObjectNotFound -Target $instance
+                Stop-Function -Message "Cannot find $instanceName on $computerName" -Continue -Category ObjectNotFound -Target $instance
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-            $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -136,21 +136,21 @@ function Set-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regroot = $args[0]
-                $serviceaccount = $args[1]
-                $instancename = $args[2]
+            $scriptBlock = {
+                $regRoot = $args[0]
+                $serviceAccount = $args[1]
+                $instanceName = $args[2]
                 $vsname = $args[3]
                 $Thumbprint = $args[4]
 
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                $oldthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+                $oldThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
@@ -160,7 +160,7 @@ function Set-DbaNetworkCertificate {
                     return
                 }
 
-                $permission = $serviceaccount, "Read", "Allow"
+                $permission = $serviceAccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
                 if ($null -ne $cert.PrivateKey) {
@@ -185,34 +185,34 @@ function Set-DbaNetworkCertificate {
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
-                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
+                    Set-ItemProperty -Path $regPath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
                 } else {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate"
                     return
                 }
 
-                if (![System.String]::IsNullOrEmpty($oldthumbprint)) {
-                    $notes = "Granted $serviceaccount read access to certificate private key. Replaced thumbprint: $oldthumbprint."
+                if (![System.String]::IsNullOrEmpty($oldThumbprint)) {
+                    $notes = "Granted $serviceAccount read access to certificate private key. Replaced thumbprint: $oldThumbprint."
                 } else {
-                    $notes = "Granted $serviceaccount read access to certificate private key"
+                    $notes = "Granted $serviceAccount read access to certificate private key"
                 }
 
-                $newthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+                $newThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 [pscustomobject]@{
                     ComputerName          = $env:COMPUTERNAME
-                    InstanceName          = $instancename
+                    InstanceName          = $instanceName
                     SqlInstance           = $vsname
-                    ServiceAccount        = $serviceaccount
-                    CertificateThumbprint = $newthumbprint
+                    ServiceAccount        = $serviceAccount
+                    CertificateThumbprint = $newThumbprint
                     Notes                 = $notes
                 }
             }
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
                 try {
-                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
+                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }

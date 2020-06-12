@@ -69,7 +69,7 @@ function Test-DbaDbCollation {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
