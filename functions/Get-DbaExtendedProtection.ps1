@@ -109,7 +109,7 @@ function Get-DbaExtendedProtection {
 
             $scriptblock = {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $ExtendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
+                $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
 
                 [pscustomobject]@{
                     ComputerName       = $env:COMPUTERNAME
