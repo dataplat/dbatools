@@ -214,19 +214,19 @@ function New-DbaAgentJob {
 
         # Check the e-mail operator name
         if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
-            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
-            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($PageLevel -ge 1) -and (-not $PageOperator)) {
-            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $SqlInstance
             return
         }
     }
@@ -235,7 +235,7 @@ function New-DbaAgentJob {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
