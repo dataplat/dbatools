@@ -73,7 +73,7 @@ function Get-DbaForceNetworkEncryption {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
                 $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
@@ -84,16 +84,16 @@ function Get-DbaForceNetworkEncryption {
             }
             $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object {
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'REGROOT'
                 }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'VSNAME'
                 }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -104,7 +104,7 @@ function Get-DbaForceNetworkEncryption {
                 $vsname = $instance
             }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
             Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
             Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
@@ -125,7 +125,7 @@ function Get-DbaForceNetworkEncryption {
             }
 
             try {
-                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instanceName -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptblock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
                     [pscustomobject]$result
                 }

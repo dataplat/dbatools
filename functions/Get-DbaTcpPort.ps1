@@ -98,8 +98,8 @@ function Get-DbaTcpPort {
                             $vsname = $vsname.Replace("\MSSQLSERVER", "")
 
                             try {
-                                $regroot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
-                                $dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
+                                $regRoot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
+                                $dacport = (Get-ItemProperty "HKLM:\$regRoot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
 
                                 [PsCustomObject]@{
                                     ComputerName = $instance

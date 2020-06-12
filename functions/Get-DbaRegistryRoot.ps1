@@ -56,16 +56,16 @@ function Get-DbaRegistryRoot {
 
             foreach ($sqlwmi in $sqlwmis) {
 
-                $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
                 $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 
-                if ([System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                if ([System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                     $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                    if (![System.String]::IsNullOrEmpty($regroot)) {
-                        $regroot = ($regroot -Split 'Value\=')[1]
+                    if (![System.String]::IsNullOrEmpty($regRoot)) {
+                        $regRoot = ($regRoot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
                     } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
@@ -81,7 +81,7 @@ function Get-DbaRegistryRoot {
                     }
                 }
 
-                Write-Message -Level Verbose -Message "Regroot: $regroot"
+                Write-Message -Level Verbose -Message "Regroot: $regRoot"
                 Write-Message -Level Verbose -Message "InstanceName: $instanceName"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
@@ -90,8 +90,8 @@ function Get-DbaRegistryRoot {
                     InstanceName = $instanceName
                     SqlInstance  = $vsname
                     Hive         = "HKLM"
-                    Path         = $regroot
-                    RegistryRoot = "HKLM:\$regroot"
+                    Path         = $regRoot
+                    RegistryRoot = "HKLM:\$regRoot"
                 }
             }
         }
