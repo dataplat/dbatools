@@ -110,8 +110,8 @@ function Get-DbaHideInstance {
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $HideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 # [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
                 @{

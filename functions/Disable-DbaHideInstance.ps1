@@ -112,9 +112,9 @@ function Disable-DbaHideInstance {
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name HideInstance -Value $false
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                Set-ItemProperty -Path $regPath -Name HideInstance -Value $false
+                $HideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
                     ComputerName = $env:COMPUTERNAME
