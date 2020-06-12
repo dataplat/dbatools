@@ -82,7 +82,7 @@ function Get-DbaHideInstance {
                 # here to avoid an empty catch
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
             if ([System.String]::IsNullOrEmpty($regroot)) {
                 $regroot = $sqlwmi.AdvancedProperties | Where-Object {
@@ -105,7 +105,7 @@ function Get-DbaHideInstance {
             }
 
             Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
             Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 

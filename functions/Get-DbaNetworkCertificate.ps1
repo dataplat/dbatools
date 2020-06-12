@@ -58,7 +58,7 @@ function Get-DbaNetworkCertificate {
                 $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-                $serviceaccount = $sqlwmi.ServiceAccount
+                $serviceAccount = $sqlwmi.ServiceAccount
 
                 if ([System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
@@ -76,13 +76,13 @@ function Get-DbaNetworkCertificate {
                 if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $computer }
 
                 Write-Message -Level Verbose -Message "Regroot: $regroot"
-                Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
+                Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount"
                 Write-Message -Level Verbose -Message "InstanceName: $instancename"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
                 $scriptblock = {
                     $regroot = $args[0]
-                    $serviceaccount = $args[1]
+                    $serviceAccount = $args[1]
                     $instancename = $args[2]
                     $vsname = $args[3]
 
@@ -104,7 +104,7 @@ function Get-DbaNetworkCertificate {
                         ComputerName   = $env:COMPUTERNAME
                         InstanceName   = $instancename
                         SqlInstance    = $vsname
-                        ServiceAccount = $serviceaccount
+                        ServiceAccount = $serviceAccount
                         FriendlyName   = $cert.FriendlyName
                         DnsNameList    = $cert.DnsNameList
                         Thumbprint     = $cert.Thumbprint
@@ -117,7 +117,7 @@ function Get-DbaNetworkCertificate {
                 }
 
                 try {
-                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop | Select-DefaultView -ExcludeProperty Certificate
+                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceAccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop | Select-DefaultView -ExcludeProperty Certificate
                 } catch {
                     Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
                 }

@@ -314,9 +314,9 @@ function Invoke-DbaDbMirroring {
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
 
-                $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
+                $serviceAccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
 
-                foreach ($account in $serviceaccounts) {
+                foreach ($account in $serviceAccounts) {
                     if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                         $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                         $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
