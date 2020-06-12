@@ -52,7 +52,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $user.SetInfo()
 
     #Get current service users
-    $services = Get-DbaService -ComputerName $script:instance2 -Type Engine, Agent -Instance $instanceName
+    $services = Get-Dbaservice -ComputerName $script:instance2 -Type Engine, Agent -Instance $instanceName
     $currentAgentUser = ($services | Where-Object { $_.ServiceType -eq 'Agent' }).StartName
     $currentEngineUser = ($services | Where-Object { $_.ServiceType -eq 'Engine' }).StartName
 

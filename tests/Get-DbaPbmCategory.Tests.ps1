@@ -15,19 +15,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2
         it "Gets Results" {
             $results | Should Not Be $null
         }
     }
     Context "Command actually works using -Category" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -Category 'Availability database errors'
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2 -Category 'Availability database errors'
         it "Gets Results" {
             $results | Should Not Be $null
         }
     }
     Context "Command actually works using -ExcludeSystemObject" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -ExcludeSystemObject
+        $results = Get-DbaPbmCategory -SqlInstance $script:Instance2 -ExcludeSystemObject
         it "Gets Results" {
             $results | Should Not Be $null
         }

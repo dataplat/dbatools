@@ -25,12 +25,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets Linked Servers" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$script:instance3"}
+        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$script:Instance3"}
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $script:instance3" {
-            $results.RemoteServer | Should Be "$script:instance3"
+        It "Should have Remote Server of $script:Instance3" {
+            $results.RemoteServer | Should Be "$script:Instance3"
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -40,12 +40,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -LinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer "$script:instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer "$script:Instance3"
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $script:instance3" {
-            $results.RemoteServer | Should Be "$script:instance3"
+        It "Should have Remote Server of $script:Instance3" {
+            $results.RemoteServer | Should Be "$script:Instance3"
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -ExcludeLinkedServer "$script:instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -ExcludeLinkedServer "$script:Instance3"
         It "Gets results" {
             $results | Should Be $null
         }

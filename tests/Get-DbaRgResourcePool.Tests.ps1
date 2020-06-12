@@ -15,13 +15,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaRgResourcePool -SqlInstance $script:instance2
+        $results = Get-DbaRgResourcePool -SqlInstance $script:Instance2
         it "Gets Results" {
             $results | Should Not Be $null
         }
     }
     Context "Command actually works using -Type" {
-        $results = Get-DbaRgResourcePool -SqlInstance $script:instance2 -Type Internal
+        $results = Get-DbaRgResourcePool -SqlInstance $script:Instance2 -Type Internal
         it "Gets Results" {
             $results | Should Not Be $null
         }

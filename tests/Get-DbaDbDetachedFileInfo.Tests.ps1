@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $random = Get-Random
         $dbname = "dbatoolsci_detatch_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $path = (Get-DbaDbFile -SqlInstance $script:instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
+        $path = (Get-DbadbFile -SqlInstance $script:instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
         Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
     }
 
@@ -27,11 +27,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("CREATE DATABASE $dbname
             ON (FILENAME = '$path')
             FOR ATTACH")
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:Instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+        $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:Instance2 -Path $path
         it "Gets Results" {
             $results | Should Not Be $null
         }
