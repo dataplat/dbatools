@@ -198,14 +198,14 @@ function Set-DbaNetworkCertificate {
                     $notes = "Granted $serviceAccount read access to certificate private key"
                 }
 
-                $newthumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                $newThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 [pscustomobject]@{
                     ComputerName          = $env:COMPUTERNAME
                     InstanceName          = $instanceName
                     SqlInstance           = $vsname
                     ServiceAccount        = $serviceAccount
-                    CertificateThumbprint = $newthumbprint
+                    CertificateThumbprint = $newThumbprint
                     Notes                 = $notes
                 }
             }
