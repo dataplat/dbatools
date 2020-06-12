@@ -96,7 +96,7 @@ function Remove-DbaAgentSchedule {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -112,33 +112,33 @@ function Remove-DbaAgentSchedule {
 
         } # foreach object instance
 
-        foreach ($currentschedule in $InputObject) {
-            $server = $currentschedule.Parent.Parent
+        foreach ($currentSchedule in $InputObject) {
+            $server = $currentSchedule.Parent.Parent
 
             if (-not $server) {
-                $server = $currentschedule.Parent
+                $server = $currentSchedule.Parent
             }
 
             $server.JobServer.SharedSchedules.Refresh()
-            $schedulename = $currentschedule.Name
-            $jobCount = $server.JobServer.SharedSchedules[$currentschedule].JobCount
+            $scheduleName = $currentSchedule.Name
+            $jobCount = $server.JobServer.SharedSchedules[$currentSchedule].JobCount
 
             # Check if the schedule is shared among other jobs
             if ($jobCount -ge 1 -and -not $Force) {
-                Stop-Function -Message "The schedule $schedulename is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
+                Stop-Function -Message "The schedule $scheduleName is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
             }
 
             # Remove the job schedule
-            if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentschedule on $instance")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentSchedule on $instance")) {
                 # Loop through each of the schedules and drop them
-                Write-Message -Message "Removing schedule $schedulename on $instance" -Level Verbose
+                Write-Message -Message "Removing schedule $scheduleName on $instance" -Level Verbose
 
                 #Check if jobs use the schedule
                 if ($jobCount -ge 1) {
                     # Get the job object
-                    $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) }
+                    $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentSchedule.Name) }
 
-                    Write-Message -Message "Schedule $schedulename is used in one or more jobs. Removing it for each job." -Level Verbose
+                    Write-Message -Message "Schedule $scheduleName is used in one or more jobs. Removing it for each job." -Level Verbose
 
                     # Loop through each if the schedules
                     foreach ($smoSchedule in ($smoSchedules)) {
@@ -173,7 +173,7 @@ function Remove-DbaAgentSchedule {
                 Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Verbose
                 $server.JobServer.SharedSchedules.Refresh()
                 # Get the schedules
-                $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) -and ($_.JobCount -eq 0) }
+                $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentSchedule.Name) -and ($_.JobCount -eq 0) }
 
                 # Remove the schedules that have no jobs
                 foreach ($smoSchedule in $smoSchedules) {

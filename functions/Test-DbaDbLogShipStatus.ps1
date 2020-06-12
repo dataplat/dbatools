@@ -161,7 +161,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
     }
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

@@ -94,7 +94,7 @@ function Get-DbaProcess {
     )
 
     process {
-        foreach ($instance in $SqlSnstance) {
+        foreach ($instance in $SqlInstance) {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

@@ -85,9 +85,9 @@ function Set-DbaAgentJobOutputFile {
         [switch]$EnableException
     )
 
-    foreach ($instance in $sqlinstance) {
+    foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
         } catch {
             Write-Message -Level Warning -Message "Failed to connect to: $instance"
             continue
@@ -122,29 +122,29 @@ function Set-DbaAgentJobOutputFile {
                 $steps = $currentJob.JobSteps
             }
 
-            foreach ($jobstep in $steps) {
-                $currentoutputfile = $jobstep.OutputFileName
+            foreach ($jobStep in $steps) {
+                $currentOutputFile = $jobStep.OutputFileName
 
-                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentoutputfile"
-                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobstep for $currentJob"
+                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentOutputFile"
+                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobStep for $currentJob"
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile")) {
-                        $jobstep.OutputFileName = $OutputFile
-                        $jobstep.Alter()
-                        $jobstep.Refresh()
+                    if ($Pscmdlet.ShouldProcess($jobStep, "Changing Output File from $currentOutputFile to $OutputFile")) {
+                        $jobStep.OutputFileName = $OutputFile
+                        $jobStep.Alter()
+                        $jobStep.Refresh()
 
                         [pscustomobject]@{
                             ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Job            = $currentJob.Name
-                            JobStep        = $jobstep.Name
-                            OutputFileName = $currentoutputfile
+                            JobStep        = $jobStep.Name
+                            OutputFileName = $currentOutputFile
                         }
                     }
                 } catch {
-                    Stop-Function -Message "Failed to add $OutputFile to $jobstep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
+                    Stop-Function -Message "Failed to add $OutputFile to $jobStep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
                 }
             }
         }
