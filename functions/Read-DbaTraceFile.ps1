@@ -244,7 +244,7 @@ function Read-DbaTraceFile {
         }
     }
     process {
-        foreach ($instance in $sqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
