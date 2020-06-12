@@ -108,7 +108,7 @@ function Remove-DbaNetworkCertificate {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptBlock = {
+            $scriptblock = {
                 $regRoot = $args[0]
                 $serviceAccount = $args[1]
                 $instanceName = $args[2]
