@@ -104,7 +104,7 @@ function Set-DbaNetworkCertificate {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            $computername = $instance.ComputerName
+            $computerName = $instance.ComputerName
             $instanceName = $instance.instancename
 
             try {
@@ -141,7 +141,7 @@ function Set-DbaNetworkCertificate {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
+            $scriptBlock = {
                 $regRoot = $args[0]
                 $serviceAccount = $args[1]
                 $instanceName = $args[2]
@@ -150,7 +150,7 @@ function Set-DbaNetworkCertificate {
 
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                $oldthumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                $oldThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
@@ -192,8 +192,8 @@ function Set-DbaNetworkCertificate {
                     return
                 }
 
-                if (![System.String]::IsNullOrEmpty($oldthumbprint)) {
-                    $notes = "Granted $serviceAccount read access to certificate private key. Replaced thumbprint: $oldthumbprint."
+                if (![System.String]::IsNullOrEmpty($oldThumbprint)) {
+                    $notes = "Granted $serviceAccount read access to certificate private key. Replaced thumbprint: $oldThumbprint."
                 } else {
                     $notes = "Granted $serviceAccount read access to certificate private key"
                 }
@@ -212,7 +212,7 @@ function Set-DbaNetworkCertificate {
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
                 try {
-                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
+                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
