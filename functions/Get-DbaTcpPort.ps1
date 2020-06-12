@@ -81,7 +81,7 @@ function Get-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
             if ($All) {
                 try {
-                    $scriptblock = {
+                    $scriptBlock = {
                         $instance = $args[0]
 
                         Add-Type -AssemblyName Microsoft.VisualBasic
@@ -154,10 +154,10 @@ function Get-DbaTcpPort {
 
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptBlock
                     } catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptBlock
                     }
                 } catch {
                     Stop-Function -Message "Could not get all information." -Target $instance -ErrorRecord $_

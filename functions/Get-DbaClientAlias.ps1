@@ -56,7 +56,7 @@ function Get-DbaClientAlias {
         [switch]$EnableException
     )
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             function Get-ItemPropertyValue {
                 param (
                     [parameter()]
@@ -115,7 +115,7 @@ function Get-DbaClientAlias {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }

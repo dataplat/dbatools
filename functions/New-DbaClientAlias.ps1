@@ -75,7 +75,7 @@ function New-DbaClientAlias {
 
     begin {
         # This is a script block so cannot use messaging system
-        $scriptblock = {
+        $scriptBlock = {
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
             #Variable marked as unused by PSScriptAnalyzer
             #$ServerName = $args[0]
@@ -130,7 +130,7 @@ function New-DbaClientAlias {
 
             if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
                 try {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }

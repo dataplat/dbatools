@@ -779,11 +779,11 @@ function Rename-DbaDatabase {
                                         } else {
                                             Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
                                             if (!$Preview) {
-                                                $scriptblock = {
+                                                $scriptBlock = {
                                                     $op = $args[0]
                                                     Rename-Item -Path $op.Source -NewName $op.Destination
                                                 }
-                                                Invoke-Command2 -ComputerName $op.ComputerName -Credential $sqlCredential -ScriptBlock $scriptblock -ArgumentList $op
+                                                Invoke-Command2 -ComputerName $op.ComputerName -Credential $sqlCredential -ScriptBlock $scriptBlock -ArgumentList $op
                                             }
                                         }
                                         $null = $Final_Renames.RemoveAt(0)
