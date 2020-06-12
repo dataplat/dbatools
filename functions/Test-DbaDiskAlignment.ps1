@@ -146,8 +146,8 @@ function Test-DbaDiskAlignment {
                 $instance = $service.DisplayName.Replace('SQL Server (', '')
                 $instance = $instance.TrimEnd(')')
 
-                $instancename = $instance.Replace("MSSQLSERVER", "Default")
-                Write-Message -Level Verbose -Message "Found instance $instancename" -FunctionName $FunctionName
+                $instanceName = $instance.Replace("MSSQLSERVER", "Default")
+                Write-Message -Level Verbose -Message "Found instance $instanceName" -FunctionName $FunctionName
                 if ($instance -eq 'MSSQLSERVER') {
                     $SqlInstances += $ComputerName
                 } else {

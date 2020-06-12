@@ -76,7 +76,7 @@ function Get-DbaForceNetworkEncryption {
             $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
@@ -106,7 +106,7 @@ function Get-DbaForceNetworkEncryption {
 
             Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
             Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
@@ -125,7 +125,7 @@ function Get-DbaForceNetworkEncryption {
             }
 
             try {
-                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instanceName -ScriptBlock $scriptblock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
                     [pscustomobject]$result
                 }

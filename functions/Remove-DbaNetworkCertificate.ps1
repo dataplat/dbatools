@@ -86,7 +86,7 @@ function Remove-DbaNetworkCertificate {
 
             $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-            $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+            $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             $serviceaccount = $sqlwmi.ServiceAccount
 
             if ([System.String]::IsNullOrEmpty($regroot)) {
@@ -105,13 +105,13 @@ function Remove-DbaNetworkCertificate {
 
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
                 $regroot = $args[0]
                 $serviceaccount = $args[1]
-                $instancename = $args[2]
+                $instanceName = $args[2]
                 $vsname = $args[3]
 
                 $regpath = "Registry::HKEY_LOCAL_MACHINE\$($regroot)\MSSQLServer\SuperSocketNetLib"
@@ -120,7 +120,7 @@ function Remove-DbaNetworkCertificate {
 
                 [pscustomobject]@{
                     ComputerName      = $env:COMPUTERNAME
-                    InstanceName      = $instancename
+                    InstanceName      = $instanceName
                     SqlInstance       = $vsname
                     ServiceAccount    = $serviceaccount
                     RemovedThumbprint = $cert.Thumbprint
@@ -129,7 +129,7 @@ function Remove-DbaNetworkCertificate {
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
+                    Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instanceName, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }

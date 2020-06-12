@@ -58,7 +58,7 @@ function Get-DbaRegistryRoot {
 
                 $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 
                 if ([System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
@@ -76,18 +76,18 @@ function Get-DbaRegistryRoot {
                 # vsname takes care of clusters
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
-                    if ($instancename -ne "MSSQLSERVER") {
-                        $vsname = "$($computer.ComputerName)\$instancename"
+                    if ($instanceName -ne "MSSQLSERVER") {
+                        $vsname = "$($computer.ComputerName)\$instanceName"
                     }
                 }
 
                 Write-Message -Level Verbose -Message "Regroot: $regroot"
-                Write-Message -Level Verbose -Message "InstanceName: $instancename"
+                Write-Message -Level Verbose -Message "InstanceName: $instanceName"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
                 [PSCustomObject]@{
                     ComputerName = $computer.ComputerName
-                    InstanceName = $instancename
+                    InstanceName = $instanceName
                     SqlInstance  = $vsname
                     Hive         = "HKLM"
                     Path         = $regroot
