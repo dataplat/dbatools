@@ -159,7 +159,7 @@ function New-DbaAgentSchedule {
             return
         }
 
-        [int]$Interval = 0
+        [int]$interval = 0
 
         # Translate FrequencyType value from string to the integer value
         if (!$FrequencyType -or $FrequencyType) {
@@ -229,12 +229,12 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the daily FrequencyType
         if ($FrequencyType -in 4, 'Daily') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Create the interval to hold the value(s)
             switch ($FrequencyInterval) {
-                "EveryDay" { $Interval = 1 }
-                default { $Interval = 1 }
+                "EveryDay" { $interval = 1 }
+                default { $interval = 1 }
             }
 
         }
@@ -242,33 +242,33 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the weekly FrequencyType
         if ($FrequencyType -in 8, 'Weekly') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
+            foreach ($item in $FrequencyInterval) {
 
-                switch ($Item) {
-                    "Sunday" { $Interval += 1 }
-                    "Monday" { $Interval += 2 }
-                    "Tuesday" { $Interval += 4 }
-                    "Wednesday" { $Interval += 8 }
-                    "Thursday" { $Interval += 16 }
-                    "Friday" { $Interval += 32 }
-                    "Saturday" { $Interval += 64 }
-                    "Weekdays" { $Interval = 62 }
-                    "Weekend" { $Interval = 65 }
-                    "EveryDay" { $Interval = 127 }
-                    1 { $Interval += 1 }
-                    2 { $Interval += 2 }
-                    4 { $Interval += 4 }
-                    8 { $Interval += 8 }
-                    16 { $Interval += 16 }
-                    32 { $Interval += 32 }
-                    64 { $Interval += 64 }
-                    62 { $Interval = 62 }
-                    65 { $Interval = 65 }
-                    127 { $Interval = 127 }
-                    default { $Interval = 0 }
+                switch ($item) {
+                    "Sunday" { $interval += 1 }
+                    "Monday" { $interval += 2 }
+                    "Tuesday" { $interval += 4 }
+                    "Wednesday" { $interval += 8 }
+                    "Thursday" { $interval += 16 }
+                    "Friday" { $interval += 32 }
+                    "Saturday" { $interval += 64 }
+                    "Weekdays" { $interval = 62 }
+                    "Weekend" { $interval = 65 }
+                    "EveryDay" { $interval = 127 }
+                    1 { $interval += 1 }
+                    2 { $interval += 2 }
+                    4 { $interval += 4 }
+                    8 { $interval += 8 }
+                    16 { $interval += 16 }
+                    32 { $interval += 32 }
+                    64 { $interval += 64 }
+                    62 { $interval = 62 }
+                    65 { $interval = 65 }
+                    127 { $interval = 127 }
+                    default { $interval = 0 }
                 }
             }
         }
@@ -276,13 +276,13 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the monthly FrequencyInterval
         if ($FrequencyType -in 16, 'Monthly') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
+            foreach ($item in $FrequencyInterval) {
                 $FrequencyInterval
-                switch ($Item) {
-                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $Interval = [int]$Item }
+                switch ($item) {
+                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
                 }
             }
 
@@ -292,31 +292,31 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the relative monthly FrequencyInterval
         if ($FrequencyType -eq 32) {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
-                switch ($Item) {
-                    "Sunday" { $Interval += 1 }
-                    "Monday" { $Interval += 2 }
-                    "Tuesday" { $Interval += 3 }
-                    "Wednesday" { $Interval += 4 }
-                    "Thursday" { $Interval += 5 }
-                    "Friday" { $Interval += 6 }
-                    "Saturday" { $Interval += 7 }
-                    "Day" { $Interval += 8 }
-                    "Weekday" { $Interval += 9 }
-                    "WeekendDay" { $Interval += 10 }
-                    1 { $Interval += 1 }
-                    2 { $Interval += 2 }
-                    3 { $Interval += 3 }
-                    4 { $Interval += 4 }
-                    5 { $Interval += 5 }
-                    6 { $Interval += 6 }
-                    7 { $Interval += 7 }
-                    8 { $Interval += 8 }
-                    9 { $Interval += 9 }
-                    10 { $Interval += 10 }
+            foreach ($item in $FrequencyInterval) {
+                switch ($item) {
+                    "Sunday" { $interval += 1 }
+                    "Monday" { $interval += 2 }
+                    "Tuesday" { $interval += 3 }
+                    "Wednesday" { $interval += 4 }
+                    "Thursday" { $interval += 5 }
+                    "Friday" { $interval += 6 }
+                    "Saturday" { $interval += 7 }
+                    "Day" { $interval += 8 }
+                    "Weekday" { $interval += 9 }
+                    "WeekendDay" { $interval += 10 }
+                    1 { $interval += 1 }
+                    2 { $interval += 2 }
+                    3 { $interval += 3 }
+                    4 { $interval += 4 }
+                    5 { $interval += 5 }
+                    6 { $interval += 6 }
+                    7 { $interval += 7 }
+                    8 { $interval += 8 }
+                    9 { $interval += 9 }
+                    10 { $interval += 10 }
                 }
             }
         }
@@ -333,10 +333,10 @@ function New-DbaAgentSchedule {
         }
 
         # Check if the interval is valid for the frequency
-        if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
+        if (($FrequencyType -in 4, 8, 32) -and ($interval -lt 1)) {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Level Warning
-                $Interval = 1
+                $interval = 1
             } else {
                 Stop-Function -Message "Parameter FrequencyInterval must be provided for a recurring schedule." -Target $SqlInstance
                 return
@@ -418,7 +418,7 @@ function New-DbaAgentSchedule {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -469,9 +469,9 @@ function New-DbaAgentSchedule {
                             $JobSchedule.IsEnabled = $true
                         }
 
-                        if ($Interval -ge 0) {
-                            Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-                            $JobSchedule.FrequencyInterval = $Interval
+                        if ($interval -ge 0) {
+                            Write-Message -Message "Setting job schedule frequency interval to $interval" -Level Verbose
+                            $JobSchedule.FrequencyInterval = $interval
                         }
 
                         if ($FrequencyType -ge 1) {
@@ -552,9 +552,9 @@ function New-DbaAgentSchedule {
                     $JobSchedule.IsEnabled = $true
                 }
 
-                if ($Interval -ge 1) {
-                    Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-                    $JobSchedule.FrequencyInterval = $Interval
+                if ($interval -ge 1) {
+                    Write-Message -Message "Setting job schedule frequency interval to $interval" -Level Verbose
+                    $JobSchedule.FrequencyInterval = $interval
                 }
 
                 if ($FrequencyType -ge 1) {

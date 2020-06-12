@@ -152,7 +152,7 @@ function New-DbaDbAsymmetricKey {
                                 }
                                 'SqlAssembly' {
                                     Write-Message -Level Verbose -Message 'SqlAssembly passed in as key source'
-                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $sqlInstance -SqlCredential $SqlCredential -Database $db -Name $KeySource)) {
+                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db -Name $KeySource)) {
                                         Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
                                     }
                                 }

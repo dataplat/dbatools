@@ -98,11 +98,11 @@ function Set-DbaAgentAlert {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Alert)) {
-            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -127,24 +127,24 @@ function Set-DbaAgentAlert {
             }
         }
 
-        foreach ($currentalert in $InputObject) {
-            $server = $currentalert.Parent.Parent
+        foreach ($currentAlert in $InputObject) {
+            $server = $currentAlert.Parent.Parent
 
             #region alert options
             # Settings the options for the alert
             if ($NewName) {
                 Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                $currentalert.Rename($NewName)
+                $currentAlert.Rename($NewName)
             }
 
             if ($Enabled) {
                 Write-Message -Message "Setting alert to enabled" -Level Verbose
-                $currentalert.IsEnabled = $true
+                $currentAlert.IsEnabled = $true
             }
 
             if ($Disabled) {
                 Write-Message -Message "Setting alert to disabled" -Level Verbose
-                $currentalert.IsEnabled = $false
+                $currentAlert.IsEnabled = $false
             }
 
             #endregion alert options
@@ -155,11 +155,11 @@ function Set-DbaAgentAlert {
                     Write-Message -Message "Changing the alert" -Level Verbose
 
                     # Change the alert
-                    $currentalert.Alter()
+                    $currentAlert.Alter()
                 } catch {
                     Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
                 }
-                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
+                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentAlert.name
             }
         }
     }

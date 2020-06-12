@@ -187,11 +187,11 @@ function Set-DbaAgentServer {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $SqlInstance)) {
-            Stop-Function -Message "You must specify an Instance or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify an Instance or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
