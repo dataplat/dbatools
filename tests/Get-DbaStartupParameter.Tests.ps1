@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaStartupParameter -SqlInstance $script:Instance2
+        $results = Get-DbaStartupParameter -SqlInstance $script:instance2
         it "Gets Results" {
             $results | Should Not Be $null
         }
