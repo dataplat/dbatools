@@ -57,7 +57,7 @@ function Get-DbaExtendedProtection {
     )
     process {
 
-        foreach ($instance in $sqlInstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             if ($instance.IsLocalHost) {
                 $null = Test-ElevationRequirement -ComputerName $instance -Continue
