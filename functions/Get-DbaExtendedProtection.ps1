@@ -103,7 +103,7 @@ function Get-DbaExtendedProtection {
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
             Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
             Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
