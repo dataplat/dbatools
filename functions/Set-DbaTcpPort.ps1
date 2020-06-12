@@ -115,7 +115,7 @@ function Set-DbaTcpPort {
             } catch {
                 [pscustomobject]@{
                     ComputerName       = $computerName
-                    InstanceName       = $wmIInstanceName
+                    InstanceName       = $wmiInstanceName
                     SqlInstance        = $sqlInstanceName
                     PreviousPortNumber = $oldPort
                     PortNumber         = $Port
@@ -130,19 +130,19 @@ function Set-DbaTcpPort {
         }
 
         foreach ($instance in $SqlInstance) {
-            $wmIInstanceName = $instance.InstanceName
+            $wmiInstanceName = $instance.InstanceName
             $computerName = $instance.ComputerName
 
-            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmIInstanceName")) {
+            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
                     $computerName = $instance.ComputerName
                     $resolved = Resolve-DbaNetworkName -ComputerName $computerName
-                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmIInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                 } catch {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmIInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                     } catch {
-                        Stop-Function -Message "Failure setting port to $Port for $wmIInstanceName on $computerName" -Continue
+                        Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
                     }
                 }
             }

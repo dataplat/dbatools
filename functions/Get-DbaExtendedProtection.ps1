@@ -107,7 +107,7 @@ function Get-DbaExtendedProtection {
             Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptBlock = {
+            $scriptblock = {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
                 $ExtendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
 
@@ -121,7 +121,7 @@ function Get-DbaExtendedProtection {
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
