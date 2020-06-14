@@ -250,5 +250,4 @@ function Invoke-DbaDbTransfer {
             }
         }
     }
-    end { }
 }
