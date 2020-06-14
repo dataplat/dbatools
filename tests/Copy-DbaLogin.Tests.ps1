@@ -115,7 +115,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Supports pipe" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2
+        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
         It "migrates the one tester login" {
             $results.Name | Should -Be "tester"
             $results.Status | Should -Be "Successful"
