@@ -141,40 +141,29 @@ function Invoke-DbaDbTransfer {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
-        [Parameter(ParameterSetName = "Default")]
         [DbaInstanceParameter]$SqlInstance,
 
-        [Parameter(ParameterSetName = "Default")]
         [PSCredential]$SqlCredential,
 
-        [Parameter(ParameterSetName = "Default")]
         [DbaInstanceParameter]$DestinationSqlInstance,
 
-        [Parameter(ParameterSetName = "Default")]
         [PSCredential]$DestinationSqlCredential,
 
-        [Parameter(ParameterSetName = "Default")]
         [string]$Database,
 
-        [Parameter(ParameterSetName = "Default")]
         [string]$DestinationDatabase = $Database,
 
-        [Parameter(ParameterSetName = "Default")]
         [int]$BatchSize = 50000,
 
-        [Parameter(ParameterSetName = "Default")]
         [int]$BulkCopyTimeOut = 5000,
 
-        [Parameter(ParameterSetName = "Default")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
 
-        [Parameter(ValueFromPipeline, ParameterSetName = "Default")]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Transfer]$InputObject,
 
-        [Parameter(ParameterSetName = "Default")]
         [switch]$CopyAllObjects,
 
-        [Parameter(ParameterSetName = "Default")]
         [ValidateSet(
             'FullTextCatalogs',
             'FullTextStopLists',
@@ -208,10 +197,8 @@ function Invoke-DbaDbTransfer {
         )]
         [string[]]$CopyAll,
 
-        [Parameter(ParameterSetName = "Default")]
         [switch]$SchemaOnly,
 
-        [Parameter(ParameterSetName = "Default")]
         [switch]$DataOnly,
 
         [switch]$ScriptOnly,

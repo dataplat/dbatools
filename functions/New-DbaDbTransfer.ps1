@@ -109,10 +109,10 @@ function New-DbaDbTransfer {
 
         Creates a transfer object to copy specific tables from database sql1.mydb to sql2.mydb
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [OutputType([Microsoft.SqlServer.Management.Smo.Transfer])]
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [Parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
 
         [PSCredential]$SqlCredential,
@@ -121,7 +121,6 @@ function New-DbaDbTransfer {
 
         [PSCredential]$DestinationSqlCredential,
 
-        [Parameter(Mandatory)]
         [string]$Database,
 
         [string]$DestinationDatabase = $Database,
@@ -180,6 +179,14 @@ function New-DbaDbTransfer {
         $objectCollection = New-Object System.Collections.ArrayList
     }
     process {
+        if (Test-Bound -Not SqlInstance) {
+            Stop-Function -Message "Source instance was not specified"
+            return
+        }
+        if (Test-Bound -Not Database) {
+            Stop-Function -Message "Source database was not specified"
+            return
+        }
         foreach ($object in $InputObject) {
             if (-not $object) {
                 Stop-Function -Message "Object is empty"
@@ -190,12 +197,17 @@ function New-DbaDbTransfer {
 
     }
     end {
-        $sourceDb = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -EnableException:$EnableException
+        try {
+            $sourceDb = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -EnableException
+        } catch {
+            Stop-Function -Message "Failed to retrieve database from the source instance $SqlInstance" -ErrorRecord $_
+            return
+        }
         if (-not $sourceDb) {
-            Stop-Function -Message "Database not found"
+            Stop-Function -Message "Database $Database not found on $SqlInstance"
             return
         } elseif ($sourceDb.Count -gt 1) {
-            Stop-Function -Message "More than one database found with the parameters provided"
+            Stop-Function -Message "More than one database found on $SqlInstanced with the parameters provided"
             return
         }
         # Create transfer object and define properties based on parameters
