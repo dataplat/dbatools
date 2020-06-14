@@ -106,7 +106,7 @@ function New-DbaDacProfile {
             $return | Out-String
         }
 
-        function Get-Template ($db, $connstring) {
+        function Get-Template ($db, $connString) {
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
               <PropertyGroup>
@@ -115,12 +115,12 @@ function New-DbaDacProfile {
                 <ProfileVersionNumber>1</ProfileVersionNumber>
                 {2}
               </PropertyGroup>
-            </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
+            </Project>" -f $db[0], $connString, $(Convert-HashtableToXMLString($PublishOptions))
         }
 
-        function Get-ServerName ($connstring) {
+        function Get-ServerName ($connString) {
             $builder = New-Object System.Data.Common.DbConnectionStringBuilder
-            $builder.set_ConnectionString($connstring)
+            $builder.set_ConnectionString($connString)
             $instance = $builder['data source']
 
             if (-not $instance) {
@@ -135,9 +135,9 @@ function New-DbaDacProfile {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -146,28 +146,28 @@ function New-DbaDacProfile {
 
         }
 
-        foreach ($connstring in $ConnectionString) {
+        foreach ($connString in $ConnectionString) {
             foreach ($db in $Database) {
                 if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
-                    $profileTemplate = Get-Template $db, $connstring
-                    $instancename = Get-ServerName $connstring
+                    $profileTemplate = Get-Template $db, $connString
+                    $instanceName = Get-ServerName $connString
 
                     try {
-                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
-                        Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-                        $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+                        $server = [DbaInstance]($instanceName.ToString().Replace('--', '\'))
+                        $publishProfile = Join-Path $Path "$($instanceName.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Writing to $publishProfile"
+                        $profileTemplate | Out-File $publishProfile -ErrorAction Stop
                         [pscustomobject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.InstanceName
                             SqlInstance      = $server.FullName
                             Database         = $db
-                            FileName         = $PublishProfile
-                            ConnectionString = $connstring
+                            FileName         = $publishProfile
+                            ConnectionString = $connString
                             ProfileTemplate  = $profileTemplate
                         } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
                     } catch {
-                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instanceName -Continue
                     }
                 }
             }

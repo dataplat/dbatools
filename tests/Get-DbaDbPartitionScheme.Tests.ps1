@@ -36,7 +36,7 @@ DROP PARTITION FUNCTION [$PFName];
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionScheme -Database master
     }
 
-    Context "Partition Functions are correctly located" {
+    Context "Partition Schemes are correctly located" {
         $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master | Select-Object *
         $results2 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2
 

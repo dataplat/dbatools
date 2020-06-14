@@ -87,7 +87,7 @@ function Get-DbaAvailableCollation {
     }
 
     process {
-        foreach ($Instance in $sqlInstance) {
+        foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {

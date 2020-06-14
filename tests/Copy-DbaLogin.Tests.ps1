@@ -68,8 +68,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should copy successfully" {
             $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login Tester
             $results.Status | Should -Be "Successful"
-            $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login Tester
-            $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login Tester
+            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login Tester
+            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login Tester
 
             $login2 | Should -Not -BeNullOrEmpty
 

@@ -158,14 +158,14 @@ function Reset-DbaAdmin {
     }
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $stepcounter = 0
             $baseaddress = $instance.ComputerName
             # Get hostname
 
             if ($baseaddress.IsLocalHost) {
                 $ipaddr = "."
-                $hostname = $env:COMPUTERNAME
+                $hostName = $env:COMPUTERNAME
                 $baseaddress = $env:COMPUTERNAME
             }
 
@@ -186,7 +186,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Verbose -Message "First attempt using ICMP failed. Trying to connect using sockets. This may take up to 20 seconds."
                     $tcp = New-Object System.Net.Sockets.TcpClient
                     try {
-                        $tcp.Connect($hostname, 135)
+                        $tcp.Connect($hostName, 135)
                         $tcp.Close()
                         $tcp.Dispose()
                     } catch {
@@ -206,9 +206,9 @@ function Reset-DbaAdmin {
             Write-Message -Level Verbose -Message "Resolving NetBIOS name."
             try {
                 # this is required otherwise, the ip is returned
-                $hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
-                if ($null -eq $hostname) {
-                    $hostname = (nbtstat -A $ipaddr | Where-Object {
+                $hostName = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
+                if ($null -eq $hostName) {
+                    $hostName = (nbtstat -A $ipaddr | Where-Object {
                             $_ -match '\<00\>  UNIQUE'
                         } | ForEach-Object {
                             $_.SubString(4, 14)
@@ -223,13 +223,13 @@ function Reset-DbaAdmin {
     if (-not $instance.IsLocalHost) {
         try {
             $connectionParams = @{
-                ComputerName = $hostname
+                ComputerName = $hostName
                 ErrorAction  = "Stop"
                 UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             $session = New-PSSession @connectionParams
         } catch {
-            Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
+            Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostName using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
         }
     }
 
@@ -239,7 +239,7 @@ function Reset-DbaAdmin {
         Write-Message -Level Verbose -Message "Windows login detected. Checking to ensure account is valid."
         $windowslogin = $true
         try {
-            if ($hostname -eq $env:COMPUTERNAME) {
+            if ($hostName -eq $env:COMPUTERNAME) {
                 $account = New-Object System.Security.Principal.NTAccount($args)
                 #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
                 $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
@@ -268,31 +268,31 @@ function Reset-DbaAdmin {
     }
 
     # Get instance and service display name, then get services
-    $instancename = $null
-    $instancename = $instance.InstanceName
-    if (-not $instancename) {
-        $instancename = "MSSQLSERVER"
+    $instanceName = $null
+    $instanceName = $instance.InstanceName
+    if (-not $instanceName) {
+        $instanceName = "MSSQLSERVER"
     }
-    $displayName = "SQL Server ($instancename)"
+    $displayName = "SQL Server ($instanceName)"
 
     try {
-        if ($hostname -eq $env:COMPUTERNAME) {
-            $instanceservices = Get-Service -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instancename)*" -and $_.Status -eq "Running"
+        if ($hostName -eq $env:COMPUTERNAME) {
+            $instanceServices = Get-Service -ErrorAction Stop | Where-Object {
+                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
             }
-            $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+            $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
         } else {
-            $instanceservices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instancename)*" -and $_.Status -eq "Running"
+            $instanceServices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
+                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
             }
-            $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+            $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
         }
     } catch {
-        Stop-Function -Message "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
+        Stop-Function -Message "Cannot connect to WMI on $hostName or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
         return
     }
 
-    if (-not $instanceservices) {
+    if (-not $instanceServices) {
         Stop-Function -Message "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again." -Target $instance
         return
     }
@@ -311,9 +311,9 @@ function Reset-DbaAdmin {
     }
 
     if ($null -ne $checkcluster) {
-        $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostname |
+        $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName |
             Where-Object {
-                $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instancename)"
+                $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)"
             }
     }
 
@@ -322,7 +322,7 @@ function Reset-DbaAdmin {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
         # Take SQL Server offline so that it can be started in single-user mode
         if ($clusterResource.count -gt 0) {
-            $isclustered = $true
+            $isClustered = $true
             try {
                 $clusterResource | Where-Object {
                     $_.Name -eq "SQL Server"
@@ -348,7 +348,7 @@ function Reset-DbaAdmin {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
         Write-Message -Level Verbose -Message "Successfully stopped SQL service."
     } catch {
-        Start-Service -InputObject $instanceservices -ErrorAction Stop
+        Start-Service -InputObject $instanceServices -ErrorAction Stop
         Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
         return
     }
@@ -360,12 +360,12 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
     try {
         if ($instance.IsLocalHost) {
-            $netstart = net start ""$displayname"" /mReset-DbaAdmin 2>&1
+            $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
             if ("$netstart" -notmatch "success") {
                 Stop-Function -Message "Restart failure" -Continue
             }
         } else {
-            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayname -ScriptBlock {
+            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock {
                 net start ""$args"" /mReset-DbaAdmin
             } 2>&1
             foreach ($line in $netstart) {
@@ -377,7 +377,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
     } catch {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
-        if ($isclustered) {
+        if ($isClustered) {
             $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
                 $_.BringOnline(60)
             }
@@ -385,7 +385,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
                 $_.BringOnline(60)
             }
         } else {
-            Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
+            Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
         }
         Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
         return
@@ -402,7 +402,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back
             $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
         } catch {
             Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
-            if ($isclustered) {
+            if ($isClustered) {
                 $clusterResource | Where-Object {
                     $_.Name -eq "SQL Server"
                 } | ForEach-Object {
@@ -414,7 +414,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back
                 $_.BringOnline(60)
             }
     } else {
-        Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
+        Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
     }
     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
 }
@@ -481,7 +481,7 @@ if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting"))
     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
     try {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-        if ($isclustered -eq $true) {
+        if ($isClustered -eq $true) {
             $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
                 $_.BringOnline(60)
             }
@@ -489,7 +489,7 @@ if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting"))
                 $_.BringOnline(60)
             }
         } else {
-            Start-Service -InputObject $instanceservices -ErrorAction Stop
+            Start-Service -InputObject $instanceServices -ErrorAction Stop
         }
     } catch {
         Stop-Function -Message "Failure" -ErrorRecord $_

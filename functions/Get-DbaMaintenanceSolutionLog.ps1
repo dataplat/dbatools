@@ -141,11 +141,11 @@ function Get-DbaMaintenanceSolutionLog {
                 }
             }
             if ($fresh.ContainsKey('Comment')) {
-                $commentparts = $fresh['Comment'] -split ', '
-                foreach ($part in $commentparts) {
-                    $indkey, $indvalue = $part -split ': ', 2
-                    if ($fresh.ContainsKey($indkey)) {
-                        $fresh[$indkey] = $indvalue
+                $commentParts = $fresh['Comment'] -split ', '
+                foreach ($part in $commentParts) {
+                    $indKey, $indValue = $part -split ': ', 2
+                    if ($fresh.ContainsKey($indKey)) {
+                        $fresh[$indKey] = $indValue
                     }
                 }
             }
@@ -157,17 +157,17 @@ function Get-DbaMaintenanceSolutionLog {
         }
     }
     process {
-        foreach ($instance in $sqlinstance) {
-            $logdir = $logfiles = $null
+        foreach ($instance in $SqlInstance) {
+            $logDir = $logFiles = $null
             $computername = $instance.ComputerName
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Can't connect to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($logtype -ne 'IndexOptimize') {
-                Write-Message -Level Warning -Message "Parsing $logtype is not supported at the moment"
+            if ($LogType -ne 'IndexOptimize') {
+                Write-Message -Level Warning -Message "Parsing $LogType is not supported at the moment"
                 Continue
             }
             if (!$instance.IsLocalHost -and $server.HostPlatform -ne "Windows") {
@@ -175,46 +175,46 @@ function Get-DbaMaintenanceSolutionLog {
                 Continue
             }
             if ($Path) {
-                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
+                $logDir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
             } else {
-                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
+                $logDir = Join-AdminUnc -Servername $server.ComputerName -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
             }
-            if (!$logdir) {
+            if (!$logDir) {
                 Write-Message -Level Warning -Message "No log directory returned from $instance"
                 Continue
             }
 
-            Write-Message -Level Verbose -Message "Log directory on $computername is $logdir"
-            if (! (Test-Path $logdir)) {
-                Write-Message -Level Warning -Message "Directory $logdir is not accessible"
+            Write-Message -Level Verbose -Message "Log directory on $computername is $logDir"
+            if (! (Test-Path $logDir)) {
+                Write-Message -Level Warning -Message "Directory $logDir is not accessible"
                 continue
             }
-            $logfiles = [System.IO.Directory]::EnumerateFiles("$logdir", "IndexOptimize_*.txt")
+            $logFiles = [System.IO.Directory]::EnumerateFiles("$logDir", "IndexOptimize_*.txt")
             if ($Since) {
-                $filteredlogs = @()
-                foreach ($l in $logfiles) {
+                $filteredLogs = @()
+                foreach ($l in $logFiles) {
                     $base = $($l.Substring($l.Length - 15, 15))
                     try {
-                        $datefile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
+                        $dateFile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
                     } catch {
-                        $datefile = Get-ItemProperty -Path $l | Select-Object -ExpandProperty CreationTime
+                        $dateFile = Get-ItemProperty -Path $l | Select-Object -ExpandProperty CreationTime
                     }
-                    if ($datefile -gt $since) {
-                        $filteredlogs += $l
+                    if ($dateFile -gt $since) {
+                        $filteredLogs += $l
                     }
                 }
-                $logfiles = $filteredlogs
+                $logFiles = $filteredLogs
             }
-            if (! $logfiles.count -ge 1) {
+            if (! $logFiles.count -ge 1) {
                 Write-Message -Level Warning -Message "No log files returned from $computername"
                 Continue
             }
-            $instanceinfo = @{ }
-            $instanceinfo['ComputerName'] = $server.ComputerName
-            $instanceinfo['InstanceName'] = $server.ServiceName
-            $instanceinfo['SqlInstance'] = $server.Name
+            $instanceInfo = @{ }
+            $instanceInfo['ComputerName'] = $server.ComputerName
+            $instanceInfo['InstanceName'] = $server.ServiceName
+            $instanceInfo['SqlInstance'] = $server.Name
 
-            foreach ($File in $logfiles) {
+            foreach ($File in $logFiles) {
                 Write-Message -Level Verbose -Message "Reading $file"
                 $text = New-Object System.IO.StreamReader -ArgumentList "$File"
                 $block = New-Object System.Collections.ArrayList

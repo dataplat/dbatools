@@ -179,9 +179,9 @@ function Export-DbaDacPackage {
             $tblList = $null
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -197,10 +197,10 @@ function Export-DbaDacPackage {
 
             foreach ($db in $dbs) {
                 $resultstime = [diagnostics.stopwatch]::StartNew()
-                $dbname = $db.name
+                $dbName = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
-                    $connstring = "$connstring;Database=$dbname"
+                    $connstring = "$connstring;Database=$dbName"
                 }
 
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
@@ -233,7 +233,7 @@ function Export-DbaDacPackage {
                         #not sure how to extract that info from the existing DAC application, leaving 1.0.0.0 for now
                         $version = New-Object System.Version -ArgumentList '1.0.0.0'
                         try {
-                            $dacSvc.Extract($FilePath, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
+                            $dacSvc.Extract($FilePath, $dbName, $dbName, $version, $null, $tblList, $opts, $null)
                         } catch {
                             Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
                         } finally {
@@ -242,7 +242,7 @@ function Export-DbaDacPackage {
                     } elseif ($Type -eq 'Bacpac') {
                         Write-Message -Level Verbose -Message "Initiating Bacpac export to $FilePath"
                         try {
-                            $dacSvc.ExportBacpac($FilePath, $dbname, $opts, $tblList, $null)
+                            $dacSvc.ExportBacpac($FilePath, $dbName, $opts, $tblList, $null)
                         } catch {
                             Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
                         } finally {
@@ -285,7 +285,7 @@ function Export-DbaDacPackage {
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
-                    Database     = $dbname
+                    Database     = $dbName
                     Path         = $FilePath
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     Result       = $finalResult

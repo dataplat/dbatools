@@ -137,8 +137,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should retain its same properties" {
 
-            $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login tester
-            $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login tester
+            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login tester
+            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login tester
 
             $login2 | Should Not BeNullOrEmpty
 
@@ -155,8 +155,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should not have same properties because of the overrides" {
 
-            $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login claudio
-            $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login port
+            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login claudio
+            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login port
 
             $login2 | Should Not BeNullOrEmpty
 

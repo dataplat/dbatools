@@ -61,7 +61,7 @@ function Enable-DbaHideInstance {
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             if ($instance.IsLocalHost) {
                 $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -83,21 +83,21 @@ function Enable-DbaHideInstance {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -106,28 +106,28 @@ function Enable-DbaHideInstance {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name HideInstance -Value $true
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                Set-ItemProperty -Path $regPath -Name HideInstance -Value $true
+                $hideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
                     ComputerName = $env:COMPUTERNAME
                     InstanceName = $args[2]
                     SqlInstance  = $args[1]
-                    HideInstance = ($HideInstance -eq $true)
+                    HideInstance = ($hideInstance -eq $true)
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instanceName instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
