@@ -497,8 +497,8 @@ function Invoke-DbaDbDataMasking {
                                 foreach ($row in $data) {
                                     if ((($stepcounter++) % 100) -eq 0) {
                                         $progressParams = @{
-                                            StepNumber = $stepcounter
-                                            TotalSteps = $data.Count
+                                            StepNumber = $batchCounter
+                                            TotalSteps = $totalBatches
                                             Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                                             Message    = "Generating Updates"
                                         }
@@ -662,8 +662,8 @@ function Invoke-DbaDbDataMasking {
                                     $batchCounter++
 
                                     $progressParams = @{
-                                        StepNumber = $stepcounter
-                                        TotalSteps = $data.Count
+                                        StepNumber = $batchCounter
+                                        TotalSteps = $totalBatches
                                         Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                                         Message    = "Executing Batch $batchCounter/$totalBatches"
                                     }
@@ -690,8 +690,8 @@ function Invoke-DbaDbDataMasking {
                                 $batchCounter++
 
                                 $progressParams = @{
-                                    StepNumber = $stepcounter
-                                    TotalSteps = $data.Count
+                                    StepNumber = $batchCounter
+                                    TotalSteps = $totalBatches
                                     Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
