@@ -405,6 +405,8 @@ $script:xplat = @(
     'Get-DbaDbAsymmetricKey',
     'New-DbaDbAsymmetricKey',
     'Remove-DbaDbAsymmetricKey',
+    'Invoke-DbaDbTransfer',
+    'New-DbaDbTransfer',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
     'Write-DbaDbTableData',

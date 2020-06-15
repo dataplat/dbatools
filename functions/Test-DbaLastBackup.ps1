@@ -67,7 +67,7 @@ function Test-DbaLastBackup {
 
     .PARAMETER DeviceType
         Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
-        
+
     .PARAMETER AzureCredential
         The name of the SQL Server credential on the destination instance that holds the key to the azure storage account.
 
@@ -257,8 +257,8 @@ function Test-DbaLastBackup {
 
             if ($datadirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions." -Continue
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceAccount has permissions." -Continue
                 }
             } else {
                 $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
@@ -266,8 +266,8 @@ function Test-DbaLastBackup {
 
             if ($logdirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions." -Continue
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceAccount has permissions." -Continue
                 }
             } else {
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf

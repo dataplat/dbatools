@@ -52,7 +52,7 @@ function Get-DbaProductKey {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $versionMajor = $args[0]
             $instanceReg = $args[1]
             $edition = $args[2]
@@ -192,7 +192,7 @@ function Get-DbaProductKey {
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
 
                 try {
-                    $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
+                    $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }

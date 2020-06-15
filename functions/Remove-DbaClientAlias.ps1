@@ -60,7 +60,7 @@ function Remove-DbaClientAlias {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $Alias = $args
 
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
@@ -104,7 +104,7 @@ function Remove-DbaClientAlias {
 
             if ($PSCmdlet.ShouldProcess("$($Alias -join ', ') on $computer", "Remove aliases")) {
                 try {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }

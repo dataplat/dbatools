@@ -172,29 +172,29 @@ function Add-DbaAgReplica {
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
                         if ($SeedingMode -eq "Automatic") {
-                            $serviceaccount = $server.ServiceAccount.Trim()
-                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+                            $serviceAccount = $server.ServiceAccount.Trim()
+                            $saName = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
 
-                            if ($serviceaccount) {
-                                if ($serviceaccount.StartsWith("NT ")) {
-                                    $serviceaccount = "$saname`$"
+                            if ($serviceAccount) {
+                                if ($serviceAccount.StartsWith("NT ")) {
+                                    $serviceAccount = "$saName`$"
                                 }
-                                if ($serviceaccount.StartsWith("$saname")) {
-                                    $serviceaccount = "$saname`$"
+                                if ($serviceAccount.StartsWith("$saName")) {
+                                    $serviceAccount = "$saName`$"
                                 }
-                                if ($serviceaccount.StartsWith(".")) {
-                                    $serviceaccount = "$saname`$"
+                                if ($serviceAccount.StartsWith(".")) {
+                                    $serviceAccount = "$saName`$"
                                 }
                             }
 
-                            if (-not $serviceaccount) {
-                                $serviceaccount = "$saname`$"
+                            if (-not $serviceAccount) {
+                                $serviceAccount = "$saName`$"
                             }
 
                             if ($server.HostPlatform -ne "Linux") {
-                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
+                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceAccounts")) {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
                                 }
                             }
                         }
