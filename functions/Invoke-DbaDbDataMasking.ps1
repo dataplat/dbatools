@@ -258,7 +258,7 @@ function Invoke-DbaDbDataMasking {
                 $Database = $tables.Name
             }
 
-            foreach ($dbname in $Database) {
+            foreach ($dbName in $Database) {
                 if (-not $DictionaryFilePath) {
                     $dictionary = @{ }
                 }

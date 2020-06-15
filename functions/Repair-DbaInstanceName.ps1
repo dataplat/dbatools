@@ -155,17 +155,17 @@ function Repair-DbaInstanceName {
 
                                     foreach ($database in $server.Databases) {
                                         if ($database.IsMirroringEnabled) {
-                                            $dbname = $database.name
+                                            $dbName = $database.name
 
                                             try {
-                                                Write-Message -Level Verbose -Message "Breaking mirror for $dbname."
+                                                Write-Message -Level Verbose -Message "Breaking mirror for $dbName."
                                                 $database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                                                 $database.Alter()
                                                 $database.Refresh()
                                             } catch {
                                                 Stop-Function -Message "Failure" -Target $server -ErrorRecord $_
                                                 return
-                                                #throw "Could not break mirror for $dbname. Skipping."
+                                                #throw "Could not break mirror for $dbName. Skipping."
                                             }
                                         }
                                     }
