@@ -16,9 +16,7 @@ function Export-DbaDacPackage {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Only SQL authentication is supported. When not specified, uses Trusted Authentication.
 
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
