@@ -57,7 +57,7 @@ function Invoke-ManagedComputerCommand {
     $prescriptblock = $setupScriptBlock.ToString()
     $postscriptblock = $ScriptBlock.ToString()
 
-    $scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
+    $scriptBlock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
     Write-Message -Level Verbose -Message "Connecting to SQL WMI on $computer."
 
     try {

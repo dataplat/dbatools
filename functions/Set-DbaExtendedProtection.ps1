@@ -107,11 +107,11 @@ function Set-DbaExtendedProtection {
             $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
             if ([System.String]::IsNullOrEmpty($regRoot)) {
                 $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }

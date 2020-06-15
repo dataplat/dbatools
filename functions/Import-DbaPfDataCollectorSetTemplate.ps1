@@ -249,7 +249,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                         $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
                     }
 
-                    $scriptblock = {
+                    $scriptBlock = {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
                             Write-Message -Level Verbose -Message " $results"
@@ -260,12 +260,12 @@ function Import-DbaPfDataCollectorSetTemplate {
 
                     if ((Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name)) {
                         if ($Pscmdlet.ShouldProcess($computer, "CollectorSet $Name already exists. Modify?")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     } else {
                         if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     }

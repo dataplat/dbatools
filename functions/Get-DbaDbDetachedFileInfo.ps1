@@ -65,7 +65,7 @@ function Get-DbaDbDetachedFileInfo {
             return
         }
         $servername = $server.name
-        $serviceaccount = $server.ServiceAccount
+        $serviceAccount = $server.ServiceAccount
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -74,7 +74,7 @@ function Get-DbaDbDetachedFileInfo {
             $logfiles = New-Object System.Collections.Specialized.StringCollection
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $filepath)) {
-                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceaccount) have access to the path?" -Continue
+                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceAccount) have access to the path?" -Continue
             }
 
             try {

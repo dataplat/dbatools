@@ -409,20 +409,20 @@ function Connect-DbaInstance {
         foreach ($instance in $SqlInstance) {
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
-                $isconnectionstring = $true
+                $isConnectionString = $true
             }
             if ($instance.Type -eq 'RegisteredServer' -and $instance.InputObject.ConnectionString) {
                 $connstring = $instance.InputObject.ConnectionString
-                $isconnectionstring = $true
+                $isConnectionString = $true
             }
 
-            if ($isconnectionstring) {
+            if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
                     $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
                 } catch {
-                    $isconnectionstring = $false
+                    $isConnectionString = $false
                 }
             }
 
@@ -621,7 +621,7 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($isconnectionstring) {
+            if ($isConnectionString) {
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
@@ -636,7 +636,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } elseif (-not $isAzure -and -not $isconnectionstring) {
+            } elseif (-not $isAzure -and -not $isConnectionString) {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 

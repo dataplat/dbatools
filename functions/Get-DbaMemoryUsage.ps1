@@ -77,7 +77,7 @@ function Get-DbaMemoryUsage {
             $SSIScounters = '(memory)'
         }
 
-        $scriptblock = {
+        $scriptBlock = {
             param ($Memcounters,
                 $Plancounters,
                 $BufManpagecounters,
@@ -191,7 +191,7 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptBlock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
                         [PSCustomObject]@{
                             ComputerName    = $result.ComputerName
                             SqlInstance     = $result.SqlInstance
