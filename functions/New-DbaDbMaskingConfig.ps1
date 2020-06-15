@@ -501,6 +501,7 @@ function New-DbaDbMaskingConfig {
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
                             Composite       = $null
+                            Action          = $null
                         }
                     } else {
                         $type = "Random"
