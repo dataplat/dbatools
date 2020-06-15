@@ -378,29 +378,29 @@ function Add-DbaAgReplica {
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
                         if ($SeedingMode -eq "Automatic") {
-                            $serviceaccount = $server.ServiceAccount.Trim()
-                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+                            $serviceAccount = $server.ServiceAccount.Trim()
+                            $saName = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
 
-                            if ($serviceaccount) {
-                                if ($serviceaccount.StartsWith("NT ")) {
-                                    $serviceaccount = "$saname`$"
+                            if ($serviceAccount) {
+                                if ($serviceAccount.StartsWith("NT ")) {
+                                    $serviceAccount = "$saName`$"
                                 }
-                                if ($serviceaccount.StartsWith("$saname")) {
-                                    $serviceaccount = "$saname`$"
+                                if ($serviceAccount.StartsWith("$saName")) {
+                                    $serviceAccount = "$saName`$"
                                 }
-                                if ($serviceaccount.StartsWith(".")) {
-                                    $serviceaccount = "$saname`$"
+                                if ($serviceAccount.StartsWith(".")) {
+                                    $serviceAccount = "$saName`$"
                                 }
                             }
 
-                            if (-not $serviceaccount) {
-                                $serviceaccount = "$saname`$"
+                            if (-not $serviceAccount) {
+                                $serviceAccount = "$saName`$"
                             }
 
                             if ($server.HostPlatform -ne "Linux") {
-                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
+                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceAccounts")) {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
                                 }
                             }
                         }
@@ -519,7 +519,7 @@ function Add-DbaComputerCertificate {
 
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
@@ -2231,20 +2231,20 @@ function Connect-DbaInstance {
         foreach ($instance in $SqlInstance) {
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
-                $isconnectionstring = $true
+                $isConnectionString = $true
             }
             if ($instance.Type -eq 'RegisteredServer' -and $instance.InputObject.ConnectionString) {
                 $connstring = $instance.InputObject.ConnectionString
-                $isconnectionstring = $true
+                $isConnectionString = $true
             }
 
-            if ($isconnectionstring) {
+            if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
                     $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
                 } catch {
-                    $isconnectionstring = $false
+                    $isConnectionString = $false
                 }
             }
 
@@ -2433,7 +2433,7 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($isconnectionstring) {
+            if ($isConnectionString) {
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
@@ -2448,7 +2448,7 @@ function Connect-DbaInstance {
                 $connstring = $server.ConnectionContext.ConnectionString
                 $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                 $server.ConnectionContext.Connect()
-            } elseif (-not $isAzure -and -not $isconnectionstring) {
+            } elseif (-not $isAzure -and -not $isConnectionString) {
                 # It's okay to skip Azure because this is addressed above with New-DbaConnectionString
                 $server.ConnectionContext.ApplicationName = $ClientName
 
@@ -6036,7 +6036,7 @@ function Copy-DbaDatabase {
                         }
 
                         if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $dbName")) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $DestinationDbName")) {
                                 try {
                                     $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
                                     $NewDatabase.Alter()
@@ -10601,7 +10601,7 @@ function Disable-DbaAgHadr {
             # hadr results from sql wmi can be iffy, skip the check
             
 
-            $scriptblock = {
+            $scriptBlock = {
                 $instance = $args[0]
                 $sqlService = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instance)"
                 $sqlService.ChangeHadrServiceSetting(0)
@@ -10610,7 +10610,7 @@ function Disable-DbaAgHadr {
             if ($noChange -eq $false) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to 0 for $instance")) {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $instancename
+                        Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName
                     } catch {
                         Stop-Function -Continue -Message "Failure on $($instance.FullName) | This may be because AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
                     }
@@ -10723,7 +10723,7 @@ function Disable-DbaForceNetworkEncryption {
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
@@ -10745,23 +10745,23 @@ function Disable-DbaForceNetworkEncryption {
                 Stop-Function -Message "Failed to access $instance." -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -10770,18 +10770,18 @@ function Disable-DbaForceNetworkEncryption {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                 #Variable marked as unused by PSScriptAnalyzer
-                #$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
-                Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $false
-                $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+                #$oldvalue = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
+                Set-ItemProperty -Path $regPath -Name ForceEncryption -Value $false
+                $forceencryption = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
 
                 [pscustomobject]@{
                     ComputerName          = $env:COMPUTERNAME
@@ -10792,10 +10792,10 @@ function Disable-DbaForceNetworkEncryption {
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
-                    Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop
+                    Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instanceName instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -10838,21 +10838,21 @@ function Disable-DbaHideInstance {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -10861,15 +10861,15 @@ function Disable-DbaHideInstance {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name HideInstance -Value $false
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                Set-ItemProperty -Path $regPath -Name HideInstance -Value $false
+                $HideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
                     ComputerName = $env:COMPUTERNAME
@@ -10879,10 +10879,10 @@ function Disable-DbaHideInstance {
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop
-                    Write-Message -Level Critical -Message "HideInstance was successfully disabled on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop
+                    Write-Message -Level Critical -Message "HideInstance was successfully disabled on $($resolved.FullComputerName) for the $instanceName instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -11224,7 +11224,7 @@ function Enable-DbaAgHadr {
             # hadr results from sql wmi can be iffy, skip the check
             
 
-            $scriptblock = {
+            $scriptBlock = {
                 $instance = $args[0]
                 $sqlService = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instance)"
                 $sqlService.ChangeHadrServiceSetting(1)
@@ -11233,7 +11233,7 @@ function Enable-DbaAgHadr {
             if ($noChange -eq $false) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to 1 for $instance")) {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $instancename
+                        Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName
                     } catch {
                         Stop-Function -Continue -Message "Failure on $($instance.FullName) | This may be because AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
                     }
@@ -11372,7 +11372,7 @@ function Enable-DbaForceNetworkEncryption {
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
@@ -11394,23 +11394,23 @@ function Enable-DbaForceNetworkEncryption {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -11419,18 +11419,18 @@ function Enable-DbaForceNetworkEncryption {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                 #Variable marked as unused by PSScriptAnalyzer
-                #$oldvalue = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
-                Set-ItemProperty -Path $regpath -Name ForceEncryption -Value $true
-                $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+                #$oldvalue = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
+                Set-ItemProperty -Path $regPath -Name ForceEncryption -Value $true
+                $forceencryption = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
 
                 [pscustomobject]@{
                     ComputerName          = $env:COMPUTERNAME
@@ -11441,10 +11441,10 @@ function Enable-DbaForceNetworkEncryption {
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ForceEncryption value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instancename instance. You must now restart the SQL Server for changes to take effect." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Write-Message -Level Critical -Message "Force encryption was successfully set on $($resolved.FullComputerName) for the $instanceName instance. You must now restart the SQL Server for changes to take effect." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -11465,7 +11465,7 @@ function Enable-DbaHideInstance {
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             if ($instance.IsLocalHost) {
                 $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -11487,21 +11487,21 @@ function Enable-DbaHideInstance {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -11510,28 +11510,28 @@ function Enable-DbaHideInstance {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name HideInstance -Value $true
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                Set-ItemProperty -Path $regPath -Name HideInstance -Value $true
+                $hideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 [pscustomobject]@{
                     ComputerName = $env:COMPUTERNAME
                     InstanceName = $args[2]
                     SqlInstance  = $args[1]
-                    HideInstance = ($HideInstance -eq $true)
+                    HideInstance = ($hideInstance -eq $true)
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the HideInstance value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Write-Message -Level Critical -Message "HideInstance was successfully set on $($resolved.FullComputerName) for the $instanceName instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -12283,9 +12283,9 @@ function Export-DbaDacPackage {
             $tblList = $null
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -12301,10 +12301,10 @@ function Export-DbaDacPackage {
 
             foreach ($db in $dbs) {
                 $resultstime = [diagnostics.stopwatch]::StartNew()
-                $dbname = $db.name
+                $dbName = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString
                 if ($connstring -notmatch 'Database=') {
-                    $connstring = "$connstring;Database=$dbname"
+                    $connstring = "$connstring;Database=$dbName"
                 }
 
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
@@ -12337,7 +12337,7 @@ function Export-DbaDacPackage {
                         #not sure how to extract that info from the existing DAC application, leaving 1.0.0.0 for now
                         $version = New-Object System.Version -ArgumentList '1.0.0.0'
                         try {
-                            $dacSvc.Extract($FilePath, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
+                            $dacSvc.Extract($FilePath, $dbName, $dbName, $version, $null, $tblList, $opts, $null)
                         } catch {
                             Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
                         } finally {
@@ -12346,7 +12346,7 @@ function Export-DbaDacPackage {
                     } elseif ($Type -eq 'Bacpac') {
                         Write-Message -Level Verbose -Message "Initiating Bacpac export to $FilePath"
                         try {
-                            $dacSvc.ExportBacpac($FilePath, $dbname, $opts, $tblList, $null)
+                            $dacSvc.ExportBacpac($FilePath, $dbName, $opts, $tblList, $null)
                         } catch {
                             Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
                         } finally {
@@ -12389,7 +12389,7 @@ function Export-DbaDacPackage {
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
-                    Database     = $dbname
+                    Database     = $dbName
                     Path         = $FilePath
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     Result       = $finalResult
@@ -14694,7 +14694,7 @@ function Export-DbaUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$User,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019')]
         [string]$DestinationVersion,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -14722,6 +14722,7 @@ function Export-DbaUser {
             'SQLServer2014'        = 'Version120'
             'SQLServer2016'        = 'Version130'
             'SQLServer2017'        = 'Version140'
+            'SQLServer2019'        = 'Version150'
         }
 
         $versionName = @{
@@ -14732,6 +14733,7 @@ function Export-DbaUser {
             'Version120' = 'SQLServer2014'
             'Version130' = 'SQLServer2016'
             'Version140' = 'SQLServer2017'
+            'Version150' = 'SQLServer2019'
         }
     }
     process {
@@ -14741,7 +14743,7 @@ function Export-DbaUser {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
-        # To keep the filenames generated and re-use (appedn) if needed
+        # To keep the filenames generated and re-use (append) if needed
         $usersProcessed = @{ }
 
         foreach ($db in $InputObject) {
@@ -15369,16 +15371,16 @@ function Find-DbaAgentJob {
 
             if ($IsDisabled) {
                 Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-                $output += $jobs | Where-Object IsEnabled -eq $false
+                $output = $jobs | Where-Object IsEnabled -eq $false
             }
 
             if ($IsNotScheduled) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-                $output += $jobs | Where-Object HasSchedule -eq $false
+                $output = $jobs | Where-Object HasSchedule -eq $false
             }
             if ($IsNoEmailNotification) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-                $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
+                $output = $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
             }
 
             if ($Owner) {
@@ -16194,9 +16196,9 @@ function Find-DbaDbDuplicateIndex {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -19118,7 +19120,7 @@ function Get-DbaAgentJobOutputFile {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -19287,7 +19289,7 @@ function Get-DbaAgentOperator {
                 Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue -Target $server
             }
 
-            $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "Enabled as IsEnabled", "EmailAddress", "LastEmail"
+            $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name", "ID", "Enabled as IsEnabled", "EmailAddress", "LastEmail"
 
             if ($Operator) {
                 $operators = $server.JobServer.Operators | Where-Object Name -In $Operator
@@ -19832,7 +19834,7 @@ function Get-DbaAvailableCollation {
     }
 
     process {
-        foreach ($Instance in $sqlInstance) {
+        foreach ($Instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -20520,7 +20522,7 @@ function Get-DbaClientAlias {
         [switch]$EnableException
     )
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             function Get-ItemPropertyValue {
                 param (
                     [parameter()]
@@ -20579,7 +20581,7 @@ function Get-DbaClientAlias {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
@@ -21069,7 +21071,7 @@ function Get-DbaComputerCertificate {
 
     begin {
         #region Scriptblock for remoting
-        $scriptblock = {
+        $scriptBlock = {
             param (
                 $Thumbprint,
                 $Store,
@@ -21185,7 +21187,7 @@ function Get-DbaComputerCertificate {
             foreach ($currentStore in $Store) {
                 foreach ($currentFolder in $Folder) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
                     } catch {
                         Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
                     }
@@ -23445,7 +23447,7 @@ function Get-DbaDbDetachedFileInfo {
             return
         }
         $servername = $server.name
-        $serviceaccount = $server.ServiceAccount
+        $serviceAccount = $server.ServiceAccount
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -23454,7 +23456,7 @@ function Get-DbaDbDetachedFileInfo {
             $logfiles = New-Object System.Collections.Specialized.StringCollection
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $filepath)) {
-                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceaccount) have access to the path?" -Continue
+                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceAccount) have access to the path?" -Continue
             }
 
             try {
@@ -24240,7 +24242,7 @@ function Get-DbaDbLogShipError {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
@@ -25488,17 +25490,17 @@ function Get-DbaDbRestoreHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $computername = $server.ComputerName
-                $instancename = $server.ServiceName
+                $instanceName = $server.ServiceName
                 $servername = $server.DomainInstanceName
 
                 if ($force -eq $true) {
                     $select = "SELECT '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance], * "
                 } else {
                     $select = "SELECT
                     '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance],
                      rsh.destination_database_name AS [Database],
                      --rsh.restore_history_id as RestoreHistoryID,
@@ -26117,7 +26119,7 @@ function Get-DbaDbTable {
     }
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
@@ -26148,15 +26150,15 @@ function Get-DbaDbTable {
                 $tables = $db.Tables
             }
 
-            foreach ($sqltable in $tables) {
-                $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
+            foreach ($sqlTable in $tables) {
+                $sqlTable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                $sqlTable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                $sqlTable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $sqlTable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
-                $defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+                $defaultProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
 
-                Select-DefaultView -InputObject $sqltable -Property $defaultprops
+                Select-DefaultView -InputObject $sqlTable -Property $defaultProps
             }
         }
     }
@@ -27142,10 +27144,10 @@ function Get-DbaExecutionPlan {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -27174,35 +27176,35 @@ function Get-DbaExecutionPlan {
                     $where = " WHERE "
                 }
 
-                $wherearray = @()
+                $whereArray = @()
 
                 if ($Database) {
-                    $dblist = $Database -join "','"
-                    $wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
+                    $dbList = $Database -join "','"
+                    $whereArray += " DB_NAME(deqp.dbid) in ('$dbList') "
                 }
 
                 if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
-                    $wherearray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
                 }
 
                 if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
-                    $wherearray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
                 }
 
                 if ($ExcludeDatabase) {
-                    $dblist = $ExcludeDatabase -join "','"
-                    $wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
+                    $dbList = $ExcludeDatabase -join "','"
+                    $whereArray += " DB_NAME(deqp.dbid) not in ('$dbList') "
                 }
 
                 if ($ExcludeEmptyQueryPlan) {
-                    $wherearray += " detqp.query_plan is not null"
+                    $whereArray += " detqp.query_plan is not null"
                 }
 
                 if ($where.length -gt 0) {
-                    $wherearray = $wherearray -join " and "
-                    $where = "$where $wherearray"
+                    $whereArray = $whereArray -join " and "
+                    $where = "$where $whereArray"
                 }
 
                 $sql = "$select $from $where"
@@ -27213,8 +27215,8 @@ function Get-DbaExecutionPlan {
                 } else {
                     foreach ($row in $server.Query($sql)) {
                         $simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-                        $sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
-                        $planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+                        $sqlHandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+                        $planHandle = "0x"; $row.planhandle | ForEach-Object { $planHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
                         $planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
                         [pscustomobject]@{
@@ -27224,8 +27226,8 @@ function Get-DbaExecutionPlan {
                             DatabaseName                      = $row.DatabaseName
                             ObjectName                        = $row.ObjectName
                             QueryPosition                     = $row.QueryPosition
-                            SqlHandle                         = $SqlHandle
-                            PlanHandle                        = $PlanHandle
+                            SqlHandle                         = $sqlHandle
+                            PlanHandle                        = $planHandle
                             CreationTime                      = $row.CreationTime
                             LastExecutionTime                 = $row.LastExecutionTime
                             StatementCondition                = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
@@ -27273,7 +27275,7 @@ function Get-DbaExtendedProtection {
     )
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             if ($instance.IsLocalHost) {
                 $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -27295,21 +27297,21 @@ function Get-DbaExtendedProtection {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -27318,26 +27320,26 @@ function Get-DbaExtendedProtection {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $ExtendedProtection = (Get-ItemProperty -Path $regpath -Name ExtendedProtection).ExtendedProtection
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
 
                 [pscustomobject]@{
                     ComputerName       = $env:COMPUTERNAME
                     InstanceName       = $args[2]
                     SqlInstance        = $args[1]
-                    ExtendedProtection = "$ExtendedProtection - $(switch ($ExtendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
+                    ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -27358,7 +27360,7 @@ function Get-DbaFeature {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server" -ErrorAction SilentlyContinue |
                 Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
                 Sort-Object FullName -Descending | Select-Object -First 1
@@ -27377,7 +27379,7 @@ function Get-DbaFeature {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $text = Invoke-Command2 -ComputerName $Computer -ScriptBlock $scriptblock -Credential $Credential -Raw
+                $text = Invoke-Command2 -ComputerName $Computer -ScriptBlock $scriptBlock -Credential $Credential -Raw
 
                 if (-not $text) {
                     Write-Message -Level Verbose -Message "No features found on $computer"
@@ -27685,27 +27687,27 @@ function Get-DbaForceNetworkEncryption {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object {
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'REGROOT'
                 }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'VSNAME'
                 }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -27716,15 +27718,15 @@ function Get-DbaForceNetworkEncryption {
                 $vsname = $instance
             }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-                $forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                $forceencryption = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
 
                 # [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
                 @{
@@ -27737,7 +27739,7 @@ function Get-DbaForceNetworkEncryption {
             }
 
             try {
-                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
                     [pscustomobject]$result
                 }
@@ -28770,27 +28772,27 @@ function Get-DbaHideInstance {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
             } catch {
                 # Probably because the instance name has been aliased or does not exist or something
                 # here to avoid an empty catch
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object {
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'REGROOT'
                 }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object {
                     $_ -match 'VSNAME'
                 }
 
-                if (-not [System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (-not [System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -28801,14 +28803,14 @@ function Get-DbaHideInstance {
                 $vsname = $instance
             }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
-            Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
+            Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-Message -Level Verbose -Message "InstanceName: $instanceName" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $HideInstance = (Get-ItemProperty -Path $regpath -Name HideInstance).HideInstance
+            $scriptBlock = {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                $HideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
                 # [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
                 @{
@@ -28820,7 +28822,7 @@ function Get-DbaHideInstance {
             }
 
             try {
-                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+                $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
                     [pscustomobject]$result
                 }
@@ -29372,7 +29374,7 @@ function Get-DbaKbUpdate {
                     $arch = Get-Info -Text $downloaddialog -Pattern 'architectures ='
                     $longlang = Get-Info -Text $downloaddialog -Pattern 'longLanguages ='
                     $updateid = Get-Info -Text $downloaddialog -Pattern 'updateID ='
-                    $ishotfix = Get-Info -Text $downloaddialog -Pattern 'isHotFix ='
+                    $isHotfix = Get-Info -Text $downloaddialog -Pattern 'isHotFix ='
 
                     if ($arch -eq "AMD64") {
                         $arch = "x64"
@@ -29436,7 +29438,7 @@ function Get-DbaKbUpdate {
                             SupportedUntil    = $build.SupportedUntil
                             Architecture      = $arch
                             Language          = $longlang
-                            Hotfix            = $ishotfix
+                            Hotfix            = $isHotfix
                             Description       = $description
                             LastModified      = $lastmodified
                             Size              = $size
@@ -30040,11 +30042,11 @@ function Get-DbaMaintenanceSolutionLog {
                 }
             }
             if ($fresh.ContainsKey('Comment')) {
-                $commentparts = $fresh['Comment'] -split ', '
-                foreach ($part in $commentparts) {
-                    $indkey, $indvalue = $part -split ': ', 2
-                    if ($fresh.ContainsKey($indkey)) {
-                        $fresh[$indkey] = $indvalue
+                $commentParts = $fresh['Comment'] -split ', '
+                foreach ($part in $commentParts) {
+                    $indKey, $indValue = $part -split ': ', 2
+                    if ($fresh.ContainsKey($indKey)) {
+                        $fresh[$indKey] = $indValue
                     }
                 }
             }
@@ -30056,17 +30058,17 @@ function Get-DbaMaintenanceSolutionLog {
         }
     }
     process {
-        foreach ($instance in $sqlinstance) {
-            $logdir = $logfiles = $null
+        foreach ($instance in $SqlInstance) {
+            $logDir = $logFiles = $null
             $computername = $instance.ComputerName
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Can't connect to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($logtype -ne 'IndexOptimize') {
-                Write-Message -Level Warning -Message "Parsing $logtype is not supported at the moment"
+            if ($LogType -ne 'IndexOptimize') {
+                Write-Message -Level Warning -Message "Parsing $LogType is not supported at the moment"
                 Continue
             }
             if (!$instance.IsLocalHost -and $server.HostPlatform -ne "Windows") {
@@ -30074,46 +30076,46 @@ function Get-DbaMaintenanceSolutionLog {
                 Continue
             }
             if ($Path) {
-                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
+                $logDir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
             } else {
-                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
+                $logDir = Join-AdminUnc -Servername $server.ComputerName -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
             }
-            if (!$logdir) {
+            if (!$logDir) {
                 Write-Message -Level Warning -Message "No log directory returned from $instance"
                 Continue
             }
 
-            Write-Message -Level Verbose -Message "Log directory on $computername is $logdir"
-            if (! (Test-Path $logdir)) {
-                Write-Message -Level Warning -Message "Directory $logdir is not accessible"
+            Write-Message -Level Verbose -Message "Log directory on $computername is $logDir"
+            if (! (Test-Path $logDir)) {
+                Write-Message -Level Warning -Message "Directory $logDir is not accessible"
                 continue
             }
-            $logfiles = [System.IO.Directory]::EnumerateFiles("$logdir", "IndexOptimize_*.txt")
+            $logFiles = [System.IO.Directory]::EnumerateFiles("$logDir", "IndexOptimize_*.txt")
             if ($Since) {
-                $filteredlogs = @()
-                foreach ($l in $logfiles) {
+                $filteredLogs = @()
+                foreach ($l in $logFiles) {
                     $base = $($l.Substring($l.Length - 15, 15))
                     try {
-                        $datefile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
+                        $dateFile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
                     } catch {
-                        $datefile = Get-ItemProperty -Path $l | Select-Object -ExpandProperty CreationTime
+                        $dateFile = Get-ItemProperty -Path $l | Select-Object -ExpandProperty CreationTime
                     }
-                    if ($datefile -gt $since) {
-                        $filteredlogs += $l
+                    if ($dateFile -gt $since) {
+                        $filteredLogs += $l
                     }
                 }
-                $logfiles = $filteredlogs
+                $logFiles = $filteredLogs
             }
-            if (! $logfiles.count -ge 1) {
+            if (! $logFiles.count -ge 1) {
                 Write-Message -Level Warning -Message "No log files returned from $computername"
                 Continue
             }
-            $instanceinfo = @{ }
-            $instanceinfo['ComputerName'] = $server.ComputerName
-            $instanceinfo['InstanceName'] = $server.ServiceName
-            $instanceinfo['SqlInstance'] = $server.Name
+            $instanceInfo = @{ }
+            $instanceInfo['ComputerName'] = $server.ComputerName
+            $instanceInfo['InstanceName'] = $server.ServiceName
+            $instanceInfo['SqlInstance'] = $server.Name
 
-            foreach ($File in $logfiles) {
+            foreach ($File in $logFiles) {
                 Write-Message -Level Verbose -Message "Reading $file"
                 $text = New-Object System.IO.StreamReader -ArgumentList "$File"
                 $block = New-Object System.Collections.ArrayList
@@ -30175,7 +30177,7 @@ function Get-DbaManagementObject {
         if (!$VersionNumber) {
             $VersionNumber = 0
         }
-        $scriptblock = {
+        $scriptBlock = {
             $VersionNumber = [int]$args[0]
             
             Write-Verbose -Message "Checking currently loaded SMO version"
@@ -30257,7 +30259,7 @@ function Get-DbaManagementObject {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 Write-Message -Level Verbose -Message "Executing scriptblock against $computer"
-                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
             }
@@ -30422,7 +30424,7 @@ function Get-DbaMemoryUsage {
             $SSIScounters = '(memory)'
         }
 
-        $scriptblock = {
+        $scriptBlock = {
             param ($Memcounters,
                 $Plancounters,
                 $BufManpagecounters,
@@ -30536,7 +30538,7 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptBlock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
                         [PSCustomObject]@{
                             ComputerName    = $result.ComputerName
                             SqlInstance     = $result.SqlInstance
@@ -30829,17 +30831,17 @@ function Get-DbaNetworkCertificate {
             }
 
             foreach ($sqlwmi in $sqlwmis) {
-                $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-                $serviceaccount = $sqlwmi.ServiceAccount
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $serviceAccount = $sqlwmi.ServiceAccount
 
-                if ([System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                if ([System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                     $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                    if (![System.String]::IsNullOrEmpty($regroot)) {
-                        $regroot = ($regroot -Split 'Value\=')[1]
+                    if (![System.String]::IsNullOrEmpty($regRoot)) {
+                        $regRoot = ($regRoot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
                     } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
@@ -30849,20 +30851,20 @@ function Get-DbaNetworkCertificate {
 
                 if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $computer }
 
-                Write-Message -Level Verbose -Message "Regroot: $regroot"
-                Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
-                Write-Message -Level Verbose -Message "InstanceName: $instancename"
+                Write-Message -Level Verbose -Message "Regroot: $regRoot"
+                Write-Message -Level Verbose -Message "ServiceAcct: $serviceAccount"
+                Write-Message -Level Verbose -Message "InstanceName: $instanceName"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
-                $scriptblock = {
-                    $regroot = $args[0]
-                    $serviceaccount = $args[1]
-                    $instancename = $args[2]
+                $scriptBlock = {
+                    $regRoot = $args[0]
+                    $serviceAccount = $args[1]
+                    $instanceName = $args[2]
                     $vsname = $args[3]
 
-                    $regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
+                    $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                    $thumbprint = (Get-ItemProperty -Path $regpath -Name Certificate -ErrorAction SilentlyContinue).Certificate
+                    $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate -ErrorAction SilentlyContinue).Certificate
 
                     try {
                         $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
@@ -30876,9 +30878,9 @@ function Get-DbaNetworkCertificate {
 
                     [pscustomobject]@{
                         ComputerName   = $env:COMPUTERNAME
-                        InstanceName   = $instancename
+                        InstanceName   = $instanceName
                         SqlInstance    = $vsname
-                        ServiceAccount = $serviceaccount
+                        ServiceAccount = $serviceAccount
                         FriendlyName   = $cert.FriendlyName
                         DnsNameList    = $cert.DnsNameList
                         Thumbprint     = $cert.Thumbprint
@@ -30891,7 +30893,7 @@ function Get-DbaNetworkCertificate {
                 }
 
                 try {
-                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop | Select-DefaultView -ExcludeProperty Certificate
+                    Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname -ScriptBlock $scriptBlock -ErrorAction Stop | Select-DefaultView -ExcludeProperty Certificate
                 } catch {
                     Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
                 }
@@ -31479,6 +31481,7 @@ function Get-DbaPermission {
                     , [GranteeType] = pr.type_desc
                     , [RevokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
                     , [GrantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                        + CASE WHEN dp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.database_permissions dp
                     JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
                     LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
@@ -31586,7 +31589,7 @@ function Get-DbaPfAvailableCounter {
         [switch]$EnableException
     )
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
             Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
 
@@ -31609,10 +31612,10 @@ process {
 
         try {
             if ($pattern) {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $credential -ErrorAction Stop |
                     Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
             } else {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $credential -ErrorAction Stop |
                     Select-DefaultView -ExcludeProperty Credential
             }
         } catch {
@@ -32338,7 +32341,7 @@ function Get-DbaProcess {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -32370,43 +32373,43 @@ function Get-DbaProcess {
                 $results = $null
             }
 
-            $allsessions = @()
+            $allSessions = @()
 
             $processes = $server.EnumProcesses()
 
             if ($Login) {
-                $allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Spid) {
-                $allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Hostname) {
-                $allsessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Program) {
-                $allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Database) {
-                $allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
             }
 
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
-                $allsessions = $processes
+                $allSessions = $processes
             }
 
             if ($ExcludeSystemSpids -eq $true) {
-                $allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
+                $allSessions = $allSessions | Where-Object { $_.Spid -gt 50 }
             }
 
             if ($Exclude) {
-                $allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
+                $allSessions = $allSessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allSessions.Spid }
             }
 
-            foreach ($session in $allsessions) {
+            foreach ($session in $allSessions) {
 
                 if ($session.Status -eq "") {
                     $status = "sleeping"
@@ -32461,7 +32464,7 @@ function Get-DbaProductKey {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $versionMajor = $args[0]
             $instanceReg = $args[1]
             $edition = $args[2]
@@ -32601,7 +32604,7 @@ function Get-DbaProductKey {
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
 
                 try {
-                    $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
+                    $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
@@ -33396,16 +33399,16 @@ function Get-DbaRegistryRoot {
 
             foreach ($sqlwmi in $sqlwmis) {
 
-                $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 
-                if ([System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                if ([System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                     $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                    if (![System.String]::IsNullOrEmpty($regroot)) {
-                        $regroot = ($regroot -Split 'Value\=')[1]
+                    if (![System.String]::IsNullOrEmpty($regRoot)) {
+                        $regRoot = ($regRoot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
                     } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
@@ -33416,22 +33419,22 @@ function Get-DbaRegistryRoot {
                 # vsname takes care of clusters
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
-                    if ($instancename -ne "MSSQLSERVER") {
-                        $vsname = "$($computer.ComputerName)\$instancename"
+                    if ($instanceName -ne "MSSQLSERVER") {
+                        $vsname = "$($computer.ComputerName)\$instanceName"
                     }
                 }
 
-                Write-Message -Level Verbose -Message "Regroot: $regroot"
-                Write-Message -Level Verbose -Message "InstanceName: $instancename"
+                Write-Message -Level Verbose -Message "Regroot: $regRoot"
+                Write-Message -Level Verbose -Message "InstanceName: $instanceName"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
                 [PSCustomObject]@{
                     ComputerName = $computer.ComputerName
-                    InstanceName = $instancename
+                    InstanceName = $instanceName
                     SqlInstance  = $vsname
                     Hive         = "HKLM"
-                    Path         = $regroot
-                    RegistryRoot = "HKLM:\$regroot"
+                    Path         = $regRoot
+                    RegistryRoot = "HKLM:\$regRoot"
                 }
             }
         }
@@ -35380,7 +35383,7 @@ function Get-DbaSuspectPage {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
@@ -35449,7 +35452,7 @@ function Get-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
             if ($All) {
                 try {
-                    $scriptblock = {
+                    $scriptBlock = {
                         $instance = $args[0]
 
                         Add-Type -AssemblyName Microsoft.VisualBasic
@@ -35466,8 +35469,8 @@ function Get-DbaTcpPort {
                             $vsname = $vsname.Replace("\MSSQLSERVER", "")
 
                             try {
-                                $regroot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
-                                $dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
+                                $regRoot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
+                                $dacport = (Get-ItemProperty "HKLM:\$regRoot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
 
                                 [PsCustomObject]@{
                                     ComputerName = $instance
@@ -35522,10 +35525,10 @@ function Get-DbaTcpPort {
 
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptBlock
                     } catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptBlock
                     }
                 } catch {
                     Stop-Function -Message "Could not get all information." -Target $instance -ErrorRecord $_
@@ -36608,57 +36611,57 @@ function Get-DbaWaitResource {
         }
 
         try {
-            $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
             Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         }
 
         $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):*'
-        $ResourceType = $matches.Type
-        $DbId = $matches.DbId
-        $DbName = ($server.Databases | Where-Object ID -eq $dbid).Name
-        if ($null -eq $DbName) {
-            stop-function -Message "Database with id $dbid does not exist on $server"
+        $resourceType = $matches.Type
+        $dbId = $matches.DbId
+        $dbName = ($server.Databases | Where-Object ID -eq $dbId).Name
+        if ($null -eq $dbName) {
+            stop-function -Message "Database with id $dbId does not exist on $server"
             return
         }
-        if ($ResourceType -eq 'PAGE') {
+        if ($resourceType -eq 'PAGE') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<FileID>[0-9]*):(?<PageID>[0-9]*)$'
-            $DataFileSql = "select name, physical_name from sys.master_files where database_id=$DbID and file_ID=$($matches.FileID);"
-            $DataFile = $server.query($DataFileSql)
-            if ($null -eq $DataFile) {
-                Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbname not found"
+            $dataFileSql = "select name, physical_name from sys.master_files where database_id=$dbId and file_ID=$($matches.FileID);"
+            $dataFile = $server.query($dataFileSql)
+            if ($null -eq $dataFile) {
+                Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbName not found"
                 return
             }
-            $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
+            $objectIdSql = "dbcc traceon (3604); dbcc page ($dbId,$($matches.fileID),$($matches.PageID),2) with tableresults;"
             try {
-                $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
+                $objectId = ($server.databases[$dbName].Query($objectIdSql) | Where-Object Field -eq 'Metadata: ObjectId').Value
             } catch {
                 Stop-Function -Message "You've requested a page beyond the end of the database, exiting"
                 return
             }
-            if ($null -eq $ObjectID) {
+            if ($null -eq $objectId) {
                 Write-Message -Level Warning -Message "Object not found, could have been delete, or a transcription error when copying the Wait_resource to PowerShell"
                 return
             }
-            $ObjectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectID;"
-            $Object = $server.databases[$dbname].query($ObjectSql)
-            if ($null -eq $Object) {
+            $objectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectId;"
+            $object = $server.databases[$dbName].query($objectSql)
+            if ($null -eq $object) {
                 Write-Message -Warning "Object could not be found. Could have been removed, or could be a transcription error copying the Wait_resource to sowerShell"
             }
             [PsCustomObject]@{
-                DatabaseID   = $DbId
-                DatabaseName = $DbName
-                DataFileName = $Datafile.name
-                DataFilePath = $DataFile.physical_name
-                ObjectID     = $ObjectID
-                ObjectName   = $Object.Name
-                ObjectSchema = $Object.SchemaName
-                ObjectType   = $Object.type_desc
+                DatabaseID   = $dbId
+                DatabaseName = $dbName
+                DataFileName = $dataFile.name
+                DataFilePath = $dataFile.physical_name
+                ObjectID     = $objectId
+                ObjectName   = $object.Name
+                ObjectSchema = $object.SchemaName
+                ObjectType   = $object.type_desc
             }
         }
-        if ($ResourceType -eq 'KEY') {
+        if ($resourceType -eq 'KEY') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) (?<physloc>\(.*\))$'
-            $IndexSql = "select
+            $indexSql = "select
                             sp.object_id as ObjectID,
                             OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName,
                             sao.name as ObjectName,
@@ -36669,27 +36672,27 @@ function Get-DbaWaitResource {
                         where
                             hobt_id = $($matches.frodo);
                 "
-            $Index = $server.databases[$dbname].Query($IndexSql)
-            if ($null -eq $Index) {
-                Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbname on $server"
+            $index = $server.databases[$dbName].Query($indexSql)
+            if ($null -eq $index) {
+                Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbName on $server"
                 return
             }
             $output = [PsCustomObject]@{
-                DatabaseID   = $DbId
-                DatabaseName = $DbName
-                SchemaName   = $Index.SchemaName
-                IndexName    = $Index.IndexName
+                DatabaseID   = $dbId
+                DatabaseName = $dbName
+                SchemaName   = $index.SchemaName
+                IndexName    = $index.IndexName
                 ObjectID     = $index.ObjectID
                 Objectname   = $index.ObjectName
                 HobtID       = $matches.frodo
             }
             if ($row -eq $True) {
-                $DataSql = "select * from $($Index.SchemaName).$($Index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
-                $Data = $server.databases[$dbname].query($DataSql)
+                $dataSql = "select * from $($index.SchemaName).$($index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
+                $data = $server.databases[$dbName].query($dataSql)
                 if ($null -eq $data) {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
                 } else {
-                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $data
                     $output | Select-Object * -ExpandProperty ObjectData
                 }
             } else {
@@ -39089,7 +39092,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                         $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
                     }
 
-                    $scriptblock = {
+                    $scriptBlock = {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
                             Write-Message -Level Verbose -Message " $results"
@@ -39100,12 +39103,12 @@ function Import-DbaPfDataCollectorSetTemplate {
 
                     if ((Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name)) {
                         if ($Pscmdlet.ShouldProcess($computer, "CollectorSet $Name already exists. Modify?")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     } else {
                         if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     }
@@ -41251,21 +41254,21 @@ function Invoke-DbaAdvancedRestore {
             Write-Message -Message "Doing Page Recovery" -Level Verbose
             $tmpPages = @()
             foreach ($Page in $PageRestore) {
-                $tmppages += "$($Page.FileId):$($Page.PageID)"
+                $tmpPages += "$($Page.FileId):$($Page.PageID)"
             }
             $NoRecovery = $True
             $Pages = $tmpPages -join ','
         }
-        $InternalHistory = @()
+        $internalHistory = @()
     }
     process {
         foreach ($bh in $BackupHistory) {
-            $InternalHistory += $bh
+            $internalHistory += $bh
         }
     }
     end {
         if (Test-FunctionInterrupt) { return }
-        $Databases = $InternalHistory.Database | Select-Object -Unique
+        $Databases = $internalHistory.Database | Select-Object -Unique
         foreach ($Database in $Databases) {
             $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
@@ -41298,7 +41301,7 @@ function Invoke-DbaAdvancedRestore {
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
-            $backups = @($InternalHistory | Where-Object { $_.Database -eq $Database } | Sort-Object -Property Type, FirstLsn)
+            $backups = @($internalHistory | Where-Object { $_.Database -eq $Database } | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
 
             foreach ($backup in $backups) {
@@ -41398,25 +41401,25 @@ function Invoke-DbaAdvancedRestore {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         } elseif ($null -ne $Pages -and $Action -eq 'Database') {
                             $script = $Restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 1 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         } elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
-                            Write-Progress -id 1 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            Write-Progress -id 1 -activity "Verifying $Database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.SqlVerify($server)
-                            Write-Progress -id 1 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            Write-Progress -id 1 -activity "Verifying $Database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
@@ -41427,7 +41430,7 @@ function Invoke-DbaAdvancedRestore {
                         } else {
                             $outerProgress = $BackupCnt / $Backups.Count * 100
                             if ($BackupCnt -eq 1) {
-                                Write-Progress -id 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
+                                Write-Progress -id 1 -Activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $Restore.Script($Server)
@@ -41438,7 +41441,7 @@ function Invoke-DbaAdvancedRestore {
                             $Restore.PercentCompleteNotification = 1
                             $Restore.SqlRestore($Server)
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
-                            Write-Progress -id 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
+                            Write-Progress -id 1 -Activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     } catch {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
@@ -41746,7 +41749,7 @@ function Invoke-DbaBalanceDataFiles {
         # Set the initial success flag
         [bool]$success = $true
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -41858,9 +41861,9 @@ function Invoke-DbaBalanceDataFiles {
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
                     } else {
-                        $TableCollection = $db.Tables
+                        $tableCollection = $db.Tables
                     }
 
                     # Get the database file groups and check the aount of data files
@@ -41883,7 +41886,7 @@ function Invoke-DbaBalanceDataFiles {
                     $unsuccessfulTables = @()
 
                     # Loop through each of the tables
-                    foreach ($tbl in $TableCollection) {
+                    foreach ($tbl in $tableCollection) {
 
                         # Chck if the table balanceable
                         if ($tbl.Name -in $balanceableTables.Name) {
@@ -41891,7 +41894,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($TableCollection.Indexes.Count -lt 1) {
+                            if ($tableCollection.Indexes.Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -41899,7 +41902,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag
@@ -45756,9 +45759,9 @@ function Invoke-DbaDbMirroring {
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
 
-                $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
+                $serviceAccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
 
-                foreach ($account in $serviceaccounts) {
+                foreach ($account in $serviceAccounts) {
                     if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                         $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                         $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
@@ -46311,6 +46314,122 @@ function Invoke-DbaDbShrink {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
+function Invoke-DbaDbTransfer {
+    
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+    Param (
+        [DbaInstanceParameter]$SqlInstance,
+
+        [PSCredential]$SqlCredential,
+
+        [DbaInstanceParameter]$DestinationSqlInstance,
+
+        [PSCredential]$DestinationSqlCredential,
+
+        [string]$Database,
+
+        [string]$DestinationDatabase = $Database,
+
+        [int]$BatchSize = 50000,
+
+        [int]$BulkCopyTimeOut = 5000,
+
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
+
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Transfer]$InputObject,
+
+        [switch]$CopyAllObjects,
+
+        [ValidateSet(
+            'FullTextCatalogs',
+            'FullTextStopLists',
+            'SearchPropertyLists',
+            'Tables',
+            'Views',
+            'StoredProcedures',
+            'UserDefinedFunctions',
+            'UserDefinedDataTypes',
+            'UserDefinedTableTypes',
+            'PlanGuides',
+            'Rules',
+            'Defaults',
+            'Users',
+            'Roles',
+            'PartitionSchemes',
+            'PartitionFunctions',
+            'XmlSchemaCollections',
+            'SqlAssemblies',
+            'UserDefinedAggregates',
+            'UserDefinedTypes',
+            'Schemas',
+            'Synonyms',
+            'Sequences',
+            'DatabaseTriggers',
+            'DatabaseScopedCredentials',
+            'ExternalFileFormats',
+            'ExternalDataSources',
+            'Logins',
+            'ExternalLibraries'
+        )]
+        [string[]]$CopyAll,
+
+        [switch]$SchemaOnly,
+
+        [switch]$DataOnly,
+
+        [switch]$ScriptOnly,
+
+        [switch]$EnableException
+    )
+    begin {
+        $newTransferParams = (Get-Command New-DbaDbTransfer).Parameters.Keys | Where-Object { $_ -notin [System.Management.Automation.PSCmdlet]::CommonParameters }
+    }
+    process {
+        if ($InputObject) {
+            $transfer = $InputObject
+        } else {
+            $paramSet = @{ }
+            # generate transfer object by adding all applicable parameters to the New-DbaDbTransfer call
+            foreach ($key in $PSBoundParameters.Keys) {
+                if ($key -in $newTransferParams) {
+                    $paramSet[$key] = $PSBoundParameters[$key]
+                }
+            }
+            Write-Message -Message "Generating a transfer object based on current parameters" -Level Verbose
+            $transfer = New-DbaDbTransfer @paramSet
+        }
+        # add event handling
+        $events = Register-ObjectEvent -InputObject $transfer -EventName DataTransferEvent -Action {
+            "[$(Get-Date)] [$($args[1].DataTransferEventType)] $($args[1].Message)"
+        }
+        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+        if ($PSCmdlet.ShouldProcess("Begin transfer")) {
+            try {
+                if ($ScriptOnly) {
+                    return $transfer.ScriptTransfer()
+                } else {
+                    $transfer.TransferData()
+                }
+            } catch {
+                Stop-Function -ErrorRecord $_ -Message "Transfer failed"
+                return
+            }
+
+            return [pscustomobject]@{
+                SourceInstance      = $transfer.Database.Parent.Name
+                SourceDatabase      = $transfer.Database.Name
+                DestinationInstance = $transfer.DestinationServer
+                DestinationDatabase = $transfer.DestinationDatabase
+                Status              = 'Success'
+                Elapsed             = [prettytimespan]$elapsed.Elapsed
+                Log                 = $events.Output
             }
         }
     }
@@ -46944,7 +47063,7 @@ function Invoke-DbaPfRelog {
             return
         }
 
-        $scriptblock = {
+        $scriptBlock = {
             if ($args) {
                 $file = $args
             } else {
@@ -47080,7 +47199,7 @@ function Invoke-DbaPfRelog {
                     cmd /c "relog $arguments"
                 } else {
                     Write-Message -Level Verbose -Message "relog $arguments"
-                    $scriptblock = {
+                    $scriptBlock = {
                         $output = (cmd /c "relog $arguments" | Out-String).Trim()
 
                         if ($output -notmatch "Success") {
@@ -47100,7 +47219,7 @@ function Invoke-DbaPfRelog {
                             }
                         }
                     }
-                    Invoke-Command -ScriptBlock $scriptblock
+                    Invoke-Command -ScriptBlock $scriptBlock
                 }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
@@ -47108,12 +47227,12 @@ function Invoke-DbaPfRelog {
         }
 
         if ($Multithread) {
-            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
+            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptBlock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
             if ($parallelerror) {
                 Write-Message -Level Verbose -Message "$parallelerror"
             }
         } else {
-            foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptblock -ArgumentList $file }
+            foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptBlock -ArgumentList $file }
         }
     }
 }
@@ -47781,14 +47900,14 @@ function Invoke-DbaWhoIsActive {
         [switch]$EnableException
     )
     begin {
-        $passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
-        $localparams = $psboundparameters
+        $passedParams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
+        $localParams = $psboundparameters
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -47797,7 +47916,7 @@ function Invoke-DbaWhoIsActive {
                 throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
             }
 
-            $paramdictionary = @{
+            $paramDictionary = @{
                 Filter             = '@filter'
                 FilterType         = '@filter_type'
                 NotFilter          = 'not_filter'
@@ -47826,44 +47945,44 @@ function Invoke-DbaWhoIsActive {
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
             try {
-                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlconnection.Open()
+                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
+                $sqlConnection.ConnectionString = $server.ConnectionContext.ConnectionString
+                $sqlConnection.Open()
 
                 if ($Database) {
                     # database is being returned as something weird. change it to string without using a method then trim.
                     $Database = "$Database"
                     $Database = $Database.Trim()
-                    $sqlconnection.ChangeDatabase($Database)
+                    $sqlConnection.ChangeDatabase($Database)
                 }
 
-                $sqlcommand = New-Object System.Data.SqlClient.SqlCommand
-                $sqlcommand.CommandType = "StoredProcedure"
-                $sqlcommand.CommandText = "dbo.sp_WhoIsActive"
-                $sqlcommand.Connection = $sqlconnection
+                $sqlCommand = New-Object System.Data.SqlClient.SqlCommand
+                $sqlCommand.CommandType = "StoredProcedure"
+                $sqlCommand.CommandText = "dbo.sp_WhoIsActive"
+                $sqlCommand.Connection = $sqlConnection
 
-                foreach ($param in $passedparams) {
+                foreach ($param in $passedParams) {
                     Write-Message -Level Verbose -Message "Check parameter '$param'"
 
-                    $sqlparam = $paramdictionary[$param]
+                    $sqlParam = $paramDictionary[$param]
 
-                    if ($sqlparam) {
+                    if ($sqlParam) {
 
-                        $value = $localparams[$param]
+                        $value = $localParams[$param]
 
                         switch ($value) {
                             $true { $value = 1 }
                             $false { $value = 0 }
                         }
-                        Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
-                        [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
+                        Write-Message -Level Verbose -Message "Adding parameter '$sqlParam' with value '$value'"
+                        [Void]$sqlCommand.Parameters.AddWithValue($sqlParam, $value)
                     }
                 }
 
-                $datatable = New-Object system.Data.DataSet
-                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
-                $dataadapter.fill($datatable) | Out-Null
-                $datatable.Tables.Rows
+                $dataTable = New-Object system.Data.DataSet
+                $dataAdapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlCommand)
+                $dataAdapter.fill($dataTable) | Out-Null
+                $dataTable.Tables.Rows
             } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
@@ -48459,7 +48578,7 @@ function Mount-DbaDatabase {
 
                     $FileStructure = New-Object System.Collections.Specialized.StringCollection
                     foreach ($file in $filepaths) {
-                        $exists = Test-Dbapath -SqlInstance $server -Path $file
+                        $exists = Test-DbaPath -SqlInstance $server -Path $file
                         if (-not $exists) {
                             $message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter."
                             Stop-Function -Message $message -Target $file -Continue
@@ -48746,19 +48865,19 @@ function New-DbaAgentJob {
 
         # Check the e-mail operator name
         if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
-            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
-            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($PageLevel -ge 1) -and (-not $PageOperator)) {
-            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $SqlInstance
             return
         }
     }
@@ -48767,7 +48886,7 @@ function New-DbaAgentJob {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -49075,7 +49194,7 @@ function New-DbaAgentJobStep {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -49092,13 +49211,13 @@ function New-DbaAgentJobStep {
                     # Create the job step object
                     try {
                         # Get the job
-                        $currentjob = $Server.JobServer.Jobs[$j]
+                        $currentJob = $Server.JobServer.Jobs[$j]
 
                         # Create the job step
-                        $JobStep = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobStep
+                        $jobStep = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobStep
 
                         # Set the job where the job steps belongs to
-                        $JobStep.Parent = $currentjob
+                        $jobStep.Parent = $currentJob
                     } catch {
                         Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                     }
@@ -49108,15 +49227,15 @@ function New-DbaAgentJobStep {
                     if ($StepName) {
                         # Check if the step already exists
                         if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-                            $JobStep.Name = $StepName
+                            $jobStep.Name = $StepName
                         } elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the name job step object
-                            $JobStep.Name = $StepName
+                            $jobStep.Name = $StepName
                         } else {
                             Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
                         }
@@ -49127,7 +49246,7 @@ function New-DbaAgentJobStep {
                         # Check if the used step id is already in place
                         if ($Job.JobSteps.ID -notcontains $StepId) {
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
-                            $JobStep.ID = $StepId
+                            $jobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepID) -and $Insert) {
                             Write-Message -Message "Inserting step as step $StepID" -Level Verbose
                             foreach ($tStep in $Server.JobServer.Jobs[$j].JobSteps) {
@@ -49139,69 +49258,69 @@ function New-DbaAgentJobStep {
                                 }
                                 $tStep.Alter()
                             }
-                            $JobStep.ID = $StepId
+                            $jobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
                             Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the existing job step
                             $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object { $_.ID -eq 1 }).Name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the ID job step object
-                            $JobStep.ID = $StepId
+                            $jobStep.ID = $StepId
                         } else {
                             Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
                         }
                     } else {
                         # Get the job step count
-                        $JobStep.ID = $Job.JobSteps.Count + 1
+                        $jobStep.ID = $Job.JobSteps.Count + 1
                     }
 
                     if ($Subsystem) {
                         Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
-                        $JobStep.Subsystem = $Subsystem
+                        $jobStep.Subsystem = $Subsystem
                     }
 
                     if ($SubsystemServer) {
                         Write-Message -Message "Setting job step subsystem server to $SubsystemServer" -Level Verbose
-                        $JobStep.Server = $SubsystemServer
+                        $jobStep.Server = $SubsystemServer
                     }
 
                     if ($Command) {
                         Write-Message -Message "Setting job step command to $Command" -Level Verbose
-                        $JobStep.Command = $Command
+                        $jobStep.Command = $Command
                     }
 
                     if ($CmdExecSuccessCode) {
                         Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose
-                        $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
+                        $jobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
                     }
 
                     if ($OnSuccessAction) {
                         Write-Message -Message "Setting job step success action to $OnSuccessAction" -Level Verbose
-                        $JobStep.OnSuccessAction = $OnSuccessAction
+                        $jobStep.OnSuccessAction = $OnSuccessAction
                     }
 
                     if ($OnSuccessStepId) {
                         Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose
-                        $JobStep.OnSuccessStep = $OnSuccessStepId
+                        $jobStep.OnSuccessStep = $OnSuccessStepId
                     }
 
                     if ($OnFailAction) {
                         Write-Message -Message "Setting job step fail action to $OnFailAction" -Level Verbose
-                        $JobStep.OnFailAction = $OnFailAction
+                        $jobStep.OnFailAction = $OnFailAction
                     }
 
                     if ($OnFailStepId) {
                         Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose
-                        $JobStep.OnFailStep = $OnFailStepId
+                        $jobStep.OnFailStep = $OnFailStepId
                     }
 
                     if ($Database) {
                         # Check if the database is present on the server
                         if ($Server.Databases.Name -contains $Database) {
                             Write-Message -Message "Setting job step database name to $Database" -Level Verbose
-                            $JobStep.DatabaseName = $Database
+                            $jobStep.DatabaseName = $Database
                         } else {
                             Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                         }
@@ -49212,7 +49331,7 @@ function New-DbaAgentJobStep {
                         if ($Server.Databases[$DatabaseName].Users.Name -contains $DatabaseUser) {
 
                             Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
-                            $JobStep.DatabaseUserName = $DatabaseUser
+                            $jobStep.DatabaseUserName = $DatabaseUser
                         } else {
                             Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
                         }
@@ -49220,24 +49339,24 @@ function New-DbaAgentJobStep {
 
                     if ($RetryAttempts) {
                         Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
-                        $JobStep.RetryAttempts = $RetryAttempts
+                        $jobStep.RetryAttempts = $RetryAttempts
                     }
 
                     if ($RetryInterval) {
                         Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
-                        $JobStep.RetryInterval = $RetryInterval
+                        $jobStep.RetryInterval = $RetryInterval
                     }
 
                     if ($OutputFileName) {
                         Write-Message -Message "Setting job step output file name to $OutputFileName" -Level Verbose
-                        $JobStep.OutputFileName = $OutputFileName
+                        $jobStep.OutputFileName = $OutputFileName
                     }
 
                     if ($ProxyName) {
                         # Check if the proxy exists
                         if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
                             Write-Message -Message "Setting job step proxy name to $ProxyName" -Level Verbose
-                            $JobStep.ProxyName = $ProxyName
+                            $jobStep.ProxyName = $ProxyName
                         } else {
                             Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                         }
@@ -49245,7 +49364,7 @@ function New-DbaAgentJobStep {
 
                     if ($Flag.Count -ge 1) {
                         Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose
-                        $JobStep.JobStepFlags = $Flag
+                        $jobStep.JobStepFlags = $Flag
                     }
                     #endregion job step options
 
@@ -49255,14 +49374,14 @@ function New-DbaAgentJobStep {
                             Write-Message -Message "Creating the job step" -Level Verbose
 
                             # Create the job step
-                            $JobStep.Create()
-                            $currentjob.Alter()
+                            $jobStep.Create()
+                            $currentJob.Alter()
                         } catch {
                             Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
                         }
 
                         # Return the job step
-                        $JobStep
+                        $jobStep
                     }
                 }
             } # foreach object job
@@ -49446,7 +49565,7 @@ function New-DbaAgentSchedule {
             return
         }
 
-        [int]$Interval = 0
+        [int]$interval = 0
 
         # Translate FrequencyType value from string to the integer value
         if (!$FrequencyType -or $FrequencyType) {
@@ -49516,12 +49635,12 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the daily FrequencyType
         if ($FrequencyType -in 4, 'Daily') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Create the interval to hold the value(s)
             switch ($FrequencyInterval) {
-                "EveryDay" { $Interval = 1 }
-                default { $Interval = 1 }
+                "EveryDay" { $interval = 1 }
+                default { $interval = 1 }
             }
 
         }
@@ -49529,33 +49648,33 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the weekly FrequencyType
         if ($FrequencyType -in 8, 'Weekly') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
+            foreach ($item in $FrequencyInterval) {
 
-                switch ($Item) {
-                    "Sunday" { $Interval += 1 }
-                    "Monday" { $Interval += 2 }
-                    "Tuesday" { $Interval += 4 }
-                    "Wednesday" { $Interval += 8 }
-                    "Thursday" { $Interval += 16 }
-                    "Friday" { $Interval += 32 }
-                    "Saturday" { $Interval += 64 }
-                    "Weekdays" { $Interval = 62 }
-                    "Weekend" { $Interval = 65 }
-                    "EveryDay" { $Interval = 127 }
-                    1 { $Interval += 1 }
-                    2 { $Interval += 2 }
-                    4 { $Interval += 4 }
-                    8 { $Interval += 8 }
-                    16 { $Interval += 16 }
-                    32 { $Interval += 32 }
-                    64 { $Interval += 64 }
-                    62 { $Interval = 62 }
-                    65 { $Interval = 65 }
-                    127 { $Interval = 127 }
-                    default { $Interval = 0 }
+                switch ($item) {
+                    "Sunday" { $interval += 1 }
+                    "Monday" { $interval += 2 }
+                    "Tuesday" { $interval += 4 }
+                    "Wednesday" { $interval += 8 }
+                    "Thursday" { $interval += 16 }
+                    "Friday" { $interval += 32 }
+                    "Saturday" { $interval += 64 }
+                    "Weekdays" { $interval = 62 }
+                    "Weekend" { $interval = 65 }
+                    "EveryDay" { $interval = 127 }
+                    1 { $interval += 1 }
+                    2 { $interval += 2 }
+                    4 { $interval += 4 }
+                    8 { $interval += 8 }
+                    16 { $interval += 16 }
+                    32 { $interval += 32 }
+                    64 { $interval += 64 }
+                    62 { $interval = 62 }
+                    65 { $interval = 65 }
+                    127 { $interval = 127 }
+                    default { $interval = 0 }
                 }
             }
         }
@@ -49563,13 +49682,13 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the monthly FrequencyInterval
         if ($FrequencyType -in 16, 'Monthly') {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
+            foreach ($item in $FrequencyInterval) {
                 $FrequencyInterval
-                switch ($Item) {
-                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $Interval = [int]$Item }
+                switch ($item) {
+                    { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
                 }
             }
 
@@ -49579,31 +49698,31 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the relative monthly FrequencyInterval
         if ($FrequencyType -eq 32) {
             # Create the interval to hold the value(s)
-            [int]$Interval = 0
+            [int]$interval = 0
 
             # Loop through the array
-            foreach ($Item in $FrequencyInterval) {
-                switch ($Item) {
-                    "Sunday" { $Interval += 1 }
-                    "Monday" { $Interval += 2 }
-                    "Tuesday" { $Interval += 3 }
-                    "Wednesday" { $Interval += 4 }
-                    "Thursday" { $Interval += 5 }
-                    "Friday" { $Interval += 6 }
-                    "Saturday" { $Interval += 7 }
-                    "Day" { $Interval += 8 }
-                    "Weekday" { $Interval += 9 }
-                    "WeekendDay" { $Interval += 10 }
-                    1 { $Interval += 1 }
-                    2 { $Interval += 2 }
-                    3 { $Interval += 3 }
-                    4 { $Interval += 4 }
-                    5 { $Interval += 5 }
-                    6 { $Interval += 6 }
-                    7 { $Interval += 7 }
-                    8 { $Interval += 8 }
-                    9 { $Interval += 9 }
-                    10 { $Interval += 10 }
+            foreach ($item in $FrequencyInterval) {
+                switch ($item) {
+                    "Sunday" { $interval += 1 }
+                    "Monday" { $interval += 2 }
+                    "Tuesday" { $interval += 3 }
+                    "Wednesday" { $interval += 4 }
+                    "Thursday" { $interval += 5 }
+                    "Friday" { $interval += 6 }
+                    "Saturday" { $interval += 7 }
+                    "Day" { $interval += 8 }
+                    "Weekday" { $interval += 9 }
+                    "WeekendDay" { $interval += 10 }
+                    1 { $interval += 1 }
+                    2 { $interval += 2 }
+                    3 { $interval += 3 }
+                    4 { $interval += 4 }
+                    5 { $interval += 5 }
+                    6 { $interval += 6 }
+                    7 { $interval += 7 }
+                    8 { $interval += 8 }
+                    9 { $interval += 9 }
+                    10 { $interval += 10 }
                 }
             }
         }
@@ -49620,10 +49739,10 @@ function New-DbaAgentSchedule {
         }
 
         # Check if the interval is valid for the frequency
-        if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
+        if (($FrequencyType -in 4, 8, 32) -and ($interval -lt 1)) {
             if ($Force) {
                 Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Level Warning
-                $Interval = 1
+                $interval = 1
             } else {
                 Stop-Function -Message "Parameter FrequencyInterval must be provided for a recurring schedule." -Target $SqlInstance
                 return
@@ -49705,7 +49824,7 @@ function New-DbaAgentSchedule {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -49756,9 +49875,9 @@ function New-DbaAgentSchedule {
                             $JobSchedule.IsEnabled = $true
                         }
 
-                        if ($Interval -ge 0) {
-                            Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-                            $JobSchedule.FrequencyInterval = $Interval
+                        if ($interval -ge 0) {
+                            Write-Message -Message "Setting job schedule frequency interval to $interval" -Level Verbose
+                            $JobSchedule.FrequencyInterval = $interval
                         }
 
                         if ($FrequencyType -ge 1) {
@@ -49839,9 +49958,9 @@ function New-DbaAgentSchedule {
                     $JobSchedule.IsEnabled = $true
                 }
 
-                if ($Interval -ge 1) {
-                    Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-                    $JobSchedule.FrequencyInterval = $Interval
+                if ($interval -ge 1) {
+                    Write-Message -Message "Setting job schedule frequency interval to $interval" -Level Verbose
+                    $JobSchedule.FrequencyInterval = $interval
                 }
 
                 if ($FrequencyType -ge 1) {
@@ -50261,7 +50380,7 @@ function New-DbaAvailabilityGroup {
             $primaryserviceaccount = "$saname`$"
         }
 
-        $serviceaccounts = @($primaryserviceaccount)
+        $serviceAccounts = @($primaryserviceaccount)
 
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
@@ -50284,10 +50403,10 @@ function New-DbaAvailabilityGroup {
                 $secondaryserviceaccount = "$saname`$"
             }
 
-            $serviceaccounts += $secondaryserviceaccount
+            $serviceAccounts += $secondaryserviceaccount
         }
 
-        $serviceaccounts = $serviceaccounts | Select-Object -Unique
+        $serviceAccounts = $serviceAccounts | Select-Object -Unique
 
         if ($SeedingMode -eq 'Automatic') {
             try {
@@ -50546,7 +50665,7 @@ function New-DbaClientAlias {
 
     begin {
         # This is a script block so cannot use messaging system
-        $scriptblock = {
+        $scriptBlock = {
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
             #Variable marked as unused by PSScriptAnalyzer
             #$ServerName = $args[0]
@@ -50593,7 +50712,7 @@ function New-DbaClientAlias {
 
             if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
                 try {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
@@ -50932,7 +51051,7 @@ function New-DbaComputerCertificate {
                     if ($ClusterInstanceName) { $secondaryNode = $true }
                 }
 
-                $scriptblock = {
+                $scriptBlock = {
                     $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                     $cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
 
@@ -50945,7 +51064,7 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
                     try {
-                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop).Thumbprint
+                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
@@ -51522,7 +51641,7 @@ function New-DbaDacProfile {
             $return | Out-String
         }
 
-        function Get-Template ($db, $connstring) {
+        function Get-Template ($db, $connString) {
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
               <PropertyGroup>
@@ -51531,12 +51650,12 @@ function New-DbaDacProfile {
                 <ProfileVersionNumber>1</ProfileVersionNumber>
                 {2}
               </PropertyGroup>
-            </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
+            </Project>" -f $db[0], $connString, $(Convert-HashtableToXMLString($PublishOptions))
         }
 
-        function Get-ServerName ($connstring) {
+        function Get-ServerName ($connString) {
             $builder = New-Object System.Data.Common.DbConnectionStringBuilder
-            $builder.set_ConnectionString($connstring)
+            $builder.set_ConnectionString($connString)
             $instance = $builder['data source']
 
             if (-not $instance) {
@@ -51551,9 +51670,9 @@ function New-DbaDacProfile {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -51562,28 +51681,28 @@ function New-DbaDacProfile {
 
         }
 
-        foreach ($connstring in $ConnectionString) {
+        foreach ($connString in $ConnectionString) {
             foreach ($db in $Database) {
                 if ($Pscmdlet.ShouldProcess($db, "Creating new DAC Profile")) {
-                    $profileTemplate = Get-Template $db, $connstring
-                    $instancename = Get-ServerName $connstring
+                    $profileTemplate = Get-Template $db, $connString
+                    $instanceName = Get-ServerName $connString
 
                     try {
-                        $server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
-                        $PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
-                        Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-                        $profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+                        $server = [DbaInstance]($instanceName.ToString().Replace('--', '\'))
+                        $publishProfile = Join-Path $Path "$($instanceName.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Writing to $publishProfile"
+                        $profileTemplate | Out-File $publishProfile -ErrorAction Stop
                         [pscustomobject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.InstanceName
                             SqlInstance      = $server.FullName
                             Database         = $db
-                            FileName         = $PublishProfile
-                            ConnectionString = $connstring
+                            FileName         = $publishProfile
+                            ConnectionString = $connString
                             ProfileTemplate  = $profileTemplate
                         } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
                     } catch {
-                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+                        Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instanceName -Continue
                     }
                 }
             }
@@ -51941,7 +52060,7 @@ function New-DbaDbAsymmetricKey {
                                 }
                                 'SqlAssembly' {
                                     Write-Message -Level Verbose -Message 'SqlAssembly passed in as key source'
-                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $sqlInstance -SqlCredential $SqlCredential -Database $db -Name $KeySource)) {
+                                    if ($null -eq (Get-DbaDbAssembly -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db -Name $KeySource)) {
                                         Stop-Function -Message "Instance $SqlInstance cannot see $keysource to create key, skipping" -Target $db -Continue
                                     }
                                 }
@@ -53517,6 +53636,161 @@ function New-DbaDbTable {
 }
 
 #.ExternalHelp dbatools-Help.xml
+function New-DbaDbTransfer {
+    
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+    [OutputType([Microsoft.SqlServer.Management.Smo.Transfer])]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [DbaInstanceParameter]$SqlInstance,
+
+        [PSCredential]$SqlCredential,
+
+        [DbaInstanceParameter]$DestinationSqlInstance,
+
+        [PSCredential]$DestinationSqlCredential,
+
+        [string]$Database,
+
+        [string]$DestinationDatabase = $Database,
+
+        [int]$BatchSize = 50000,
+
+        [int]$BulkCopyTimeOut = 5000,
+
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
+
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.NamedSmoObject[]]$InputObject,
+
+        [switch]$CopyAllObjects,
+
+        [ValidateSet(
+            'FullTextCatalogs',
+            'FullTextStopLists',
+            'SearchPropertyLists',
+            'Tables',
+            'Views',
+            'StoredProcedures',
+            'UserDefinedFunctions',
+            'UserDefinedDataTypes',
+            'UserDefinedTableTypes',
+            'PlanGuides',
+            'Rules',
+            'Defaults',
+            'Users',
+            'Roles',
+            'PartitionSchemes',
+            'PartitionFunctions',
+            'XmlSchemaCollections',
+            'SqlAssemblies',
+            'UserDefinedAggregates',
+            'UserDefinedTypes',
+            'Schemas',
+            'Synonyms',
+            'Sequences',
+            'DatabaseTriggers',
+            'DatabaseScopedCredentials',
+            'ExternalFileFormats',
+            'ExternalDataSources',
+            'Logins',
+            'ExternalLibraries'
+        )]
+        [string[]]$CopyAll,
+
+        [switch]$SchemaOnly,
+
+        [switch]$DataOnly,
+
+        [switch]$EnableException
+    )
+    begin {
+        $objectCollection = New-Object System.Collections.ArrayList
+    }
+    process {
+        if (Test-Bound -Not SqlInstance) {
+            Stop-Function -Message "Source instance was not specified"
+            return
+        }
+        if (Test-Bound -Not Database) {
+            Stop-Function -Message "Source database was not specified"
+            return
+        }
+        foreach ($object in $InputObject) {
+            if (-not $object) {
+                Stop-Function -Message "Object is empty"
+                return
+            }
+            $objectCollection.Add($object) | Out-Null
+        }
+
+    }
+    end {
+        try {
+            $sourceDb = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -EnableException
+        } catch {
+            Stop-Function -Message "Failed to retrieve database from the source instance $SqlInstance" -ErrorRecord $_
+            return
+        }
+        if (-not $sourceDb) {
+            Stop-Function -Message "Database $Database not found on $SqlInstance"
+            return
+        } elseif ($sourceDb.Count -gt 1) {
+            Stop-Function -Message "More than one database found on $SqlInstanced with the parameters provided"
+            return
+        }
+        # Create transfer object and define properties based on parameters
+        $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer($sourceDb)
+        foreach ($object in $objectCollection) {
+            $transfer.ObjectList.Add($object) | Out-Null
+        }
+        $transfer.BatchSize = $BatchSize
+        $transfer.BulkCopyTimeOut = $BulkCopyTimeOut
+        $transfer.CopyAllObjects = $CopyAllObjects
+        foreach ($copyType in $CopyAll) {
+            $transfer."CopyAll$copyType" = $true
+        }
+        if ($ScriptingOption) { $transfer.Options = $ScriptingOption }
+
+        # Add destination connection parameters
+        if ($DestinationSqlInstance.IsConnectionString) {
+            $connString = $DestinationSqlInstance.InputObject
+        } elseif ($DestinationSqlInstance.Type -eq 'RegisteredServer' -and $DestinationSqlInstance.InputObject.ConnectionString) {
+            $connString = $DestinationSqlInstance.InputObject.ConnectionString
+        } elseif ($DestinationSqlInstance.Type -eq 'Server' -and $DestinationSqlInstance.InputObject.ConnectionContext.ConnectionString) {
+            $connString = $DestinationSqlInstance.InputObject.ConnectionContext.ConnectionString
+        } else {
+            $transfer.DestinationServer = $DestinationSqlInstance.InputObject
+            $transfer.DestinationLoginSecure = $true
+        }
+        if ($connString) {
+            $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $connString
+            if ($srv = $connStringBuilder['Data Source']) { $transfer.DestinationServer = $srv }
+            else { $transfer.DestinationServer = 'localhost' }
+            if ($uName = $connStringBuilder['User ID']) { $transfer.DestinationLogin = $uName }
+            if ($pwd = $connStringBuilder['Password']) { $transfer.DestinationPassword = $pwd }
+            if (($db = $connStringBuilder['Initial Catalog']) -and (Test-Bound -Not -Parameter DestinationDatabase)) {
+                $transfer.DestinationDatabase = $db
+            } else {
+                $transfer.DestinationDatabase = $DestinationDatabase
+            }
+            $transfer.DestinationLoginSecure = $connStringBuilder['Integrated Security']
+        } else {
+            $transfer.DestinationDatabase = $DestinationDatabase
+        }
+        if ($DestinationSqlCredential) {
+            $transfer.DestinationLoginSecure = $false
+            $transfer.DestinationLogin = $DestinationSqlCredential.UserName
+            $transfer.DestinationPassword = $DestinationSqlCredential.GetNetworkCredential().Password
+        }
+        if (Test-Bound -Parameter SchemaOnly) { $transfer.CopyData = -not $SchemaOnly }
+        if (Test-Bound -Parameter DataOnly) { $transfer.CopySchema = -not $DataOnly }
+
+        return $transfer
+    }
+}
+
+#.ExternalHelp dbatools-Help.xml
 function New-DbaDbUser {
     
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
@@ -53800,14 +54074,14 @@ function New-DbaDirectory {
 
     foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         $Path = $Path.Replace("'", "''")
 
-        $exists = Test-DbaPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
+        $exists = Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $Path
 
         if ($exists) {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
@@ -53818,16 +54092,16 @@ function New-DbaDirectory {
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
                 $null = $server.Query($sql)
-                $Created = $true
+                $created = $true
             } catch {
-                $Created = $false
+                $created = $false
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
 
             [pscustomobject]@{
                 Server  = $SqlInstance
                 Path    = $Path
-                Created = $Created
+                Created = $created
             }
         }
     }
@@ -54972,16 +55246,16 @@ function Publish-DbaDacPackage {
         }
         if ($Type -eq 'Dacpac') {
             if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
-                $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
+                $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
             } else {
-                $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
+                $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
             }
         } elseif ($Type -eq 'Bacpac') {
             if ($ScriptOnly -or $GenerateDeploymentReport -or $GenerateDeploymentScript) {
                 Stop-Function -Message "ScriptOnly, GenerateDeploymentScript, and GenerateDeploymentReport cannot be used in a Bacpac scenario." -ErrorRecord $_
                 return
             }
-            $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Bacpac', 'Result', 'DeployOptions'
+            $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Bacpac', 'Result', 'DeployOptions'
         }
 
         if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
@@ -54989,9 +55263,9 @@ function Publish-DbaDacPackage {
             return
         }
 
-        function Get-ServerName ($connstring) {
+        function Get-ServerName ($connString) {
             $builder = New-Object System.Data.Common.DbConnectionStringBuilder
-            $builder.set_ConnectionString($connstring)
+            $builder.set_ConnectionString($connString)
             $instance = $builder['data source']
 
             if (-not $instance) {
@@ -55048,9 +55322,9 @@ function Publish-DbaDacPackage {
             }
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -55095,11 +55369,11 @@ function Publish-DbaDacPackage {
             Get-SqlCmdVars -SqlCommandVariableValues $options.DeployOptions.SqlCommandVariableValues
         }
 
-        foreach ($connstring in $ConnectionString) {
-            $cleaninstance = Get-ServerName $connstring
+        foreach ($connString in $ConnectionString) {
+            $cleaninstance = Get-ServerName $connString
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
-            foreach ($dbname in $database) {
+            foreach ($dbName in $Database) {
                 #Set deployment properties when specified
                 if (Test-Bound -ParameterName GenerateDeploymentScript) {
                     $options.GenerateDeploymentScript = $GenerateDeploymentScript
@@ -55110,16 +55384,16 @@ function Publish-DbaDacPackage {
                 #Set output file paths when needed
                 $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
                 if ($GenerateDeploymentScript) {
-                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
-                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
+                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
+                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
                 }
-                if ($connstring -notmatch 'Database=') {
-                    $connstring = "$connstring;Database=$dbname"
+                if ($connString -notmatch 'Database=') {
+                    $connString = "$connString;Database=$dbName"
                 }
 
                 #Create services object
                 try {
-                    $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
+                    $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
@@ -55138,16 +55412,16 @@ function Publish-DbaDacPackage {
                                 Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
                             }
                             if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
-                                $result = $dacServices.Script($dacPackage, $dbname, $options)
+                                $result = $dacServices.Script($dacPackage, $dbName, $options)
                             }
                         } else {
                             if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
-                                $result = $dacServices.Publish($dacPackage, $dbname, $options)
+                                $result = $dacServices.Publish($dacPackage, $dbName, $options)
                             }
                         }
                     } elseif ($Type -eq 'Bacpac') {
                         if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
-                            $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
+                            $dacServices.ImportBacpac($bacPackage, $dbName, $options, $null)
                         }
                     }
                 } catch [Microsoft.SqlServer.Dac.DacServicesException] {
@@ -55156,7 +55430,7 @@ function Publish-DbaDacPackage {
                     Unregister-Event -SourceIdentifier "msg"
                     if ($Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
                         if ($options.GenerateDeploymentReport) {
-                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
+                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbName`_Result.DeploymentReport_$timeStamp.xml"
                             $result.DeploymentReport | Out-File $deploymentReport
                             Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
                         }
@@ -55166,8 +55440,8 @@ function Publish-DbaDacPackage {
                                 Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                             }
                         }
-                        $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
-                        if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
+                        $resultOutput = ($output.output -join "`r`n" | Out-String).Trim()
+                        if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                             Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }
                         $server = [dbainstance]$instance
@@ -55176,11 +55450,11 @@ function Publish-DbaDacPackage {
                                 ComputerName         = $server.ComputerName
                                 InstanceName         = $server.InstanceName
                                 SqlInstance          = $server.FullName
-                                Database             = $dbname
-                                Result               = $resultoutput
+                                Database             = $dbName
+                                Result               = $resultOutput
                                 Dacpac               = $Path
                                 PublishXml           = $PublishXml
-                                ConnectionString     = $connstring
+                                ConnectionString     = $connString
                                 DatabaseScriptPath   = $options.DatabaseScriptPath
                                 MasterDbScriptPath   = $options.MasterDbScriptPath
                                 DeploymentReport     = $DeploymentReport
@@ -55192,14 +55466,14 @@ function Publish-DbaDacPackage {
                                 ComputerName     = $server.ComputerName
                                 InstanceName     = $server.InstanceName
                                 SqlInstance      = $server.FullName
-                                Database         = $dbname
-                                Result           = $resultoutput
+                                Database         = $dbName
+                                Result           = $resultOutput
                                 Bacpac           = $Path
-                                ConnectionString = $connstring
+                                ConnectionString = $connString
                                 DeployOptions    = $options
                             }
                         }
-                        $output | Select-DefaultView -Property $defaultcolumns
+                        $output | Select-DefaultView -Property $defaultColumns
                     }
                 }
             }
@@ -55585,7 +55859,7 @@ function Read-DbaTraceFile {
         }
     }
     process {
-        foreach ($instance in $sqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
@@ -56301,7 +56575,7 @@ function Remove-DbaAgentSchedule {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -56317,33 +56591,33 @@ function Remove-DbaAgentSchedule {
 
         } # foreach object instance
 
-        foreach ($currentschedule in $InputObject) {
-            $server = $currentschedule.Parent.Parent
+        foreach ($currentSchedule in $InputObject) {
+            $server = $currentSchedule.Parent.Parent
 
             if (-not $server) {
-                $server = $currentschedule.Parent
+                $server = $currentSchedule.Parent
             }
 
             $server.JobServer.SharedSchedules.Refresh()
-            $schedulename = $currentschedule.Name
-            $jobCount = $server.JobServer.SharedSchedules[$currentschedule].JobCount
+            $scheduleName = $currentSchedule.Name
+            $jobCount = $server.JobServer.SharedSchedules[$currentSchedule].JobCount
 
             # Check if the schedule is shared among other jobs
             if ($jobCount -ge 1 -and -not $Force) {
-                Stop-Function -Message "The schedule $schedulename is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
+                Stop-Function -Message "The schedule $scheduleName is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
             }
 
             # Remove the job schedule
-            if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentschedule on $instance")) {
+            if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $currentSchedule on $instance")) {
                 # Loop through each of the schedules and drop them
-                Write-Message -Message "Removing schedule $schedulename on $instance" -Level Verbose
+                Write-Message -Message "Removing schedule $scheduleName on $instance" -Level Verbose
 
                 #Check if jobs use the schedule
                 if ($jobCount -ge 1) {
                     # Get the job object
-                    $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) }
+                    $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentSchedule.Name) }
 
-                    Write-Message -Message "Schedule $schedulename is used in one or more jobs. Removing it for each job." -Level Verbose
+                    Write-Message -Message "Schedule $scheduleName is used in one or more jobs. Removing it for each job." -Level Verbose
 
                     # Loop through each if the schedules
                     foreach ($smoSchedule in ($smoSchedules)) {
@@ -56378,7 +56652,7 @@ function Remove-DbaAgentSchedule {
                 Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Verbose
                 $server.JobServer.SharedSchedules.Refresh()
                 # Get the schedules
-                $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentschedule.Name) -and ($_.JobCount -eq 0) }
+                $smoSchedules = $server.JobServer.SharedSchedules | Where-Object { ($_.Name -eq $currentSchedule.Name) -and ($_.JobCount -eq 0) }
 
                 # Remove the schedules that have no jobs
                 foreach ($smoSchedule in $smoSchedules) {
@@ -56627,7 +56901,7 @@ function Remove-DbaClientAlias {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $Alias = $args
 
             $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
@@ -56671,7 +56945,7 @@ function Remove-DbaClientAlias {
 
             if ($PSCmdlet.ShouldProcess("$($Alias -join ', ') on $computer", "Remove aliases")) {
                 try {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
                 }
@@ -56729,7 +57003,7 @@ function Remove-DbaComputerCertificate {
 
     begin {
         #region Scriptblock for remoting
-        $scriptblock = {
+        $scriptBlock = {
             param (
                 $Thumbprint,
                 $Store,
@@ -56818,7 +57092,7 @@ function Remove-DbaComputerCertificate {
             foreach ($thumb in $Thumbprint) {
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop
                     } catch {
                         Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
                     }
@@ -56986,8 +57260,8 @@ function Remove-DbaDatabaseSafely {
         }
 
         if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
-            $serviceaccount = $destserver.ServiceAccount
-            Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
+            $serviceAccount = $destserver.ServiceAccount
+            Stop-Function -Message "Can't access $backupFolder Please check if $serviceAccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }
 
         #TODO: Test
@@ -58457,7 +58731,7 @@ function Remove-DbaNetworkCertificate {
         # Registry access
 
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -58480,17 +58754,17 @@ function Remove-DbaNetworkCertificate {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-            $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -58499,33 +58773,33 @@ function Remove-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
             $scriptblock = {
-                $regroot = $args[0]
-                $serviceaccount = $args[1]
-                $instancename = $args[2]
+                $regRoot = $args[0]
+                $serviceAccount = $args[1]
+                $instanceName = $args[2]
                 $vsname = $args[3]
 
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($regroot)\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
-                Set-ItemProperty -Path $regpath -Name Certificate -Value $null
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($regRoot)\MSSQLServer\SuperSocketNetLib"
+                $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                Set-ItemProperty -Path $regPath -Name Certificate -Value $null
 
                 [pscustomobject]@{
                     ComputerName      = $env:COMPUTERNAME
-                    InstanceName      = $instancename
+                    InstanceName      = $instanceName
                     SqlInstance       = $vsname
-                    ServiceAccount    = $serviceaccount
+                    ServiceAccount    = $serviceAccount
                     RemovedThumbprint = $cert.Thumbprint
                 }
             }
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
+                    Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -58912,7 +59186,7 @@ function Remove-DbaSpn {
                 if ($spnadobject -contains $spn) {
                     $null = $spnadobject.Remove($spn)
                     $adentry.CommitChanges()
-                    Write-Message -Message "Remove SPN $spn for $serviceaccount" -Level Verbose
+                    Write-Message -Message "Remove SPN $spn for $ServiceAccount" -Level Verbose
                     $set = $false
                     $status = "Successfully removed SPN"
                 }
@@ -59709,11 +59983,11 @@ function Rename-DbaDatabase {
                                         } else {
                                             Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
                                             if (!$Preview) {
-                                                $scriptblock = {
+                                                $scriptBlock = {
                                                     $op = $args[0]
                                                     Rename-Item -Path $op.Source -NewName $op.Destination
                                                 }
-                                                Invoke-Command2 -ComputerName $op.ComputerName -Credential $sqlCredential -ScriptBlock $scriptblock -ArgumentList $op
+                                                Invoke-Command2 -ComputerName $op.ComputerName -Credential $sqlCredential -ScriptBlock $scriptBlock -ArgumentList $op
                                             }
                                         }
                                         $null = $Final_Renames.RemoveAt(0)
@@ -60161,20 +60435,20 @@ function Repair-DbaInstanceName {
             }
             # ^ That's embarrassing
 
-            $instancename = $server.InstanceName
+            $instanceName = $server.InstanceName
 
-            if (-not $instancename) {
-                $instancename = "MSSQLSERVER"
+            if (-not $instanceName) {
+                $instanceName = "MSSQLSERVER"
             }
 
             try {
-                $allsqlservices = Get-Service -ComputerName $instance.ComputerName -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instancename*" -and $_.Status -eq "Running" }
+                $allsqlservices = Get-Service -ComputerName $instance.ComputerName -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instanceName*" -and $_.Status -eq "Running" }
             } catch {
                 Write-Message -Level Warning -Message "Can't contact $instance using Get-Service. This means the script will not be able to automatically restart SQL services."
             }
 
             if ($nametest.Warnings.length -gt 0) {
-                $reportingservice = Get-Service -ComputerName $instance.ComputerName -DisplayName "SQL Server Reporting Services ($instancename)" -ErrorAction SilentlyContinue
+                $reportingservice = Get-Service -ComputerName $instance.ComputerName -DisplayName "SQL Server Reporting Services ($instanceName)" -ErrorAction SilentlyContinue
 
                 if ($reportingservice.Status -eq "Running") {
                     if ($Pscmdlet.ShouldProcess($server.name, "Reporting Services is running for this instance. Would you like to automatically stop this service?")) {
@@ -60210,11 +60484,11 @@ function Repair-DbaInstanceName {
                 Write-Message -Level Warning -Message "Could not contact $($instance.ComputerName) using Get-Service. You must manually restart the SQL Server instance."
                 $needsrestart = $true
             } else {
-                if ($Pscmdlet.ShouldProcess($instance.ComputerName, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instancename instance now?")) {
+                if ($Pscmdlet.ShouldProcess($instance.ComputerName, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instanceName instance now?")) {
                     try {
-                        Write-Message -Level Verbose -Message "Stopping SQL Services for the $instancename instance"
+                        Write-Message -Level Verbose -Message "Stopping SQL Services for the $instanceName instance"
                         $allsqlservices | Stop-Service -Force -WarningAction SilentlyContinue # because it reports the wrong name
-                        Write-Message -Level Verbose -Message "Starting SQL Services for the $instancename instance."
+                        Write-Message -Level Verbose -Message "Starting SQL Services for the $instanceName instance."
                         $allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service -WarningAction SilentlyContinue # because it reports the wrong name
                     } catch {
                         Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
@@ -60300,14 +60574,14 @@ function Reset-DbaAdmin {
     }
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $stepcounter = 0
             $baseaddress = $instance.ComputerName
             # Get hostname
 
             if ($baseaddress.IsLocalHost) {
                 $ipaddr = "."
-                $hostname = $env:COMPUTERNAME
+                $hostName = $env:COMPUTERNAME
                 $baseaddress = $env:COMPUTERNAME
             }
 
@@ -60328,7 +60602,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Verbose -Message "First attempt using ICMP failed. Trying to connect using sockets. This may take up to 20 seconds."
                     $tcp = New-Object System.Net.Sockets.TcpClient
                     try {
-                        $tcp.Connect($hostname, 135)
+                        $tcp.Connect($hostName, 135)
                         $tcp.Close()
                         $tcp.Dispose()
                     } catch {
@@ -60348,9 +60622,9 @@ function Reset-DbaAdmin {
             Write-Message -Level Verbose -Message "Resolving NetBIOS name."
             try {
                 # this is required otherwise, the ip is returned
-                $hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
-                if ($null -eq $hostname) {
-                    $hostname = (nbtstat -A $ipaddr | Where-Object {
+                $hostName = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
+                if ($null -eq $hostName) {
+                    $hostName = (nbtstat -A $ipaddr | Where-Object {
                             $_ -match '\<00\>  UNIQUE'
                         } | ForEach-Object {
                             $_.SubString(4, 14)
@@ -60365,13 +60639,13 @@ function Reset-DbaAdmin {
     if (-not $instance.IsLocalHost) {
         try {
             $connectionParams = @{
-                ComputerName = $hostname
+                ComputerName = $hostName
                 ErrorAction  = "Stop"
                 UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
             }
             $session = New-PSSession @connectionParams
         } catch {
-            Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostname using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
+            Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostName using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
         }
     }
 
@@ -60381,7 +60655,7 @@ function Reset-DbaAdmin {
         Write-Message -Level Verbose -Message "Windows login detected. Checking to ensure account is valid."
         $windowslogin = $true
         try {
-            if ($hostname -eq $env:COMPUTERNAME) {
+            if ($hostName -eq $env:COMPUTERNAME) {
                 $account = New-Object System.Security.Principal.NTAccount($args)
                 #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
                 $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
@@ -60410,31 +60684,31 @@ function Reset-DbaAdmin {
     }
 
     # Get instance and service display name, then get services
-    $instancename = $null
-    $instancename = $instance.InstanceName
-    if (-not $instancename) {
-        $instancename = "MSSQLSERVER"
+    $instanceName = $null
+    $instanceName = $instance.InstanceName
+    if (-not $instanceName) {
+        $instanceName = "MSSQLSERVER"
     }
-    $displayName = "SQL Server ($instancename)"
+    $displayName = "SQL Server ($instanceName)"
 
     try {
-        if ($hostname -eq $env:COMPUTERNAME) {
-            $instanceservices = Get-Service -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instancename)*" -and $_.Status -eq "Running"
+        if ($hostName -eq $env:COMPUTERNAME) {
+            $instanceServices = Get-Service -ErrorAction Stop | Where-Object {
+                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
             }
-            $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+            $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
         } else {
-            $instanceservices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instancename)*" -and $_.Status -eq "Running"
+            $instanceServices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
+                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
             }
-            $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+            $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
         }
     } catch {
-        Stop-Function -Message "Cannot connect to WMI on $hostname or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
+        Stop-Function -Message "Cannot connect to WMI on $hostName or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
         return
     }
 
-    if (-not $instanceservices) {
+    if (-not $instanceServices) {
         Stop-Function -Message "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again." -Target $instance
         return
     }
@@ -60453,9 +60727,9 @@ function Reset-DbaAdmin {
     }
 
     if ($null -ne $checkcluster) {
-        $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostname |
+        $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName |
             Where-Object {
-                $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instancename)"
+                $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)"
             }
     }
 
@@ -60464,7 +60738,7 @@ function Reset-DbaAdmin {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
         # Take SQL Server offline so that it can be started in single-user mode
         if ($clusterResource.count -gt 0) {
-            $isclustered = $true
+            $isClustered = $true
             try {
                 $clusterResource | Where-Object {
                     $_.Name -eq "SQL Server"
@@ -60490,7 +60764,7 @@ function Reset-DbaAdmin {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
         Write-Message -Level Verbose -Message "Successfully stopped SQL service."
     } catch {
-        Start-Service -InputObject $instanceservices -ErrorAction Stop
+        Start-Service -InputObject $instanceServices -ErrorAction Stop
         Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
         return
     }
@@ -60502,12 +60776,12 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
     try {
         if ($instance.IsLocalHost) {
-            $netstart = net start ""$displayname"" /mReset-DbaAdmin 2>&1
+            $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
             if ("$netstart" -notmatch "success") {
                 Stop-Function -Message "Restart failure" -Continue
             }
         } else {
-            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayname -ScriptBlock {
+            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock {
                 net start ""$args"" /mReset-DbaAdmin
             } 2>&1
             foreach ($line in $netstart) {
@@ -60519,7 +60793,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
     } catch {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
-        if ($isclustered) {
+        if ($isClustered) {
             $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
                 $_.BringOnline(60)
             }
@@ -60527,7 +60801,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mod
                 $_.BringOnline(60)
             }
         } else {
-            Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
+            Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
         }
         Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
         return
@@ -60544,7 +60818,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back
             $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
         } catch {
             Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
-            if ($isclustered) {
+            if ($isClustered) {
                 $clusterResource | Where-Object {
                     $_.Name -eq "SQL Server"
                 } | ForEach-Object {
@@ -60556,7 +60830,7 @@ if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back
                 $_.BringOnline(60)
             }
     } else {
-        Start-Service -InputObject $instanceservices -ErrorAction SilentlyContinue
+        Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
     }
     Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
 }
@@ -60623,7 +60897,7 @@ if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting"))
     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
     try {
         Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-        if ($isclustered -eq $true) {
+        if ($isClustered -eq $true) {
             $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
                 $_.BringOnline(60)
             }
@@ -60631,7 +60905,7 @@ if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting"))
                 $_.BringOnline(60)
             }
         } else {
-            Start-Service -InputObject $instanceservices -ErrorAction Stop
+            Start-Service -InputObject $instanceServices -ErrorAction Stop
         }
     } catch {
         Stop-Function -Message "Failure" -ErrorRecord $_
@@ -62077,11 +62351,11 @@ function Set-DbaAgentAlert {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Alert)) {
-            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -62106,24 +62380,24 @@ function Set-DbaAgentAlert {
             }
         }
 
-        foreach ($currentalert in $InputObject) {
-            $server = $currentalert.Parent.Parent
+        foreach ($currentAlert in $InputObject) {
+            $server = $currentAlert.Parent.Parent
 
             #region alert options
             # Settings the options for the alert
             if ($NewName) {
                 Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                $currentalert.Rename($NewName)
+                $currentAlert.Rename($NewName)
             }
 
             if ($Enabled) {
                 Write-Message -Message "Setting alert to enabled" -Level Verbose
-                $currentalert.IsEnabled = $true
+                $currentAlert.IsEnabled = $true
             }
 
             if ($Disabled) {
                 Write-Message -Message "Setting alert to disabled" -Level Verbose
-                $currentalert.IsEnabled = $false
+                $currentAlert.IsEnabled = $false
             }
 
             #endregion alert options
@@ -62134,11 +62408,11 @@ function Set-DbaAgentAlert {
                     Write-Message -Message "Changing the alert" -Level Verbose
 
                     # Change the alert
-                    $currentalert.Alter()
+                    $currentAlert.Alter()
                 } catch {
                     Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
                 }
-                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
+                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentAlert.name
             }
         }
     }
@@ -62210,19 +62484,19 @@ function Set-DbaAgentJob {
 
         # Check the e-mail operator name
         if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
-            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
-            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($PageLevel -ge 1) -and (-not $PageOperator)) {
-            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $SqlInstance
             return
         }
     }
@@ -62232,11 +62506,11 @@ function Set-DbaAgentJob {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Job)) {
-            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -62605,9 +62879,9 @@ function Set-DbaAgentJobOutputFile {
         [switch]$EnableException
     )
 
-    foreach ($instance in $sqlinstance) {
+    foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
         } catch {
             Write-Message -Level Warning -Message "Failed to connect to: $instance"
             continue
@@ -62642,29 +62916,29 @@ function Set-DbaAgentJobOutputFile {
                 $steps = $currentJob.JobSteps
             }
 
-            foreach ($jobstep in $steps) {
-                $currentoutputfile = $jobstep.OutputFileName
+            foreach ($jobStep in $steps) {
+                $currentOutputFile = $jobStep.OutputFileName
 
-                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentoutputfile"
-                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobstep for $currentJob"
+                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentOutputFile"
+                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobStep for $currentJob"
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile")) {
-                        $jobstep.OutputFileName = $OutputFile
-                        $jobstep.Alter()
-                        $jobstep.Refresh()
+                    if ($Pscmdlet.ShouldProcess($jobStep, "Changing Output File from $currentOutputFile to $OutputFile")) {
+                        $jobStep.OutputFileName = $OutputFile
+                        $jobStep.Alter()
+                        $jobStep.Refresh()
 
                         [pscustomobject]@{
                             ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Job            = $currentJob.Name
-                            JobStep        = $jobstep.Name
-                            OutputFileName = $currentoutputfile
+                            JobStep        = $jobStep.Name
+                            OutputFileName = $currentOutputFile
                         }
                     }
                 } catch {
-                    Stop-Function -Message "Failed to add $OutputFile to $jobstep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
+                    Stop-Function -Message "Failed to add $OutputFile to $jobStep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
                 }
             }
         }
@@ -62820,16 +63094,16 @@ function Set-DbaAgentJobStep {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Job)) {
-            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
         if ((-not $InputObject) -and (-not $StepName)) {
-            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -62864,7 +63138,7 @@ function Set-DbaAgentJobStep {
             $InputObject = $InputObject | Where-Object Name -in $StepName
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             # Try connecting to the instance
             try {
@@ -63441,11 +63715,11 @@ function Set-DbaAgentServer {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $SqlInstance)) {
-            Stop-Function -Message "You must specify an Instance or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify an Instance or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -64753,10 +65027,10 @@ function Set-DbaDbState {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        function Get-WrongCombo($optset, $allparams) {
+        function Get-WrongCombo($optset, $allParams) {
             $x = 0
             foreach ($opt in $optset) {
-                if ($allparams.ContainsKey($opt)) { $x += 1 }
+                if ($allParams.ContainsKey($opt)) { $x += 1 }
             }
             if ($x -gt 1) {
                 $msg = $optset -Join ',-'
@@ -64765,9 +65039,9 @@ function Set-DbaDbState {
             }
         }
 
-        function Edit-DatabaseState($sqlinstance, $dbname, $opt, $immediate = $false) {
+        function Edit-DatabaseState($SqlInstance, $dbName, $opt, $immediate = $false) {
             $warn = $null
-            $sql = "ALTER DATABASE [$dbname] SET $opt"
+            $sql = "ALTER DATABASE [$dbName] SET $opt"
             if ($immediate) {
                 $sql += " WITH ROLLBACK IMMEDIATE"
             } else {
@@ -64779,17 +65053,17 @@ function Set-DbaDbState {
                     # this can be helpful only for SINGLE_USER databases
                     # but since $immediate is called, it does no more harm
                     # than the immediate rollback
-                    $sqlinstance.KillAllProcesses($dbname)
+                    $SqlInstance.KillAllProcesses($dbName)
                 }
-                $null = $sqlinstance.Query($sql)
+                $null = $SqlInstance.Query($sql)
             } catch {
-                $warn = "Failed to set '$dbname' to $opt"
+                $warn = "Failed to set '$dbName' to $opt"
                 Write-Message -Level Warning -Message $warn
             }
             return $warn
         }
 
-        $StatusHash = @{
+        $statusHash = @{
             'Offline'       = 'OFFLINE'
             'Normal'        = 'ONLINE'
             'EmergencyMode' = 'EMERGENCY'
@@ -64797,9 +65071,9 @@ function Set-DbaDbState {
 
         function Get-DbState($databaseName, $dbStatuses) {
             $base = $dbStatuses | Where-Object DatabaseName -ceq $databaseName
-            foreach ($status in $StatusHash.Keys) {
+            foreach ($status in $statusHash.Keys) {
                 if ($base.Status -match $status) {
-                    $base.Status = $StatusHash[$status]
+                    $base.Status = $statusHash[$status]
                     break
                 }
             }
@@ -64807,23 +65081,23 @@ function Set-DbaDbState {
         }
 
         $RWExclusive = @('ReadOnly', 'ReadWrite')
-        $StatusExclusive = @('Online', 'Offline', 'Emergency', 'Detached')
-        $AccessExclusive = @('SingleUser', 'RestrictedUser', 'MultiUser')
-        $allparams = $PSBoundParameters
+        $statusExclusive = @('Online', 'Offline', 'Emergency', 'Detached')
+        $accessExclusive = @('SingleUser', 'RestrictedUser', 'MultiUser')
+        $allParams = $PSBoundParameters
         try {
-            Get-WrongCombo -optset $RWExclusive -allparams $allparams
+            Get-WrongCombo -optset $RWExclusive -allparams $allParams
         } catch {
             Stop-Function -Message $_
             return
         }
         try {
-            Get-WrongCombo -optset $StatusExclusive -allparams $allparams
+            Get-WrongCombo -optset $statusExclusive -allparams $allParams
         } catch {
             Stop-Function -Message $_
             return
         }
         try {
-            Get-WrongCombo -optset $AccessExclusive -allparams $allparams
+            Get-WrongCombo -optset $accessExclusive -allparams $allParams
         } catch {
             Stop-Function -Message $_
             return
@@ -65253,7 +65527,7 @@ function Set-DbaExtendedProtection {
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             Write-Message -Level VeryVerbose -Message "Processing $instance." -Target $instance
             if ($instance.IsLocalHost) {
                 $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -65275,21 +65549,21 @@ function Set-DbaExtendedProtection {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
             try {
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
             } catch {
                 $null = 1
             }
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance." -Continue -Category ObjectNotFound -Target $instance
@@ -65298,28 +65572,28 @@ function Set-DbaExtendedProtection {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
+            Write-Message -Level Verbose -Message "Regroot: $regRoot" -Target $instance
             Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
             Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
             Write-Message -Level Verbose -Message "Value: $Value" -Target $instance
 
             $scriptblock = {
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regpath -Name ExtendedProtection -Value $Value
-                $ExtendedProtection = (Get-ItemProperty -Path $regpath -Name ExtendedProtection).ExtendedProtection
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
+                Set-ItemProperty -Path $regPath -Name ExtendedProtection -Value $Value
+                $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
 
                 [pscustomobject]@{
                     ComputerName       = $env:COMPUTERNAME
                     InstanceName       = $args[2]
                     SqlInstance        = $args[1]
-                    ExtendedProtection = "$ExtendedProtection - $(switch ($ExtendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
+                    ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
                 }
             }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regroot for $($instance.InstanceName)")) {
+            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)")) {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "ExtendedProtection was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
@@ -65393,7 +65667,7 @@ function Set-DbaLogin {
         if (Test-FunctionInterrupt) { return }
 
         $allLogins = @{ }
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -65599,12 +65873,12 @@ function Set-DbaMaxDop {
             return
         }
 
-        $dbscopedconfiguration = $false
+        $dbScopedConfiguration = $false
 
         if ((Test-Bound -Not -ParameterName InputObject)) {
-            $InputObject = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
+            $InputObject = Test-DbaMaxDop -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Verbose:$false
         } elseif ($null -eq $InputObject.SqlInstance) {
-            $InputObject = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
+            $InputObject = Test-DbaMaxDop -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Verbose:$false
         }
 
         $InputObject | Add-Member -Force -NotePropertyName PreviousInstanceMaxDopValue -NotePropertyValue 0
@@ -65614,12 +65888,12 @@ function Set-DbaMaxDop {
         $servers = $InputObject | Select-Object SqlInstance -Unique
 
         foreach ($server in $servers) {
-            $servername = $server.SqlInstance
+            $serverName = $server.SqlInstance
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $serverName -Continue
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
@@ -65627,13 +65901,13 @@ function Set-DbaMaxDop {
             }
 
             if ($server.versionMajor -ge 13) {
-                Write-Message -Level Verbose -Message "Server '$servername' supports Max DOP configuration per database."
+                Write-Message -Level Verbose -Message "Server '$serverName' supports Max DOP configuration per database."
 
                 if ((Test-Bound -ParameterName Database, ExcludeDatabase -not)) {
                     #Set at instance level
                     $InputObject = $InputObject | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
                 } else {
-                    $dbscopedconfiguration = $true
+                    $dbScopedConfiguration = $true
 
                     if ((Test-Bound -Not -ParameterName AllDatabases) -and (Test-Bound -ParameterName Database)) {
                         $InputObject = $InputObject | Where-Object { $_.Database -in $Database }
@@ -65644,25 +65918,25 @@ function Set-DbaMaxDop {
                             $InputObject = $InputObject | Where-Object { $_.DatabaseMaxDop -ne "N/A" }
                         } else {
                             $InputObject = $InputObject | Where-Object { $_.DatabaseMaxDop -eq "N/A" }
-                            $dbscopedconfiguration = $false
+                            $dbScopedConfiguration = $false
                         }
                     }
                 }
             } else {
                 if ((Test-Bound -ParameterName database) -or (Test-Bound -ParameterName AllDatabases)) {
-                    Write-Message -Level Warning -Message "Server '$servername' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
+                    Write-Message -Level Warning -Message "Server '$serverName' (v$($server.versionMajor)) does not support Max DOP configuration at the database level. Remember that this option is only available from SQL Server 2016 (v13). Run the command again without using database related parameters. Skipping."
                     Continue
                 }
             }
 
-            foreach ($row in $InputObject | Where-Object { $_.SqlInstance -eq $servername }) {
-                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration)) {
-                    Write-Message -Level Verbose -Message "$servername is configured properly. No change required."
+            foreach ($row in $InputObject | Where-Object { $_.SqlInstance -eq $serverName }) {
+                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbScopedConfiguration)) {
+                    Write-Message -Level Verbose -Message "$serverName is configured properly. No change required."
                     Continue
                 }
 
-                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.DatabaseMaxDop) -and $dbscopedconfiguration) {
-                    Write-Message -Level Verbose -Message "Database $($row.Database) on $servername is configured properly. No change required."
+                if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.DatabaseMaxDop) -and $dbScopedConfiguration) {
+                    Write-Message -Level Verbose -Message "Database $($row.Database) on $serverName is configured properly. No change required."
                     Continue
                 }
 
@@ -65670,7 +65944,7 @@ function Set-DbaMaxDop {
 
                 try {
                     if ($UseRecommended) {
-                        if ($dbscopedconfiguration) {
+                        if ($dbScopedConfiguration) {
                             $row.PreviousDatabaseMaxDopValue = $row.DatabaseMaxDop
 
                             if ($resetDatabases) {
@@ -65688,25 +65962,25 @@ function Set-DbaMaxDop {
                             $row.CurrentInstanceMaxDop = $row.RecommendedMaxDop
                         }
                     } else {
-                        if ($dbscopedconfiguration) {
+                        if ($dbScopedConfiguration) {
                             $row.PreviousDatabaseMaxDopValue = $row.DatabaseMaxDop
 
                             Write-Message -Level Verbose -Message "Changing $($row.Database) database max DOP from $($row.DatabaseMaxDop) to $MaxDop."
                             $server.Databases["$($row.Database)"].MaxDop = $MaxDop
                             $row.DatabaseMaxDop = $MaxDop
                         } else {
-                            Write-Message -Level Verbose -Message "Changing $servername SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $MaxDop."
+                            Write-Message -Level Verbose -Message "Changing $serverName SQL Server max DOP from $($row.CurrentInstanceMaxDop) to $MaxDop."
                             $server.Configuration.MaxDegreeOfParallelism.ConfigValue = $MaxDop
                             $row.CurrentInstanceMaxDop = $MaxDop
                         }
                     }
 
-                    if ($dbscopedconfiguration) {
+                    if ($dbScopedConfiguration) {
                         if ($Pscmdlet.ShouldProcess($row.Database, "Setting max dop on database")) {
                             $server.Databases["$($row.Database)"].Alter()
                         }
                     } else {
-                        if ($Pscmdlet.ShouldProcess($servername, "Setting max dop on instance")) {
+                        if ($Pscmdlet.ShouldProcess($serverName, "Setting max dop on instance")) {
                             $server.Configuration.Alter()
                         }
                     }
@@ -65724,7 +65998,7 @@ function Set-DbaMaxDop {
                         PreviousInstanceMaxDopValue = $row.PreviousInstanceMaxDopValue
                     }
 
-                    if ($dbscopedconfiguration) {
+                    if ($dbScopedConfiguration) {
                         Select-DefaultView -InputObject $results -Property InstanceName, Database, PreviousDatabaseMaxDopValue, @{
                             name = "CurrentDatabaseMaxDopValue"; expression = {
                                 $_.DatabaseMaxDop
@@ -65833,7 +66107,7 @@ function Set-DbaNetworkCertificate {
             $Thumbprint = $Certificate.Thumbprint
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -65850,30 +66124,30 @@ function Set-DbaNetworkCertificate {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            $computername = $instance.ComputerName
-            $instancename = $instance.instancename
+            $computerName = $instance.ComputerName
+            $instanceName = $instance.instancename
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
 
             if (-not $sqlwmi) {
-                Stop-Function -Message "Cannot find $instancename on $computerName" -Continue -Category ObjectNotFound -Target $instance
+                Stop-Function -Message "Cannot find $instanceName on $computerName" -Continue -Category ObjectNotFound -Target $instance
             }
 
-            $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
             $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-            $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-            $serviceaccount = $sqlwmi.ServiceAccount
+            $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+            $serviceAccount = $sqlwmi.ServiceAccount
 
-            if ([System.String]::IsNullOrEmpty($regroot)) {
-                $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                 $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                if (![System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = ($regroot -Split 'Value\=')[1]
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
@@ -65882,21 +66156,21 @@ function Set-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regroot" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceaccount" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instancename" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
-            $scriptblock = {
-                $regroot = $args[0]
-                $serviceaccount = $args[1]
-                $instancename = $args[2]
+            $scriptBlock = {
+                $regRoot = $args[0]
+                $serviceAccount = $args[1]
+                $instanceName = $args[2]
                 $vsname = $args[3]
                 $Thumbprint = $args[4]
 
-                $regpath = "Registry::HKEY_LOCAL_MACHINE\$regroot\MSSQLServer\SuperSocketNetLib"
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                $oldthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+                $oldThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
@@ -65906,7 +66180,7 @@ function Set-DbaNetworkCertificate {
                     return
                 }
 
-                $permission = $serviceaccount, "Read", "Allow"
+                $permission = $serviceAccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
                 if ($null -ne $cert.PrivateKey) {
@@ -65931,34 +66205,34 @@ function Set-DbaNetworkCertificate {
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
-                    Set-ItemProperty -Path $regpath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
+                    Set-ItemProperty -Path $regPath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
                 } else {
                     
                     Write-Warning "Read-only permissions could not be granted to certificate"
                     return
                 }
 
-                if (![System.String]::IsNullOrEmpty($oldthumbprint)) {
-                    $notes = "Granted $serviceaccount read access to certificate private key. Replaced thumbprint: $oldthumbprint."
+                if (![System.String]::IsNullOrEmpty($oldThumbprint)) {
+                    $notes = "Granted $serviceAccount read access to certificate private key. Replaced thumbprint: $oldThumbprint."
                 } else {
-                    $notes = "Granted $serviceaccount read access to certificate private key"
+                    $notes = "Granted $serviceAccount read access to certificate private key"
                 }
 
-                $newthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
+                $newThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
                 [pscustomobject]@{
                     ComputerName          = $env:COMPUTERNAME
-                    InstanceName          = $instancename
+                    InstanceName          = $instanceName
                     SqlInstance           = $vsname
-                    ServiceAccount        = $serviceaccount
-                    CertificateThumbprint = $newthumbprint
+                    ServiceAccount        = $serviceAccount
+                    CertificateThumbprint = $newThumbprint
                     Notes                 = $notes
                 }
             }
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
                 try {
-                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
+                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -66713,15 +66987,15 @@ function Set-DbaTcpPort {
             }
         }
         $scriptblock = {
-            $computername = $args[0]
-            $wmiinstancename = $args[1]
+            $computerName = $args[0]
+            $wmiInstanceName = $args[1]
             $port = $args[2]
             $IpAddress = $args[3]
-            $sqlinstanceName = $args[4]
+            $sqlInstanceName = $args[4]
 
-            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computername
+            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computerName
             $wmiinstance = $wmi.ServerInstances | Where-Object {
-                $_.Name -eq $wmiinstancename
+                $_.Name -eq $wmiInstanceName
             }
             $tcp = $wmiinstance.ServerProtocols | Where-Object {
                 $_.DisplayName -eq 'TCP/IP'
@@ -66729,28 +67003,28 @@ function Set-DbaTcpPort {
             $IpAddress = $tcp.IpAddresses | Where-Object {
                 $_.IpAddress -eq $IpAddress
             }
-            $tcpport = $IpAddress.IpAddressProperties | Where-Object {
+            $tcpPort = $IpAddress.IpAddressProperties | Where-Object {
                 $_.Name -eq 'TcpPort'
             }
 
-            $oldport = $tcpport.Value
+            $oldPort = $tcpPort.Value
             try {
-                $tcpport.value = $port
+                $tcpPort.value = $port
                 $tcp.Alter()
                 [pscustomobject]@{
-                    ComputerName       = $computername
-                    InstanceName       = $wmiinstancename
-                    SqlInstance        = $sqlinstanceName
-                    PreviousPortNumber = $oldport
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
                     PortNumber         = $Port
                     Status             = "Success"
                 }
             } catch {
                 [pscustomobject]@{
-                    ComputerName       = $computername
-                    InstanceName       = $wmiinstancename
-                    SqlInstance        = $sqlinstanceName
-                    PreviousPortNumber = $oldport
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
                     PortNumber         = $Port
                     Status             = "Failed: $_"
                 }
@@ -66763,19 +67037,19 @@ function Set-DbaTcpPort {
         }
 
         foreach ($instance in $SqlInstance) {
-            $wmiinstancename = $instance.InstanceName
+            $wmiInstanceName = $instance.InstanceName
             $computerName = $instance.ComputerName
 
-            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiinstancename")) {
+            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
                     $computerName = $instance.ComputerName
                     $resolved = Resolve-DbaNetworkName -ComputerName $computerName
-                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiinstancename, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                 } catch {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiinstancename, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                     } catch {
-                        Stop-Function -Message "Failure setting port to $Port for $wmiinstancename on $computerName" -Continue
+                        Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
                     }
                 }
             }
@@ -69749,7 +70023,7 @@ function Test-DbaDbCollation {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -70690,7 +70964,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
     }
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -71080,8 +71354,8 @@ function Test-DbaDiskAlignment {
                 $instance = $service.DisplayName.Replace('SQL Server (', '')
                 $instance = $instance.TrimEnd(')')
 
-                $instancename = $instance.Replace("MSSQLSERVER", "Default")
-                Write-Message -Level Verbose -Message "Found instance $instancename" -FunctionName $FunctionName
+                $instanceName = $instance.Replace("MSSQLSERVER", "Default")
+                Write-Message -Level Verbose -Message "Found instance $instanceName" -FunctionName $FunctionName
                 if ($instance -eq 'MSSQLSERVER') {
                     $SqlInstances += $ComputerName
                 } else {
@@ -71281,8 +71555,8 @@ function Test-DbaDiskAllocation {
                     $instance = $service.DisplayName.Replace('SQL Server (', '')
                     $instance = $instance.TrimEnd(')')
 
-                    $instancename = $instance.Replace("MSSQLSERVER", "Default")
-                    Write-Message -Level Verbose -Message "Found instance $instancename."
+                    $instanceName = $instance.Replace("MSSQLSERVER", "Default")
+                    Write-Message -Level Verbose -Message "Found instance $instanceName."
 
                     if ($instance -eq 'MSSQLSERVER') {
                         $SqlInstances += $ipaddr
@@ -71907,8 +72181,8 @@ function Test-DbaLastBackup {
 
             if ($datadirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions." -Continue
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceAccount has permissions." -Continue
                 }
             } else {
                 $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
@@ -71916,8 +72190,8 @@ function Test-DbaLastBackup {
 
             if ($logdirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions." -Continue
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceAccount has permissions." -Continue
                 }
             } else {
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
@@ -72292,7 +72566,7 @@ function Test-DbaManagementObject {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             foreach ($number in $args) {
                 $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$number.*" | Sort-Object Name -Descending).Name
 
@@ -72315,7 +72589,7 @@ function Test-DbaManagementObject {
     process {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
@@ -75095,7 +75369,8 @@ function Write-DbaDbTableData {
                 return
             }
 
-            $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
+            $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
+            $tableExists = $targetTable.Count -eq 1
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
@@ -78540,15 +78815,15 @@ function Get-WmiHadr {
             }
 
             if ($null -eq $currentState.IsHadrEnabled) {
-                $isenabled = $false
+                $isEnabled = $false
             } else {
-                $isenabled = $currentState.IsHadrEnabled
+                $isEnabled = $currentState.IsHadrEnabled
             }
             [PSCustomObject]@{
                 ComputerName  = $computer
                 InstanceName  = $instanceName
                 SqlInstance   = $instance.FullName
-                IsHadrEnabled = $isenabled
+                IsHadrEnabled = $isEnabled
             }
         }
     }
@@ -79088,7 +79363,7 @@ function Invoke-DbaAsync {
                 $pool.ApartmentState = "MTA"
                 $pool.Open()
                 $runspaces = @()
-                $scriptblock = {
+                $scriptBlock = {
                     param ($da, $ds, $conn, $queue )
                     $conn.FireInfoMessageEventOnUserErrors = $false
                     $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
@@ -79105,7 +79380,7 @@ function Invoke-DbaAsync {
                 }
                 $queue = New-Object System.Collections.Concurrent.ConcurrentQueue[string]
                 $runspace = [PowerShell]::Create()
-                $null = $runspace.AddScript($scriptblock)
+                $null = $runspace.AddScript($scriptBlock)
                 $null = $runspace.AddArgument($da)
                 $null = $runspace.AddArgument($ds)
                 $null = $runspace.AddArgument($Conn)
@@ -79594,7 +79869,7 @@ function Invoke-ManagedComputerCommand {
     $prescriptblock = $setupScriptBlock.ToString()
     $postscriptblock = $ScriptBlock.ToString()
 
-    $scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
+    $scriptBlock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
     Write-Message -Level Verbose -Message "Connecting to SQL WMI on $computer."
 
     try {
