@@ -554,7 +554,7 @@ function New-DbaAvailabilityGroup {
             $primaryserviceaccount = "$saname`$"
         }
 
-        $serviceaccounts = @($primaryserviceaccount)
+        $serviceAccounts = @($primaryserviceaccount)
 
         foreach ($second in $secondaries) {
             # If service account is empty, add the computer account instead
@@ -577,10 +577,10 @@ function New-DbaAvailabilityGroup {
                 $secondaryserviceaccount = "$saname`$"
             }
 
-            $serviceaccounts += $secondaryserviceaccount
+            $serviceAccounts += $secondaryserviceaccount
         }
 
-        $serviceaccounts = $serviceaccounts | Select-Object -Unique
+        $serviceAccounts = $serviceAccounts | Select-Object -Unique
 
         if ($SeedingMode -eq 'Automatic') {
             try {

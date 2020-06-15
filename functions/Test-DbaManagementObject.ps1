@@ -48,7 +48,7 @@ function Test-DbaManagementObject {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             foreach ($number in $args) {
                 $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$number.*" | Sort-Object Name -Descending).Name
 
@@ -71,7 +71,7 @@ function Test-DbaManagementObject {
     process {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
-                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }

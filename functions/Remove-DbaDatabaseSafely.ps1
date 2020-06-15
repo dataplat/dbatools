@@ -181,8 +181,8 @@ function Remove-DbaDatabaseSafely {
         }
 
         if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
-            $serviceaccount = $destserver.ServiceAccount
-            Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
+            $serviceAccount = $destserver.ServiceAccount
+            Stop-Function -Message "Can't access $backupFolder Please check if $serviceAccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }
 
         #TODO: Test

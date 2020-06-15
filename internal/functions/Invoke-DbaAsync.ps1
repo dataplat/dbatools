@@ -192,7 +192,7 @@ function Invoke-DbaAsync {
                 $pool.ApartmentState = "MTA"
                 $pool.Open()
                 $runspaces = @()
-                $scriptblock = {
+                $scriptBlock = {
                     param ($da, $ds, $conn, $queue )
                     $conn.FireInfoMessageEventOnUserErrors = $false
                     $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
@@ -209,7 +209,7 @@ function Invoke-DbaAsync {
                 }
                 $queue = New-Object System.Collections.Concurrent.ConcurrentQueue[string]
                 $runspace = [PowerShell]::Create()
-                $null = $runspace.AddScript($scriptblock)
+                $null = $runspace.AddScript($scriptBlock)
                 $null = $runspace.AddArgument($da)
                 $null = $runspace.AddArgument($ds)
                 $null = $runspace.AddArgument($Conn)
