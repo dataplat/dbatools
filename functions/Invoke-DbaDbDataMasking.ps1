@@ -495,7 +495,7 @@ function Invoke-DbaDbDataMasking {
                             # Check if column is does not contain an action
                             if ($columnobject.Name -notin $columnsWithActions.Name) {
                                 foreach ($row in $data) {
-                                    if ((($stepcounter++) % 100) -eq 0) {
+                                    if ((($batchCounter++) % 100) -eq 0) {
                                         $progressParams = @{
                                             StepNumber = $batchCounter
                                             TotalSteps = $totalBatches
@@ -687,7 +687,6 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             if ($stringBuilder.Length -ge 1) {
-                                $batchCounter++
 
                                 $progressParams = @{
                                     StepNumber = $batchCounter
@@ -696,13 +695,17 @@ function Invoke-DbaDbDataMasking {
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-                                Write-ProgressHelper @progressParams
+
+                                #$progressParams
+                                #Write-ProgressHelper @progressParams
 
                                 try {
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 } catch {
                                     Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                 }
+
+                                $batchCounter++
                             }
                         }
 
