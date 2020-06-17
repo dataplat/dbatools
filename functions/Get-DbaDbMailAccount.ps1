@@ -75,7 +75,7 @@ function Get-DbaDbMailAccount {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaDbMail -SqlInstance $instance -SqlCredential $SqlCredential
         }
 
         if (-not $InputObject) {
