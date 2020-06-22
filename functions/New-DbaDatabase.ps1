@@ -363,6 +363,7 @@ function New-DbaDatabase {
                         Write-Message -Message "Setting database owner to $Owner" -Level Verbose
                         try {
                             $newdb.SetOwner($Owner)
+                            $newdb.Refresh()
                         } catch {
                             Stop-Function -Message "Error setting Database Owner to $Owner" -ErrorRecord $_ -Target $instance -Continue
                         }
