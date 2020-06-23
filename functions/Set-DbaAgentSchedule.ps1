@@ -249,7 +249,7 @@ function Set-DbaAgentSchedule {
                         4 { $Interval += 4 }
                         8 { $Interval += 8 }
                         16 { $Interval += 16 }
-                        31 { $Interval += 32 }
+                        32 { $Interval += 32 }
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
