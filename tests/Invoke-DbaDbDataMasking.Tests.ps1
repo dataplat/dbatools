@@ -49,13 +49,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         It "returns the proper output" {
             $file = New-DbaDbMaskingConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp
+
             $results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance2 -Database $db -Confirm:$false
+
             foreach ($result in $results) {
                 $result.Rows | Should -Be 2
                 $result.Database | Should -Contain $db
             }
 
         }
+
         It "masks the data and does not delete it" {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Not -Be $null
             Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people where fname = 'Joe'" | Should -Be $null

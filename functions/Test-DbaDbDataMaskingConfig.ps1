@@ -71,12 +71,23 @@ function Test-DbaDbDataMaskingConfig {
             return
         }
 
-        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = @('bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar')
 
         $randomizerTypes = Get-DbaRandomizedType
 
-        $requiredColumnProperties = 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType'
+        $requiredColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType')
+
+        $allowedActionCategories = @('datetime', 'number')
+        $allowedActionSubCategories = @('year', 'quarter', 'month', 'dayofyear', 'day', 'week', 'weekday', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond')
+        $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Subtract')
+
+        $allowedDateTimeTypes = @('date', 'datetime', 'datetime2', 'smalldatetime', 'time')
+        $allowedNumberTypes = @('bigint', 'bit', 'int', 'money', 'smallint')
+
+        $requiredDateTimeActionProperties = @('Category', 'Subcategory', 'Type', 'Value')
+        $requiredNumberActionProperties = @('Category', 'Type', 'Value')
     }
+
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -189,7 +200,128 @@ function Test-DbaDbDataMaskingConfig {
                         }
                     }
                 }
-            }
-        }
+
+                # Test actions
+                if ($column.Action) {
+                    # General checks
+
+                    if ($null -ne $column.Action.Category -and $column.Action.Category -notin $allowedActionCategories) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action category '$($column.Action.Category)' is not allowed"
+                        }
+                    }
+
+                    if ($null -ne $column.Action.Category -and $column.Action.Type -notin $allowedActionTypes) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action type '$($column.Action.Type)' is not allowed"
+                        }
+                    }
+
+                    if ($null -eq $column.Action.Value -and $column.Action.Type -in $allowedActionTypes) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action value cannot be empty"
+                        }
+                    }
+
+                    if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $allowedActionSubCategories) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = $column.Action.Category
+                            Error  = "The action subcategory cannot be empty"
+                        }
+                    }
+
+                    $actionProperties = $column.Action | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
+
+                    # Date checks
+                    if ($column.Action.Category -eq 'datetime' ) {
+
+                        $compareResult = Compare-Object -ReferenceObject $requiredDateTimeActionProperties -DifferenceObject $actionProperties
+
+                        if ($null -ne $compareResult) {
+                            if ($compareResult.SideIndicator -contains "<=") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                                    Error  = "The action does not contain all the required properties. Please check the action "
+                                }
+                            }
+
+                            if ($compareResult.SideIndicator -contains "=>") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                                    Error  = "The action contains a property that is not in the required properties. Please check the column"
+                                }
+                            }
+                        }
+
+                        if ($column.ColumnType -notin $allowedDateTimeTypes) {
+                            [PSCustomObject]@{
+                                Table  = $table.Name
+                                Column = $column.Name
+                                Value  = $column.Action.Category
+                                Error  = "The category is not valid with data type $($column.ColumnType)"
+                            }
+                        }
+
+                        <# if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $allo) {
+                            [PSCustomObject]@{
+                                Table  = $table.Name
+                                Column = $column.Name
+                                Value  = $column.Action.Category
+                                Error  = "The action subcategory '$($column.Action.SubCategory)' is not allowed"
+                            }
+                        } #>
+                    }
+
+                    # Number checks
+                    if ($column.Action.Category -eq 'number' ) {
+                        $compareResult = Compare-Object -ReferenceObject $requiredNumberActionProperties -DifferenceObject $actionProperties
+
+                        if ($null -ne $compareResult) {
+                            if ($compareResult.SideIndicator -contains "<=") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                                    Error  = "The action does not contain all the required properties. Please check the action "
+                                }
+                            }
+
+                            <# if ($compareResult.SideIndicator -contains "=>") {
+                                [PSCustomObject]@{
+                                    Table  = $table.Name
+                                    Column = $column.Name
+                                    Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                                    Error  = "The action contains a property that is not in the required properties. Please check the column"
+                                }
+                            } #>
+                        }
+
+                        if ($column.ColumnType -notin $allowedNumberTypes) {
+                            [PSCustomObject]@{
+                                Table  = $table.Name
+                                Column = $column.Name
+                                Value  = $column.Action.Category
+                                Error  = "The category is not valid with data type $($column.ColumnType)"
+                            }
+                        }
+                    }
+                }# End column action
+            } # End for each column
+        } # End for each table
     }
 }

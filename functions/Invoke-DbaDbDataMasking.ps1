@@ -220,9 +220,16 @@ function Invoke-DbaDbDataMasking {
         } else {
             # Test the configuration file
             try {
-                Test-DbaDbDataMaskingConfig -FilePath $FilePath -EnableException
+                $configErrors = @()
+
+                $configErrors += Test-DbaDbDataMaskingConfig -FilePath $FilePath -EnableException
+
+                if ($configErrors.Count -ge 1) {
+                    Stop-Function -Message "Errors found testing the configuration file." -Target $FilePath
+                    return $configErrors
+                }
             } catch {
-                Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
+                Stop-Function -Message "Something went wrong testing the configuration file" -ErrorRecord $_ -Target $FilePath
                 return
             }
 
@@ -321,7 +328,7 @@ function Invoke-DbaDbDataMasking {
                             $columnString += ",[$($identityColumn)]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        $data = $db.Query($query)
+                        [array]$data = $db.Query($query)
 
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
@@ -427,190 +434,270 @@ function Invoke-DbaDbDataMasking {
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Masking $($data.Count) row(s) for column [$($tablecolumns.Name -join ', ')] in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
                         $rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
 
-                        # Loop through each of the rows and change them
-                        foreach ($row in $data) {
-                            if ((($stepcounter++) % 100) -eq 0) {
-                                $progressParams = @{
-                                    StepNumber = $stepcounter
-                                    TotalSteps = $data.Count
-                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                    Message    = "Generating Updates"
-                                }
+                        $columnsWithActions = @()
+                        $columnsWithActions += $tableobject.Columns | Where-Object Action -ne $null
 
-                                Write-ProgressHelper @progressParams
+                        # Go through the composites
+                        if ($columnsWithActions.Count -ge 1) {
+                            foreach ($columnObject in $columnsWithActions) {
+                                foreach ($columnAction in $columnObject.Action) {
+                                    $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+
+                                    if ($columnAction.Category -eq 'DateTime') {
+                                        switch ($columnAction.Type) {
+                                            "Add" {
+                                                $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
+                                            }
+                                            "Subtract" {
+                                                $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
+                                            }
+                                        }
+                                    } elseif ($columnAction.Category -eq 'Number') {
+                                        switch ($columnAction.Type) {
+                                            "Add" {
+                                                $query += "[$($columnObject.Name)] + $($columnAction.Value);"
+                                            }
+                                            "Divide" {
+                                                $query += "[$($columnObject.Name)] / $($columnAction.Value);"
+                                            }
+                                            "Multiply" {
+                                                $query += "[$($columnObject.Name)] * $($columnAction.Value);"
+                                            }
+                                            "Subtract" {
+                                                $query += "[$($columnObject.Name)] - $($columnAction.Value);"
+                                            }
+                                        }
+                                    }
+                                    # Add the query to the rest
+                                    $null = $stringBuilder.AppendLine($query)
+                                }
                             }
 
-                            $updates = @()
-                            $newValue = $null
-
-                            foreach ($columnobject in $tablecolumns) {
-
-                                if ($columnobject.ColumnType -notin $supportedDataTypes) {
-                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
+                            try {
+                                if ($stringBuilder.Length -ge 1) {
+                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 }
+                            } catch {
+                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                            }
 
-                                if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
-                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
+                            $null = $stringBuilder.Clear()
+                        }
 
-                                if ($columnobject.SubType -notin $supportedFakerSubTypes) {
-                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                if ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
-                                    $newValue = $null
-                                } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
-                                    $newValue = $null
-                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
-
-                                    if ($uniqueValues.Count -lt 1) {
-                                        Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
-                                        return
-                                    }
-
-                                    $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
-
-                                } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
-                                    $newValue = $dictionary.Item($row.$($columnobject.Name))
-                                } else {
-                                    # make sure min is good
-                                    if ($columnobject.MinValue) {
-                                        $min = $columnobject.MinValue
-                                    } else {
-                                        if ($columnobject.CharacterString) {
-                                            $min = 1
-                                        } else {
-                                            $min = 0
+                        # Loop through each of the rows and change them
+                        foreach ($columnobject in $tablecolumns) {
+                            # Check if column is does not contain an action
+                            if ($columnobject.Name -notin $columnsWithActions.Name) {
+                                foreach ($row in $data) {
+                                    if ((($batchCounter++) % 100) -eq 0) {
+                                        $progressParams = @{
+                                            StepNumber = $batchCounter
+                                            TotalSteps = $totalBatches
+                                            Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                            Message    = "Generating Updates"
                                         }
+
+                                        Write-ProgressHelper @progressParams
                                     }
 
-                                    # make sure max is good
-                                    if ($MaxValue) {
-                                        if ($columnobject.MaxValue -le $MaxValue) {
+                                    $updates = @()
+                                    $newValue = $null
+
+                                    # Generate a unique value for the row
+                                    if ($columnobject.ColumnType -notin $supportedDataTypes) {
+                                        Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
+                                    }
+
+                                    if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
+                                        Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
+                                    }
+
+                                    if ($columnobject.SubType -notin $supportedFakerSubTypes) {
+                                        Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
+                                    }
+
+                                    if ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
+                                        $newValue = $null
+                                    } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
+                                        $newValue = $null
+                                    } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+
+                                        if ($uniqueValues.Count -lt 1) {
+                                            Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
+                                            return
+                                        }
+
+                                        $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+
+                                    } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
+                                        $newValue = $dictionary.Item($row.$($columnobject.Name))
+                                    } else {
+                                        # make sure min is good
+                                        if ($columnobject.MinValue) {
+                                            $min = $columnobject.MinValue
+                                        } else {
+                                            if ($columnobject.CharacterString) {
+                                                $min = 1
+                                            } else {
+                                                $min = 0
+                                            }
+                                        }
+
+                                        # make sure max is good
+                                        if ($MaxValue) {
+                                            if ($columnobject.MaxValue -le $MaxValue) {
+                                                $max = $columnobject.MaxValue
+                                            } else {
+                                                $max = $MaxValue
+                                            }
+                                        } else {
                                             $max = $columnobject.MaxValue
+                                        }
+
+                                        if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                            $max = 10
+                                        }
+
+                                        if ($columnobject.CharacterString) {
+                                            $charstring = $columnobject.CharacterString
                                         } else {
-                                            $max = $MaxValue
+                                            $charstring = $CharacterString
                                         }
+
+                                        if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                            if (-not $columnobject.MinValue) {
+                                                $min = (Get-Date).AddDays(-365)
+                                            }
+                                            if (-not $columnobject.MaxValue) {
+                                                $max = (Get-Date).AddDays(365)
+                                            }
+                                        }
+
+                                        try {
+                                            $newValue = $null
+
+                                            if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                                if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                    $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                    $newValue = ($newValue -join '')
+                                                } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                    $valueString = ($row.$($columnobject.Name)).ToString()
+
+                                                    $commaIndex = $valueString.IndexOf(",")
+                                                    $dotIndex = $valueString.IndexOf(".")
+
+                                                    $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+
+                                                    if ($commaIndex -ne -1) {
+                                                        $newValue = $newValue.Insert($commaIndex, ',')
+                                                    }
+
+                                                    if ($dotIndex -ne -1) {
+                                                        $newValue = $newValue.Insert($dotIndex, '.')
+                                                    }
+                                                }
+                                            } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                            } else {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                            }
+                                        } catch {
+
+                                            Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
+                                        }
+                                    }
+
+                                    if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
+                                        $updates += "[$($columnobject.Name)] = NULL"
+                                    } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
+                                        if ($columnValue) {
+                                            $updates += "[$($columnobject.Name)] = 1"
+                                        } else {
+                                            $updates += "[$($columnobject.Name)] = 0"
+                                        }
+                                    } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                        $updates += "[$($columnobject.Name)] = $newValue"
+                                    } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -eq 'datetime') {
+                                        $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -eq 'datetime2') {
+                                        $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -like 'date') {
+                                        $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -like '*date*') {
+                                        $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -like 'time') {
+                                        $newValue = ([datetime]$newValue).Tostring("HH:mm:ss.fffffff")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
+                                    } elseif ($columnobject.ColumnType -eq 'xml') {
+                                        # nothing, unsure how i'll handle this
                                     } else {
-                                        $max = $columnobject.MaxValue
+                                        $newValue = ($newValue).Tostring().Replace("'", "''")
+                                        $updates += "[$($columnobject.Name)] = '$newValue'"
                                     }
 
-                                    if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
-                                        $max = 10
+                                    if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
+                                        $dictionary.Add($row.$($columnobject.Name), $newValue)
                                     }
 
-                                    if ($columnobject.CharacterString) {
-                                        $charstring = $columnobject.CharacterString
-                                    } else {
-                                        $charstring = $CharacterString
+
+                                    $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
+                                }
+
+                                $batchRowCounter++
+
+                                if ($batchRowCounter -eq $BatchSize) {
+                                    $batchCounter++
+
+                                    $progressParams = @{
+                                        StepNumber = $batchCounter
+                                        TotalSteps = $totalBatches
+                                        Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                        Message    = "Executing Batch $batchCounter/$totalBatches"
                                     }
 
-                                    if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                        if (-not $columnobject.MinValue) {
-                                            $min = (Get-Date).AddDays(-365)
-                                        }
-                                        if (-not $columnobject.MaxValue) {
-                                            $max = (Get-Date).AddDays(365)
-                                        }
-                                    }
+                                    Write-ProgressHelper @progressParams
+
+                                    Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
 
                                     try {
-                                        $newValue = $null
-
-                                        if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
-                                            if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
-
-                                                $newValue = ($newValue -join '')
-                                            } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
-                                                $valueString = ($row.$($columnobject.Name)).ToString()
-
-                                                $commaIndex = $valueString.IndexOf(",")
-                                                $dotIndex = $valueString.IndexOf(".")
-
-                                                $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
-
-                                                if ($commaIndex -ne -1) {
-                                                    $newValue = $newValue.Insert($commaIndex, ',')
-                                                }
-
-                                                if ($dotIndex -ne -1) {
-                                                    $newValue = $newValue.Insert($dotIndex, '.')
-                                                }
-                                            }
-                                        } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                            $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
-                                        } else {
-                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
-                                        }
+                                        Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                     } catch {
-
-                                        Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
+                                        Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                     }
+
+                                    $null = $stringBuilder.Clear()
+                                    $batchRowCounter = 0
                                 }
 
-                                if ($null -eq $newValue -and $columnobject.Nullable -eq $true) {
-                                    $updates += "[$($columnobject.Name)] = NULL"
-                                } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
-                                    if ($columnValue) {
-                                        $updates += "[$($columnobject.Name)] = 1"
-                                    } else {
-                                        $updates += "[$($columnobject.Name)] = 0"
-                                    }
-                                } elseif ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
-                                    $updates += "[$($columnobject.Name)] = $newValue"
-                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -eq 'datetime') {
-                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fff")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -eq 'datetime2') {
-                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -like 'date') {
-                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -like '*date*') {
-                                    $newValue = ([datetime]$newValue).Tostring("yyyy-MM-dd HH:mm:ss")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -like 'time') {
-                                    $newValue = ([datetime]$newValue).Tostring("HH:mm:ss.fffffff")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                } elseif ($columnobject.ColumnType -eq 'xml') {
-                                    # nothing, unsure how i'll handle this
-                                } else {
-                                    $newValue = ($newValue).Tostring().Replace("'", "''")
-                                    $updates += "[$($columnobject.Name)] = '$newValue'"
-                                }
-
-                                if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
-                                    $dictionary.Add($row.$($columnobject.Name), $newValue)
-                                }
+                                # Increase the row number
+                                $rowNumber++
                             }
 
-                            $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
-
-                            $batchRowCounter++
-
-                            if ($batchRowCounter -eq $BatchSize) {
-                                $batchCounter++
+                            if ($stringBuilder.Length -ge 1) {
 
                                 $progressParams = @{
-                                    StepNumber = $stepcounter
-                                    TotalSteps = $data.Count
+                                    StepNumber = $batchCounter
+                                    TotalSteps = $totalBatches
                                     Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-                                Write-ProgressHelper @progressParams
 
-                                Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
+                                #$progressParams
+                                #Write-ProgressHelper @progressParams
 
                                 try {
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
@@ -618,30 +705,7 @@ function Invoke-DbaDbDataMasking {
                                     Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                 }
 
-                                $null = $stringBuilder.Clear()
-                                $batchRowCounter = 0
-                            }
-
-                            # Increase the row number
-                            $rowNumber++
-                        }
-
-                        if ($stringBuilder.Length -ge 1) {
-                            $batchCounter++
-
-                            $progressParams = @{
-                                StepNumber = $stepcounter
-                                TotalSteps = $data.Count
-                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                Message    = "Executing Batch $batchCounter/$totalBatches"
-                            }
-
-                            Write-ProgressHelper @progressParams
-
-                            try {
-                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
-                            } catch {
-                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                $batchCounter++
                             }
                         }
 
@@ -650,6 +714,12 @@ function Invoke-DbaDbDataMasking {
                         $columnsWithComposites = @()
                         $columnsWithComposites += $tableobject.Columns | Where-Object Composite -ne $null
 
+                        # Check for both special actions
+                        if (($columnsWithComposites.Count -ge 1) -and ($columnsWithActions.Count -ge 1)) {
+                            Stop-Function -Message "You cannot use both composites and actions"
+                        }
+
+                        # Go through the composites
                         if ($columnsWithComposites.Count -ge 1) {
                             foreach ($columnObject in $columnsWithComposites) {
 
@@ -734,7 +804,7 @@ function Invoke-DbaDbDataMasking {
                                 Schema       = $tableobject.Schema
                                 Table        = $tableobject.Name
                                 Columns      = $tableobject.Columns.Name
-                                Rows         = $($data.Rows.Count)
+                                Rows         = $($data.Count)
                                 Elapsed      = [prettytimespan]$elapsed.Elapsed
                                 Status       = "Masked"
                             }
