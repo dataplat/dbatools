@@ -127,30 +127,30 @@ function Set-DbaDbOwner {
                 Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
             }
 
-            $dbname = $db.name
-            if ($PSCmdlet.ShouldProcess($instance, "Setting database owner for $dbname to $TargetLogin")) {
+            $dbName = $db.name
+            if ($PSCmdlet.ShouldProcess($instance, "Setting database owner for $dbName to $TargetLogin")) {
                 try {
-                    Write-Message -Level Verbose -Message "Setting database owner for $dbname to $TargetLogin on $instance."
+                    Write-Message -Level Verbose -Message "Setting database owner for $dbName to $TargetLogin on $instance."
                     # Set database owner to $TargetLogin (default 'sa')
                     # Ownership validations checks
 
                     if ($db.Status -notmatch 'Normal') {
-                        Write-Message -Level Warning -Message "$dbname on $instance is in a  $($db.Status) state and can not be altered. It will be skipped."
+                        Write-Message -Level Warning -Message "$dbName on $instance is in a  $($db.Status) state and can not be altered. It will be skipped."
                     }
                     #Database is updatable, not read-only
                     elseif ($db.IsUpdateable -eq $false) {
-                        Write-Message -Level Warning -Message "$dbname on $instance is not in an updateable state and can not be altered. It will be skipped."
+                        Write-Message -Level Warning -Message "$dbName on $instance is not in an updateable state and can not be altered. It will be skipped."
                     }
                     #Is the login mapped as a user? Logins already mapped in the database can not be the owner
                     elseif ($db.Users.name -contains $TargetLogin) {
-                        Write-Message -Level Warning -Message "$dbname on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
+                        Write-Message -Level Warning -Message "$dbName on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
                     } else {
                         $db.SetOwner($TargetLogin)
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
-                            Database     = $dbname
+                            Database     = $dbName
                             Owner        = $TargetLogin
                         }
                     }

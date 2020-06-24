@@ -216,11 +216,11 @@ function Invoke-DbaDbMirroring {
                 }
 
                 if ($validation.MirroringStatus -ne "None") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 }
 
                 if ($primarydb.Status -ne "Normal") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
+                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current state: $($primarydb.Status)"
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
