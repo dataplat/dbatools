@@ -648,7 +648,7 @@ function Copy-DbaDatabase {
                 [object]$fileStructure,
                 [string]$dbName
             )
-            if ($Pscmdlet.ShouldProcess($dbname, "Starting detaching and re-attaching from $sourceServer to $destServer")) {
+            if ($Pscmdlet.ShouldProcess($dbName, "Starting detaching and re-attaching from $sourceServer to $destServer")) {
                 $destfilestructure = New-Object System.Collections.Specialized.StringCollection
                 $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
                 $dbOwner = $sourceServer.databases[$dbName].owner
@@ -991,31 +991,31 @@ function Copy-DbaDatabase {
                     $dbOwner = $currentdb.Owner
                     $destinationDbName = $dbName
                     if ((Test-Bound "NewName")) {
-                        Write-Message -Level Verbose -Message "NewName specified, copying $dbname as $NewName"
+                        Write-Message -Level Verbose -Message "NewName specified, copying $dbName as $NewName"
                         $destinationDbName = $NewName
                         $replaceInFile = $True
                     }
                     if ($(Test-Bound "Prefix")) {
                         $destinationDbName = $prefix + $destinationDbName
-                        Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $destinationDbName"
+                        Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
                     }
 
-                    $filestructure.databases[$dbname].Add('destinationDbName', $destinationDbName)
-                    ForEach ($key in $filestructure.databases[$dbname].Destination.Keys) {
-                        $splitFileName = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename -Leaf
-                        $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename
+                    $filestructure.databases[$dbName].Add('destinationDbName', $destinationDbName)
+                    ForEach ($key in $filestructure.databases[$dbName].Destination.Keys) {
+                        $splitFileName = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename -Leaf
+                        $SplitPath = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename
                         if ($replaceInFile) {
-                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                            $splitFileName = $splitFileName.replace($dbName, $destinationDbName)
                         }
                         $splitFileName = $prefix + $splitFileName
-                        $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
-                        $splitFileName = Split-Path $filestructure.databases[$dbname].Destination[$key].physical -Leaf
-                        $SplitPath = Split-Path $fileStructure.databases[$dbname].Destination[$key].physical
+                        $filestructure.databases[$dbName].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
+                        $splitFileName = Split-Path $filestructure.databases[$dbName].Destination[$key].physical -Leaf
+                        $SplitPath = Split-Path $fileStructure.databases[$dbName].Destination[$key].physical
                         if ($replaceInFile) {
-                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                            $splitFileName = $splitFileName.replace($dbName, $destinationDbName)
                         }
                         $splitFileName = $prefix + $splitFileName
-                        $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $splitFileName
+                        $filestructure.databases[$dbName].Destination.$key.physical = Join-Path $SplitPath $splitFileName
                     }
 
                     $copyDatabaseStatus = [pscustomobject]@{

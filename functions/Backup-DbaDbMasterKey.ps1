@@ -137,10 +137,10 @@ function Backup-DbaDbMasterKey {
             }
 
             $time = (Get-Date -Format yyyMMddHHmmss)
-            $dbname = $db.name
+            $dbName = $db.name
             $Path = $Path.TrimEnd("\")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = "$Path\$fileinstance-$dbname-$time.key"
+            $filename = "$Path\$fileinstance-$dbName-$time.key"
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
@@ -154,7 +154,7 @@ function Backup-DbaDbMasterKey {
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 

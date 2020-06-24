@@ -378,12 +378,12 @@ function New-DbaAvailabilityGroup {
 
         foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 return
             }
 
             if ($primarydb.Status -ne "Normal") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
+                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current state: $($primarydb.Status)"
                 return
             }
 

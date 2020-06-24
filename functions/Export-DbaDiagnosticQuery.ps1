@@ -96,7 +96,7 @@ function Export-DbaDiagnosticQuery {
             $result = $row.Result
             $name = $row.Name
             $SqlInstance = $row.SqlInstance.Replace("\", "$")
-            $dbname = $row.Database
+            $dbName = $row.Database
             $number = $row.Number
 
             if ($null -eq $result) {
@@ -105,8 +105,8 @@ function Export-DbaDiagnosticQuery {
 
             $queryname = Remove-InvalidFileNameChars -Name $Name
             $excelfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$Suffix.xlsx"
-            $exceldbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbname-$Suffix.xlsx"
-            $csvdbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+            $exceldbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$dbName-$Suffix.xlsx"
+            $csvdbfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbName-DQ-$number-$queryname-$Suffix.csv"
             $csvfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 
             $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan", "query_plan_xml"
@@ -116,7 +116,7 @@ function Export-DbaDiagnosticQuery {
                 foreach ($plan in $result."$columnname") {
                     $plannr += 1
                     if ($row.DatabaseSpecific) {
-                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                        $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbName-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     } else {
                         $planfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
                     }
@@ -137,7 +137,7 @@ function Export-DbaDiagnosticQuery {
                 foreach ($sql in $result."$columnname") {
                     $sqlnr += 1
                     if ($row.DatabaseSpecific) {
-                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                        $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-$dbName-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     } else {
                         $sqlfilename = Join-DbaPath -Path $Path -Child "$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
                     }
