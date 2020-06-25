@@ -171,7 +171,7 @@ function Add-DbaAgDatabase {
             if ($SeedingMode -eq "Automatic") {
                 # first check
                 if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.Name
                 }
             }
 
