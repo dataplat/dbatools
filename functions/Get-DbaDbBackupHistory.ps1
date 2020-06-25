@@ -12,7 +12,7 @@ function Get-DbaDbBackupHistory {
 
         If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history
 
-        If a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well.
+        If a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well, if the Availability Group has a listener.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
@@ -317,9 +317,14 @@ function Get-DbaDbBackupHistory {
                         $adb = Get-DbaDatabase -SqlInstance $server -Database $adb.name
                     }
                     $AvailabilityGroupBase = $adb.parent.AvailabilityGroups[$adb.AvailabilityGroupName]
+                    $AvailabilityGroupListener = $AvailabilityGroupBase.AvailabilityGroupListeners.Name
+                    if ($null -eq $AvailabilityGroupListener) {
+                        Write-Message -Level Verbose -Message "AvailabilityGroup $($AvailabilityGroupBase.Name) has no listener, so skipping fetching history from replicas for db $($adb.name)"
+                        continue
+                    }
                     $null = $PSBoundParameters.Remove('SqlInstance')
                     $null = $PSBoundParameters.Remove('Database')
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityGroupListeners.name -database $adb.Name @PSBoundParameters
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupListener -database $adb.Name @PSBoundParameters
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     Foreach ($agr in $AgLoopResults) {
                         $agr.AvailabilityGroupName = $AvailabilityGroupName
