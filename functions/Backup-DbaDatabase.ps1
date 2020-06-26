@@ -642,9 +642,9 @@ function Backup-DbaDatabase {
                             Write-Progress -id $ProgressId -activity "Backing up database $dbName to $backupfile" -status "Complete" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
-                                $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
+                                $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -SqlCredential $SqlCredential -Database $dbName
                             } else {
-                                $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -SqlCredential $SqlCredential -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
