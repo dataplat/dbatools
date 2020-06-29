@@ -57,6 +57,11 @@ function Get-DbaAgentSchedule {
         Returns the SQL Agent Shared Schedules with the Id of 3
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance localhost, sql2016 -ScheduleUid 'bf57fa7e-7720-4936-85a0-87d279db7eb7'
+
+        Returns the SQL Agent Shared Schedules with the UID
+
+    .EXAMPLE
         PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
 
         Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
@@ -256,7 +261,7 @@ function Get-DbaAgentSchedule {
             $scheduleCollection = @()
 
             if ($Schedule -or $ScheduleUid -or $Id) {
-                if ($ScheduleUid) {
+                if ($Schedule) {
                     $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
                 }
 
