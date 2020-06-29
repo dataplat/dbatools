@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'InputObject', 'EnableException', 'Force'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'ScheduleUid', 'InputObject', 'EnableException', 'Force'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -35,7 +35,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should remove schedules" {
         $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-            Where-Object {$_.name -like 'dbatools*'}
+        Where-Object { $_.name -like 'dbatools*' }
         It "Should find all created schedule" {
             $results | Should Not BeNullOrEmpty
         }
@@ -47,8 +47,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-            Where-Object {$_.name -like 'dbatools*'} |
-            Remove-DbaAgentSchedule -Confirm:$false -Force
+        Where-Object { $_.name -like 'dbatools*' } |
+        Remove-DbaAgentSchedule -Confirm:$false -Force
         It "Should not find any created schedule" {
             $results | Should BeNullOrEmpty
         }
