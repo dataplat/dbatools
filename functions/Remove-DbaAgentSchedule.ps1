@@ -19,6 +19,9 @@ function Remove-DbaAgentSchedule {
     .PARAMETER Schedule
         The name of the job schedule.
 
+    .PARAMETER ScheduleUid
+        The unique identifier of the schedule
+
     .PARAMETER InputObject
         A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
 
