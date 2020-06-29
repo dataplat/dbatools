@@ -270,7 +270,7 @@ function Get-DbaAgentSchedule {
                 }
 
                 if ($Id) {
-                    $scheduleCollection += $scheduleCollection | Where-Object { $_.Id -in $Id }
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Id -in $Id }
                 }
             } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
