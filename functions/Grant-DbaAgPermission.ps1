@@ -131,7 +131,8 @@ function Grant-DbaAgPermission {
                     try {
                         $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
                     } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                        return
                     }
                 }
             }
@@ -142,7 +143,8 @@ function Grant-DbaAgPermission {
                         try {
                             $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
                         } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                            return
                         }
                     }
                 }
