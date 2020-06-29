@@ -19,6 +19,9 @@ function Get-DbaAgentSchedule {
     .PARAMETER Schedule
         Parameter to filter the schedules returned
 
+    .PARAMETER ScheduleUid
+        The unique identifier of the schedule
+
     .PARAMETER Id
         Parameter to filter the schedules returned
 
@@ -64,6 +67,7 @@ function Get-DbaAgentSchedule {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Schedule,
+        [string[]]$ScheduleUid,
         [int[]]$Id,
         [switch]$EnableException
     )
@@ -249,18 +253,26 @@ function Get-DbaAgentSchedule {
                 Stop-Function -Message "$($server.Edition) does not support SQL Server Agent. Skipping $server." -Continue
             }
 
-            if ($Schedule) {
-                $scheduleCollection = $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+            $scheduleCollection = @()
+
+            if ($Schedule -or $ScheduleUid -or $Id) {
+                if ($ScheduleUid) {
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+                }
+
+                if ($ScheduleUid) {
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.ScheduleUid -in $ScheduleUid }
+                }
+
+                if ($Id) {
+                    $scheduleCollection += $scheduleCollection | Where-Object { $_.Id -in $Id }
+                }
             } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
             }
-
-            if ($Id) {
-                $scheduleCollection = $scheduleCollection | Where-Object { $_.Id -in $Id }
-            }
         }
 
-        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description"
+        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
 
         foreach ($currentschedule in $scheduleCollection) {
             $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
