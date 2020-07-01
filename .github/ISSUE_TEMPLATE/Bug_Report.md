@@ -14,33 +14,26 @@ The core team may close bug reports that do not follow our provided template.
 The information we ask for helps to better troubleshoot the report. We release frequently and often, this information helps to resolve the issue more efficiently.
 -->
 
-<!--
-dbatools 1.0 has been released as of June 20, 2019
-Please ensure you are on this version before submitting an issue
--->
-
 ### Environmental information
 
 <!--
-Run below command, paste results below:
-& {"``````";"#### PowerShell version:`n$($PSVersionTable | Out-String)"; "`n#### dbatools Module version:`n$(gmo dbatools -List | select name, path, version | fl -force | Out-String)";"``````"} | clip
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+Please provide the output of the below script
+```powershell
+[pscustomobject]@{
+>> 'PowerShell Version' = $PSVersionTable.PSVersion.ToString()
+>> 'dbatools latest installed' = (Get-InstalledModule -Name dbatools).Version
+>> 'Culture of OS' = (Get-Culture)
+>> } | fl -force
+```
 -->
 
-<!-- Only if using non-English versions of Windows -->
-<!-- Paste output of `Get-Culture` -->
-```powershell
-# Replace with output of Get-Culture
-```
-
-
 #### SQL Server:
-<!-- Paste output of `SELECT @@VERSION` -->
+
 ```sql
 /* REPLACE WITH output of @@VERSION */
 ```
 
-<!-- Only if using non-English Database Engine -->
-<!-- Paste output of `SELECT @@LANGUAGE` -->
 ```sql
 /* REPLACE WITH output of @@LANGUAGE */
 ```
@@ -70,8 +63,8 @@ If anything other than powershell.exe was used, please confirm that you can dupl
 #### Errors Received
 
 <!--
-Run this command and paste below:
-& {"``````";$error[0] | select *;"``````"} | clip
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+Provide the full error stack, you can obtain this by duplicating the error and then immediately running this command: `$error[0] | select *`
 -->
 
 #### Steps to Reproduce
