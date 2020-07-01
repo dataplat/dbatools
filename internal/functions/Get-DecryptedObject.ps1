@@ -22,7 +22,7 @@ function Get-DecryptedObject {
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
-    $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
+    $sql = "SELECT substring(crypt_property,9,datalength(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
         $smkbytes = $server.Query($sql).smk
     } catch {
@@ -115,14 +115,14 @@ function Get-DecryptedObject {
                 syslnklgns.name,
                 substring(syslnklgns.pwdhash,5,$ivlen) iv,
                 substring(syslnklgns.pwdhash,$($ivlen + 5),
-                len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+                datalength(syslnklgns.pwdhash)-$($ivlen + 4)) pass
             FROM master.sys.syslnklgns
                 inner join master.sys.sysservers
                 on syslnklgns.srvid=sysservers.srvid
-            WHERE len(pwdhash) > 0"
+            WHERE datalength(pwdhash) > 0"
         }
         "Credential" {
-            "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+            "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),datalength(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
         }
     }
 
