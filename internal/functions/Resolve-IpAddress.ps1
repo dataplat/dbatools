@@ -8,9 +8,15 @@ function Resolve-IpAddress {
     )
     $ping = New-Object System.Net.NetworkInformation.Ping
     $timeout = 1000 #milliseconds
+    $destComputer=$null
     if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-        return $ping.Send($Server.ComputerName, $timeout).Address.IPAddressToString
+        if($server.computername){
+            $destComputer=$server.Computername
+        }elseif($server.name){
+            $destComputer=$server.name
+        }
     } else {
-        return $ping.Send($server.Split('\')[0], $timeout).Address.IPAddressToString
+        $destComputer=$server.Split('\')[0]
     }
+    return $ping.Send($destComputer, $timeout).Address.IPAddressToString
 }
