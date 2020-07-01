@@ -12,6 +12,8 @@ function Resolve-IpAddress {
     if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         if($server.computername){
             $destComputer=$server.Computername
+        }elseif($server.ComputerNamePhysicalNetBIOS){
+            $destComputer=$server.ComputerNamePhysicalNetBIOS
         }elseif($server.name){
             $destComputer=$server.name
         }
