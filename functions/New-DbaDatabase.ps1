@@ -211,16 +211,16 @@ function New-DbaDatabase {
 
             Write-Message -Message "Set local data path to $DataFilePath and local log path to $LogFilePath" -Level Verbose
 
-            foreach ($dbname in $Name) {
-                if ($server.Databases[$dbname].Name) {
-                    Stop-Function -Message "Database $dbname already exists on $instance" -Target $instance -Continue
+            foreach ($dbName in $Name) {
+                if ($server.Databases[$dbName].Name) {
+                    Stop-Function -Message "Database $dbName already exists on $instance" -Target $instance -Continue
                 }
 
                 try {
-                    Write-Message -Message "Creating smo object for new database $dbname" -Level Verbose
-                    $newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbname)
+                    Write-Message -Message "Creating smo object for new database $dbName" -Level Verbose
+                    $newdb = New-Object Microsoft.SqlServer.Management.Smo.Database($server, $dbName)
                 } catch {
-                    Stop-Function -Message "Error creating database object for $dbname on server $server" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Error creating database object for $dbName on server $server" -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 if ($Collation) {
@@ -244,7 +244,7 @@ function New-DbaDatabase {
 
                     #add the primary file
                     try {
-                        $primaryfilename = $dbname + "_PRIMARY"
+                        $primaryfilename = $dbName + "_PRIMARY"
                         Write-Message -Message "Creating file name $primaryfilename in filegroup PRIMARY" -Level Verbose
 
                         #check the size of the modeldev file; if larger than our $PrimaryFilesize setting use that instead
@@ -280,7 +280,7 @@ function New-DbaDatabase {
                     }
 
                     try {
-                        $logname = $dbname + "_Log"
+                        $logname = $dbName + "_Log"
                         Write-Message -Message "Creating log $logname" -Level Verbose
 
                         #check the size of the modellog file; if larger than our $LogSize setting use that instead
@@ -309,7 +309,7 @@ function New-DbaDatabase {
                     if (Test-Bound -ParameterName SecondaryFileMaxSize, SecondaryFileGrowth, SecondaryFilesize) {
                         #add the Secondary data file group
                         try {
-                            $secondaryfilegroupname = $dbname + "_MainData"
+                            $secondaryfilegroupname = $dbName + "_MainData"
                             Write-Message -Message "Creating Secondary filegroup $secondaryfilegroupname" -Level Verbose
 
                             $secondaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, $secondaryfilegroupname)
@@ -351,18 +351,19 @@ function New-DbaDatabase {
                     }
                 }
 
-                Write-Message -Message "Creating Database $dbname" -Level Verbose
-                if ($PSCmdlet.ShouldProcess($instance, "Creating the database $dbname on instance $instance")) {
+                Write-Message -Message "Creating Database $dbName" -Level Verbose
+                if ($PSCmdlet.ShouldProcess($instance, "Creating the database $dbName on instance $instance")) {
                     try {
                         $newdb.Create()
                     } catch {
-                        Stop-Function -Message "Error creating Database $dbname on server $instance" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Error creating Database $dbName on server $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
 
                     if ($Owner) {
                         Write-Message -Message "Setting database owner to $Owner" -Level Verbose
                         try {
                             $newdb.SetOwner($Owner)
+                            $newdb.Refresh()
                         } catch {
                             Stop-Function -Message "Error setting Database Owner to $Owner" -ErrorRecord $_ -Target $instance -Continue
                         }
@@ -377,7 +378,7 @@ function New-DbaDatabase {
                         }
                     }
 
-                    Get-DbaDatabase -SqlInstance $server -Database $dbname
+                    Get-DbaDatabase -SqlInstance $server -Database $dbName
                 }
             }
         }

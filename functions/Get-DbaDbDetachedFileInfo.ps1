@@ -79,7 +79,7 @@ function Get-DbaDbDetachedFileInfo {
 
             try {
                 $detachedDatabaseInfo = $server.DetachedDatabaseInfo($filepath)
-                $dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
+                $dbName = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
                 $exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
                 $collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
             } catch {
@@ -128,7 +128,7 @@ function Get-DbaDbDetachedFileInfo {
                 ComputerName = $SqlInstance.ComputerName
                 InstanceName = $SqlInstance.InstanceName
                 SqlInstance  = $SqlInstance.InputObject
-                Name         = $dbname
+                Name         = $dbName
                 Version      = $dbversion
                 ExactVersion = $exactdbversion
                 Collation    = $collation
