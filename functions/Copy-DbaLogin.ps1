@@ -121,7 +121,12 @@ function Copy-DbaLogin {
     .EXAMPLE
         PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser
 
-        Copies PreviousUser and then renames it to newlogin.
+        Copies PreviousUser as newlogin.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ OldLogin = "NewLogin" } -Source Sql01 -Destination Sql01 -Login ORG\OldLogin -ObjectLevel -NewSid
+
+        Clones OldLogin as NewLogin onto the same server, generating a new SID for the login. Also clones object-level permissions.
 
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017

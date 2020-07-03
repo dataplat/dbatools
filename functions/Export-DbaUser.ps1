@@ -122,6 +122,11 @@ function Export-DbaUser {
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1 -User user1 -Template -PassThru
+
+        Exports user1 from database db1, replacing loginname and username with {templateLogin} and {templateUser} correspondingly.
+
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
