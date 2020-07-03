@@ -46,6 +46,9 @@ function Export-DbaUser {
     .PARAMETER Passthru
         Output script to console, useful with | clip
 
+    .PARAMETER Template
+        Script user as a templated string that contains tokens {templateUser} and {templateLogin} instead of username and login
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -119,6 +122,11 @@ function Export-DbaUser {
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
 
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1 -User user1 -Template -PassThru
+
+        Exports user1 from database db1, replacing loginname and username with {templateLogin} and {templateUser} correspondingly.
+
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -141,6 +149,7 @@ function Export-DbaUser {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$Passthru,
+        [switch]$Template,
         [switch]$EnableException,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
         [switch]$ExcludeGoBatchSeparator
@@ -265,7 +274,19 @@ function Export-DbaUser {
                         } else {
                             $execute = ""
                         }
-                        $outsql += "$execute$($dbUserPermissionScript.ToString())"
+                        $permissionScript = $dbUserPermissionScript.ToString()
+                        if ($Template) {
+                            $escapedUsername = [regex]::Escape($dbuser.Name)
+                            $permissionScript = $permissionScript -replace "\`[$escapedUsername\`]", '[{templateUser}]'
+                            $permissionScript = $permissionScript -replace "'$escapedUsername'", "'{templateUser}'"
+                            if ($dbuser.Login) {
+                                $escapedLogin = [regex]::Escape($dbuser.Login)
+                                $permissionScript = $permissionScript -replace "\`[$escapedLogin\`]", '[{templateLogin}]'
+                                $permissionScript = $permissionScript -replace "'$escapedLogin'", "'{templateLogin}'"
+                            }
+
+                        }
+                        $outsql += "$execute$($permissionScript)"
                     }
 
                     #Database Permissions
@@ -277,8 +298,13 @@ function Export-DbaUser {
                             $withGrant = " "
                             $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                         }
+                        if ($Template) {
+                            $grantee = "{templateUser}"
+                        } else {
+                            $grantee = $databasePermission.Grantee
+                        }
 
-                        $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$($databasePermission.Grantee)]$withGrant AS [$($databasePermission.Grantor)];"
+                        $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$grantee]$withGrant AS [$($databasePermission.Grantor)];"
                     }
 
                     #Database Object Permissions
@@ -432,8 +458,13 @@ function Export-DbaUser {
                             $withGrant = " "
                             $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                         }
+                        if ($Template) {
+                            $grantee = "{templateUser}"
+                        } else {
+                            $grantee = $databasePermission.Grantee
+                        }
 
-                        $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
+                        $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
                     }
 
                 } catch {
@@ -473,7 +504,7 @@ function Export-DbaUser {
             }
         }
         # Just a single file, output path once here
-        if (-Not $GenerateFilePerUser) {
+        if (-Not $GenerateFilePerUser -and $FilePath) {
             Get-ChildItem -Path $FilePath
         }
     }
