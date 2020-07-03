@@ -58,6 +58,9 @@ function New-DbaLogin {
     .PARAMETER Disabled
         Create the login in a disabled state
 
+    .PARAMETER DenyWindowsLogin
+        Create the login and deny Windows login ability
+
     .PARAMETER NewSid
         Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
 
@@ -112,6 +115,11 @@ function New-DbaLogin {
 
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
 
+    .EXAMPLE
+        PS C:\> New-DbaLogin -SqlInstance sql1 -Login domain\user1, domain\user2 -DenyWindowsLogin
+
+        Creates two new Windows Authentication backed login on sql1. The logins would be denied from logging in.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
@@ -162,6 +170,7 @@ function New-DbaLogin {
         [switch]$PasswordPolicyEnforced,
         [Alias("Disable")]
         [switch]$Disabled,
+        [switch]$DenyWindowsLogin,
         [switch]$NewSid,
         [switch]$Force,
         [switch]$EnableException
@@ -225,7 +234,7 @@ function New-DbaLogin {
                     $currentPasswordExpirationEnabled = $loginItem.PasswordExpirationEnabled
                     $currentPasswordPolicyEnforced = $loginItem.PasswordPolicyEnforced
                     $currentDisabled = $loginItem.IsDisabled
-
+                    $currentDenyWindowsLogin = $loginItem.DenyWindowsLogin
                     #Get previous password
                     if ($loginType -eq 'SqlLogin' -and !($SecurePassword -or $HashedPassword)) {
                         $sourceServer = $loginItem.Parent
@@ -269,7 +278,7 @@ function New-DbaLogin {
                     }
                 } else {
                     $loginName = $loginItem
-                    $currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpirationEnabled = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $null
+                    $currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpirationEnabled = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $currentDenyWindowsLogin = $null
 
                     if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
                     elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") { $loginType = 'AsymmetricKey' }
@@ -307,6 +316,9 @@ function New-DbaLogin {
                 }
                 if ($PSBoundParameters.Keys -contains 'Disabled') {
                     $currentDisabled = $Disabled
+                }
+                if (Test-Bound -Parameter DenyWindowsLogin) {
+                    $currentDenyWindowsLogin = $DenyWindowsLogin
                 }
 
                 #Apply renaming if necessary
@@ -380,6 +392,13 @@ function New-DbaLogin {
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
 
+                            # leaving it here to test
+                            if ($currentDenyWindowsLogin) {
+                                Write-Message -Level VeryVerbose -Message "Setting $loginName DenyWindowsLogin to $currentDenyWindowsLogin"
+                                $withParams += ", DENY_LOGIN" # gotta check this one
+                                $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
+                            }
+
                             #Generate hashed password if necessary
                             if ($SecurePassword) {
                                 $currentHashedPassword = Get-PasswordHash $SecurePassword $server.versionMajor
@@ -451,6 +470,23 @@ function New-DbaLogin {
                                     Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
                                 } catch {
                                     Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                                }
+                            }
+                        }
+                        #Process the DenyWindowsLogin property
+                        if ($currentDenyWindowsLogin) {
+                            try {
+                                $newLogin.DenyWindowsLogin = $true
+                                $newLogin.Apply()
+                                Write-Message -Level Verbose -Message "Login $loginName has been denied on $instance."
+                            } catch {
+                                Write-Message -Level Verbose -Message "Failed to set deny windows login priviledge $loginName on $instance using SMO, trying T-SQL."
+                                try {
+                                    $sql = "ALTER LOGIN [$loginName] DENY_WINDOWS" #check this one
+                                    $null = $server.Query($sql)
+                                    Write-Message -Level Verbose -Message "Login $loginName is now denied of Windows login privileges on $instance."
+                                } catch {
+                                    Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                         }
