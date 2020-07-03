@@ -25,7 +25,7 @@ function Install-DbaFirstResponderKit {
         Specifies the database to install the First Responder Kit stored procedures into
 
     .PARAMETER Branch
-        Specifies an alternate branch of the First Responder Kit to install. (master or dev)
+        Specifies an alternate branch of the First Responder Kit to install. (main or dev)
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.
@@ -94,8 +94,8 @@ function Install-DbaFirstResponderKit {
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet('master', 'dev')]
-        [string]$Branch = "master",
+        [ValidateSet('main', 'dev')]
+        [string]$Branch = "main",
         [object]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
