@@ -84,7 +84,7 @@ function Set-DbaSpConfigure {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
+        if (Test-Bound -ParameterName SqlInstance) {
             $InputObject += Get-DbaSpConfigure -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $Name
         }
 
