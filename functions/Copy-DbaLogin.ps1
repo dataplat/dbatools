@@ -55,7 +55,7 @@ function Copy-DbaLogin {
         Ignore sids from the source login objects to generate new sids on the destination server. Useful when copying login onto the same server
 
     .PARAMETER LoginRenameHashtable
-        Pass a hash table into this parameter to be passed into Rename-DbaLogin to update the Login and mappings after the Login is completed.
+        Pass a hash table into this parameter to create logins under different names based on hashtable mapping.
 
     .PARAMETER ObjectLevel
         Include object-level permissions for each user associated with copied login.
