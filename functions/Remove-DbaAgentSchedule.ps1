@@ -19,6 +19,9 @@ function Remove-DbaAgentSchedule {
     .PARAMETER Schedule
         The name of the job schedule.
 
+    .PARAMETER ScheduleUid
+        The unique identifier of the schedule
+
     .PARAMETER InputObject
         A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
 
@@ -76,24 +79,33 @@ function Remove-DbaAgentSchedule {
 
         Remove the schedules using a pipeline
 
+    .EXAMPLE
+        Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -ScheduleUid 'bf57fa7e-7720-4936-85a0-87d279db7eb7'
+
+        Remove the schedules usingthe schdule uid
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [Parameter(Mandatory, ParameterSetName = "instance")]
+        [Parameter(ParameterSetName = "instance")]
         [ValidateNotNullOrEmpty()]
-        [Alias("Schedules")]
-        [object[]]$Schedule,
+        [Alias("Schedules", "Name")]
+        [string[]]$Schedule,
+        [Alias("Uid")]
+        [string[]]$ScheduleUid,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
         [switch]$EnableException,
         [switch]$Force
     )
+
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
     }
+
     process {
 
         foreach ($instance in $SqlInstance) {
@@ -104,10 +116,18 @@ function Remove-DbaAgentSchedule {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if (-not $InputObject -and (-not $Schedule -or $ScheduleUid)) {
+                Stop-Function -Message "Please enter the schedule or schedule uid"
+            }
+
             $InputObject += $server.JobServer.SharedSchedules
 
             if ($Schedule) {
                 $InputObject = $InputObject | Where-Object Name -in $Schedule
+            }
+
+            if ($ScheduleUid) {
+                $InputObject = $InputObject | Where-Object ScheduleUid -in $ScheduleUid
             }
 
         } # foreach object instance
