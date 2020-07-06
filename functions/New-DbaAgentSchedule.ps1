@@ -615,7 +615,7 @@ function New-DbaAgentSchedule {
                     }
 
                     # Output the job schedule
-                    return $JobSchedule
+                    $JobSchedule
                 }
             }
         } # foreach object instance
