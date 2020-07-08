@@ -89,7 +89,7 @@ function Set-DbaSpConfigure {
         }
 
         foreach ($configobject in $InputObject) {
-            $server = $InputObject.Parent
+            $server = $configobject.Parent
             $currentRunValue = $configobject.RunningValue
             $currentConfigValue = $configobject.ConfiguredValue
             $minValue = $configobject.MinValue
