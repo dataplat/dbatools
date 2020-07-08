@@ -95,7 +95,7 @@ function Import-DbaCsv {
         This behaviour will be overridden if the -Schema parameter is specified.
 
     .PARAMETER TableLock
-        If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
+        If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used.
 
         Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not
         specified, row locks are used."
