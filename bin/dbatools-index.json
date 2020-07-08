@@ -5012,7 +5012,7 @@
         "CommandName":  "Copy-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser\nCopies PreviousUser and then renames it to newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$loginSplat = @{\n\u003e\u003e Source = $Sql01\r\n\u003e\u003e Destination = \"Localhost\"\r\n\u003e\u003e SourceSqlCredential = $sqlcred\r\n\u003e\u003e Login = \u0027ReadUserP\u0027, \u0027ReadWriteUserP\u0027, \u0027AdminP\u0027\r\n\u003e\u003e LoginRenameHashtable = @{\r\n\u003e\u003e \"ReadUserP\" = \"ReadUserT\"\r\n\u003e\u003e \"ReadWriteUserP\" = \"ReadWriteUserT\"\r\n\u003e\u003e \"AdminP\"         = \"AdminT\"\r\n\u003e\u003e }\r\n\u003e\u003e }\r\nPS C:\\\u003e Copy-DbaLogin @loginSplat\nCopies the three specified logins to \u0027localhost\u0027 and renames them according to the LoginRenameHashTable.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf active connections are found for a login, the copy of that Login will fail as it cannot be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection\nCopies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.\nIf any active connections are found they will be killed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -ExcludeLogin realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred\nCopies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.\nIf a Login already exists on the destination, it will not be migrated.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\nCopies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"PreviousUser\" = \"newlogin\" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser\nCopies PreviousUser as newlogin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ OldLogin = \"NewLogin\" } -Source Sql01 -Destination Sql01 -Login ORG\\OldLogin -ObjectLevel -NewSid\nClones OldLogin as NewLogin onto the same server, generating a new SID for the login. Also clones object-level permissions.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017\nDisplays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$loginSplat = @{\n\u003e\u003e Source = $Sql01\r\n\u003e\u003e Destination = \"Localhost\"\r\n\u003e\u003e SourceSqlCredential = $sqlcred\r\n\u003e\u003e Login = \u0027ReadUserP\u0027, \u0027ReadWriteUserP\u0027, \u0027AdminP\u0027\r\n\u003e\u003e LoginRenameHashtable = @{\r\n\u003e\u003e \"ReadUserP\" = \"ReadUserT\"\r\n\u003e\u003e \"ReadWriteUserP\" = \"ReadWriteUserT\"\r\n\u003e\u003e \"AdminP\"         = \"AdminT\"\r\n\u003e\u003e }\r\n\u003e\u003e }\r\nPS C:\\\u003e Copy-DbaLogin @loginSplat\nCopies the three specified logins to \u0027localhost\u0027 and renames them according to the LoginRenameHashTable.",
         "Params":  [
                        [
                            "Source",
@@ -5096,7 +5096,7 @@
                        ],
                        [
                            "LoginRenameHashtable",
-                           "Pass a hash table into this parameter to be passed into Rename-DbaLogin to update the Login and mappings after the Login is completed.",
+                           "Pass a hash table into this parameter to create logins under different names based on hashtable mapping.",
                            "",
                            false,
                            "false",
@@ -5111,8 +5111,24 @@
                            "False"
                        ],
                        [
+                           "NewSid",
+                           "Ignore sids from the source login objects to generate new sids on the destination server. Useful when copying login onto the same server",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Force",
                            "If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ObjectLevel",
+                           "Include object-level permissions for each user associated with copied login.",
                            "",
                            false,
                            "false",
@@ -5151,7 +5167,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] -OutFile \u003cString\u003e [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-InputObject \u003cObject\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-Force] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-NewSid] [-Force] [-ObjectLevel] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-NewSid] [-Force] [-ObjectLevel] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin -Source \u003cDbaInstanceParameter\u003e [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] -OutFile \u003cString\u003e [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-NewSid] [-Force] [-ObjectLevel] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-NewSid] [-Force] [-ObjectLevel] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaLogin [-SourceSqlCredential \u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Login \u003cObject[]\u003e] [-ExcludeLogin \u003cObject[]\u003e] [-ExcludeSystemLogins] [-SyncSaName] [-LoginRenameHashtable \u003cHashtable\u003e] [-KillActiveConnection] [-NewSid] [-Force] [-ObjectLevel] [-ExcludePermissionSync] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaPolicyManagement",
@@ -8761,7 +8777,7 @@
         "CommandName":  "Export-DbaUser",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-users.sql\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\\temp\\users.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\\temp\\users.sql\nExports ONLY users User1 and User2 from sqlserver2014a to the file C:\\temp\\users.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\\temp\nExports ONLY users User1 and User2 from sqlserver2014a to the folder C:\\temp. One file per user will be generated\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports user User1 from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptDrops = $false\r\nPS C:\\\u003e $options.WithDependencies = $true\r\nPS C:\\\u003e Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ScriptingOptionsObject $options\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ExcludeGoBatchSeparator\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 batch separator.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-users.sql\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\\temp\\users.sql -Append\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the file if it exists. If not, the file will be created.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\\temp\\users.sql\nExports ONLY users User1 and User2 from sqlserver2014a to the file C:\\temp\\users.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\\temp\nExports ONLY users User1 and User2 from sqlserver2014a to the folder C:\\temp. One file per user will be generated\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\\temp\\users.sql -DestinationVersion SQLServer2016\nExports user User1 from sqlserver2008 to the file C:\\temp\\users.sql with syntax to run on SQL Server 2016\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$options = New-DbaScriptingOption\nPS C:\\\u003e $options.ScriptDrops = $false\r\nPS C:\\\u003e $options.WithDependencies = $true\r\nPS C:\\\u003e Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ScriptingOptionsObject $options\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ExcludeGoBatchSeparator\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 batch separator.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1 -User user1 -Template -PassThru\nExports user1 from database db1, replacing loginname and username with {templateLogin} and {templateUser} correspondingly.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -8860,6 +8876,14 @@
                            "False"
                        ],
                        [
+                           "Template",
+                           "Script user as a templated string that contains tokens {templateUser} and {templateLogin} instead of username and login",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -8884,7 +8908,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaUser [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-User] \u003cString[]\u003e] [[-DestinationVersion] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoClobber] [-Append] [-Passthru] [-EnableException] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-ExcludeGoBatchSeparator] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaUser [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-User] \u003cString[]\u003e] [[-DestinationVersion] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoClobber] [-Append] [-Passthru] [-Template] [-EnableException] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-ExcludeGoBatchSeparator] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaXECsv",
@@ -11238,7 +11262,7 @@
         "CommandName":  "Get-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016 -Id 3\nReturns the SQL Agent Shared Schedules with the Id of 3\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016 -Id 3\nReturns the SQL Agent Shared Schedules with the Id of 3\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016 -ScheduleUid \u0027bf57fa7e-7720-4936-85a0-87d279db7eb7\u0027\nReturns the SQL Agent Shared Schedules with the UID\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql2016 -Schedule \"Maintenance10min\",\"Maintenance60min\"\nReturns the \"Maintenance10min\" \u0026 \"Maintenance60min\" schedules from the sql2016 SQL Server instance",
         "Params":  [
                        [
                            "SqlInstance",
@@ -11265,6 +11289,14 @@
                            ""
                        ],
                        [
+                           "ScheduleUid",
+                           "The unique identifier of the schedule",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Id",
                            "Parameter to filter the schedules returned",
                            "",
@@ -11281,7 +11313,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Schedule] \u003cString[]\u003e] [[-Id] \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Schedule] \u003cString[]\u003e] [[-ScheduleUid] \u003cString[]\u003e] [[-Id] \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentServer",
@@ -12773,7 +12805,7 @@
     },
     {
         "Name":  "Get-DbaDbBackupHistory",
-        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group\n\nIf an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history\n\nIf a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
+        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group\n\nIf an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history\n\nIf a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well, if the Availability Group has a listener.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup"
@@ -24335,11 +24367,11 @@
                        ],
                        [
                            "Branch",
-                           "Specifies an alternate branch of the First Responder Kit to install. (master or dev)",
+                           "Specifies an alternate branch of the First Responder Kit to install. (main or dev)",
                            "",
                            false,
                            "false",
-                           "master"
+                           "main"
                        ],
                        [
                            "Database",
@@ -34230,7 +34262,7 @@
         "CommandName":  "New-DbaLogin",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaLogin",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\nPS C:\\\u003e New-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -SecurePassword $securePassword -PasswordPolicyEnforced -PasswordExpirationEnabled\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login \r\n[Newlogin] will be removed prior to creation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicyEnforced -PasswordExpirationEnabled -DefaultDatabase tempdb -Disabled\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] \r\nand will be created in a disabled state.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance sql1 -Login domain\\user\nCreates a new Windows Authentication backed login on sql1. The login will be part of the public server role.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\nPS C:\\\u003e New-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -SecurePassword $securePassword -PasswordPolicyEnforced -PasswordExpirationEnabled\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login \r\n[Newlogin] will be removed prior to creation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicyEnforced -PasswordExpirationEnabled -DefaultDatabase tempdb -Disabled\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] \r\nand will be created in a disabled state.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance sql1 -Login domain\\user\nCreates a new Windows Authentication backed login on sql1. The login will be part of the public server role.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaLogin -SqlInstance sql1 -Login domain\\user1, domain\\user2 -DenyWindowsLogin\nCreates two new Windows Authentication backed login on sql1. The logins would be denied from logging in.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34361,6 +34393,14 @@
                            "False"
                        ],
                        [
+                           "DenyWindowsLogin",
+                           "Create the login and deny Windows login ability",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "NewSid",
                            "Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server",
                            "",
@@ -34401,7 +34441,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [[-SecurePassword] \u003cSecureString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-DefaultDatabase \u003cString\u003e] [-Language \u003cString\u003e] [-PasswordExpirationEnabled] [-PasswordPolicyEnforced] [-Disabled] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-MapToAsymmetricKey \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-Disabled] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-MapToCertificate \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-Disabled] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-HashedPassword \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-DefaultDatabase \u003cString\u003e] [-Language \u003cString\u003e] [-PasswordExpirationEnabled] [-PasswordPolicyEnforced] [-Disabled] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [[-SecurePassword] \u003cSecureString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-DefaultDatabase \u003cString\u003e] [-Language \u003cString\u003e] [-PasswordExpirationEnabled] [-PasswordPolicyEnforced] [-Disabled] [-DenyWindowsLogin] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-MapToAsymmetricKey \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-Disabled] [-DenyWindowsLogin] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-MapToCertificate \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-Disabled] [-DenyWindowsLogin] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Login \u003cString[]\u003e] [-InputObject \u003cObject[]\u003e] [-LoginRenameHashtable \u003cHashtable\u003e] [-HashedPassword \u003cString\u003e] [-MapToCredential \u003cString\u003e] [-Sid \u003cObject\u003e] [-DefaultDatabase \u003cString\u003e] [-Language \u003cString\u003e] [-PasswordExpirationEnabled] [-PasswordPolicyEnforced] [-Disabled] [-DenyWindowsLogin] [-NewSid] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaScriptingOption",
@@ -36360,7 +36400,7 @@
         "CommandName":  "Remove-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\nRemove the schedule weekly\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\nRemove the schedule weekly from the job even if the schedule is being used by another job.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\nRemove multiple schedule\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\nRemove the schedule on multiple servers for multiple schedules\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\nRemove the schedule on multiple servers using pipe line\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule\nRemove the schedules using a pipeline",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\nRemove the schedule weekly\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\nRemove the schedule weekly from the job even if the schedule is being used by another job.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\nRemove multiple schedule\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\nRemove the schedule on multiple servers for multiple schedules\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\nRemove the schedule on multiple servers using pipe line\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule\nRemove the schedules using a pipeline\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -ScheduleUid \u0027bf57fa7e-7720-4936-85a0-87d279db7eb7\u0027\nRemove the schedules usingthe schdule uid",
         "Params":  [
                        [
                            "SqlInstance",
@@ -36381,8 +36421,16 @@
                        [
                            "Schedule",
                            "The name of the job schedule.",
-                           "Schedules",
-                           true,
+                           "Schedules,Name",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ScheduleUid",
+                           "The unique identifier of the schedule",
+                           "Uid",
+                           false,
                            "false",
                            ""
                        ],
@@ -36427,7 +36475,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentSchedule -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Schedule \u003cObject[]\u003e [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentSchedule [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cScheduleBase[]\u003e [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentSchedule -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Schedule \u003cString[]\u003e] [-ScheduleUid \u003cString[]\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentSchedule [-SqlCredential \u003cPSCredential\u003e] [-ScheduleUid \u003cString[]\u003e] -InputObject \u003cScheduleBase[]\u003e [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgListener",

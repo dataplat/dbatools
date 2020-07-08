@@ -407,7 +407,7 @@ function New-DbaAgentJob {
             }
 
             # Return the job
-            return $currentjob
+            $currentjob
         }
     }
 
