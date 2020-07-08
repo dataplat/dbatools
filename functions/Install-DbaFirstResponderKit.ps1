@@ -196,7 +196,7 @@ function Install-DbaFirstResponderKit {
             $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
             $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
             # Install/Update each FRK stored procedure
-            foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
+            foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql" -Exclude '*SQL_Server_2005.sql')) {
                 $scriptname = $script.Name
                 $scriptError = $false
                 if ($scriptname -ne "sp_BlitzRS.sql") {
