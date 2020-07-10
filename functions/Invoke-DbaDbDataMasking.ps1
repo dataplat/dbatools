@@ -473,7 +473,17 @@ function Invoke-DbaDbDataMasking {
                                                 $query += "[$($columnObject.Name)] - $($columnAction.Value);"
                                             }
                                         }
+                                    } elseif ($columnAction.Category -eq 'Column') {
+                                        switch ($columnAction.Type) {
+                                            "Set" {
+                                                $query += "$($columnObject.Value)"
+                                            }
+                                            "Nullify" {
+                                                $query += "NULL"
+                                            }
+                                        }
                                     }
+
                                     # Add the query to the rest
                                     $null = $stringBuilder.AppendLine($query)
                                 }
