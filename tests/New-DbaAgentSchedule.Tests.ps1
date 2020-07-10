@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $script:instance2,$script:instance1 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
         $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
 
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule'
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2,$script:instance1 -Job 'dbatoolsci_newschedule'
     }
 
     Context "Should create schedules based on static frequency" {
@@ -208,5 +208,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $($r.parent) | Should Be 'dbatoolsci_newschedule'
             }
         }
+    }
+
+    Context "Should create schedules on multiple instances" {
+        $results1 = New-DbaAgentSchedule -SqlInstance $script:instance2, $script:instance1 -Force -Schedule dbatoolsci_ScheduleWithoutJobOnMultipleServers
+        $results2 = New-DbaAgentSchedule -SqlInstance $script:instance2, $script:instance1 -Force -Schedule dbatoolsci_NewScheduleForAJobWithoutASchedule -Job dbatoolsci_newschedule
+
+        It "Should create schedules without jobs" {
+            $results1.Count | Should Be 2
+        }
+
+        It "Should create schedules for an existing jobs" {
+            $results2.Count | Should Be 2
+        }
+        Remove-DbaAgentSchedule -Confirm:$false -Force -SqlInstance $script:instance2, $script:instance1 -Schedule dbatoolsci_ScheduleWithoutJobOnMultipleServers, dbatoolsci_NewScheduleForAJobWithoutASchedule
     }
 }
