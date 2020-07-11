@@ -182,6 +182,7 @@ function Install-DbaSqlWatch {
             return
         }
 
+        $totalSteps = $stepCounter + $SqlInstance.Count * 2
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
@@ -190,7 +191,7 @@ function Install-DbaSqlWatch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance" -TotalSteps $totalSteps
 
 
                 try {
@@ -200,7 +201,7 @@ function Install-DbaSqlWatch {
                         RegisterDataTierApplication = $true
                     }
 
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
 
