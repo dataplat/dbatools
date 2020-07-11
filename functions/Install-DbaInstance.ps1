@@ -609,9 +609,9 @@ function Install-DbaInstance {
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($canonicVersion -ge '13.0') {
+            if ($canonicVersion -ge '13.0' -and (-Not $configNode.SQLTEMPDBFILECOUNT)) {
                 # configure the number of cores
-                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException | Measure-Object NumberOfLogicalProcessors -Sum | Select-Object -ExpandProperty sum
                 if ($cores -gt 8) {
                     $cores = 8
                 }
