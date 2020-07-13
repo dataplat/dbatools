@@ -727,7 +727,7 @@ function Invoke-DbaDbDataMasking {
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-                                Write-ProgressHelper @progressParams
+                                #Write-ProgressHelper @progressParams
 
                                 try {
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
