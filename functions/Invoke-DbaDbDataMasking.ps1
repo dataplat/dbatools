@@ -447,6 +447,8 @@ function Invoke-DbaDbDataMasking {
                         if ($columnsWithActions.Count -ge 1) {
                             foreach ($columnObject in $columnsWithActions) {
                                 foreach ($columnAction in $columnObject.Action) {
+                                    $validAction = $true
+
                                     $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
 
                                     if ($columnAction.Category -eq 'DateTime') {
@@ -456,6 +458,9 @@ function Invoke-DbaDbDataMasking {
                                             }
                                             "Subtract" {
                                                 $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
+                                            }
+                                            default {
+                                                $validAction = $false
                                             }
                                         }
                                     } elseif ($columnAction.Category -eq 'Number') {
@@ -472,6 +477,9 @@ function Invoke-DbaDbDataMasking {
                                             "Subtract" {
                                                 $query += "[$($columnObject.Name)] - $($columnAction.Value);"
                                             }
+                                            default {
+                                                $validAction = $false
+                                            }
                                         }
                                     } elseif ($columnAction.Category -eq 'Column') {
                                         switch ($columnAction.Type) {
@@ -479,13 +487,22 @@ function Invoke-DbaDbDataMasking {
                                                 $query += "$($columnObject.Value)"
                                             }
                                             "Nullify" {
-                                                $query += "NULL"
+                                                if ($columnobject.Nullable) {
+                                                    $query += "NULL"
+                                                } else {
+                                                    $validAction = $false
+                                                }
+                                            }
+                                            default {
+                                                $validAction = $false
                                             }
                                         }
                                     }
 
                                     # Add the query to the rest
-                                    $null = $stringBuilder.AppendLine($query)
+                                    if ($validAction) {
+                                        $null = $stringBuilder.AppendLine($query)
+                                    }
                                 }
                             }
 
