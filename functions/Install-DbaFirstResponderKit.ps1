@@ -197,42 +197,52 @@ function Install-DbaFirstResponderKit {
             }
             if ($PSCmdlet.ShouldProcess($database, "Installing FRK procedures in $database on $instance")) {
                 Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
-                $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+                $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
                 # Install/Update each FRK stored procedure
                 $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
                 foreach ($script in $sqlScripts) {
-                    $scriptname = $script.Name
+                    $scriptName = $script.Name
                     $scriptError = $false
-                    if ($scriptname -ne "sp_BlitzRS.sql") {
 
-                        if ($scriptname -eq "sp_BlitzQueryStore.sql") {
-                            if ($server.VersionMajor -lt 13) { continue }
+                    $baseres = [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $Database
+                        Name         = $script.BaseName
+                        Status       = $null
+                    }
+
+                    if ($scriptName -eq "sp_BlitzQueryStore.sql" -and ($server.VersionMajor -lt 13)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2016, skipping $scriptName"
+                        $baseres.Status = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($scriptName -eq "sp_BlitzInMemoryOLTP.sql" -and ($server.VersionMajor -lt 12)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2014, skipping $scriptName"
+                        $baseres.Status = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                        } catch {
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
+                            $scriptError = $true
                         }
-                        if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
-                            try {
-                                Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
-                            } catch {
-                                Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
-                                $scriptError = $true
-                            }
-                            $baseres = @{
-                                ComputerName = $server.ComputerName
-                                InstanceName = $server.ServiceName
-                                SqlInstance  = $server.DomainInstanceName
-                                Database     = $Database
-                                Name         = $script.BaseName
-                            }
-                            if ($scriptError) {
-                                $baseres['Status'] = 'Error'
-                            } elseif ($script.BaseName -in $allprocedures) {
-                                $baseres['Status'] = 'Updated'
-                            } else {
-                                $baseres['Status'] = 'Installed'
-                            }
-                            [PSCustomObject]$baseres
+
+                        if ($scriptError) {
+                            $baseres.Status = 'Error'
+                        } elseif ($script.BaseName -in $allprocedures) {
+                            $baseres.Status = 'Updated'
+                        } else {
+                            $baseres.Status = 'Installed'
                         }
+                        $baseres
                     }
                 }
             }
