@@ -136,7 +136,7 @@ function Get-DbaDbEncryption {
                         $returnCertificate.Owner = $serverCertificate.Owner
                         $returnCertificate.Object = $serverCertificate
                         $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
-                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties.where( { $psitem.name -eq 'EncryptionAlgorithm' }).value
+                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties | Where-Object( { $psitem.name -eq 'EncryptionAlgorithm' }).value
                     }
 
                     $returnCertificate
