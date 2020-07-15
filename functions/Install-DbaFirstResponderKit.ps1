@@ -118,17 +118,6 @@ function Install-DbaFirstResponderKit {
         $zipFolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
         $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
 
-        if ($LocalFile) {
-            if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
-                Stop-Function -Message "$LocalFile doesn't exist"
-                return
-            }
-            if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
-                Stop-Function -Message "$LocalFile should be a zip file"
-                return
-            }
-        }
-
         if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
             if (Test-Path $zipFile) {
@@ -138,13 +127,25 @@ function Install-DbaFirstResponderKit {
             }
 
             if ($LocalFile) {
+                if (-not (Test-Path $LocalFile)) {
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
+                        Stop-Function -Message "$LocalFile doesn't exist"
+                        return
+                    }
+                }
+                if (Test-Path $LocalFile -PathType Container) {
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
+                        Stop-Function -Message "$LocalFile should be a zip file"
+                        return
+                    }
+                }
                 if (Test-Windows -NoWarn) {
                     if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
                         Unblock-File $LocalFile -ErrorAction SilentlyContinue
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
-                    Expand-Archive -Path $LocalFile -DestinationPath $zipFolder -Force
+                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
                 }
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
