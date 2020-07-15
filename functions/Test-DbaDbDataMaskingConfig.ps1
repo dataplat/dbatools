@@ -77,9 +77,9 @@ function Test-DbaDbDataMaskingConfig {
 
         $requiredColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType')
 
-        $allowedActionCategories = @('datetime', 'number')
+        $allowedActionCategories = @('datetime', 'number', 'column')
         $allowedActionSubCategories = @('year', 'quarter', 'month', 'dayofyear', 'day', 'week', 'weekday', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond')
-        $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Subtract')
+        $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Nullify', 'Set', 'Subtract')
 
         $allowedDateTimeTypes = @('date', 'datetime', 'datetime2', 'smalldatetime', 'time')
         $allowedNumberTypes = @('bigint', 'bit', 'int', 'money', 'smallint')
@@ -223,7 +223,7 @@ function Test-DbaDbDataMaskingConfig {
                         }
                     }
 
-                    if ($null -eq $column.Action.Value -and $column.Action.Type -in $allowedActionTypes) {
+                    if ($column.Action.Category -ne 'Column' -and $column.Action.Type -ne 'Nullify' -and $null -eq $column.Action.Value -and $column.Action.Type -in $allowedActionTypes) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
