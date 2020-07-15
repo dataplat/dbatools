@@ -113,12 +113,10 @@ function Install-DbaFirstResponderKit {
         }
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
-        $frkLocation = "SQL-Server-First-Responder-Kit-$Branch"
-
         $temp = [System.IO.Path]::GetTempPath()
         $zipFile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
-        $zipFolder = $frkLocation
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $frkLocation
+        $zipFolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
+        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
 
         if ($LocalFile) {
             if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
@@ -133,18 +131,12 @@ function Install-DbaFirstResponderKit {
 
         if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if ($zipFile | Test-Path) {
+            if (Test-Path $zipFile) {
                 if ($PSCmdlet.ShouldProcess($zipFile, "File found, dropping $zipFile")) {
                     Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
                 }
             }
-            if ($zipFolder | Test-Path) {
-                if ($PSCmdlet.ShouldProcess($zipFolder, "File found, dropping $zipFolder")) {
-                    Remove-Item -Path $zipFolder -ErrorAction SilentlyContinue
-                }
-            }
 
-            $null = New-Item -ItemType Directory -Path $zipFolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
                 if (Test-Windows -NoWarn) {
                     if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
@@ -158,7 +150,6 @@ function Install-DbaFirstResponderKit {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
                 if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
                     try {
-
                         try {
                             Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
                         } catch {
@@ -172,7 +163,7 @@ function Install-DbaFirstResponderKit {
                             Unblock-File $zipFile -ErrorAction SilentlyContinue
                         }
 
-                        Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force
+                        Expand-Archive -Path $zipFile -DestinationPath $temp -Force
                         Remove-Item -Path $zipFile
                     } catch {
                         Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
@@ -188,15 +179,13 @@ function Install-DbaFirstResponderKit {
                 } else {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
-                Copy-Item -Path $zipFolder -Destination $LocalCachedCopy -Recurse
+                Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $LocalCachedCopy
             }
         }
     }
 
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
@@ -209,10 +198,11 @@ function Install-DbaFirstResponderKit {
             if ($PSCmdlet.ShouldProcess($database, "Installing FRK procedures in $database on $instance")) {
                 Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
                 $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-                $allprocedures = ($sesrver.Query($allprocedures_query, $Database)).Name
+                $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
                 # Install/Update each FRK stored procedure
-                foreach ($script in (Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql" -Exclude '*SQL_Server_2005.sql')) {
+                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                foreach ($script in $sqlScripts) {
                     $scriptname = $script.Name
                     $scriptError = $false
                     if ($scriptname -ne "sp_BlitzRS.sql") {
