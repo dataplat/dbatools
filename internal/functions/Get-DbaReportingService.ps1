@@ -34,7 +34,7 @@ function Get-DbaReportingService {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaService
+        https://docs.dbatools.io/#Get-DbaService
 
     .EXAMPLE
         PS C:\> Get-DbaReportingService -ComputerName sqlserver2014a

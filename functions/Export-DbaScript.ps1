@@ -225,7 +225,7 @@ function Export-DbaScript {
                 if ($NoPrefix) {
                     $prefix = $null
                 } else {
-                    $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                    $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://docs.dbatools.io/#$commandName for more information`n*/"
                 }
 
                 if ($passthru) {

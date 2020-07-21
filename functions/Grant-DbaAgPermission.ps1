@@ -72,7 +72,7 @@ function Grant-DbaAgPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Grant-DbaAgPermission
+        https://docs.dbatools.io/#Grant-DbaAgPermission
 
     .EXAMPLE
         PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase
