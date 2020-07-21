@@ -66,7 +66,7 @@ function Invoke-DbaDbLogShipRecovery {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbLogShipRecovery
+        https://docs.dbatools.io/#Invoke-DbaDbLogShipRecovery
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1

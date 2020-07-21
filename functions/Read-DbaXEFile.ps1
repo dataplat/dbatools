@@ -29,7 +29,7 @@ function Read-DbaXEFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Read-DbaXEFile
+        https://docs.dbatools.io/#Read-DbaXEFile
 
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\deadocks.xel

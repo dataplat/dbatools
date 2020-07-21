@@ -56,7 +56,7 @@ function New-DbaXESmartReplay {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaXESmartReplay
+        https://docs.dbatools.io/#New-DbaXESmartReplay
 
     .EXAMPLE
         PS C:\> $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning

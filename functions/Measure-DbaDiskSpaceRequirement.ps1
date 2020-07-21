@@ -51,7 +51,7 @@ function Measure-DbaDiskSpaceRequirement {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Measure-DbaDiskSpaceRequirement
+        https://docs.dbatools.io/#Measure-DbaDiskSpaceRequirement
 
     .EXAMPLE
         PS C:\> Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2

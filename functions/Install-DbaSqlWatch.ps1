@@ -52,7 +52,7 @@ function Install-DbaSqlWatch {
         https://sqlwatch.io
 
     .LINK
-        https://dbatools.io/Install-DbaSqlWatch
+        https://docs.dbatools.io/#Install-DbaSqlWatch
 
     .EXAMPLE
         Install-DbaSqlWatch -SqlInstance server1

@@ -53,7 +53,7 @@ function Remove-DbaDbBackupRestoreHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbBackupRestoreHistory
+        https://docs.dbatools.io/#Remove-DbaDbBackupRestoreHistory
 
     .EXAMPLE
         PS C:\> Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016

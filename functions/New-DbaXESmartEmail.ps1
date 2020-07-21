@@ -69,7 +69,7 @@ function New-DbaXESmartEmail {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaXESmartEmail
+        https://docs.dbatools.io/#New-DbaXESmartEmail
 
     .EXAMPLE
         PS C:\> $params = @{

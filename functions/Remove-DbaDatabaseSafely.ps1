@@ -80,7 +80,7 @@ function Remove-DbaDatabaseSafely {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDatabaseSafely
+        https://docs.dbatools.io/#Remove-DbaDatabaseSafely
 
     .EXAMPLE
         PS C:\> Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'

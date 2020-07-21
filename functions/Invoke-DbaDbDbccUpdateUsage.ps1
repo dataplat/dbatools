@@ -64,7 +64,7 @@ function Invoke-DbaDbDbccUpdateUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDbccUpdateUsage
+        https://docs.dbatools.io/#Invoke-DbaDbDbccUpdateUsage
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbDbccUpdateUsage -SqlInstance SqlServer2017

@@ -35,7 +35,7 @@ function Remove-DbaClientAlias {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaClientAlias
+        https://docs.dbatools.io/#Remove-DbaClientAlias
 
     .EXAMPLE
         PS C:\> Remove-DbaClientAlias -ComputerName workstationx -Alias sqlps

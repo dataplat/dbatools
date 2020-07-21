@@ -67,7 +67,7 @@ function Invoke-DbaDbUpgrade {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbUpgrade
+        https://docs.dbatools.io/#Invoke-DbaDbUpgrade
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test

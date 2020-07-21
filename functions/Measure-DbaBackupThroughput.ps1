@@ -60,7 +60,7 @@ function Measure-DbaBackupThroughput {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Measure-DbaBackupThroughput
+        https://docs.dbatools.io/#Measure-DbaBackupThroughput
 
     .EXAMPLE
         PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016

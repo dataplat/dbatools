@@ -64,13 +64,13 @@ function Resolve-DbaNetworkName {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Resolve-DbaNetworkName
+        https://docs.dbatools.io/#Resolve-DbaNetworkName
 
     .EXAMPLE
         PS C:\> Resolve-DbaNetworkName -ComputerName sql2014
 
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2014
-        
+
     .EXAMPLE
         PS C:\> Resolve-DbaNetworkName -ComputerName sql2016, sql2014
 

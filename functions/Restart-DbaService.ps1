@@ -52,7 +52,7 @@ function Restart-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .LINK
-        https://dbatools.io/Restart-DbaService
+        https://docs.dbatools.io/#Restart-DbaService
 
     .EXAMPLE
         PS C:\> Restart-DbaService -ComputerName sqlserver2014a

@@ -98,7 +98,7 @@ function New-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentJob
+        https://docs.dbatools.io/#New-DbaAgentJob
 
     .EXAMPLE
         PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job'

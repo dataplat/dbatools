@@ -97,7 +97,7 @@ function New-DbaDbTransfer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbTransfer
+        https://docs.dbatools.io/#New-DbaDbTransfer
 
     .EXAMPLE
         PS C:\> New-DbaDbTransfer -SqlInstance sql1 -Destination sql2 -Database mydb -CopyAll Tables

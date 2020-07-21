@@ -50,7 +50,7 @@ function New-DbaDbRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbRole
+        https://docs.dbatools.io/#New-DbaDbRole
 
     .EXAMPLE
         PS C:\> New-DbaDbRole -SqlInstance sql2017a -Database db1 -Role 'dbExecuter'

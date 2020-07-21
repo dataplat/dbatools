@@ -48,7 +48,7 @@ function Restore-DbaDbCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Restore-DbaDbCertificate
+        https://docs.dbatools.io/#Restore-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> $securepass = Get-Credential usernamedoesntmatter | Select-Object -ExpandProperty Password

@@ -55,7 +55,7 @@ function New-DbaDacProfile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDacProfile
+        https://docs.dbatools.io/#New-DbaDacProfile
 
     .EXAMPLE
         PS C:\> New-DbaDacProfile -SqlInstance sql2017 -SqlCredential ad\sqldba -Database WorldWideImporters -Path C:\temp

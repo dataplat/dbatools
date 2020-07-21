@@ -47,7 +47,7 @@ function Repair-DbaDbMirror {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Repair-DbaDbMirror
+        https://docs.dbatools.io/#Repair-DbaDbMirror
 
     .EXAMPLE
         PS C:\> Repair-DbaDbMirror -SqlInstance sql2017 -Database pubs

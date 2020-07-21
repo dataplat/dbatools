@@ -40,7 +40,7 @@ function Remove-DbaComputerCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaComputerCertificate
+        https://docs.dbatools.io/#Remove-DbaComputerCertificate
 
     .EXAMPLE
         PS C:\> Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94

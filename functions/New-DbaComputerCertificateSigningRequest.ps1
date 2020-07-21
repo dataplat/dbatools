@@ -49,7 +49,7 @@ function New-DbaComputerCertificateSigningRequest {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaComputerCertificateSigningRequest
+        https://docs.dbatools.io/#New-DbaComputerCertificateSigningRequest
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate

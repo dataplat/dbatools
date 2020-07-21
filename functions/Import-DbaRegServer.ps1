@@ -43,7 +43,7 @@ function Import-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbaRegServer
+        https://docs.dbatools.io/#Import-DbaRegServer
 
     .EXAMPLE
         PS C:\> Import-DbaRegServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml

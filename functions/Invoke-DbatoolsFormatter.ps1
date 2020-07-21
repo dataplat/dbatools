@@ -23,7 +23,7 @@ function Invoke-DbatoolsFormatter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbatoolsFormatter
+        https://docs.dbatools.io/#Invoke-DbatoolsFormatter
 
     .EXAMPLE
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\functions\Get-DbaDatabase.ps1

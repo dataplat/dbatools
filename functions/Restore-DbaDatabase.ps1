@@ -217,7 +217,7 @@ function Restore-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Restore-DbaDatabase
+        https://docs.dbatools.io/#Restore-DbaDatabase
 
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups

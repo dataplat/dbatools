@@ -41,7 +41,7 @@ function Remove-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaLogin
+        https://docs.dbatools.io/#Remove-DbaLogin
 
     .EXAMPLE
         PS C:\> Remove-DbaLogin -SqlInstance sql2016 -Login mylogin

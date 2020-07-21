@@ -48,7 +48,7 @@ function New-DbaDbMasterKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbMasterKey
+        https://docs.dbatools.io/#New-DbaDbMasterKey
 
     .EXAMPLE
         PS C:\> New-DbaDbMasterKey -SqlInstance Server1

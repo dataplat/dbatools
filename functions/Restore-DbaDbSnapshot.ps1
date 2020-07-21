@@ -55,7 +55,7 @@ function Restore-DbaDbSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Restore-DbaDbSnapshot
+        https://docs.dbatools.io/#Restore-DbaDbSnapshot
 
     .EXAMPLE
         PS C:\> Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting

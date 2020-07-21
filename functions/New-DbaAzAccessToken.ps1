@@ -60,7 +60,7 @@ function New-DbaAzAccessToken {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAzAccessToken
+        https://docs.dbatools.io/#New-DbaAzAccessToken
 
     .EXAMPLE
         PS C:\> New-DbaAzAccessToken -Type ManagedIdentity

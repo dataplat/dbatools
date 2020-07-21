@@ -75,7 +75,7 @@ function Invoke-DbaDbDataGenerator {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDataGenerator
+        https://docs.dbatools.io/#Invoke-DbaDbDataGenerator
 
     .EXAMPLE
         Invoke-DbaDbDataGenerator -SqlInstance sqldb2 -Database DB1 -FilePath C:\temp\sqldb1.db1.tables.json

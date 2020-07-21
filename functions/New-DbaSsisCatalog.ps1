@@ -45,7 +45,7 @@ function New-DbaSsisCatalog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaSsisCatalog
+        https://docs.dbatools.io/#New-DbaSsisCatalog
 
     .EXAMPLE
         PS C:\> $SecurePassword = Read-Host -AsSecureString -Prompt "Enter password"

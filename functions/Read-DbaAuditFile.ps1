@@ -29,7 +29,7 @@ function Read-DbaAuditFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Read-DbaAuditFile
+        https://docs.dbatools.io/#Read-DbaAuditFile
 
     .EXAMPLE
         PS C:\> Read-DbaAuditFile -Path C:\temp\logins.sqlaudit

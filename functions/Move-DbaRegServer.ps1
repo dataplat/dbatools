@@ -50,7 +50,7 @@ function Move-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Move-DbaRegServer
+        https://docs.dbatools.io/#Move-DbaRegServer
 
     .EXAMPLE
         PS C:\> Move-DbaRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -Group HR\Prod

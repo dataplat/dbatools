@@ -57,7 +57,7 @@ function New-DbaDbMailAccount {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbMailAccount
+        https://docs.dbatools.io/#New-DbaDbMailAccount
 
     .EXAMPLE
         PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local

@@ -62,7 +62,7 @@ function New-DbaDbDataGeneratorConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbDataGeneratorConfig
+        https://docs.dbatools.io/#New-DbaDbDataGeneratorConfig
 
     .EXAMPLE
         New-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone

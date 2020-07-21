@@ -46,7 +46,7 @@ function New-DbatoolsSupportPackage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbatoolsSupportPackage
+        https://docs.dbatools.io/#New-DbatoolsSupportPackage
 
     .EXAMPLE
         PS C:\> New-DbatoolsSupportPackage

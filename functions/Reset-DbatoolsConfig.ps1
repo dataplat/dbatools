@@ -43,7 +43,7 @@ function Reset-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Reset-DbatoolsConfig
+        https://docs.dbatools.io/#Reset-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Reset-DbatoolsConfig -Module MyModule

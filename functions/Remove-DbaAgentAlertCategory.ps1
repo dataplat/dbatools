@@ -43,7 +43,7 @@ function Remove-DbaAgentAlertCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentAlertCategory
+        https://docs.dbatools.io/#Remove-DbaAgentAlertCategory
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'

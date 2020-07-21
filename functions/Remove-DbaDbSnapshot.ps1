@@ -54,7 +54,7 @@ function Remove-DbaDbSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbSnapshot
+        https://docs.dbatools.io/#Remove-DbaDbSnapshot
 
     .EXAMPLE
         PS C:\> Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101

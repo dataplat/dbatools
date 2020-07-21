@@ -102,7 +102,7 @@ function Invoke-DbaDbShrink {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbShrink
+        https://docs.dbatools.io/#Invoke-DbaDbShrink
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014

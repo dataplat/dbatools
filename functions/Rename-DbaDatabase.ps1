@@ -137,7 +137,7 @@ function Rename-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Rename-DbaDatabase
+        https://docs.dbatools.io/#Rename-DbaDatabase
 
     .EXAMPLE
         PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName HR2 -Preview | Select-Object *

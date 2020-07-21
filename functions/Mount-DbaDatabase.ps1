@@ -48,7 +48,7 @@ function Mount-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Mount-DbaDatabase
+        https://docs.dbatools.io/#Mount-DbaDatabase
 
     .EXAMPLE
         PS C:\> $fileStructure = New-Object System.Collections.Specialized.StringCollection

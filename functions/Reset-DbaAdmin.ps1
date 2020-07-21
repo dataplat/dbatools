@@ -66,7 +66,7 @@ function Reset-DbaAdmin {
         Remoting must be enabled and accessible if $instance is not local
 
     .LINK
-        https://dbatools.io/Reset-DbaAdmin
+        https://docs.dbatools.io/#Reset-DbaAdmin
 
     .EXAMPLE
         PS C:\> Reset-DbaAdmin -SqlInstance sqlcluster -SqlCredential sqladmin

@@ -45,7 +45,7 @@ function Remove-DbaDbAsymmetricKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbAsymmetricKey
+        https://docs.dbatools.io/#Remove-DbaDbAsymmetricKey
 
     .EXAMPLE
         PS C:\> Remove-DbaDbAsymmetricKey -SqlInstance Server1 -Database Enctest -Name AsCert1

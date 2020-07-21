@@ -47,7 +47,7 @@ function New-DbaXESmartCsvWriter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaXESmartCsvWriter
+        https://docs.dbatools.io/#New-DbaXESmartCsvWriter
 
     .EXAMPLE
         PS C:\> $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count"

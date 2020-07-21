@@ -29,7 +29,7 @@ function Install-DbatoolsWatchUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Install-DbatoolsWatchUpdate
+        https://docs.dbatools.io/#Install-DbatoolsWatchUpdate
 
     .EXAMPLE
         PS C:\> Install-DbatoolsWatchUpdate

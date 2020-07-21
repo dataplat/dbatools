@@ -45,7 +45,7 @@ function Read-DbaTransactionLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Read-DbaTransactionLog
+        https://docs.dbatools.io/#Read-DbaTransactionLog
 
     .EXAMPLE
         PS C:\> $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase

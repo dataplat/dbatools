@@ -59,7 +59,7 @@ function Remove-DbaDbOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbOrphanUser
+        https://docs.dbatools.io/#Remove-DbaDbOrphanUser
 
     .EXAMPLE
         PS C:\> Remove-DbaDbOrphanUser -SqlInstance sql2005

@@ -41,7 +41,7 @@ function New-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaXESession
+        https://docs.dbatools.io/#New-DbaXESession
 
     .EXAMPLE
         PS C:\> $session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test

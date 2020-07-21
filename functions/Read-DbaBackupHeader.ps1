@@ -41,7 +41,7 @@ function Read-DbaBackupHeader {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Read-DbaBackupHeader
+        https://docs.dbatools.io/#Read-DbaBackupHeader
 
     .EXAMPLE
         PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path S:\backups\mydb\mydb.bak

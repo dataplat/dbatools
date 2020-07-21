@@ -68,7 +68,7 @@ function Invoke-DbaDbccFreeCache {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbccFreeCache
+        https://docs.dbatools.io/#Invoke-DbaDbccFreeCache
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE

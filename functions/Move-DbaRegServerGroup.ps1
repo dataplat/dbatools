@@ -47,7 +47,7 @@ function Move-DbaRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Move-DbaRegServerGroup
+        https://docs.dbatools.io/#Move-DbaRegServerGroup
 
     .EXAMPLE
         PS C:\> Move-DbaRegServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod

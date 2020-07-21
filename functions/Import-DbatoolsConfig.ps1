@@ -42,7 +42,7 @@ function Import-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbatoolsConfig
+        https://docs.dbatools.io/#Import-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Import-DbatoolsConfig -Path '.\config.json'

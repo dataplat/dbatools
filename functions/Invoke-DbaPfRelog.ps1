@@ -79,7 +79,7 @@ function Invoke-DbaPfRelog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaPfRelog
+        https://docs.dbatools.io/#Invoke-DbaPfRelog
 
     .EXAMPLE
         PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg

@@ -53,7 +53,7 @@ function Remove-DbaDbUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbUser
+        https://docs.dbatools.io/#Remove-DbaDbUser
 
     .EXAMPLE
         PS C:\> Remove-DbaDbUser -SqlInstance sqlserver2014 -User user1

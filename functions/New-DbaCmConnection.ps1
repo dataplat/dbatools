@@ -79,7 +79,7 @@ function New-DbaCmConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaCmConnection
+        https://docs.dbatools.io/#New-DbaCmConnection
 
     .EXAMPLE
         PS C:\> New-DbaCmConnection -ComputerName sql2014 -UseWindowsCredentials -OverrideExplicitCredential -DisabledConnectionTypes CimRM

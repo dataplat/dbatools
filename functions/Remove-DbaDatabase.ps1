@@ -42,7 +42,7 @@ function Remove-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDatabase
+        https://docs.dbatools.io/#Remove-DbaDatabase
 
     .EXAMPLE
         PS C:\> Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb

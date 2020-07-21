@@ -45,7 +45,7 @@ function Resume-DbaAgDbDataMovement {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Resume-DbaAgDbDataMovement
+        https://docs.dbatools.io/#Resume-DbaAgDbDataMovement
 
     .EXAMPLE
         PS C:\> Resume-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2

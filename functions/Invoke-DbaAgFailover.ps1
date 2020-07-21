@@ -45,7 +45,7 @@ function Invoke-DbaAgFailover {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaAgFailover
+        https://docs.dbatools.io/#Invoke-DbaAgFailover
 
     .EXAMPLE
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint

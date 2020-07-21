@@ -45,7 +45,7 @@ function Remove-DbaAgDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgDatabase
+        https://docs.dbatools.io/#Remove-DbaAgDatabase
 
     .EXAMPLE
         PS C:\> Remove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false

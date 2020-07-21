@@ -126,7 +126,7 @@ function New-DbaConnectionString {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaConnectionString
+        https://docs.dbatools.io/#New-DbaConnectionString
 
     .EXAMPLE
         PS C:\> New-DbaConnectionString -SqlInstance sql2014

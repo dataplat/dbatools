@@ -45,7 +45,7 @@ function Remove-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaXESession
+        https://docs.dbatools.io/#Remove-DbaXESession
 
     .EXAMPLE
         PS C:\> Remove-DbaXESession -SqlInstance sql2012 -AllSessions

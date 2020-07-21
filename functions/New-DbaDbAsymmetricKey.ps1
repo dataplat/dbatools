@@ -63,7 +63,7 @@ function New-DbaDbAsymmetricKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbAsymmetricKey
+        https://docs.dbatools.io/#New-DbaDbAsymmetricKey
 
     .EXAMPLE
         PS C:\> New-DbaDbAsymmetricKey -SqlInstance Server1

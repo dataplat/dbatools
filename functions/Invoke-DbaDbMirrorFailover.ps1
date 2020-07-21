@@ -47,7 +47,7 @@ function Invoke-DbaDbMirrorFailover {
         TODO: add service accounts
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbMirrorFailover
+        https://docs.dbatools.io/#Invoke-DbaDbMirrorFailover
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs

@@ -40,7 +40,7 @@ function Register-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Register-DbatoolsConfig
+        https://docs.dbatools.io/#Register-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig message.style.* | Register-DbatoolsConfig

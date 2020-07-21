@@ -47,7 +47,7 @@ function Measure-DbaDbVirtualLogFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Measure-DbaDbVirtualLogFile
+        https://docs.dbatools.io/#Measure-DbaDbVirtualLogFile
 
     .EXAMPLE
         PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlcluster

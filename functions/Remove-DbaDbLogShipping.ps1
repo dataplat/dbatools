@@ -59,7 +59,7 @@
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbLogShipping
+        https://docs.dbatools.io/#Remove-DbaDbLogShipping
 
     .EXAMPLE
         Remove-DbaDbLogShipping -PrimarySqlInstance sql1 -SecondarySqlInstance sql2 -Database DB1

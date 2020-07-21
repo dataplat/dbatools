@@ -44,7 +44,7 @@ function Invoke-DbaDbccDropCleanBuffer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbccDropCleanBuffer
+        https://docs.dbatools.io/#Invoke-DbaDbccDropCleanBuffer
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbccDropCleanBuffer -SqlInstance SqlServer2017

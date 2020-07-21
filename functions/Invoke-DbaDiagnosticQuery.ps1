@@ -82,7 +82,7 @@ function Invoke-DbaDiagnosticQuery {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDiagnosticQuery
+        https://docs.dbatools.io/#Invoke-DbaDiagnosticQuery
 
     .EXAMPLE
         PS C:\>Invoke-DbaDiagnosticQuery -SqlInstance sql2016

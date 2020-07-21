@@ -15,7 +15,7 @@ function Measure-DbatoolsImport {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Measure-DbatoolsImport
+        https://docs.dbatools.io/#Measure-DbatoolsImport
 
     .EXAMPLE
         PS C:\> Measure-DbatoolsImport

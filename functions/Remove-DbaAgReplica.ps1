@@ -45,7 +45,7 @@ function Remove-DbaAgReplica {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgReplica
+        https://docs.dbatools.io/#Remove-DbaAgReplica
 
     .EXAMPLE
         PS C:\> Remove-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint -Replica sp1

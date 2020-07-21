@@ -40,7 +40,7 @@ function New-DbaDacOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDacOption
+        https://docs.dbatools.io/#New-DbaDacOption
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export

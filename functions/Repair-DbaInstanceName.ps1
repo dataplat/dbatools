@@ -48,7 +48,7 @@ function Repair-DbaInstanceName {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Repair-DbaInstanceName
+        https://docs.dbatools.io/#Repair-DbaInstanceName
 
     .EXAMPLE
         PS C:\> Repair-DbaInstanceName -SqlInstance sql2014

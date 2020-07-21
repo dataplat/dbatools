@@ -70,7 +70,7 @@ function New-DbaXESmartTableWriter {
         SmartTarget: by Gianluca Sartori (@spaghettidba)
 
     .LINK
-        https://dbatools.io/New-DbaXESmartTableWriter
+        https://docs.dbatools.io/#New-DbaXESmartTableWriter
 
     .EXAMPLE
         PS C:\> $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"

@@ -51,7 +51,7 @@ function Install-DbaWhoIsActive {
         http://whoisactive.com
 
     .LINK
-        https://dbatools.io/Install-DbaWhoIsActive
+        https://docs.dbatools.io/#Install-DbaWhoIsActive
 
     .EXAMPLE
         PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master

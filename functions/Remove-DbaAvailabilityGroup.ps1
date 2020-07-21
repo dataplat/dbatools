@@ -55,7 +55,7 @@ function Remove-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAvailabilityGroup
+        https://docs.dbatools.io/#Remove-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AllAvailabilityGroups

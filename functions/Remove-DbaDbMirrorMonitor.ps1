@@ -38,7 +38,7 @@ function Remove-DbaDbMirrorMonitor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbMirrorMonitor
+        https://docs.dbatools.io/#Remove-DbaDbMirrorMonitor
 
     .EXAMPLE
         PS C:\> Remove-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012

@@ -72,7 +72,7 @@ function Publish-DbaDacPackage {
         Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package (Microsoft.Data.Tools.MSBuild) and this uses that nuget package.
 
     .LINK
-        https://dbatools.io/Publish-DbaDacPackage
+        https://docs.dbatools.io/#Publish-DbaDacPackage
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish

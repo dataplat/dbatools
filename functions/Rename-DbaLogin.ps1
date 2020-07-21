@@ -47,7 +47,7 @@ function Rename-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Rename-DbaLogin
+        https://docs.dbatools.io/#Rename-DbaLogin
 
     .EXAMPLE
         PS C:\>Rename-DbaLogin -SqlInstance localhost -Login DbaToolsUser -NewLogin captain

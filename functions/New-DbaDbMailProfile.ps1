@@ -48,7 +48,7 @@ function New-DbaDbMailProfile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbMailProfile
+        https://docs.dbatools.io/#New-DbaDbMailProfile
 
     .EXAMPLE
         PS C:\> $profile = New-DbaDbMailProfile -SqlInstance sql2017 -Name 'The DBA Team'

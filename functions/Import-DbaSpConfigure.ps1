@@ -64,7 +64,7 @@ function Import-DbaSpConfigure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbaSpConfigure
+        https://docs.dbatools.io/#Import-DbaSpConfigure
 
     .INPUTS
         None You cannot pipe objects to Import-DbaSpConfigure

@@ -51,7 +51,7 @@ function Import-DbaXESessionTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbaXESessionTemplate
+        https://docs.dbatools.io/#Import-DbaXESessionTemplate
 
     .EXAMPLE
         PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats

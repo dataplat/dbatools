@@ -158,7 +158,7 @@ function Invoke-DbaWhoIsActive {
         http://whoisactive.com
 
     .LINK
-        https://dbatools.io/Invoke-DbaWhoIsActive
+        https://docs.dbatools.io/#Invoke-DbaWhoIsActive
 
     .EXAMPLE
         PS C:\> Invoke-DbaWhoIsActive -SqlInstance sqlserver2014a

@@ -42,7 +42,7 @@ function Invoke-DbatoolsRenameHelper {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbatoolsRenameHelper
+        https://docs.dbatools.io/#Invoke-DbatoolsRenameHelper
 
     .EXAMPLE
         PS C:\> Get-ChildItem C:\temp\ps\*.ps1 -Recurse | Invoke-DbatoolsRenameHelper

@@ -43,7 +43,7 @@ function Remove-DbaAgentJobCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentJobCategory
+        https://docs.dbatools.io/#Remove-DbaAgentJobCategory
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'

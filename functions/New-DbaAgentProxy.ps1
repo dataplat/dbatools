@@ -77,7 +77,7 @@ function New-DbaAgentProxy {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentProxy
+        https://docs.dbatools.io/#New-DbaAgentProxy
 
     .EXAMPLE
         PS C:\> New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy'

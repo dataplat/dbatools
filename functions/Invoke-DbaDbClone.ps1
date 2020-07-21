@@ -62,7 +62,7 @@ function Invoke-DbaDbClone {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbClone
+        https://docs.dbatools.io/#Invoke-DbaDbClone
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone

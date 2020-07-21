@@ -40,7 +40,7 @@ function Remove-DbaPfDataCollectorSet {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaPfDataCollectorSet
+        https://docs.dbatools.io/#Remove-DbaPfDataCollectorSet
 
     .EXAMPLE
         PS C:\> Remove-DbaPfDataCollectorSet

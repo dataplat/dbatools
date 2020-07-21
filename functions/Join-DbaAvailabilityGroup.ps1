@@ -46,7 +46,7 @@ function Join-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Join-DbaAvailabilityGroup
+        https://docs.dbatools.io/#Join-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02

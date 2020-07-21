@@ -109,7 +109,7 @@ function New-DbaAgentSchedule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentSchedule
+        https://docs.dbatools.io/#New-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force

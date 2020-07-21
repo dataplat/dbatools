@@ -105,7 +105,7 @@ function Invoke-DbaDbDataMasking {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDataMasking
+        https://docs.dbatools.io/#Invoke-DbaDbDataMasking
 
     .EXAMPLE
         Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -FilePath C:\Temp\sqldb1.db1.tables.json

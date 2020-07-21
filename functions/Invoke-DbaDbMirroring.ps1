@@ -87,7 +87,7 @@ function Invoke-DbaDbMirroring {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbMirroring
+        https://docs.dbatools.io/#Invoke-DbaDbMirroring
 
     .EXAMPLE
         PS C:\> $params = @{

@@ -160,7 +160,7 @@ function New-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAvailabilityGroup
+        https://docs.dbatools.io/#New-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint

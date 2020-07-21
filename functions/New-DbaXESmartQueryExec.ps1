@@ -50,7 +50,7 @@ function New-DbaXESmartQueryExec {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaXESmartQueryExec
+        https://docs.dbatools.io/#New-DbaXESmartQueryExec
 
     .EXAMPLE
         PS C:\> $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"

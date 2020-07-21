@@ -42,7 +42,7 @@ function Remove-DbaTrace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaTrace
+        https://docs.dbatools.io/#Remove-DbaTrace
 
     .EXAMPLE
         PS C:\> Remove-DbaTrace -SqlInstance sql2008

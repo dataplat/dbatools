@@ -59,7 +59,7 @@ function Repair-DbaDbOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Repair-DbaDbOrphanUser
+        https://docs.dbatools.io/#Repair-DbaDbOrphanUser
 
     .EXAMPLE
         PS C:\> Repair-DbaDbOrphanUser -SqlInstance sql2005

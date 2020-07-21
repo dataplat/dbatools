@@ -17,7 +17,7 @@ function New-DbaScriptingOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaScriptingOption
+        https://docs.dbatools.io/#New-DbaScriptingOption
 
     .EXAMPLE
         PS C:\> $options = New-DbaScriptingOption

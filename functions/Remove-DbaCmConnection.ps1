@@ -29,7 +29,7 @@ function Remove-DbaCmConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaCmConnection
+        https://docs.dbatools.io/#Remove-DbaCmConnection
 
     .EXAMPLE
         PS C:\> Remove-DbaCmConnection -ComputerName sql2014

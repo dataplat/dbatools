@@ -60,7 +60,7 @@ function New-DbaDbCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbCertificate
+        https://docs.dbatools.io/#New-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> New-DbaDbCertificate -SqlInstance Server1

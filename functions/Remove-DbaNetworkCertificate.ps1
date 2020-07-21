@@ -32,7 +32,7 @@ function Remove-DbaNetworkCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaNetworkCertificate
+        https://docs.dbatools.io/#Remove-DbaNetworkCertificate
 
     .EXAMPLE
         PS C:\> Remove-DbaNetworkCertificate

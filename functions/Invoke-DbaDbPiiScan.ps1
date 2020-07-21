@@ -77,7 +77,7 @@ function Invoke-DbaDbPiiScan {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbPiiScan
+        https://docs.dbatools.io/#Invoke-DbaDbPiiScan
 
     .EXAMPLE
         Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1

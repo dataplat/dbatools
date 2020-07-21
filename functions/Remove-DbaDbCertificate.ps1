@@ -45,7 +45,7 @@ function Remove-DbaDbCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbCertificate
+        https://docs.dbatools.io/#Remove-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> Remove-DbaDbCertificate -SqlInstance Server1

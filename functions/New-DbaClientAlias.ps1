@@ -41,7 +41,7 @@ function New-DbaClientAlias {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaClientAlias
+        https://docs.dbatools.io/#New-DbaClientAlias
 
     .EXAMPLE
         PS C:\> New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp

@@ -48,7 +48,7 @@ function Remove-DbaAgentJobStep {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgentJobStep
+        https://docs.dbatools.io/#Remove-DbaAgentJobStep
 
     .EXAMPLE
         PS C:\> Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1

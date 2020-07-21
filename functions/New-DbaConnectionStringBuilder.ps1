@@ -51,7 +51,7 @@ function New-DbaConnectionStringBuilder {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaConnectionStringBuilder
+        https://docs.dbatools.io/#New-DbaConnectionStringBuilder
 
     .EXAMPLE
         PS C:\> New-DbaConnectionStringBuilder

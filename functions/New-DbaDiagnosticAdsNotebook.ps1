@@ -47,7 +47,7 @@ function New-DbaDiagnosticAdsNotebook {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDiagnosticAdsNotebook
+        https://docs.dbatools.io/#New-DbaDiagnosticAdsNotebook
 
     .EXAMPLE
         PS C:\> New-DbaDiagnosticAdsNotebook -SqlInstance localhost -Path c:\temp\myNotebook.ipynb

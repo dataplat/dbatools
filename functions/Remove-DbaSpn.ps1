@@ -37,7 +37,7 @@ function Remove-DbaSpn {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaSpn
+        https://docs.dbatools.io/#Remove-DbaSpn
 
     .EXAMPLE
         PS C:\> Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account

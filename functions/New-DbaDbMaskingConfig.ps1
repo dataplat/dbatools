@@ -89,7 +89,7 @@ function New-DbaDbMaskingConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbMaskingConfig
+        https://docs.dbatools.io/#New-DbaDbMaskingConfig
 
     .EXAMPLE
         New-DbaDbMaskingConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone

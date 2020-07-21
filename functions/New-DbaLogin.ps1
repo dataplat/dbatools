@@ -87,7 +87,7 @@ function New-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaLogin
+        https://docs.dbatools.io/#New-DbaLogin
 
     .EXAMPLE
         PS C:\> New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin

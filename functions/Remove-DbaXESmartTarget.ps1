@@ -31,7 +31,7 @@ function Remove-DbaXESmartTarget {
         https://github.com/spaghettidba/XESmartTarget/wiki
 
     .LINK
-        https://dbatools.io/Remove-DbaXESmartTarget
+        https://docs.dbatools.io/#Remove-DbaXESmartTarget
 
     .EXAMPLE
         PS C:\> Get-DbaXESmartTarget | Remove-DbaXESmartTarget

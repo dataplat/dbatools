@@ -48,7 +48,7 @@ function Remove-DbaDbRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbRoleMember
+        https://docs.dbatools.io/#Remove-DbaDbRoleMember
 
     .EXAMPLE
         PS C:\> Remove-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -User user1

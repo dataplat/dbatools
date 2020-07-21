@@ -188,7 +188,7 @@ function Import-DbaCsv {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbaCsv
+        https://docs.dbatools.io/#Import-DbaCsv
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets

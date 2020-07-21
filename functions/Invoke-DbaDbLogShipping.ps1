@@ -357,7 +357,7 @@ function Invoke-DbaDbLogShipping {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbLogShipping
+        https://docs.dbatools.io/#Invoke-DbaDbLogShipping
 
     .EXAMPLE
         PS C:\> $params = @{

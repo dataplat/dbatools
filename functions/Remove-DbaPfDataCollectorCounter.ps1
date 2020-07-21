@@ -46,7 +46,7 @@ function Remove-DbaPfDataCollectorCounter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaPfDataCollectorCounter
+        https://docs.dbatools.io/#Remove-DbaPfDataCollectorCounter
 
     .EXAMPLE
         PS C:\> Remove-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet 'System Correlation' -Collector DataCollector01  -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'

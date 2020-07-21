@@ -58,7 +58,7 @@ function Invoke-DbaDbDecryptObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDecryptObject
+        https://docs.dbatools.io/#Invoke-DbaDbDecryptObject
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1

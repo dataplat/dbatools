@@ -69,7 +69,7 @@ function Install-DbaMaintenanceSolution {
         https://ola.hallengren.com
 
     .LINK
-         https://dbatools.io/Install-DbaMaintenanceSolution
+         https://docs.dbatools.io/#Install-DbaMaintenanceSolution
 
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72

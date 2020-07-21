@@ -93,7 +93,7 @@ function Import-DbaPfDataCollectorSetTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
+        https://docs.dbatools.io/#Import-DbaPfDataCollectorSetTemplate
 
     .EXAMPLE
         PS C:\> Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query'

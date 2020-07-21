@@ -135,7 +135,7 @@ function Read-DbaTraceFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Read-DbaTraceFile
+        https://docs.dbatools.io/#Read-DbaTraceFile
 
     .EXAMPLE
         PS C:\> Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc

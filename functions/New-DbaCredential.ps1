@@ -54,7 +54,7 @@ function New-DbaCredential {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaCredential
+        https://docs.dbatools.io/#New-DbaCredential
 
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1

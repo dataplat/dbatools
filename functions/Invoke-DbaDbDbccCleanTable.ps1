@@ -54,7 +54,7 @@ function Invoke-DbaDbDbccCleanTable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDbccCleanTable
+        https://docs.dbatools.io/#Invoke-DbaDbDbccCleanTable
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbDbccCleanTable -SqlInstance SqlServer2017 -Database CurrentDB -Object 'dbo.SomeTable'

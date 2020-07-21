@@ -41,7 +41,7 @@ function Remove-DbaServerRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaServerRole
+        https://docs.dbatools.io/#Remove-DbaServerRole
 
     .EXAMPLE
         PS C:\> Remove-DbaServerRole -SqlInstance Server1 -ServerRole 'serverExecuter'

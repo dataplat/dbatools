@@ -113,7 +113,7 @@ function New-DbaAgentJobStep {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentJobStep
+        https://docs.dbatools.io/#New-DbaAgentJobStep
 
     .EXAMPLE
         PS C:\> New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1

@@ -70,7 +70,7 @@ function Revoke-DbaAgPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Revoke-DbaAgPermission
+        https://docs.dbatools.io/#Revoke-DbaAgPermission
 
     .EXAMPLE
         PS C:\> Revoke-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase

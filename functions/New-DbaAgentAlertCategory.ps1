@@ -43,7 +43,7 @@ function New-DbaAgentAlertCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentAlertCategory
+        https://docs.dbatools.io/#New-DbaAgentAlertCategory
 
     .EXAMPLE
         PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'

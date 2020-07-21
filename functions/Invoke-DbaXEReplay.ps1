@@ -46,7 +46,7 @@ function Invoke-DbaXEReplay {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaXEReplay
+        https://docs.dbatools.io/#Invoke-DbaXEReplay
 
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017

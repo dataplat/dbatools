@@ -78,7 +78,7 @@ function New-DbaComputerCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaComputerCertificate
+        https://docs.dbatools.io/#New-DbaComputerCertificate
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate

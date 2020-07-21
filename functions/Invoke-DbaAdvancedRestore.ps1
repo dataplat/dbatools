@@ -103,7 +103,7 @@ function Invoke-DbaAdvancedRestore {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaAdvancedRestore
+        https://docs.dbatools.io/#Invoke-DbaAdvancedRestore
 
     .EXAMPLE
         PS C:\> $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance

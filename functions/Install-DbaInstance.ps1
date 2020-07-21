@@ -184,7 +184,7 @@ function Install-DbaInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Install-DbaInstance
+        https://docs.dbatools.io/#Install-DbaInstance
 
     .Example
         C:\PS> Install-DbaInstance -Version 2017 -Feature All

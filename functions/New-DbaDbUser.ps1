@@ -54,7 +54,7 @@ function New-DbaDbUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbUser
+        https://docs.dbatools.io/#New-DbaDbUser
 
     .EXAMPLE
         PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1

@@ -66,7 +66,7 @@ function New-DbaDbSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbSnapshot
+        https://docs.dbatools.io/#New-DbaDbSnapshot
 
     .EXAMPLE
         PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting

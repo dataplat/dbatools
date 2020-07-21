@@ -44,7 +44,7 @@ function New-DbaServerRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaServerRole
+        https://docs.dbatools.io/#New-DbaServerRole
 
     .EXAMPLE
         PS C:\> New-DbaServerRole -SqlInstance sql2017a -ServerRole 'dbExecuter' -Owner sa

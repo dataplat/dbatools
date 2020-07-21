@@ -50,7 +50,7 @@ Function Invoke-DbaAdvancedUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaAdvancedUpdate
+        https://docs.dbatools.io/#Invoke-DbaAdvancedUpdate
 
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions

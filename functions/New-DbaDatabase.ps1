@@ -87,7 +87,7 @@ function New-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDatabase
+        https://docs.dbatools.io/#New-DbaDatabase
 
     .EXAMPLE
         New-DbaDatabase -SqlInstance sql1

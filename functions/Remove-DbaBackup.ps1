@@ -60,7 +60,7 @@ function Remove-DbaBackup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaBackup
+        https://docs.dbatools.io/#Remove-DbaBackup
 
     .EXAMPLE
         PS C:\> Remove-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h

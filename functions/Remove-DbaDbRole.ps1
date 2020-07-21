@@ -54,7 +54,7 @@ function Remove-DbaDbRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbRole
+        https://docs.dbatools.io/#Remove-DbaDbRole
 
     .EXAMPLE
         PS C:\> Remove-DbaDbRole -SqlInstance localhost -Database dbname -Role "customrole1", "customrole2"

@@ -43,7 +43,7 @@ function New-DbaDirectory {
         Remoting must be enabled and accessible if $SqlInstance is not local
 
     .LINK
-        https://dbatools.io/New-DbaDirectory
+        https://docs.dbatools.io/#New-DbaDirectory
 
     .EXAMPLE
         PS C:\> New-DbaDirectory -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP

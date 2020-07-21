@@ -50,7 +50,7 @@ function Remove-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaRegServer
+        https://docs.dbatools.io/#Remove-DbaRegServer
 
     .EXAMPLE
         PS C:\> Remove-DbaRegServer -SqlInstance sql2012 -Group HR, Accounting

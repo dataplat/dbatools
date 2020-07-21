@@ -79,7 +79,7 @@ function Invoke-DbaAdvancedInstall {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Invoke-DbaAdvancedInstall
+    https://docs.dbatools.io/#Invoke-DbaAdvancedInstall
 
     .EXAMPLE
     PS C:\> Invoke-DbaAdvancedUpdate -ComputerName SQL1 -Action $actions

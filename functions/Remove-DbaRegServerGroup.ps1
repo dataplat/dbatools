@@ -44,7 +44,7 @@ function Remove-DbaRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaRegServerGroup
+        https://docs.dbatools.io/#Remove-DbaRegServerGroup
 
     .EXAMPLE
         PS C:\> Remove-DbaRegServerGroup -SqlInstance sql2012 -Group HR, Accounting

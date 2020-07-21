@@ -69,7 +69,7 @@ function Invoke-DbaQuery {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaQuery
+        https://docs.dbatools.io/#Invoke-DbaQuery
 
     .EXAMPLE
         PS C:\> Invoke-DbaQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'

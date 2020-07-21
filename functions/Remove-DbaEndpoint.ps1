@@ -45,7 +45,7 @@ function Remove-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaEndpoint
+        https://docs.dbatools.io/#Remove-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints

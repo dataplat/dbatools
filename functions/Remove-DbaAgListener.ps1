@@ -45,7 +45,7 @@ function Remove-DbaAgListener {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaAgListener
+        https://docs.dbatools.io/#Remove-DbaAgListener
 
     .EXAMPLE
         PS C:\> Remove-DbaAgListener -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false

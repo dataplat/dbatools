@@ -63,7 +63,7 @@ function Invoke-DbaDbDbccCheckConstraint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbDbccCheckConstraint
+        https://docs.dbatools.io/#Invoke-DbaDbDbccCheckConstraint
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbDbccCheckConstraint -SqlInstance SqlServer2017

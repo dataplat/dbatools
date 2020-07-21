@@ -197,7 +197,7 @@ function New-DbaDbTable {
        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-       https://dbatools.io/New-DbaDbTable
+       https://docs.dbatools.io/#New-DbaDbTable
 
     .EXAMPLE
        PS C:\> $col = @{

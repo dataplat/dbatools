@@ -76,7 +76,7 @@ function New-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaEndpoint
+        https://docs.dbatools.io/#New-DbaEndpoint
 
     .EXAMPLE
         PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring
