@@ -58,7 +58,7 @@ function Copy-DbaDbQueryStoreOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaDbQueryStoreOption
+        https://docs.dbatools.io/#Copy-DbaDbQueryStoreOption
 
     .EXAMPLE
         PS C:\> Copy-DbaDbQueryStoreOption -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases

@@ -44,7 +44,7 @@ function Find-DbaCommand {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaCommand
+        https://docs.dbatools.io/#Find-DbaCommand
 
     .EXAMPLE
         PS C:\> Find-DbaCommand "snapshot"

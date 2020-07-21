@@ -52,7 +52,7 @@ function Export-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbatoolsConfig
+        https://docs.dbatools.io/#Export-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig | Export-DbatoolsConfig -OutPath '~/export.json'

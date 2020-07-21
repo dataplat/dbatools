@@ -157,7 +157,7 @@ function Connect-DbaInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Connect-DbaInstance
+        https://docs.dbatools.io/#Connect-DbaInstance
 
     .EXAMPLE
         PS C:\> Connect-DbaInstance -SqlInstance sql2014

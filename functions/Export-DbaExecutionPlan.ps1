@@ -60,7 +60,7 @@ function Export-DbaExecutionPlan {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaExecutionPlan
+        https://docs.dbatools.io/#Export-DbaExecutionPlan
 
     .EXAMPLE
         PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp

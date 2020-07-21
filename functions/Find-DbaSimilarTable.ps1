@@ -60,7 +60,7 @@ function Find-DbaSimilarTable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaSimilarTable
+        https://docs.dbatools.io/#Find-DbaSimilarTable
 
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01

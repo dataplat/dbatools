@@ -41,7 +41,7 @@ function Enable-DbaStartupProcedure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Enable-DbaStartupProcedure
+        https://docs.dbatools.io/#Enable-DbaStartupProcedure
 
     .EXAMPLE
         PS C:\> Enable-DbaStartupProcedure -SqlInstance SqlBox1\Instance2 -StartupProcedure '[dbo].[StartUpProc1]'

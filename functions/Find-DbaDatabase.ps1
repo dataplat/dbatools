@@ -41,7 +41,7 @@ function Find-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaDatabase
+        https://docs.dbatools.io/#Find-DbaDatabase
 
     .EXAMPLE
         PS C:\> Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report

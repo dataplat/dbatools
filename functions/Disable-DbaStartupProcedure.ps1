@@ -44,7 +44,7 @@ function Disable-DbaStartupProcedure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Disable-DbaStartupProcedure
+        https://docs.dbatools.io/#Disable-DbaStartupProcedure
 
     .EXAMPLE
         PS C:\> Disable-DbaStartupProcedure -SqlInstance SqlBox1\Instance2 -StartupProcedure '[dbo].[StartUpProc1]'

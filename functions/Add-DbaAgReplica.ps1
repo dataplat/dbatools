@@ -81,7 +81,7 @@ function Add-DbaAgReplica {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaAgReplica
+        https://docs.dbatools.io/#Add-DbaAgReplica
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b

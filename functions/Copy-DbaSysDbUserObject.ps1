@@ -54,7 +54,7 @@ function Copy-DbaSysDbUserObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaSysDbUserObject
+        https://docs.dbatools.io/#Copy-DbaSysDbUserObject
 
     .EXAMPLE
         PS C:\> Copy-DbaSysDbUserObject -Source sqlserver2014a -Destination sqlcluster

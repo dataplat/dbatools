@@ -46,7 +46,7 @@ function Clear-DbaPlanCache {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Clear-DbaPlanCache
+        https://docs.dbatools.io/#Clear-DbaPlanCache
 
     .EXAMPLE
         PS C:\> Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200

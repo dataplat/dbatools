@@ -37,7 +37,7 @@ function Export-DbaSpConfigure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaSpConfigure
+        https://docs.dbatools.io/#Export-DbaSpConfigure
 
     .INPUTS
         A DbaInstanceParameter representing an array of SQL Server instances.

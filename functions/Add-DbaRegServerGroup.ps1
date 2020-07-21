@@ -51,7 +51,7 @@ function Add-DbaRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaRegServerGroup
+        https://docs.dbatools.io/#Add-DbaRegServerGroup
 
     .EXAMPLE
         PS C:\> Add-DbaRegServerGroup -SqlInstance sql2012 -Name HR

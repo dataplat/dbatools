@@ -76,7 +76,7 @@ function Export-DbaUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaUser
+        https://docs.dbatools.io/#Export-DbaUser
 
     .EXAMPLE
         PS C:\> Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql

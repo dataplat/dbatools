@@ -48,7 +48,7 @@ function Find-DbaDbDisabledIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaDbDisabledIndex
+        https://docs.dbatools.io/#Find-DbaDbDisabledIndex
 
     .EXAMPLE
         PS C:\> Find-DbaDbDisabledIndex -SqlInstance sql2005

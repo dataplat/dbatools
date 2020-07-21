@@ -36,7 +36,7 @@ function Enable-DbaAgHadr {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Enable-DbaAgHadr
+        https://docs.dbatools.io/#Enable-DbaAgHadr
 
     .EXAMPLE
         PS C:\> Enable-DbaAgHadr -SqlInstance sql2016

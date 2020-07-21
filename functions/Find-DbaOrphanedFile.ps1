@@ -50,7 +50,7 @@ function Find-DbaOrphanedFile {
         Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
 
     .LINK
-        https://dbatools.io/Find-DbaOrphanedFile
+        https://docs.dbatools.io/#Find-DbaOrphanedFile
 
     .EXAMPLE
         PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a

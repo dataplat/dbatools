@@ -51,7 +51,7 @@ function Dismount-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Dismount-DbaDatabase
+        https://docs.dbatools.io/#Dismount-DbaDatabase
 
     .EXAMPLE
         PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging

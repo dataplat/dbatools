@@ -40,7 +40,7 @@ function Export-DbaPfDataCollectorSetTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaPfDataCollectorSetTemplate
+        https://docs.dbatools.io/#Export-DbaPfDataCollectorSetTemplate
 
     .EXAMPLE
         PS C:\> Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf

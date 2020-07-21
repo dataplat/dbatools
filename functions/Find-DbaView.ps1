@@ -47,7 +47,7 @@ function Find-DbaView {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaView
+        https://docs.dbatools.io/#Find-DbaView
 
     .EXAMPLE
         PS C:\> Find-DbaView -SqlInstance DEV01 -Pattern whatever

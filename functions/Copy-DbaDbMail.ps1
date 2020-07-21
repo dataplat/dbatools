@@ -54,7 +54,7 @@ function Copy-DbaDbMail {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaDbMail
+        https://docs.dbatools.io/#Copy-DbaDbMail
 
     .EXAMPLE
         PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster

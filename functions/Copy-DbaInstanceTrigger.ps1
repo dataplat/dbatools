@@ -59,7 +59,7 @@ function Copy-DbaInstanceTrigger {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaInstanceTrigger
+        https://docs.dbatools.io/#Copy-DbaInstanceTrigger
 
     .EXAMPLE
         PS C:\> Copy-DbaInstanceTrigger -Source sqlserver2014a -Destination sqlcluster

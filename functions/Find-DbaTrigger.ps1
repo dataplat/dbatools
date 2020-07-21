@@ -51,7 +51,7 @@ function Find-DbaTrigger {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaTrigger
+        https://docs.dbatools.io/#Find-DbaTrigger
 
     .EXAMPLE
         PS C:\> Find-DbaTrigger -SqlInstance DEV01 -Pattern whatever

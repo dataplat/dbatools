@@ -65,7 +65,7 @@ function Copy-DbaPolicyManagement {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaPolicyManagement
+        https://docs.dbatools.io/#Copy-DbaPolicyManagement
 
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster

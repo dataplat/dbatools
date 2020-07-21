@@ -39,7 +39,7 @@ function ConvertTo-DbaDataTable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/ConvertTo-DbaDataTable
+        https://docs.dbatools.io/#ConvertTo-DbaDataTable
 
     .OUTPUTS
         System.Object[]

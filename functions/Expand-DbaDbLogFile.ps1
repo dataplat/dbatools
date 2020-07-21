@@ -110,7 +110,7 @@ function Expand-DbaDbLogFile {
         This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
 
     .LINK
-        https://dbatools.io/Expand-DbaDbLogFile
+        https://docs.dbatools.io/#Expand-DbaDbLogFile
 
     .EXAMPLE
         PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 50000

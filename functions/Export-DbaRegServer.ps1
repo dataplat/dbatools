@@ -46,7 +46,7 @@ function Export-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaRegServer
+        https://docs.dbatools.io/#Export-DbaRegServer
 
     .EXAMPLE
         PS C:\> Export-DbaRegServer -SqlInstance sql2008

@@ -72,7 +72,7 @@ function Export-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaXESession
+        https://docs.dbatools.io/#Export-DbaXESession
 
     .INPUTS
         A DbaInstanceParameter representing an array of SQL Server instances or output from Get-DbaSession

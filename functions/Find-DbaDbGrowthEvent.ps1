@@ -57,7 +57,7 @@ function Find-DbaDbGrowthEvent {
         Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
     .LINK
-        https://dbatools.io/Find-DbaDbGrowthEvent
+        https://docs.dbatools.io/#Find-DbaDbGrowthEvent
 
     .EXAMPLE
         PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost

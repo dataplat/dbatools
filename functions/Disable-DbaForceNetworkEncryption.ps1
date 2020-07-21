@@ -35,7 +35,7 @@ function Disable-DbaForceNetworkEncryption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Disable-DbaForceNetworkEncryption
+        https://docs.dbatools.io/#Disable-DbaForceNetworkEncryption
 
     .EXAMPLE
         PS C:\> Disable-DbaForceNetworkEncryption

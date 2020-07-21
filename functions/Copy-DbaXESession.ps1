@@ -59,7 +59,7 @@ function Copy-DbaXESession {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaXESession
+        https://docs.dbatools.io/#Copy-DbaXESession
 
     .EXAMPLE
         PS C:\> Copy-DbaXESession -Source sqlserver2014a -Destination sqlcluster

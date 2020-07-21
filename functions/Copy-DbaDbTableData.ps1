@@ -112,7 +112,7 @@ function Copy-DbaDbTableData {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaDbTableData
+        https://docs.dbatools.io/#Copy-DbaDbTableData
 
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table

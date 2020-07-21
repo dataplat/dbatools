@@ -42,7 +42,7 @@ function Export-DbaXESessionTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaXESessionTemplate
+        https://docs.dbatools.io/#Export-DbaXESessionTemplate
 
     .EXAMPLE
         PS C:\> Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe

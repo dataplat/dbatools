@@ -90,7 +90,7 @@ function Copy-DbaLogin {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaLogin
+        https://docs.dbatools.io/#Copy-DbaLogin
 
     .EXAMPLE
         PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force

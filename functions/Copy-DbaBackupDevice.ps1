@@ -56,7 +56,7 @@ function Copy-DbaBackupDevice {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaBackupDevice
+        https://docs.dbatools.io/#Copy-DbaBackupDevice
 
     .EXAMPLE
         PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster

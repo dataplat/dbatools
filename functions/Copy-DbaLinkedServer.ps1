@@ -63,7 +63,7 @@ function Copy-DbaLinkedServer {
         Limitations: This just copies the SQL portion. It does not copy files (i.e. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
     .LINK
-        https://dbatools.io/Copy-DbaLinkedServer
+        https://docs.dbatools.io/#Copy-DbaLinkedServer
 
     .EXAMPLE
         PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster

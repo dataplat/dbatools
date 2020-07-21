@@ -62,7 +62,7 @@ function Copy-DbaAgentAlert {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentAlert
+        https://docs.dbatools.io/#Copy-DbaAgentAlert
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster

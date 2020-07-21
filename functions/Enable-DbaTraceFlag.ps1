@@ -33,7 +33,7 @@ function Enable-DbaTraceFlag {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Enable-DbaTraceFlag
+        https://docs.dbatools.io/#Enable-DbaTraceFlag
 
     .EXAMPLE
         PS C:\> Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226

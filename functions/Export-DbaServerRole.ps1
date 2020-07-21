@@ -89,7 +89,7 @@ function Export-DbaServerRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaServerRole
+        https://docs.dbatools.io/#Export-DbaServerRole
 
     .EXAMPLE
         PS C:\> Export-DbaServerRole -SqlInstance sql2005

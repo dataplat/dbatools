@@ -29,7 +29,7 @@ function Export-DbaXECsv {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaXECsv
+        https://docs.dbatools.io/#Export-DbaXECsv
 
     .EXAMPLE
         PS C:\> Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv

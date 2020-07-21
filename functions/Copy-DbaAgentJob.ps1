@@ -66,7 +66,7 @@ function Copy-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentJob
+        https://docs.dbatools.io/#Copy-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster

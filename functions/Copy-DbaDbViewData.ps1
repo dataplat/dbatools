@@ -108,7 +108,7 @@ function Copy-DbaDbViewData {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaDbViewData
+        https://docs.dbatools.io/#Copy-DbaDbViewData
 
     .EXAMPLE
         PS C:\> Copy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View dbo.test_view

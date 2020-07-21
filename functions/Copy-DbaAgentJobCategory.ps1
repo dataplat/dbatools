@@ -71,7 +71,7 @@ function Copy-DbaAgentJobCategory {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentJobCategory
+        https://docs.dbatools.io/#Copy-DbaAgentJobCategory
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentJobCategory -Source sqlserver2014a -Destination sqlcluster

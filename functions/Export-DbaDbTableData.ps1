@@ -63,7 +63,7 @@ function Export-DbaDbTableData {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaDbTableData
+        https://docs.dbatools.io/#Export-DbaDbTableData
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData

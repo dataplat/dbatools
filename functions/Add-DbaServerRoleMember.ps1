@@ -51,7 +51,7 @@ function Add-DbaServerRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaServerRoleMember
+        https://docs.dbatools.io/#Add-DbaServerRoleMember
 
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -Role dbcreator -Login login1

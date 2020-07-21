@@ -70,7 +70,7 @@ function Add-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaRegServer
+        https://docs.dbatools.io/#Add-DbaRegServer
 
     .EXAMPLE
         PS C:\> Add-DbaRegServer -SqlInstance sql2008 -ServerName sql01

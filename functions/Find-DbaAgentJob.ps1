@@ -65,7 +65,7 @@ function Find-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaAgentJob
+        https://docs.dbatools.io/#Find-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -JobName *backup*

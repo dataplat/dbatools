@@ -44,7 +44,7 @@ function Find-DbaDbUnusedIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaDbUnusedIndex
+        https://docs.dbatools.io/#Find-DbaDbUnusedIndex
 
     .EXAMPLE
         PS C:\> Find-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2

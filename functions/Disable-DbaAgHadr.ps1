@@ -36,7 +36,7 @@ function Disable-DbaAgHadr {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Disable-DbaAgHadr
+        https://docs.dbatools.io/#Disable-DbaAgHadr
 
     .EXAMPLE
         PS C:\> Disable-DbaAgHadr -SqlInstance sql2016

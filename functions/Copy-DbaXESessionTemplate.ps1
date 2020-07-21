@@ -28,7 +28,7 @@ function Copy-DbaXESessionTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaXESessionTemplate
+        https://docs.dbatools.io/#Copy-DbaXESessionTemplate
 
     .EXAMPLE
         PS C:\> Copy-DbaXESessionTemplate

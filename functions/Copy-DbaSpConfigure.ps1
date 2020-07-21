@@ -54,7 +54,7 @@ function Copy-DbaSpConfigure {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaSpConfigure
+        https://docs.dbatools.io/#Copy-DbaSpConfigure
 
     .EXAMPLE
         PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster

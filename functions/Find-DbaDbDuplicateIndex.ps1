@@ -54,7 +54,7 @@ function Find-DbaDbDuplicateIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaDbDuplicateIndex
+        https://docs.dbatools.io/#Find-DbaDbDuplicateIndex
 
     .EXAMPLE
         PS C:\> Find-DbaDbDuplicateIndex -SqlInstance sql2005

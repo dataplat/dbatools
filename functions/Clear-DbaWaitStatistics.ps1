@@ -36,7 +36,7 @@ function Clear-DbaWaitStatistics {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Clear-DbaWaitStatistics
+        https://docs.dbatools.io/#Clear-DbaWaitStatistics
 
     .EXAMPLE
         PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012

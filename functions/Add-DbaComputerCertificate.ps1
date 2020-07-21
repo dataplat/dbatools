@@ -47,7 +47,7 @@ function Add-DbaComputerCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaComputerCertificate
+        https://docs.dbatools.io/#Add-DbaComputerCertificate
 
     .EXAMPLE
         PS C:\> Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer

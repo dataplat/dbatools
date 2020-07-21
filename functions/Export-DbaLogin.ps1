@@ -100,7 +100,7 @@ function Export-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaLogin
+        https://docs.dbatools.io/#Export-DbaLogin
 
     .EXAMPLE
         PS C:\> Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql

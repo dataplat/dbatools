@@ -62,7 +62,7 @@ function Copy-DbaInstanceAudit {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaInstanceAudit
+        https://docs.dbatools.io/#Copy-DbaInstanceAudit
 
     .EXAMPLE
         PS C:\> Copy-DbaInstanceAudit -Source sqlserver2014a -Destination sqlcluster

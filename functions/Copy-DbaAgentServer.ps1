@@ -62,7 +62,7 @@ function Copy-DbaAgentServer {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentServer
+        https://docs.dbatools.io/#Copy-DbaAgentServer
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster

@@ -77,7 +77,7 @@ function Add-DbaAgDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaAgDatabase
+        https://docs.dbatools.io/#Add-DbaAgDatabase
 
     .EXAMPLE
         PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2 -Confirm

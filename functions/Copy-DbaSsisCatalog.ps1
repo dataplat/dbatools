@@ -66,7 +66,7 @@ function Copy-DbaSsisCatalog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaSsisCatalog
+        https://docs.dbatools.io/#Copy-DbaSsisCatalog
 
     .EXAMPLE
         PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster

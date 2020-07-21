@@ -153,7 +153,7 @@ function Copy-DbaDatabase {
         - Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
 
     .LINK
-        https://dbatools.io/Copy-DbaDatabase
+        https://docs.dbatools.io/#Copy-DbaDatabase
 
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\fileshare\sql\migration

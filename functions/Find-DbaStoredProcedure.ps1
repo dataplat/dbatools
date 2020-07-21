@@ -47,7 +47,7 @@ function Find-DbaStoredProcedure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaStoredProcedure
+        https://docs.dbatools.io/#Find-DbaStoredProcedure
 
     .EXAMPLE
         PS C:\> Find-DbaStoredProcedure -SqlInstance DEV01 -Pattern whatever

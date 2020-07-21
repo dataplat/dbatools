@@ -70,7 +70,7 @@ function Format-DbaBackupInformation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Format-DbaBackupInformation
+        https://docs.dbatools.io/#Format-DbaBackupInformation
 
     .EXAMPLE
         PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb

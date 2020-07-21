@@ -33,7 +33,7 @@ function Disable-DbaTraceFlag {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Disable-DbaTraceFlag
+        https://docs.dbatools.io/#Disable-DbaTraceFlag
 
     .EXAMPLE
         PS C:\> Disable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226

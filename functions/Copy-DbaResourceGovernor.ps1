@@ -59,7 +59,7 @@ function Copy-DbaResourceGovernor {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaResourceGovernor
+        https://docs.dbatools.io/#Copy-DbaResourceGovernor
 
     .EXAMPLE
         PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster

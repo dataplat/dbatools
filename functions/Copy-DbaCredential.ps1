@@ -74,7 +74,7 @@ function Copy-DbaCredential {
         - DAC access enabled for local (default)
 
     .LINK
-        https://dbatools.io/Copy-DbaCredential
+        https://docs.dbatools.io/#Copy-DbaCredential
 
     .EXAMPLE
         PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster

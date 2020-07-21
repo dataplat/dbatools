@@ -57,7 +57,7 @@ function Copy-DbaStartupProcedure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Copy-DbaStartupProcedure
+        https://docs.dbatools.io/#Copy-DbaStartupProcedure
 
     .EXAMPLE
         PS C:\> Copy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster

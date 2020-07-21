@@ -61,7 +61,7 @@ function Copy-DbaRegServer {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaRegServer
+        https://docs.dbatools.io/#Copy-DbaRegServer
 
     .EXAMPLE
         PS C:\> Copy-DbaRegServer -Source sqlserver2014a -Destination sqlcluster

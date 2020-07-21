@@ -52,7 +52,7 @@ function Export-DbaSysDbUserObject {
     General notes
 
     .LINK
-        https://dbatools.io/Export-DbaSysDbUserObject
+        https://docs.dbatools.io/#Export-DbaSysDbUserObject
     #>
 
     [CmdletBinding()]

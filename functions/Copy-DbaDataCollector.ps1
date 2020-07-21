@@ -62,7 +62,7 @@ function Copy-DbaDataCollector {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaDataCollector
+        https://docs.dbatools.io/#Copy-DbaDataCollector
 
     .EXAMPLE
         PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster

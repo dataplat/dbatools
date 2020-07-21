@@ -29,7 +29,7 @@ function Find-DbaLoginInGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaLoginInGroup
+        https://docs.dbatools.io/#Find-DbaLoginInGroup
 
     .EXAMPLE
         PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"

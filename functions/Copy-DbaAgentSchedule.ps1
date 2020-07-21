@@ -62,7 +62,7 @@ function Copy-DbaAgentSchedule {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentSchedule
+        https://docs.dbatools.io/#Copy-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster

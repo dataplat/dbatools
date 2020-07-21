@@ -61,7 +61,7 @@ function Add-DbaAgListener {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaAgListener
+        https://docs.dbatools.io/#Add-DbaAgListener
 
     .EXAMPLE
         PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20

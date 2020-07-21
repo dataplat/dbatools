@@ -113,7 +113,7 @@ function Export-DbaInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaInstance
+        https://docs.dbatools.io/#Export-DbaInstance
 
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance

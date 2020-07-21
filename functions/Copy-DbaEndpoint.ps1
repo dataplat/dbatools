@@ -59,7 +59,7 @@ function Copy-DbaEndpoint {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaEndpoint
+        https://docs.dbatools.io/#Copy-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster

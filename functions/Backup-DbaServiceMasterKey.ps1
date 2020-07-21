@@ -45,7 +45,7 @@ function Backup-DbaServiceMasterKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Backup-DbaServiceMasterKey
+        https://docs.dbatools.io/#Backup-DbaServiceMasterKey
 
     .EXAMPLE
         PS C:\> Backup-DbaServiceMasterKey -SqlInstance server1\sql2016

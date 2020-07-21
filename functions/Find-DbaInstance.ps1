@@ -163,7 +163,7 @@ function Find-DbaInstance {
         https://gallery.technet.microsoft.com/scriptcenter/List-the-IP-addresses-in-a-60c5bb6b
 
     .LINK
-        https://dbatools.io/Find-DbaInstance
+        https://docs.dbatools.io/#Find-DbaInstance
 
     .EXAMPLE
         PS C:\> Find-DbaInstance -DiscoveryType Domain, DataSourceEnumeration

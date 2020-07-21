@@ -38,7 +38,7 @@ function Add-DbaDbMirrorMonitor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaDbMirrorMonitor
+        https://docs.dbatools.io/#Add-DbaDbMirrorMonitor
 
     .EXAMPLE
         PS C:\> Add-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012

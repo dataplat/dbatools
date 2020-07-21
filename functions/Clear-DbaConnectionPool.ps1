@@ -30,7 +30,7 @@ function Clear-DbaConnectionPool {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Clear-DbaConnectionPool
+        https://docs.dbatools.io/#Clear-DbaConnectionPool
 
     .EXAMPLE
         PS C:\> Clear-DbaConnectionPool

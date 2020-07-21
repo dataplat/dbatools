@@ -48,7 +48,7 @@ function Add-DbaDbRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Add-DbaDbRoleMember
+        https://docs.dbatools.io/#Add-DbaDbRoleMember
 
     .EXAMPLE
         PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -User user1

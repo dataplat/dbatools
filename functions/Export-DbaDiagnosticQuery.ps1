@@ -40,7 +40,7 @@ function Export-DbaDiagnosticQuery {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaDiagnosticQuery
+        https://docs.dbatools.io/#Export-DbaDiagnosticQuery
 
     .EXAMPLE
         PS C:\> Invoke-DbaDiagnosticQuery -SqlInstance sql2016 | Export-DbaDiagnosticQuery -Path c:\temp

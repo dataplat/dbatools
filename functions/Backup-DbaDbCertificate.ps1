@@ -60,7 +60,7 @@ function Backup-DbaDbCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Backup-DbaDbCertificate
+        https://docs.dbatools.io/#Backup-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> Backup-DbaDbCertificate -SqlInstance Server1

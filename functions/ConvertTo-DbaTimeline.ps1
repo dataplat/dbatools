@@ -35,7 +35,7 @@ function ConvertTo-DbaTimeline {
         Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
 
     .LINK
-        https://dbatools.io/ConvertTo-DbaTimeline
+        https://docs.dbatools.io/#ConvertTo-DbaTimeline
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -ExcludeJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII

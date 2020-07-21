@@ -68,7 +68,7 @@ function Export-DbaScript {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaScript
+        https://docs.dbatools.io/#Export-DbaScript
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript

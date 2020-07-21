@@ -44,7 +44,7 @@ function Find-DbaUserObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaUserObject
+        https://docs.dbatools.io/#Find-DbaUserObject
 
     .EXAMPLE
         PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen

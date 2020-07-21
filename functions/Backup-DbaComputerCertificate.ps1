@@ -35,7 +35,7 @@ function Backup-DbaComputerCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Backup-DbaComputerCertificate
+        https://docs.dbatools.io/#Backup-DbaComputerCertificate
 
     .EXAMPLE
         PS C:\> Get-DbaComputerCertificate | Backup-DbaComputerCertificate -Path C:\temp

@@ -59,7 +59,7 @@ function Copy-DbaCustomError {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaCustomError
+        https://docs.dbatools.io/#Copy-DbaCustomError
 
     .EXAMPLE
         PS C:\> Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster

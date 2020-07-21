@@ -59,7 +59,7 @@ function Copy-DbaAgentProxy {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Copy-DbaAgentProxy
+        https://docs.dbatools.io/#Copy-DbaAgentProxy
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentProxy -Source sqlserver2014a -Destination sqlcluster

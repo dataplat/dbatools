@@ -36,7 +36,7 @@ function Clear-DbaLatchStatistics {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Clear-DbaLatchStatistics
+        https://docs.dbatools.io/#Clear-DbaLatchStatistics
 
     .EXAMPLE
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012

@@ -64,7 +64,7 @@ function Export-DbaDacPackage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaDacPackage
+        https://docs.dbatools.io/#Export-DbaDacPackage
 
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config

@@ -48,7 +48,7 @@ function Find-DbaBackup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaBackup
+        https://docs.dbatools.io/#Find-DbaBackup
 
     .EXAMPLE
         PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
