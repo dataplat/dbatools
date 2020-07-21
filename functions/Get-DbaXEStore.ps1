@@ -30,7 +30,7 @@ function Get-DbaXEStore {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXEStore
+        https://docs.dbatools.io/#Get-DbaXEStore
 
     .EXAMPLE
         PS C:\> Get-DbaXEStore -SqlInstance ServerA\sql987

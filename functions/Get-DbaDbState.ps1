@@ -41,7 +41,7 @@ function Get-DbaDbState {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbState
+        https://docs.dbatools.io/#Get-DbaDbState
 
     .EXAMPLE
         PS C:\> Get-DbaDbState -SqlInstance sqlserver2014a

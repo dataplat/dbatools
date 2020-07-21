@@ -40,7 +40,7 @@ function Get-DbaXEObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXEObject
+        https://docs.dbatools.io/#Get-DbaXEObject
 
     .EXAMPLE
         PS C:\> Get-DbaXEObject -SqlInstance sql2016

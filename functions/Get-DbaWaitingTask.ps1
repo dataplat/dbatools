@@ -37,7 +37,7 @@ function Get-DbaWaitingTask {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWaitingTask
+        https://docs.dbatools.io/#Get-DbaWaitingTask
 
     .EXAMPLE
         PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a

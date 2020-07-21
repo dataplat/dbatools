@@ -28,7 +28,7 @@ function Get-DbaWsfcSharedVolume {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcSharedVolume
+        https://docs.dbatools.io/#Get-DbaWsfcSharedVolume
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcSharedVolume -ComputerName cluster01

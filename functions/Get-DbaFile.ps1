@@ -39,7 +39,7 @@ function Get-DbaFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaFile
+        https://docs.dbatools.io/#Get-DbaFile
 
     .EXAMPLE
         PS C:\> Get-DbaFile -SqlInstance sqlserver2014a -Path E:\Dir1

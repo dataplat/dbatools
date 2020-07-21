@@ -56,7 +56,7 @@ function Get-DbaAgentJobHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentJobHistory
+        https://docs.dbatools.io/#Get-DbaAgentJobHistory
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJobHistory -SqlInstance localhost

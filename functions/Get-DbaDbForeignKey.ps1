@@ -39,7 +39,7 @@ function Get-DbaDbForeignKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbForeignKey
+        https://docs.dbatools.io/#Get-DbaDbForeignKey
 
     .EXAMPLE
         PS C:\> Get-DbaDbForeignKey -SqlInstance sql2016

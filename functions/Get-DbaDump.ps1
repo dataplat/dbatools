@@ -30,7 +30,7 @@ function Get-DbaDump {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDump
+        https://docs.dbatools.io/#Get-DbaDump
 
     .EXAMPLE
         PS C:\> Get-DbaDump -SqlInstance sql2016

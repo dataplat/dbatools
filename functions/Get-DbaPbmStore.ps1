@@ -39,7 +39,7 @@ function Get-DbaPbmStore {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmStore
+        https://docs.dbatools.io/#Get-DbaPbmStore
 
     .EXAMPLE
         PS C:\> Get-DbaPbmStore -SqlInstance sql2016

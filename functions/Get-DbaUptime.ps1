@@ -35,7 +35,7 @@ function Get-DbaUptime {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaUptime
+        https://docs.dbatools.io/#Get-DbaUptime
 
     .EXAMPLE
         PS C:\> Get-DbaUptime -SqlInstance SqlBox1\Instance2

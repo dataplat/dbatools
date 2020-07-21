@@ -40,7 +40,7 @@ function Get-DbaXESessionTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXESessionTemplate
+        https://docs.dbatools.io/#Get-DbaXESessionTemplate
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTemplate

@@ -39,7 +39,7 @@ function Get-DbaAgentJobStep {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentJobStep
+        https://docs.dbatools.io/#Get-DbaAgentJobStep
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJobStep -SqlInstance localhost

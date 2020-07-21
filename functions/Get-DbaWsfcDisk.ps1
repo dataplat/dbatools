@@ -28,7 +28,7 @@ function Get-DbaWsfcDisk {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcDisk
+        https://docs.dbatools.io/#Get-DbaWsfcDisk
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcDisk -ComputerName cluster01

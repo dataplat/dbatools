@@ -29,7 +29,7 @@ function Get-DbaNetworkActivity {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaNetworkActivity
+        https://docs.dbatools.io/#Get-DbaNetworkActivity
 
     .EXAMPLE
         PS C:\> Get-DbaNetworkActivity -ComputerName sqlserver2014a

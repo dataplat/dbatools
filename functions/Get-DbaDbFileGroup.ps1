@@ -39,7 +39,7 @@ function Get-DbaDbFileGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbFileGroup
+        https://docs.dbatools.io/#Get-DbaDbFileGroup
 
     .EXAMPLE
         PS C:\> Get-DbaDbFileGroup -SqlInstance sql2016

@@ -36,7 +36,7 @@ function Get-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaEndpoint
+        https://docs.dbatools.io/#Get-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Get-DbaEndpoint -SqlInstance localhost

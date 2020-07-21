@@ -43,7 +43,7 @@ function Get-DbaDbPageInfo {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbPageInfo
+        https://docs.dbatools.io/#Get-DbaDbPageInfo
 
     .EXAMPLE
         PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017

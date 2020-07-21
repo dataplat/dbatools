@@ -36,7 +36,7 @@ function Get-DbaTempdbUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaTempdbUsage
+        https://docs.dbatools.io/#Get-DbaTempdbUsage
 
     .EXAMPLE
         PS C:\> Get-DbaTempdbUsage -SqlInstance localhost\SQLDEV2K14

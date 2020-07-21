@@ -37,7 +37,7 @@ function Get-DbaSpConfigure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSpConfigure
+        https://docs.dbatools.io/#Get-DbaSpConfigure
 
     .INPUTS
         A DbaInstanceParameter representing an array of SQL Server instances.

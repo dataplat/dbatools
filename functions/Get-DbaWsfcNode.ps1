@@ -28,7 +28,7 @@ function Get-DbaWsfcNode {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcNode
+        https://docs.dbatools.io/#Get-DbaWsfcNode
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcNode -ComputerName cluster01

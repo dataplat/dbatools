@@ -28,7 +28,7 @@ function Get-DbaForceNetworkEncryption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaForceNetworkEncryption
+        https://docs.dbatools.io/#Get-DbaForceNetworkEncryption
 
     .EXAMPLE
         PS C:\> Get-DbaForceNetworkEncryption

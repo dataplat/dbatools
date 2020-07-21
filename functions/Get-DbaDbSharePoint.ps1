@@ -38,7 +38,7 @@ function Get-DbaDbSharePoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbSharePoint
+        https://docs.dbatools.io/#Get-DbaDbSharePoint
 
     .EXAMPLE
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster

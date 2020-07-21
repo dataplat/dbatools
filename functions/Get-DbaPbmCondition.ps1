@@ -39,7 +39,7 @@ function Get-DbaPbmCondition {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmCondition
+        https://docs.dbatools.io/#Get-DbaPbmCondition
 
     .EXAMPLE
         PS C:\> Get-DbaPbmCondition -SqlInstance sql2016

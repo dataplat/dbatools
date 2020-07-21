@@ -31,7 +31,7 @@ function Get-DbaPfDataCollectorSet {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPfDataCollectorSet
+        https://docs.dbatools.io/#Get-DbaPfDataCollectorSet
 
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorSet

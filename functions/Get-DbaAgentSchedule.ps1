@@ -39,7 +39,7 @@ function Get-DbaAgentSchedule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentSchedule
+        https://docs.dbatools.io/#Get-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> Get-DbaAgentSchedule -SqlInstance localhost

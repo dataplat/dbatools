@@ -32,7 +32,7 @@ function Get-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbatoolsConfig
+        https://docs.dbatools.io/#Get-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig 'Mail.To'

@@ -33,7 +33,7 @@ function Get-DbaAgentAlertCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentAlertCategory
+        https://docs.dbatools.io/#Get-DbaAgentAlertCategory
 
     .EXAMPLE
         PS C:\> Get-DbaAgentAlertCategory -SqlInstance sql1

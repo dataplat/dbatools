@@ -33,7 +33,7 @@ function Get-DbaRunningJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRunningJob
+        https://docs.dbatools.io/#Get-DbaRunningJob
 
     .EXAMPLE
         PS C:\> Get-DbaRunningJob -SqlInstance sql2017

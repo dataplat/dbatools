@@ -43,7 +43,7 @@ function Get-DbaDependency {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDependency
+        https://docs.dbatools.io/#Get-DbaDependency
 
     .EXAMPLE
         PS C:\> $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where-Object Name -eq Customers

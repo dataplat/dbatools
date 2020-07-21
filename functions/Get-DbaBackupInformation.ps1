@@ -87,7 +87,7 @@ function Get-DbaBackupInformation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaBackupInformation
+        https://docs.dbatools.io/#Get-DbaBackupInformation
 
     .EXAMPLE
         PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse

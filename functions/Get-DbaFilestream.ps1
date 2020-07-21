@@ -35,7 +35,7 @@ function Get-DbaFilestream {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaFilestream
+        https://docs.dbatools.io/#Get-DbaFilestream
 
     .EXAMPLE
         PS C:\> Get-DbaFilestream -SqlInstance server1\instance2

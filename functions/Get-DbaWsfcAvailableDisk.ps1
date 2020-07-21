@@ -28,7 +28,7 @@ function Get-DbaWsfcAvailableDisk {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcAvailableDisk
+        https://docs.dbatools.io/#Get-DbaWsfcAvailableDisk
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcAvailableDisk -ComputerName cluster01

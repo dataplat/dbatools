@@ -32,7 +32,7 @@ function Get-DbaKbUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaKbUpdate
+        https://docs.dbatools.io/#Get-DbaKbUpdate
 
     .EXAMPLE
         PS C:\> Get-DbaKbUpdate -Name KB4057119

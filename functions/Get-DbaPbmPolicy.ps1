@@ -42,7 +42,7 @@ function Get-DbaPbmPolicy {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmPolicy
+        https://docs.dbatools.io/#Get-DbaPbmPolicy
 
     .EXAMPLE
         PS C:\> Get-DbaPbmPolicy -SqlInstance sql2016

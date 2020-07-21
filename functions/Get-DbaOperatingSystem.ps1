@@ -26,7 +26,7 @@ function Get-DbaOperatingSystem {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaOperatingSystem
+        https://docs.dbatools.io/#Get-DbaOperatingSystem
 
     .EXAMPLE
         PS C:\> Get-DbaOperatingSystem

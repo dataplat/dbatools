@@ -20,7 +20,7 @@ function Get-DbatoolsPath {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbatoolsPath
+        https://docs.dbatools.io/#Get-DbatoolsPath
 
     .EXAMPLE
         PS C:\> Get-DbatoolsPath -Name 'temp'

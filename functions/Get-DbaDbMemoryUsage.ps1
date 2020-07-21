@@ -42,7 +42,7 @@ function Get-DbaDbMemoryUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMemoryUsage
+        https://docs.dbatools.io/#Get-DbaDbMemoryUsage
 
     .EXAMPLE
         PS C:\> Get-DbaDbMemoryUsage -SqlInstance sqlserver2014a

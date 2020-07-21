@@ -33,7 +33,7 @@ function Get-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXESession
+        https://docs.dbatools.io/#Get-DbaXESession
 
     .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987

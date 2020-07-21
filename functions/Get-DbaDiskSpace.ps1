@@ -59,7 +59,7 @@ function Get-DbaDiskSpace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDiskSpace
+        https://docs.dbatools.io/#Get-DbaDiskSpace
 
     .EXAMPLE
         PS C:\> Get-DbaDiskSpace -ComputerName srv0042

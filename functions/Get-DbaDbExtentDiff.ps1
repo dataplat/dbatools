@@ -43,7 +43,7 @@ function Get-DbaDbExtentDiff {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-        https://dbatools.io/Get-DbaDbExtentDiff
+        https://docs.dbatools.io/#Get-DbaDbExtentDiff
 
     .EXAMPLE
         PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA

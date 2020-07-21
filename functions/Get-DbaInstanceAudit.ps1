@@ -37,7 +37,7 @@ function Get-DbaInstanceAudit {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceAudit
+        https://docs.dbatools.io/#Get-DbaInstanceAudit
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceAudit -SqlInstance localhost

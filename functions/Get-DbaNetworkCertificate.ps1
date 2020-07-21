@@ -26,7 +26,7 @@ function Get-DbaNetworkCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaNetworkCertificate
+        https://docs.dbatools.io/#Get-DbaNetworkCertificate
 
     .EXAMPLE
         PS C:\> Get-DbaNetworkCertificate

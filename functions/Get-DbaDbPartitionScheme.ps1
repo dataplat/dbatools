@@ -36,7 +36,7 @@ function Get-DbaDbPartitionScheme {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbPartitionScheme
+        https://docs.dbatools.io/#Get-DbaDbPartitionScheme
 
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionScheme -SqlInstance sql2016

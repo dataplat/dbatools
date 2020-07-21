@@ -30,7 +30,7 @@ function Get-DbaInstanceTrigger {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceTrigger
+        https://docs.dbatools.io/#Get-DbaInstanceTrigger
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceTrigger -SqlInstance sql2017

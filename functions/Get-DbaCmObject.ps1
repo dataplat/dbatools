@@ -54,7 +54,7 @@ function Get-DbaCmObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmObject
+        https://docs.dbatools.io/#Get-DbaCmObject
 
     .EXAMPLE
         PS C:\> Get-DbaCmObject win32_OperatingSystem

@@ -31,7 +31,7 @@ function Get-DbaRegServerStore {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRegServerStore
+        https://docs.dbatools.io/#Get-DbaRegServerStore
 
     .EXAMPLE
         PS C:\> Get-DbaRegServerStore -SqlInstance sqlserver2014a

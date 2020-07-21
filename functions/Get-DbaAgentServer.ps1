@@ -30,7 +30,7 @@ function Get-DbaAgentServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentServer
+        https://docs.dbatools.io/#Get-DbaAgentServer
 
     .EXAMPLE
         PS C:\> Get-DbaAgentServer -SqlInstance localhost

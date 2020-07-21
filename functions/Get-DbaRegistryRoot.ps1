@@ -26,7 +26,7 @@ function Get-DbaRegistryRoot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Get-DbaRegistryRoot
+         https://docs.dbatools.io/#Get-DbaRegistryRoot
 
     .EXAMPLE
         PS C:\> Get-DbaRegistryRoot

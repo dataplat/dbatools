@@ -66,7 +66,7 @@ function Get-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaLogin
+        https://docs.dbatools.io/#Get-DbaLogin
 
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2016

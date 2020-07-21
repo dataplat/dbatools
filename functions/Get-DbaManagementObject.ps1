@@ -31,7 +31,7 @@ function Get-DbaManagementObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaManagementObject
+        https://docs.dbatools.io/#Get-DbaManagementObject
 
     .EXAMPLE
         PS C:\> Get-DbaManagementObject

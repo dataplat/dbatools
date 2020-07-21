@@ -42,7 +42,7 @@ function Get-DbaDbObjectTrigger {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbObjectTrigger
+        https://docs.dbatools.io/#Get-DbaDbObjectTrigger
 
     .EXAMPLE
         PS C:\> Get-DbaDbObjectTrigger -SqlInstance sql2017

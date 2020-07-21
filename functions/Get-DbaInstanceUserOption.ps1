@@ -31,7 +31,7 @@ function Get-DbaInstanceUserOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceUserOption
+        https://docs.dbatools.io/#Get-DbaInstanceUserOption
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceUserOption -SqlInstance localhost

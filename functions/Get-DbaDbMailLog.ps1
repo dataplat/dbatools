@@ -36,7 +36,7 @@ function Get-DbaDbMailLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMailLog
+        https://docs.dbatools.io/#Get-DbaDbMailLog
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint

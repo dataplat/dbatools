@@ -29,7 +29,7 @@ function Get-DbaMsdtc {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaMsdtc
+        https://docs.dbatools.io/#Get-DbaMsdtc
 
     .EXAMPLE
         PS C:\> Get-DbaMsdtc -ComputerName srv0042

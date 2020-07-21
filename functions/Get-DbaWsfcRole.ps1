@@ -28,7 +28,7 @@ function Get-DbaWsfcRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcRole
+        https://docs.dbatools.io/#Get-DbaWsfcRole
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcRole -ComputerName cluster01

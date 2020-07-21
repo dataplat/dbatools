@@ -38,7 +38,7 @@ function Get-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAvailabilityGroup
+        https://docs.dbatools.io/#Get-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a

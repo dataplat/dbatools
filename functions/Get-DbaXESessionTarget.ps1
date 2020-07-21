@@ -39,7 +39,7 @@ function Get-DbaXESessionTarget {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXESessionTarget
+        https://docs.dbatools.io/#Get-DbaXESessionTarget
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health

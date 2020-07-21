@@ -39,7 +39,7 @@ function Get-DbaDbFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbFile
+        https://docs.dbatools.io/#Get-DbaDbFile
 
     .EXAMPLE
         PS C:\> Get-DbaDbFile -SqlInstance sql2016

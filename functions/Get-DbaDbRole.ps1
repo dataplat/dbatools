@@ -48,7 +48,7 @@ function Get-DbaDbRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbRole
+        https://docs.dbatools.io/#Get-DbaDbRole
 
     .EXAMPLE
         PS C:\> Get-DbaDbRole -SqlInstance localhost

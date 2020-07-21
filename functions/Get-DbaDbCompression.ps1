@@ -36,7 +36,7 @@ function Get-DbaDbCompression {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbCompression
+        https://docs.dbatools.io/#Get-DbaDbCompression
 
     .EXAMPLE
         PS C:\> Get-DbaDbCompression -SqlInstance localhost

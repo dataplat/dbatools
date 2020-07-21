@@ -37,7 +37,7 @@ function Get-DbaLinkedServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaLinkedServer
+        https://docs.dbatools.io/#Get-DbaLinkedServer
 
     .EXAMPLE
         PS C:\> Get-DbaLinkedServer -SqlInstance DEV01

@@ -43,7 +43,7 @@ function Get-DbaAgDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgDatabase
+        https://docs.dbatools.io/#Get-DbaAgDatabase
 
     .EXAMPLE
         PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a

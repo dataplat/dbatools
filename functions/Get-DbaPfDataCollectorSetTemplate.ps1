@@ -29,7 +29,7 @@ function Get-DbaPfDataCollectorSetTemplate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPfDataCollectorSetTemplate
+        https://docs.dbatools.io/#Get-DbaPfDataCollectorSetTemplate
 
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorSetTemplate

@@ -20,7 +20,7 @@ function Get-DbaXESmartTarget {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXESmartTarget
+        https://docs.dbatools.io/#Get-DbaXESmartTarget
 
     .EXAMPLE
         PS C:\> Get-DbaXESmartTarget

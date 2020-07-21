@@ -37,7 +37,7 @@ function Get-DbaWaitResource {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWaitResource
+        https://docs.dbatools.io/#Get-DbaWaitResource
 
     .EXAMPLE
         PS C:\> Get-DbaWaitResource -SqlInstance server1 -WaitResource 'PAGE: 10:1:9180084'

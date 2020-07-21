@@ -45,7 +45,7 @@ function Get-DbaWindowsLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWindowsLog
+        https://docs.dbatools.io/#Get-DbaWindowsLog
 
     .EXAMPLE
         PS C:\> $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint

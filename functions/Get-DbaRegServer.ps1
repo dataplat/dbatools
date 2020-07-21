@@ -58,7 +58,7 @@ function Get-DbaRegServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRegServer
+        https://docs.dbatools.io/#Get-DbaRegServer
 
     .EXAMPLE
         PS C:\> Get-DbaRegServer

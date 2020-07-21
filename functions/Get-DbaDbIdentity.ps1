@@ -45,7 +45,7 @@ function Get-DbaDbIdentity {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbIdentity
+        https://docs.dbatools.io/#Get-DbaDbIdentity
 
     .EXAMPLE
         PS C:\> Get-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table 'Production.ScrapReason'

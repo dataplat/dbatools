@@ -32,7 +32,7 @@ function Get-DbaMemoryCondition {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaMemoryCondition
+        https://docs.dbatools.io/#Get-DbaMemoryCondition
 
     .EXAMPLE
         PS C:\> Get-DbaMemoryCondition -SqlInstance sqlserver2014a

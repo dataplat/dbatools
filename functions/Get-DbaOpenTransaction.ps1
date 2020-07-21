@@ -31,7 +31,7 @@ function Get-DbaOpenTransaction {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaOpenTransaction
+        https://docs.dbatools.io/#Get-DbaOpenTransaction
 
     .EXAMPLE
         PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a

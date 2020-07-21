@@ -41,7 +41,7 @@ function Get-DbaTcpPort {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaTcpPort
+        https://docs.dbatools.io/#Get-DbaTcpPort
 
     .EXAMPLE
         PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a

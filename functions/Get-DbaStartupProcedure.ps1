@@ -34,7 +34,7 @@ function Get-DbaStartupProcedure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaStartupProcedure
+        https://docs.dbatools.io/#Get-DbaStartupProcedure
 
     .EXAMPLE
         PS C:\> Get-DbaStartupProcedure -SqlInstance SqlBox1\Instance2

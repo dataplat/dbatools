@@ -39,7 +39,7 @@ function Get-DbaDbMailServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMailServer
+        https://docs.dbatools.io/#Get-DbaDbMailServer
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailServer -SqlInstance sql01\sharepoint

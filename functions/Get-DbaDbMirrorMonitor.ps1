@@ -60,7 +60,7 @@ function Get-DbaDbMirrorMonitor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMirrorMonitor
+        https://docs.dbatools.io/#Get-DbaDbMirrorMonitor
 
     .EXAMPLE
         PS C:\> Get-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012

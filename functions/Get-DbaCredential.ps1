@@ -45,7 +45,7 @@ function Get-DbaCredential {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCredential
+        https://docs.dbatools.io/#Get-DbaCredential
 
     .EXAMPLE
         PS C:\> Get-DbaCredential -SqlInstance localhost

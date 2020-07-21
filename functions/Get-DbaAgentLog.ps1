@@ -33,7 +33,7 @@ function Get-DbaAgentLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentLog
+        https://docs.dbatools.io/#Get-DbaAgentLog
 
     .EXAMPLE
         PS C:\> Get-DbaAgentLog -SqlInstance sql01\sharepoint

@@ -38,7 +38,7 @@ function Get-DbaAgentJobOutputFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentJobOutputFile
+        https://docs.dbatools.io/#Get-DbaAgentJobOutputFile
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job'

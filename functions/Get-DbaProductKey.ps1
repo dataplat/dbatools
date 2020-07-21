@@ -33,7 +33,7 @@ function Get-DbaProductKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaProductKey
+        https://docs.dbatools.io/#Get-DbaProductKey
 
     .EXAMPLE
         PS C:\> Get-DbaProductKey -ComputerName winxp, sqlservera, sqlserver2014a, win2k8

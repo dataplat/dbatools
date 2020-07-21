@@ -31,7 +31,7 @@ function Get-DbaCustomError {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCustomError
+        https://docs.dbatools.io/#Get-DbaCustomError
 
     .EXAMPLE
         PS C:\> Get-DbaCustomError -SqlInstance localhost

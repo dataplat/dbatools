@@ -48,7 +48,7 @@ function Get-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentJob
+        https://docs.dbatools.io/#Get-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJob -SqlInstance localhost

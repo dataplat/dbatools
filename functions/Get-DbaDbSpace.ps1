@@ -44,7 +44,7 @@ function Get-DbaDbSpace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbSpace
+        https://docs.dbatools.io/#Get-DbaDbSpace
 
     .EXAMPLE
         PS C:\> Get-DbaDbSpace -SqlInstance localhost

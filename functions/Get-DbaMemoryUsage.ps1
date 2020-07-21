@@ -37,7 +37,7 @@ function Get-DbaMemoryUsage {
         SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
 
     .LINK
-        https://dbatools.io/Get-DbaMemoryUsage
+        https://docs.dbatools.io/#Get-DbaMemoryUsage
 
     .EXAMPLE
         PS C:\> Get-DbaMemoryUsage -ComputerName sql2017

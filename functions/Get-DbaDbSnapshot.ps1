@@ -42,7 +42,7 @@ function Get-DbaDbSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbSnapshot
+        https://docs.dbatools.io/#Get-DbaDbSnapshot
 
     .EXAMPLE
         PS C:\> Get-DbaDbSnapshot -SqlInstance sqlserver2014a

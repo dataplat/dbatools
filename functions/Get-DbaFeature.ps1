@@ -41,7 +41,7 @@ function Get-DbaFeature {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaFeature
+        https://docs.dbatools.io/#Get-DbaFeature
 
     .EXAMPLE
         PS C:\> Get-DbaFeature -ComputerName sql2017, sql2016, sql2005

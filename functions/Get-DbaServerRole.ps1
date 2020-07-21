@@ -37,7 +37,7 @@ function Get-DbaServerRole {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerRole
+        https://docs.dbatools.io/#Get-DbaServerRole
 
     .EXAMPLE
         PS C:\> Get-DbaServerRole -SqlInstance sql2016a

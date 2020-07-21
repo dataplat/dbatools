@@ -28,7 +28,7 @@ function Get-DbaWsfcResource {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcResource
+        https://docs.dbatools.io/#Get-DbaWsfcResource
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcResource -ComputerName cluster01

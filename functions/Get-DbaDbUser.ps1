@@ -39,7 +39,7 @@ function Get-DbaDbUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbUser
+        https://docs.dbatools.io/#Get-DbaDbUser
 
     .EXAMPLE
         PS C:\> Get-DbaDbUser -SqlInstance sql2016

@@ -48,7 +48,7 @@ function Get-DbaQueryExecutionTime {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaQueryExecutionTime
+        https://docs.dbatools.io/#Get-DbaQueryExecutionTime
 
     .EXAMPLE
         PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012

@@ -46,7 +46,7 @@ function Get-DbaCpuUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCpuUsage
+        https://docs.dbatools.io/#Get-DbaCpuUsage
 
     .EXAMPLE
         PS C:\> Get-DbaCpuUsage -SqlInstance sql2017

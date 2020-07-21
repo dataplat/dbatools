@@ -26,7 +26,7 @@ function Get-DbaPowerPlan {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPowerPlan
+        https://docs.dbatools.io/#Get-DbaPowerPlan
 
     .EXAMPLE
         PS C:\> Get-DbaPowerPlan -ComputerName sql2017

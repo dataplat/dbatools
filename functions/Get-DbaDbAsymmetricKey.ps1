@@ -42,7 +42,7 @@ function Get-DbaDbAsymmetricKey {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbAsymmetricKey
+        https://docs.dbatools.io/#Get-DbaDbAsymmetricKey
 
     .EXAMPLE
         PS C:\> Get-DbaDbAsymmetricKey -SqlInstance sql2016

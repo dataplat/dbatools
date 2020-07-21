@@ -36,7 +36,7 @@ function Get-DbaRgResourcePool {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRgResourcePool
+        https://docs.dbatools.io/#Get-DbaRgResourcePool
 
     .EXAMPLE
         PS C:\> Get-DbaRgResourcePool -SqlInstance sql2016

@@ -31,7 +31,7 @@ function Get-DbaConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaConnection
+        https://docs.dbatools.io/#Get-DbaConnection
 
     .EXAMPLE
         PS C:\> Get-DbaConnection -SqlInstance sql2016, sql2017

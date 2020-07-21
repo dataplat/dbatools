@@ -30,7 +30,7 @@ function Get-DbaDbMail {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMail
+        https://docs.dbatools.io/#Get-DbaDbMail
 
     .EXAMPLE
         PS C:\> Get-DbaDbMail -SqlInstance sql01\sharepoint

@@ -52,7 +52,7 @@ function Get-DbaModule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaModule
+        https://docs.dbatools.io/#Get-DbaModule
 
     .EXAMPLE
         PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012

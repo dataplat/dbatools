@@ -26,7 +26,7 @@ function Get-DbaClientAlias {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaClientAlias
+        https://docs.dbatools.io/#Get-DbaClientAlias
 
     .EXAMPLE
         PS C:\> Get-DbaClientAlias

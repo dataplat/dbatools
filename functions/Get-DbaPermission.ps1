@@ -48,7 +48,7 @@ function Get-DbaPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPermission
+        https://docs.dbatools.io/#Get-DbaPermission
 
     .EXAMPLE
         PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987

@@ -41,7 +41,7 @@ Function Get-DbaDbLogSpace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbLogSpace
+        https://docs.dbatools.io/#Get-DbaDbLogSpace
 
     .EXAMPLE
         PS C:\> Get-DbaDbLogSpace -SqlInstance Server1

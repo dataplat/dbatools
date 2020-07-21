@@ -28,7 +28,7 @@ function Get-DbaWsfcCluster {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcCluster
+        https://docs.dbatools.io/#Get-DbaWsfcCluster
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcCluster -ComputerName cluster01

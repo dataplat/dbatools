@@ -36,7 +36,7 @@ function Get-DbaDbMailConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMailConfig
+        https://docs.dbatools.io/#Get-DbaDbMailConfig
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint

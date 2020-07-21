@@ -34,7 +34,7 @@ function Get-DbaRepPublication {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepPublication
+        https://docs.dbatools.io/#Get-DbaRepPublication
 
     .EXAMPLE
         PS C:\> Get-DbaRepPublication -SqlInstance sql2008, sqlserver2012

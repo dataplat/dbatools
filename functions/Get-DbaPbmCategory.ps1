@@ -39,7 +39,7 @@ function Get-DbaPbmCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmCategory
+        https://docs.dbatools.io/#Get-DbaPbmCategory
 
     .EXAMPLE
         PS C:\> Get-DbaPbmCategory -SqlInstance sql2016

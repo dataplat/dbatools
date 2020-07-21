@@ -39,7 +39,7 @@ function Get-DbaDbUdf {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbUdf
+        https://docs.dbatools.io/#Get-DbaDbUdf
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance sql2016

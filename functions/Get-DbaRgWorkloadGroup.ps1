@@ -33,7 +33,7 @@ function Get-DbaRgWorkloadGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRgWorkloadGroup
+        https://docs.dbatools.io/#Get-DbaRgWorkloadGroup
 
     .EXAMPLE
         PS C:\> Get-DbaRgWorkloadGroup -SqlInstance sql2017

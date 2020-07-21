@@ -32,7 +32,7 @@ function Get-DbaMaxMemory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaMaxMemory
+        https://docs.dbatools.io/#Get-DbaMaxMemory
 
     .EXAMPLE
         PS C:\> Get-DbaMaxMemory -SqlInstance sqlcluster, sqlserver2012

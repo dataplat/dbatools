@@ -47,7 +47,7 @@ function Get-DbaDbRestoreHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbRestoreHistory
+        https://docs.dbatools.io/#Get-DbaDbRestoreHistory
 
     .EXAMPLE
         PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016

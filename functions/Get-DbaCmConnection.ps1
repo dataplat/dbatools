@@ -26,7 +26,7 @@ function Get-DbaCmConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCmConnection
+        https://docs.dbatools.io/#Get-DbaCmConnection
 
     .EXAMPLE
         PS C:\> Get-DbaCmConnection

@@ -33,7 +33,7 @@ function Get-DbaDbccProcCache {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccProcCache
+        https://docs.dbatools.io/#Get-DbaDbccProcCache
 
     .EXAMPLE
         PS C:\> Get-DbaDbccProcCache -SqlInstance Server1

@@ -30,7 +30,7 @@ function Get-DbaAgHadr {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgHadr
+        https://docs.dbatools.io/#Get-DbaAgHadr
 
     .EXAMPLE
         PS C:\> Get-DbaAgHadr -SqlInstance sql2016

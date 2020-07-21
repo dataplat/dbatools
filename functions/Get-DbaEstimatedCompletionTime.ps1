@@ -54,7 +54,7 @@ function Get-DbaEstimatedCompletionTime {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaEstimatedCompletionTime
+        https://docs.dbatools.io/#Get-DbaEstimatedCompletionTime
 
     .EXAMPLE
         PS C:\> Get-DbaEstimatedCompletionTime -SqlInstance sql2016

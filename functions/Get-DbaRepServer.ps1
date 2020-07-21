@@ -30,7 +30,7 @@ function Get-DbaRepServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepServer
+        https://docs.dbatools.io/#Get-DbaRepServer
 
     .EXAMPLE
         PS C:\> Get-DbaRepServer -SqlInstance sql2016

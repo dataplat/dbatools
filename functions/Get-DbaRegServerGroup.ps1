@@ -41,7 +41,7 @@ function Get-DbaRegServerGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRegServerGroup
+        https://docs.dbatools.io/#Get-DbaRegServerGroup
 
     .EXAMPLE
         PS C:\> Get-DbaRegServerGroup -SqlInstance sqlserver2014a

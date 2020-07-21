@@ -39,7 +39,7 @@ function Get-DbaDbDetachedFileInfo {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbDetachedFileInfo
+        https://docs.dbatools.io/#Get-DbaDbDetachedFileInfo
 
     .EXAMPLE
         PS C:\> Get-DbaDbDetachedFileInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf

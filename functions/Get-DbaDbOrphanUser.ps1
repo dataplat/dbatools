@@ -42,7 +42,7 @@ function Get-DbaDbOrphanUser {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbOrphanUser
+        https://docs.dbatools.io/#Get-DbaDbOrphanUser
 
     .EXAMPLE
         PS C:\> Get-DbaDbOrphanUser -SqlInstance localhost\sql2016

@@ -31,7 +31,7 @@ function Get-DbaBackupDevice {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaBackupDevice
+        https://docs.dbatools.io/#Get-DbaBackupDevice
 
     .EXAMPLE
         PS C:\> Get-DbaBackupDevice -SqlInstance localhost

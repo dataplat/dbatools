@@ -30,7 +30,7 @@ function Get-DbaDeprecatedFeature {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDeprecatedFeature
+        https://docs.dbatools.io/#Get-DbaDeprecatedFeature
 
     .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012

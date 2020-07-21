@@ -41,7 +41,7 @@ function Get-DbaMaintenanceSolutionLog {
         https://ola.hallengren.com
 
     .LINK
-        https://dbatools.io/Get-DbaMaintenanceSolutionLog
+        https://docs.dbatools.io/#Get-DbaMaintenanceSolutionLog
 
     .EXAMPLE
         PS C:\> Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a

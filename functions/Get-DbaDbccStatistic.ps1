@@ -54,7 +54,7 @@ function Get-DbaDbccStatistic {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccStatistic
+        https://docs.dbatools.io/#Get-DbaDbccStatistic
 
     .EXAMPLE
         PS C:\> Get-DbaDbccStatistic -SqlInstance SQLServer2017

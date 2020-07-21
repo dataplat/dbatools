@@ -48,7 +48,7 @@ function Get-DbaErrorLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaErrorLog
+        https://docs.dbatools.io/#Get-DbaErrorLog
 
     .EXAMPLE
         PS C:\> Get-DbaErrorLog -SqlInstance sql01\sharepoint

@@ -42,7 +42,7 @@ function Get-DbaDbRecoveryModel {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbRecoveryModel
+        https://docs.dbatools.io/#Get-DbaDbRecoveryModel
 
     .EXAMPLE
         PS C:\> Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose

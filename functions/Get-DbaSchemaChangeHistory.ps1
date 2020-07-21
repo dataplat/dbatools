@@ -43,7 +43,7 @@ function Get-DbaSchemaChangeHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSchemaChangeHistory
+        https://docs.dbatools.io/#Get-DbaSchemaChangeHistory
 
     .EXAMPLE
         PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost

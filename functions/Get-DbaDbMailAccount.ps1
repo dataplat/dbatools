@@ -39,7 +39,7 @@ function Get-DbaDbMailAccount {
         License: MIT https://opensource.org/licenses/MITIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMailAccount
+        https://docs.dbatools.io/#Get-DbaDbMailAccount
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint

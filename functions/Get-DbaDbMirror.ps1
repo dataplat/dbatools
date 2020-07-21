@@ -31,7 +31,7 @@ function Get-DbaDbMirror {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMirror
+        https://docs.dbatools.io/#Get-DbaDbMirror
 
     .EXAMPLE
         PS C:\> Get-DbaDbMirror -SqlInstance localhost

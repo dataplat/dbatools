@@ -52,7 +52,7 @@ function Get-DbaExecutionPlan {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaExecutionPlan
+        https://docs.dbatools.io/#Get-DbaExecutionPlan
 
     .EXAMPLE
         PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a

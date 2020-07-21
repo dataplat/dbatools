@@ -49,7 +49,7 @@ function Get-DbaUserPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaUserPermission
+        https://docs.dbatools.io/#Get-DbaUserPermission
 
     .EXAMPLE
         PS C:\> Get-DbaUserPermission -SqlInstance sql2008, sqlserver2012

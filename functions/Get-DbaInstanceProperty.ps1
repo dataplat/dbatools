@@ -36,7 +36,7 @@ function Get-DbaInstanceProperty {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceProperty
+        https://docs.dbatools.io/#Get-DbaInstanceProperty
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceProperty -SqlInstance localhost

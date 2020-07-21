@@ -40,7 +40,7 @@ function Get-DbaPfDataCollectorCounter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPfDataCollectorCounter
+        https://docs.dbatools.io/#Get-DbaPfDataCollectorCounter
 
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorCounter

@@ -86,7 +86,7 @@ function Get-DbaDatabase {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDatabase
+        https://docs.dbatools.io/#Get-DbaDatabase
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance localhost

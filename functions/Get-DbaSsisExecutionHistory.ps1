@@ -53,7 +53,7 @@ function Get-DbaSsisExecutionHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSsisExecutionHistory
+        https://docs.dbatools.io/#Get-DbaSsisExecutionHistory
 
     .EXAMPLE
         PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC

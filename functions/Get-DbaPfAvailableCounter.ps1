@@ -34,7 +34,7 @@ function Get-DbaPfAvailableCounter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPfAvailableCounter
+        https://docs.dbatools.io/#Get-DbaPfAvailableCounter
 
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter

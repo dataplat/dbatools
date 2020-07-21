@@ -28,7 +28,7 @@ function Get-DbaWsfcNetwork {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcNetwork
+        https://docs.dbatools.io/#Get-DbaWsfcNetwork
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcNetwork -ComputerName cluster01

@@ -29,7 +29,7 @@ function Get-DbaClientProtocol {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaClientProtocol
+        https://docs.dbatools.io/#Get-DbaClientProtocol
 
     .EXAMPLE
         PS C:\> Get-DbaClientProtocol -ComputerName sqlserver2014a

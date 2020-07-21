@@ -23,7 +23,7 @@ function Get-DbatoolsChangeLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbatoolsChangeLog
+        https://docs.dbatools.io/#Get-DbatoolsChangeLog
 
     .EXAMPLE
         Get-DbatoolsChangeLog

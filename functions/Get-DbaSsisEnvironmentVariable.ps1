@@ -54,7 +54,7 @@ function Get-DbaSsisEnvironmentVariable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSsisEnvironmentVariable
+        https://docs.dbatools.io/#Get-DbaSsisEnvironmentVariable
 
     .EXAMPLE
         PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL

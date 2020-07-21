@@ -48,7 +48,7 @@ function Get-DbaDbVirtualLogFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbVirtualLogFile
+        https://docs.dbatools.io/#Get-DbaDbVirtualLogFile
 
     .EXAMPLE
         PS C:\> Get-DbaDbVirtualLogFile -SqlInstance sqlcluster

@@ -29,7 +29,7 @@ function Get-DbaInstanceProtocol {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceProtocol
+        https://docs.dbatools.io/#Get-DbaInstanceProtocol
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceProtocol -ComputerName sqlserver2014a

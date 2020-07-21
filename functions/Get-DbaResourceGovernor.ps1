@@ -30,7 +30,7 @@ function Get-DbaResourceGovernor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaResourceGovernor
+        https://docs.dbatools.io/#Get-DbaResourceGovernor
 
     .EXAMPLE
         PS C:\> Get-DbaResourceGovernor -SqlInstance sql2016

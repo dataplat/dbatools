@@ -74,7 +74,7 @@ function Get-DbaHelpIndex {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaHelpIndex
+        https://docs.dbatools.io/#Get-DbaHelpIndex
 
     .EXAMPLE
         PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB

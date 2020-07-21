@@ -36,7 +36,7 @@ function Get-DbaAgentAlert {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentAlert
+        https://docs.dbatools.io/#Get-DbaAgentAlert
 
     .EXAMPLE
         PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB

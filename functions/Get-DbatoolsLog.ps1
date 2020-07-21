@@ -63,7 +63,7 @@ function Get-DbatoolsLog {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbatoolsLog
+        https://docs.dbatools.io/#Get-DbatoolsLog
 
     .EXAMPLE
         PS C:\> Get-DbatoolsLog

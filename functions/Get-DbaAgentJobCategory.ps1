@@ -40,7 +40,7 @@ function Get-DbaAgentJobCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentJobCategory
+        https://docs.dbatools.io/#Get-DbaAgentJobCategory
 
     .EXAMPLE
         PS C:\> Get-DbaAgentJobCategory -SqlInstance sql1

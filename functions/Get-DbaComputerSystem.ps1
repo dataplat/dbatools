@@ -29,7 +29,7 @@ function Get-DbaComputerSystem {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaComputerSystem
+        https://docs.dbatools.io/#Get-DbaComputerSystem
 
     .EXAMPLE
         PS C:\> Get-DbaComputerSystem

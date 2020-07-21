@@ -28,7 +28,7 @@ function Get-DbaHideInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaHideInstance
+        https://docs.dbatools.io/#Get-DbaHideInstance
 
     .EXAMPLE
         PS C:\> Get-DbaHideInstance

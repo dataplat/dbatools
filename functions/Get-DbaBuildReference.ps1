@@ -52,7 +52,7 @@ function Get-DbaBuildReference {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaBuildReference
+        https://docs.dbatools.io/#Get-DbaBuildReference
 
     .EXAMPLE
         PS C:\> Get-DbaBuildReference -Build "12.00.4502"

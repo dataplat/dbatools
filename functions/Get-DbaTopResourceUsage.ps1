@@ -49,7 +49,7 @@ function Get-DbaTopResourceUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaTopResourceUsage
+        https://docs.dbatools.io/#Get-DbaTopResourceUsage
 
     .EXAMPLE
         PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012

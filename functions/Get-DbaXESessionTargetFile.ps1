@@ -41,7 +41,7 @@ function Get-DbaXESessionTargetFile {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaXESessionTargetFile
+        https://docs.dbatools.io/#Get-DbaXESessionTargetFile
 
     .EXAMPLE
         PS C:\> Get-DbaXESessionTargetFile -SqlInstance sql2017 -Session 'Long Running Queries'

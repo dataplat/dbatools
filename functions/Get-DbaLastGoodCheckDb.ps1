@@ -61,7 +61,7 @@ function Get-DbaLastGoodCheckDb {
         https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
 
     .LINK
-        https://dbatools.io/Get-DbaLastGoodCheckDb
+        https://docs.dbatools.io/#Get-DbaLastGoodCheckDb
 
     .EXAMPLE
         PS C:\> Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987

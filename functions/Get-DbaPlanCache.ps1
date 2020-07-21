@@ -34,7 +34,7 @@ function Get-DbaPlanCache {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPlanCache
+        https://docs.dbatools.io/#Get-DbaPlanCache
 
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017

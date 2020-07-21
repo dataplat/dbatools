@@ -43,7 +43,7 @@ function Get-DbaDbFeatureUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbFeatureUsage
+        https://docs.dbatools.io/#Get-DbaDbFeatureUsage
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDbFeatureUsage

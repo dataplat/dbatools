@@ -35,7 +35,7 @@ function Get-DbaIoLatency {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaIoLatency
+        https://docs.dbatools.io/#Get-DbaIoLatency
 
     .EXAMPLE
         PS C:\> Get-DbaIoLatency -SqlInstance sql2008, sqlserver2012

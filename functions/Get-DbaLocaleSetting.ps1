@@ -28,7 +28,7 @@ function Get-DbaLocaleSetting {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaLocaleSetting
+        https://docs.dbatools.io/#Get-DbaLocaleSetting
 
     .EXAMPLE
         PS C:\> Get-DbaLocaleSetting -ComputerName sqlserver2014a

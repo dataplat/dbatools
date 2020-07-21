@@ -33,7 +33,7 @@ function Get-DbaAgentProxy {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentProxy
+        https://docs.dbatools.io/#Get-DbaAgentProxy
 
     .EXAMPLE
         PS C:\> Get-DbaAgentProxy -SqlInstance ServerA,ServerB\instanceB

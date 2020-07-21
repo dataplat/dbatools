@@ -36,7 +36,7 @@ function Get-DbaDbMailHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbMailHistory
+        https://docs.dbatools.io/#Get-DbaDbMailHistory
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailHistory -SqlInstance sql01\sharepoint

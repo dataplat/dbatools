@@ -40,7 +40,7 @@ function Get-DbaSpinLockStatistic {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSpinLockStatistic
+        https://docs.dbatools.io/#Get-DbaSpinLockStatistic
 
     .EXAMPLE
         PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012

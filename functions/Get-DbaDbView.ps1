@@ -45,7 +45,7 @@ function Get-DbaDbView {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbView
+        https://docs.dbatools.io/#Get-DbaDbView
 
     .EXAMPLE
         PS C:\> Get-DbaDbView -SqlInstance sql2016

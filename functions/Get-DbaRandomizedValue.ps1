@@ -65,7 +65,7 @@ function Get-DbaRandomizedValue {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRandomizedValue
+        https://docs.dbatools.io/#Get-DbaRandomizedValue
 
     .EXAMPLE
         Get-DbaRandomizedValue -DataType bit

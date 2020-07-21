@@ -37,7 +37,7 @@ function Get-DbaDbAssembly {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbAssembly
+        https://docs.dbatools.io/#Get-DbaDbAssembly
 
     .EXAMPLE
         PS C:\> Get-DbaDbAssembly -SqlInstance localhost

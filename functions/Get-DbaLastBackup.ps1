@@ -36,7 +36,7 @@ function Get-DbaLastBackup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaLastBackup
+        https://docs.dbatools.io/#Get-DbaLastBackup
 
     .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987

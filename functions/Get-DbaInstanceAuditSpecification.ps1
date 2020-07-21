@@ -31,7 +31,7 @@ function Get-DbaInstanceAuditSpecification {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceAuditSpecification
+        https://docs.dbatools.io/#Get-DbaInstanceAuditSpecification
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceAuditSpecification -SqlInstance localhost

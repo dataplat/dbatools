@@ -30,7 +30,7 @@ function Get-DbaRepDistributor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepDistributor
+        https://docs.dbatools.io/#Get-DbaRepDistributor
 
     .EXAMPLE
         PS C:\> Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012

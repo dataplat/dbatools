@@ -28,7 +28,7 @@ function Get-DbaPrivilege {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPrivilege
+        https://docs.dbatools.io/#Get-DbaPrivilege
 
     .EXAMPLE
         PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a

@@ -39,7 +39,7 @@ function Get-DbaDbEncryption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbEncryption
+        https://docs.dbatools.io/#Get-DbaDbEncryption
 
     .EXAMPLE
         PS C:\> Get-DbaDbEncryption -SqlInstance DEV01

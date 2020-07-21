@@ -39,7 +39,7 @@ function Get-DbaAgListener {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgListener
+        https://docs.dbatools.io/#Get-DbaAgListener
 
     .EXAMPLE
         PS C:\> Get-DbaAgListener -SqlInstance sql2017a

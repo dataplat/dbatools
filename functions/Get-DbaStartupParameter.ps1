@@ -33,7 +33,7 @@ function Get-DbaStartupParameter {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaStartupParameter
+        https://docs.dbatools.io/#Get-DbaStartupParameter
 
     .EXAMPLE
         PS C:\> Get-DbaStartupParameter -SqlInstance sql2014

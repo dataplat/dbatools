@@ -51,7 +51,7 @@ function Get-DbaWaitStatistic {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWaitStatistic
+        https://docs.dbatools.io/#Get-DbaWaitStatistic
 
     .EXAMPLE
         PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012

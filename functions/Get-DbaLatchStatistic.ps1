@@ -44,7 +44,7 @@ function Get-DbaLatchStatistic {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaLatchStatistic
+        https://docs.dbatools.io/#Get-DbaLatchStatistic
 
     .EXAMPLE
         PS C:\> Get-DbaLatchStatistic -SqlInstance sql2008, sqlserver2012

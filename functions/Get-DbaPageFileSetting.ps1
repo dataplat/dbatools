@@ -30,7 +30,7 @@ function Get-DbaPageFileSetting {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPageFileSetting
+        https://docs.dbatools.io/#Get-DbaPageFileSetting
 
     .EXAMPLE
         PS C:\> Get-DbaPageFileSetting -ComputerName ServerA,ServerB

@@ -33,7 +33,7 @@ function Get-DbaPbmCategorySubscription {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmCategorySubscription
+        https://docs.dbatools.io/#Get-DbaPbmCategorySubscription
 
     .EXAMPLE
         PS C:\> Get-DbaPbmCategorySubscription -SqlInstance sql2016

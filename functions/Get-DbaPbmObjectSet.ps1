@@ -39,7 +39,7 @@ function Get-DbaPbmObjectSet {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPbmObjectSet
+        https://docs.dbatools.io/#Get-DbaPbmObjectSet
 
     .EXAMPLE
         PS C:\> Get-DbaPbmObjectSet -SqlInstance sql2016

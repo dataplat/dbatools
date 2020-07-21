@@ -35,7 +35,7 @@ function Get-DbaTraceFlag {
         References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 
     .LINK
-        https://dbatools.io/Get-DbaTraceFlag
+        https://docs.dbatools.io/#Get-DbaTraceFlag
 
     .EXAMPLE
         PS C:\> Get-DbaTraceFlag -SqlInstance localhost

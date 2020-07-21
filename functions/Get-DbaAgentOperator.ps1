@@ -36,7 +36,7 @@ function Get-DbaAgentOperator {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgentOperator
+        https://docs.dbatools.io/#Get-DbaAgentOperator
 
     .EXAMPLE
         PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB

@@ -42,7 +42,7 @@ function Get-DbaServerRoleMember {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaServerRoleMember
+        https://docs.dbatools.io/#Get-DbaServerRoleMember
 
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost

@@ -43,7 +43,7 @@ function Get-DbaCpuRingBuffer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaCpuRingBuffer
+        https://docs.dbatools.io/#Get-DbaCpuRingBuffer
 
     .EXAMPLE
         PS C:\> Get-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012

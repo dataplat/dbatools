@@ -30,7 +30,7 @@ function Get-DbaSpn {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaSpn
+        https://docs.dbatools.io/#Get-DbaSpn
 
     .EXAMPLE
         PS C:\> Get-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba

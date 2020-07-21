@@ -30,7 +30,7 @@ function Get-DbaDefaultPath {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDefaultPath
+        https://docs.dbatools.io/#Get-DbaDefaultPath
 
     .EXAMPLE
         PS C:\> Get-DbaDefaultPath -SqlInstance sql01\sharepoint

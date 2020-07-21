@@ -43,7 +43,7 @@ function Get-DbaService {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaService
+        https://docs.dbatools.io/#Get-DbaService
 
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sqlserver2014a

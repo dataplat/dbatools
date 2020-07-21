@@ -28,7 +28,7 @@ function Get-DbaWsfcNetworkInterface {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaWsfcNetworkInterface
+        https://docs.dbatools.io/#Get-DbaWsfcNetworkInterface
 
     .EXAMPLE
         PS C:\> Get-DbaWsfcNetworkInterface -ComputerName cluster01

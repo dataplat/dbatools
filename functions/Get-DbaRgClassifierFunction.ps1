@@ -33,7 +33,7 @@ function Get-DbaRgClassifierFunction {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRgClassifierFunction
+        https://docs.dbatools.io/#Get-DbaRgClassifierFunction
 
     .EXAMPLE
         PS C:\> Get-DbaRgClassifierFunction -SqlInstance sql2016

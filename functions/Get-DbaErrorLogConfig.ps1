@@ -32,7 +32,7 @@ function Get-DbaErrorLogConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaErrorLogConfig
+        https://docs.dbatools.io/#Get-DbaErrorLogConfig
 
     .EXAMPLE
         PS C:\> Get-DbaErrorLogConfig -SqlInstance server2017,server2014

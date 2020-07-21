@@ -43,7 +43,7 @@ function Get-DbaDbDbccOpenTran {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbDbccOpenTran
+        https://docs.dbatools.io/#Get-DbaDbDbccOpenTran
 
     .EXAMPLE
         PS C:\> Get-DbaDbDbccOpenTran -SqlInstance SQLServer2017

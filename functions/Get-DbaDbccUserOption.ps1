@@ -37,7 +37,7 @@ function Get-DbaDbccUserOption {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccUserOption
+        https://docs.dbatools.io/#Get-DbaDbccUserOption
 
     .EXAMPLE
         PS C:\> Get-DbaDbccUserOption -SqlInstance Server1

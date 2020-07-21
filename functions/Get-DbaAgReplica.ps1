@@ -39,7 +39,7 @@ function Get-DbaAgReplica {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAgReplica
+        https://docs.dbatools.io/#Get-DbaAgReplica
 
     .EXAMPLE
         PS C:\> Get-DbaAgReplica -SqlInstance sql2017a

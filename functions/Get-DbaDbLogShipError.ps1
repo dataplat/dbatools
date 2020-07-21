@@ -55,7 +55,7 @@ function Get-DbaDbLogShipError {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbLogShipError
+        https://docs.dbatools.io/#Get-DbaDbLogShipError
 
     .EXAMPLE
         PS C:\> Get-DbaDbLogShipError -SqlInstance sql1

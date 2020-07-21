@@ -84,7 +84,7 @@ function Get-DbaDbBackupHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbBackupHistory
+        https://docs.dbatools.io/#Get-DbaDbBackupHistory
 
     .EXAMPLE
         PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a

@@ -55,7 +55,7 @@ function Get-DbaProcess {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaProcess
+        https://docs.dbatools.io/#Get-DbaProcess
 
     .EXAMPLE
         PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa

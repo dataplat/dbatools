@@ -52,7 +52,7 @@ function Get-DbaDbccSessionBuffer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbccSessionBuffer
+        https://docs.dbatools.io/#Get-DbaDbccSessionBuffer
 
     .EXAMPLE
         PS C:\> Get-DbaDbccSessionBuffer -SqlInstance Server1 -Operation InputBuffer -SessionId 51

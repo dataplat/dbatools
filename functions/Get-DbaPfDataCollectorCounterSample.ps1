@@ -54,7 +54,7 @@ function Get-DbaPfDataCollectorCounterSample {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaPfDataCollectorCounterSample
+        https://docs.dbatools.io/#Get-DbaPfDataCollectorCounterSample
 
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorCounterSample

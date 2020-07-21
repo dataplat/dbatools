@@ -51,7 +51,7 @@ function Get-DbaDbTable {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbTable
+        https://docs.dbatools.io/#Get-DbaDbTable
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database Test1

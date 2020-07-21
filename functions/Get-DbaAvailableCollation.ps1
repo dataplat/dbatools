@@ -31,7 +31,7 @@ function Get-DbaAvailableCollation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaAvailableCollation
+        https://docs.dbatools.io/#Get-DbaAvailableCollation
 
     .EXAMPLE
         PS C:\> Get-DbaAvailableCollation -SqlInstance sql2016

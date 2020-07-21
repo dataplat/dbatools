@@ -38,7 +38,7 @@ function Get-DbaInstanceInstallDate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaInstanceInstallDate
+        https://docs.dbatools.io/#Get-DbaInstanceInstallDate
 
     .EXAMPLE
         PS C:\> Get-DbaInstanceInstallDate -SqlInstance SqlBox1\Instance2
