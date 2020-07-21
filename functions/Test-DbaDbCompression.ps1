@@ -72,7 +72,7 @@ function Test-DbaDbCompression {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbCompression
+        https://docs.dbatools.io/#Test-DbaDbCompression
 
     .EXAMPLE
         PS C:\> Test-DbaDbCompression -SqlInstance localhost

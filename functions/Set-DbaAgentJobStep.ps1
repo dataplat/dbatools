@@ -111,7 +111,7 @@ function Set-DbaAgentJobStep {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentJobStep
+        https://docs.dbatools.io/#Set-DbaAgentJobStep
 
     .EXAMPLE
         PS C:\> Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2

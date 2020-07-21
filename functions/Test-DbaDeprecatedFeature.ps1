@@ -39,7 +39,7 @@ function Test-DbaDeprecatedFeature {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDeprecatedFeature
+        https://docs.dbatools.io/#Test-DbaDeprecatedFeature
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature

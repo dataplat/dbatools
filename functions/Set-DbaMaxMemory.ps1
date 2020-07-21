@@ -48,7 +48,7 @@ function Set-DbaMaxMemory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaMaxMemory
+        https://docs.dbatools.io/#Set-DbaMaxMemory
 
     .EXAMPLE
         PS C:\> Set-DbaMaxMemory sqlserver1

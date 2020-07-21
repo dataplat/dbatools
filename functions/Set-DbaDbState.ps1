@@ -87,7 +87,7 @@ function Set-DbaDbState {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbState
+        https://docs.dbatools.io/#Set-DbaDbState
 
     .EXAMPLE
         PS C:\> Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline

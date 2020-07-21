@@ -51,7 +51,7 @@ function Set-DbaPowerPlan {
         Requires: WMI access to servers
 
     .LINK
-        https://dbatools.io/Set-DbaPowerPlan
+        https://docs.dbatools.io/#Set-DbaPowerPlan
 
     .EXAMPLE
         PS C:\> Set-DbaPowerPlan -ComputerName sql2017

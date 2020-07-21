@@ -48,7 +48,7 @@ function Set-DbaSpConfigure {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaSpConfigure
+        https://docs.dbatools.io/#Set-DbaSpConfigure
 
     .EXAMPLE
         PS C:\> Set-DbaSpConfigure -SqlInstance localhost -Name ScanForStartupProcedures -Value 1

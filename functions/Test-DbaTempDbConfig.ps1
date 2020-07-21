@@ -41,7 +41,7 @@ function Test-DbaTempDbConfig {
         Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
     .LINK
-        https://dbatools.io/Test-DbaTempDbConfig
+        https://docs.dbatools.io/#Test-DbaTempDbConfig
 
     .EXAMPLE
         PS C:\> Test-DbaTempDbConfig -SqlInstance localhost

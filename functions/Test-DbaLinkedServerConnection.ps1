@@ -31,7 +31,7 @@ function Test-DbaLinkedServerConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaLinkedServerConnection
+        https://docs.dbatools.io/#Test-DbaLinkedServerConnection
 
     .EXAMPLE
         PS C:\> Test-DbaLinkedServerConnection -SqlInstance DEV01

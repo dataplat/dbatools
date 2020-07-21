@@ -36,7 +36,7 @@ function Test-DbaPowerPlan {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaPowerPlan
+        https://docs.dbatools.io/#Test-DbaPowerPlan
 
     .EXAMPLE
         PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a

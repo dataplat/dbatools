@@ -29,7 +29,7 @@ function Save-DbaDiagnosticQueryScript {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Save-DbaDiagnosticQueryScript
+        https://docs.dbatools.io/#Save-DbaDiagnosticQueryScript
 
     .EXAMPLE
         PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp

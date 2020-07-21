@@ -38,7 +38,7 @@ function Test-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaEndpoint
+        https://docs.dbatools.io/#Test-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Test-DbaEndpoint -SqlInstance localhost

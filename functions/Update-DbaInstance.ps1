@@ -97,7 +97,7 @@ function Update-DbaInstance {
         Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
 
     .LINK
-        https://dbatools.io/Update-DbaInstance
+        https://docs.dbatools.io/#Update-DbaInstance
 
     .NOTES
         Tags: Install, Patching, SP, CU, Instance

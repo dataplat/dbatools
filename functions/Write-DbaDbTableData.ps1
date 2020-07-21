@@ -98,7 +98,7 @@ function Write-DbaDbTableData {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Write-DbaDbTableData
+        https://docs.dbatools.io/#Write-DbaDbTableData
 
     .EXAMPLE
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv

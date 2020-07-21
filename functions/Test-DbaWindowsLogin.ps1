@@ -42,7 +42,7 @@ function Test-DbaWindowsLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaWindowsLogin
+        https://docs.dbatools.io/#Test-DbaWindowsLogin
 
     .EXAMPLE
         PS C:\> Test-DbaWindowsLogin -SqlInstance Dev01

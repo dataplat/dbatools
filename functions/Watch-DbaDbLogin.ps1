@@ -45,7 +45,7 @@ function Watch-DbaDbLogin {
         Requires: sysadmin access on all SQL Servers for the most accurate results
 
     .LINK
-        https://dbatools.io/Watch-DbaDbLogin
+        https://docs.dbatools.io/#Watch-DbaDbLogin
 
     .EXAMPLE
         PS C:\> Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1

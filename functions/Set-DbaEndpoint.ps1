@@ -51,7 +51,7 @@ function Set-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaEndpoint
+        https://docs.dbatools.io/#Set-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Set-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa

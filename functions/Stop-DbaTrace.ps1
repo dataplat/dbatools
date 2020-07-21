@@ -42,7 +42,7 @@ function Stop-DbaTrace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaTrace
+        https://docs.dbatools.io/#Stop-DbaTrace
 
     .EXAMPLE
         PS C:\> Stop-DbaTrace -SqlInstance sql2008

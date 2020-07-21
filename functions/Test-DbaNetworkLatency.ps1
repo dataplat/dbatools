@@ -46,7 +46,7 @@ function Test-DbaNetworkLatency {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaNetworkLatency
+        https://docs.dbatools.io/#Test-DbaNetworkLatency
 
     .EXAMPLE
         PS C:\> Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster

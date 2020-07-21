@@ -41,7 +41,7 @@ function Watch-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Watch-DbaXESession
+        https://docs.dbatools.io/#Watch-DbaXESession
 
     .EXAMPLE
         PS C:\> Watch-DbaXESession -SqlInstance sql2017 -Session system_health

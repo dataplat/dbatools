@@ -49,7 +49,7 @@ function Test-DbaBuild {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaBuild
+        https://docs.dbatools.io/#Test-DbaBuild
 
     .EXAMPLE
         PS C:\> Test-DbaBuild -Build "12.0.5540" -MinimumBuild "12.0.5557"

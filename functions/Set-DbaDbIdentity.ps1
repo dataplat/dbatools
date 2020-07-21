@@ -51,7 +51,7 @@ function Set-DbaDbIdentity {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbIdentity
+        https://docs.dbatools.io/#Set-DbaDbIdentity
 
     .EXAMPLE
         PS C:\> Set-DbaDbIdentity -SqlInstance SQLServer2017 -Database AdventureWorks2014 -Table 'Production.ScrapReason'

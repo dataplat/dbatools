@@ -76,7 +76,7 @@ function Set-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAvailabilityGroup
+        https://docs.dbatools.io/#Set-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled

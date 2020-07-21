@@ -103,7 +103,7 @@ function Test-DbaLastBackup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaLastBackup
+        https://docs.dbatools.io/#Test-DbaLastBackup
 
     .EXAMPLE
         PS C:\> Test-DbaLastBackup -SqlInstance sql2016

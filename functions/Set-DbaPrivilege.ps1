@@ -41,7 +41,7 @@ function Set-DbaPrivilege {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaPrivilege
+        https://docs.dbatools.io/#Set-DbaPrivilege
 
     .EXAMPLE
         PS C:\> Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI

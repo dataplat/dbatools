@@ -17,7 +17,7 @@ function Watch-DbatoolsUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Watch-DbatoolsUpdate
+        https://docs.dbatools.io/#Watch-DbatoolsUpdate
 
     .EXAMPLE
         PS C:\> Watch-DbatoolsUpdate

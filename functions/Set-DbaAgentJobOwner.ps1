@@ -53,7 +53,7 @@ function Set-DbaAgentJobOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentJobOwner
+        https://docs.dbatools.io/#Set-DbaAgentJobOwner
 
     .EXAMPLE
         PS C:\> Set-DbaAgentJobOwner -SqlInstance localhost

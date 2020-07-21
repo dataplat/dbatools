@@ -42,7 +42,7 @@ function Test-DbaAgentJobOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaAgentJobOwner
+        https://docs.dbatools.io/#Test-DbaAgentJobOwner
 
     .EXAMPLE
         PS C:\> Test-DbaAgentJobOwner -SqlInstance localhost

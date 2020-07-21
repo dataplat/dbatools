@@ -57,7 +57,7 @@ function Test-DbaBackupInformation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaBackupInformation
+        https://docs.dbatools.io/#Test-DbaBackupInformation
 
     .EXAMPLE
         PS C:\> $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance

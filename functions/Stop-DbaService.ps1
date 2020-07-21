@@ -52,7 +52,7 @@ function Stop-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .LINK
-        https://dbatools.io/Stop-DbaService
+        https://docs.dbatools.io/#Stop-DbaService
 
     .EXAMPLE
         PS C:\> Stop-DbaService -ComputerName sqlserver2014a

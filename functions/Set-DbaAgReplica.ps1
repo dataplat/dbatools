@@ -78,7 +78,7 @@ function Set-DbaAgReplica {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgReplica
+        https://docs.dbatools.io/#Set-DbaAgReplica
 
     .EXAMPLE
         PS C:\> Set-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000

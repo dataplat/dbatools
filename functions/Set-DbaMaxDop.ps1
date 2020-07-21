@@ -55,7 +55,7 @@ function Set-DbaMaxDop {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaMaxDop
+        https://docs.dbatools.io/#Set-DbaMaxDop
 
     .EXAMPLE
         PS C:\> Set-DbaMaxDop -SqlInstance sql2008, sql2012

@@ -29,7 +29,7 @@ function Update-Dbatools {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Update-Dbatools
+        https://docs.dbatools.io/#Update-Dbatools
 
     .EXAMPLE
         PS C:\> Update-Dbatools

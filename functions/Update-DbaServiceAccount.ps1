@@ -48,7 +48,7 @@ function Update-DbaServiceAccount {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .LINK
-        https://dbatools.io/Update-DbaServiceAccount
+        https://docs.dbatools.io/#Update-DbaServiceAccount
 
     .NOTES
         Tags: Service, SqlServer, Instance, Connect

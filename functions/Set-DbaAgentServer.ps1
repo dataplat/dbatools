@@ -110,7 +110,7 @@ function Set-DbaAgentServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentServer
+        https://docs.dbatools.io/#Set-DbaAgentServer
 
     .EXAMPLE
         PS C:\> Set-DbaAgentServer -SqlInstance sql1 -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100

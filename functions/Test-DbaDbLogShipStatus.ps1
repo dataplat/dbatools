@@ -54,7 +54,7 @@ function Test-DbaDbLogShipStatus {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbLogShipStatus
+        https://docs.dbatools.io/#Test-DbaDbLogShipStatus
 
     .EXAMPLE
         PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1

@@ -36,7 +36,7 @@ function Test-DbaDbCollation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbCollation
+        https://docs.dbatools.io/#Test-DbaDbCollation
 
     .EXAMPLE
         PS C:\> Test-DbaDbCollation -SqlInstance sqlserver2014a

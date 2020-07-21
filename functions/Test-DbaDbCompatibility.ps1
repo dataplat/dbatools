@@ -36,7 +36,7 @@ function Test-DbaDbCompatibility {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbCompatibility
+        https://docs.dbatools.io/#Test-DbaDbCompatibility
 
     .EXAMPLE
         PS C:\> Test-DbaDbCompatibility -SqlInstance sqlserver2014a

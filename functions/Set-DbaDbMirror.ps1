@@ -55,7 +55,7 @@ function Set-DbaDbMirror {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbMirror
+        https://docs.dbatools.io/#Set-DbaDbMirror
 
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Partner TCP://SQL2008.ad.local:5374

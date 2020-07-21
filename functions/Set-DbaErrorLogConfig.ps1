@@ -45,7 +45,7 @@ function Set-DbaErrorLogConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaErrorLogConfig
+        https://docs.dbatools.io/#Set-DbaErrorLogConfig
 
     .EXAMPLE
         PS C:\> Set-DbaErrorLogConfig -SqlInstance sql2017,sql2014 -LogCount 25

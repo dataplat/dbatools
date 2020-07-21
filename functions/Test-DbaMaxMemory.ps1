@@ -35,7 +35,7 @@ function Test-DbaMaxMemory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaMaxMemory
+        https://docs.dbatools.io/#Test-DbaMaxMemory
 
     .EXAMPLE
         PS C:\> Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012

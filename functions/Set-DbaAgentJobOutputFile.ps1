@@ -45,7 +45,7 @@ function Set-DbaAgentJobOutputFile {
         License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-        https://dbatools.io/Set-DbaAgentJobOutputFile
+        https://docs.dbatools.io/#Set-DbaAgentJobOutputFile
 
     .EXAMPLE
         PS C:\> Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt

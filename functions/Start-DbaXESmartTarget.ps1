@@ -58,7 +58,7 @@ function Start-DbaXESmartTarget {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaXESmartTarget
+        https://docs.dbatools.io/#Start-DbaXESmartTarget
 
     .EXAMPLE
         PS C:\>$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"

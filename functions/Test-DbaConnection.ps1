@@ -34,7 +34,7 @@ function Test-DbaConnection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaConnection
+        https://docs.dbatools.io/#Test-DbaConnection
 
     .EXAMPLE
         PS C:\> Test-DbaConnection SQL2016

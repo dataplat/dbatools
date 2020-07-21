@@ -42,7 +42,7 @@ function Start-DbaTrace {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaTrace
+        https://docs.dbatools.io/#Start-DbaTrace
 
     .EXAMPLE
         PS C:\> Start-DbaTrace -SqlInstance sql2008

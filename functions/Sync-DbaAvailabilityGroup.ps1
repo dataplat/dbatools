@@ -106,7 +106,7 @@ function Sync-DbaAvailabilityGroup {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Sync-DbaAvailabilityGroup
+        https://docs.dbatools.io/#Sync-DbaAvailabilityGroup
 
     .EXAMPLE
         PS C:\> Sync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3

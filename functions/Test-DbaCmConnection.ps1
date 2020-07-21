@@ -48,7 +48,7 @@ function Test-DbaCmConnection {
         **This function should not be called from within dbatools. It is meant as a tool for users only.**
 
     .LINK
-        https://dbatools.io/Test-DbaCmConnection
+        https://docs.dbatools.io/#Test-DbaCmConnection
 
     .EXAMPLE
         PS C:\> Test-DbaCmConnection -ComputerName sql2014

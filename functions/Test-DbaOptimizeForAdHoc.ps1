@@ -33,7 +33,7 @@ function Test-DbaOptimizeForAdHoc {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaOptimizeForAdHoc
+        https://docs.dbatools.io/#Test-DbaOptimizeForAdHoc
 
     .EXAMPLE
         PS C:\> Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012

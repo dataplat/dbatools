@@ -43,7 +43,7 @@ function Start-DbaPfDataCollectorSet {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaPfDataCollectorSet
+        https://docs.dbatools.io/#Start-DbaPfDataCollectorSet
 
     .EXAMPLE
         PS C:\> Start-DbaPfDataCollectorSet

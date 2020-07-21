@@ -33,7 +33,7 @@ function Test-DbaPath {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaPath
+        https://docs.dbatools.io/#Test-DbaPath
 
     .EXAMPLE
         PS C:\> Test-DbaPath -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP

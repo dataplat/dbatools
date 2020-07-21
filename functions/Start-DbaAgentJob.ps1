@@ -57,7 +57,7 @@ function Start-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaAgentJob
+        https://docs.dbatools.io/#Start-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Start-DbaAgentJob -SqlInstance localhost

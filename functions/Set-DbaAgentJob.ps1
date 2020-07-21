@@ -106,7 +106,7 @@ function Set-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentJob
+        https://docs.dbatools.io/#Set-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Set-DbaAgentJob sql1 -Job Job1 -Disabled

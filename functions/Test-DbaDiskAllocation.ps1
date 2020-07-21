@@ -47,7 +47,7 @@ function Test-DbaDiskAllocation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDiskAllocation
+        https://docs.dbatools.io/#Test-DbaDiskAllocation
 
     .EXAMPLE
         PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014a

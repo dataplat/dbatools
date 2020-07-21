@@ -43,7 +43,7 @@ function Test-DbaMaxDop {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaMaxDop
+        https://docs.dbatools.io/#Test-DbaMaxDop
 
     .EXAMPLE
         PS C:\> Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012

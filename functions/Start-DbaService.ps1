@@ -49,7 +49,7 @@ function Start-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .LINK
-        https://dbatools.io/Start-DbaService
+        https://docs.dbatools.io/#Start-DbaService
 
     .EXAMPLE
         PS C:\> Start-DbaService -ComputerName sqlserver2014a

@@ -60,7 +60,7 @@ function Set-DbaDbCompression {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbCompression
+        https://docs.dbatools.io/#Set-DbaDbCompression
 
     .EXAMPLE
         PS C:\> Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25

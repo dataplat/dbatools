@@ -37,7 +37,7 @@ function Set-DbaExtendedProtection {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaExtendedProtection
+        https://docs.dbatools.io/#Set-DbaExtendedProtection
 
     .EXAMPLE
         PS C:\> Set-DbaExtendedProtection

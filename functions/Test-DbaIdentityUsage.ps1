@@ -42,7 +42,7 @@ function Test-DbaIdentityUsage {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaIdentityUsage
+        https://docs.dbatools.io/#Test-DbaIdentityUsage
 
     .EXAMPLE
         PS C:\> Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012

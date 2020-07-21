@@ -45,7 +45,7 @@ function Stop-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaXESession
+        https://docs.dbatools.io/#Stop-DbaXESession
 
     .EXAMPLE
         PS C:\> Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions

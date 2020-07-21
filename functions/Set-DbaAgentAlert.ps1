@@ -54,7 +54,7 @@ function Set-DbaAgentAlert {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentAlert
+        https://docs.dbatools.io/#Set-DbaAgentAlert
 
     .EXAMPLE
         PS C:\> Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled

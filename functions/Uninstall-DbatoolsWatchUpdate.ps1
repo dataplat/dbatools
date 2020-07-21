@@ -15,7 +15,7 @@ function Uninstall-DbatoolsWatchUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Uninstall-DbatoolsWatchUpdate
+        https://docs.dbatools.io/#Uninstall-DbatoolsWatchUpdate
 
     .EXAMPLE
         PS C:\> Uninstall-DbatoolsWatchUpdate

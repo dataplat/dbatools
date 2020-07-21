@@ -93,7 +93,7 @@ function Set-DbaAgentSchedule {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentSchedule
+        https://docs.dbatools.io/#Set-DbaAgentSchedule
 
     .EXAMPLE
         PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled

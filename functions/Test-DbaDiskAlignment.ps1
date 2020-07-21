@@ -63,7 +63,7 @@ function Test-DbaDiskAlignment {
         Thanks to jbruns2010!
 
     .LINK
-        https://dbatools.io/Test-DbaDiskAlignment
+        https://docs.dbatools.io/#Test-DbaDiskAlignment
 
     .EXAMPLE
         PS C:\> Test-DbaDiskAlignment -ComputerName sqlserver2014a

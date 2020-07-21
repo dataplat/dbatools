@@ -82,7 +82,7 @@ function Set-DbaLogin {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaLogin
+        https://docs.dbatools.io/#Set-DbaLogin
 
     .EXAMPLE
         PS C:\> $SecurePassword = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force

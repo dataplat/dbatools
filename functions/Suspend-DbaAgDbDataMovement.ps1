@@ -45,7 +45,7 @@ function Suspend-DbaAgDbDataMovement {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Suspend-DbaAgDbDataMovement
+        https://docs.dbatools.io/#Suspend-DbaAgDbDataMovement
 
     .EXAMPLE
         PS C:\> Suspend-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2

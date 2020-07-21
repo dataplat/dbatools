@@ -58,7 +58,7 @@ function Set-DbaDbRecoveryModel {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbRecoveryModel
+        https://docs.dbatools.io/#Set-DbaDbRecoveryModel
 
     .EXAMPLE
         PS C:\> Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose

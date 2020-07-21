@@ -41,7 +41,7 @@ function Show-DbaDbList {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Show-DbaDbList
+        https://docs.dbatools.io/#Show-DbaDbList
 
     .EXAMPLE
         PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a

@@ -158,7 +158,7 @@ function Start-DbaMigration {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaMigration
+        https://docs.dbatools.io/#Start-DbaMigration
 
     .EXAMPLE
         PS C:\> Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach

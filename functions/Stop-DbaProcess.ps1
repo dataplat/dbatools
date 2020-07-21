@@ -63,7 +63,7 @@ function Stop-DbaProcess {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaProcess
+        https://docs.dbatools.io/#Stop-DbaProcess
 
     .EXAMPLE
         PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa

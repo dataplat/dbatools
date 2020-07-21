@@ -40,7 +40,7 @@ function Set-DbaTcpPort {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaTcpPort
+        https://docs.dbatools.io/#Set-DbaTcpPort
 
     .EXAMPLE
         PS C:\> Set-DbaTcpPort -SqlInstance sql2017 -Port 1433

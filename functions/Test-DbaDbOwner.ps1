@@ -46,7 +46,7 @@ function Test-DbaDbOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDbOwner
+        https://docs.dbatools.io/#Test-DbaDbOwner
 
     .EXAMPLE
         PS C:\> Test-DbaDbOwner -SqlInstance localhost

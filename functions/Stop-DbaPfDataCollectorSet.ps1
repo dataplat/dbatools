@@ -43,7 +43,7 @@ function Stop-DbaPfDataCollectorSet {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaPfDataCollectorSet
+        https://docs.dbatools.io/#Stop-DbaPfDataCollectorSet
 
     .EXAMPLE
         PS C:\> Stop-DbaPfDataCollectorSet

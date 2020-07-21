@@ -32,7 +32,7 @@ function Show-DbaInstanceFileSystem {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Show-DbaInstanceFileSystem
+        https://docs.dbatools.io/#Show-DbaInstanceFileSystem
 
     .EXAMPLE
         PS C:\> Show-DbaInstanceFileSystem -SqlInstance sql2017

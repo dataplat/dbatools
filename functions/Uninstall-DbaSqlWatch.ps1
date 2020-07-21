@@ -41,7 +41,7 @@ Function Uninstall-DbaSqlWatch {
         https://sqlwatch.io
 
     .LINK
-        https://dbatools.io/Uninstall-DbaSqlWatch
+        https://docs.dbatools.io/#Uninstall-DbaSqlWatch
 
     .EXAMPLE
         Uninstall-DbaSqlWatch -SqlInstance server1

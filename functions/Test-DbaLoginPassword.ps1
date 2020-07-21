@@ -42,7 +42,7 @@ function Test-DbaLoginPassword {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaLoginPassword
+        https://docs.dbatools.io/#Test-DbaLoginPassword
 
     .EXAMPLE
         PS C:\> Test-DbaLoginPassword -SqlInstance Dev01

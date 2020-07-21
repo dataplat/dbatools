@@ -40,7 +40,7 @@ function Test-DbaConnectionAuthScheme {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaConnectionAuthScheme
+        https://docs.dbatools.io/#Test-DbaConnectionAuthScheme
 
     .EXAMPLE
         PS C:\> Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a, sql2016

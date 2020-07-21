@@ -33,7 +33,7 @@ function Test-DbaSpn {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaSpn
+        https://docs.dbatools.io/#Test-DbaSpn
 
     .EXAMPLE
         Test-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba

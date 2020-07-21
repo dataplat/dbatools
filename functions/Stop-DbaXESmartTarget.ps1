@@ -31,7 +31,7 @@ function Stop-DbaXESmartTarget {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaXESmartTarget
+        https://docs.dbatools.io/#Stop-DbaXESmartTarget
 
     .EXAMPLE
         PS C:\> Get-DbaXESmartTarget | Stop-DbaXESmartTarget

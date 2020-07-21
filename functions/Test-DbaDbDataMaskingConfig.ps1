@@ -35,7 +35,7 @@ function Test-DbaDbDataMaskingConfig {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaDbDataMaskingConfig
+        https://docs.dbatools.io/#Test-DbaDbDataMaskingConfig
 
     .EXAMPLE
         Test-DbaDbDataMaskingConfig -FilePath C:\temp\_datamasking\db1.json

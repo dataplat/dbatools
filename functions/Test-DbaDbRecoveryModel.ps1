@@ -43,7 +43,7 @@ function Test-DbaDbRecoveryModel {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-        https://dbatools.io/Test-DbaDbRecoveryModel
+        https://docs.dbatools.io/#Test-DbaDbRecoveryModel
 
     .EXAMPLE
         PS C:\> Test-DbaDbRecoveryModel -SqlInstance sql2005

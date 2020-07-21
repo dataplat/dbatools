@@ -39,7 +39,7 @@ function Test-DbaDiskSpeed {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaDiskSpeed
+        https://docs.dbatools.io/#Test-DbaDiskSpeed
 
     .EXAMPLE
         PS C:\> Test-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012

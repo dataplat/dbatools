@@ -39,7 +39,7 @@ function Test-DbaInstanceName {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaInstanceName
+        https://docs.dbatools.io/#Test-DbaInstanceName
 
     .EXAMPLE
         PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a

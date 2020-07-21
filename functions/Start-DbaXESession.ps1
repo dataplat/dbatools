@@ -48,7 +48,7 @@ function Start-DbaXESession {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaXESession
+        https://docs.dbatools.io/#Start-DbaXESession
 
     .EXAMPLE
         PS C:\> Start-DbaXESession -SqlInstance sqlserver2012 -AllSessions

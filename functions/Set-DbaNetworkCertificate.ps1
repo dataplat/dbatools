@@ -45,7 +45,7 @@ function Set-DbaNetworkCertificate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaNetworkCertificate
+        https://docs.dbatools.io/#Set-DbaNetworkCertificate
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2

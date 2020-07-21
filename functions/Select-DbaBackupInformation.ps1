@@ -46,7 +46,7 @@ function Select-DbaBackupInformation {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Select-DbaBackupInformation
+        https://docs.dbatools.io/#Select-DbaBackupInformation
 
     .EXAMPLE
         PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\server1\backups$

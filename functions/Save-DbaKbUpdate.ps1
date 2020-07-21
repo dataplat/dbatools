@@ -37,7 +37,7 @@ function Save-DbaKbUpdate {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Save-DbaKbUpdate
+        https://docs.dbatools.io/#Save-DbaKbUpdate
 
     .EXAMPLE
         PS C:\> Save-DbaKbUpdate -Name KB4057119

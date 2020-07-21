@@ -35,7 +35,7 @@ function Test-DbaDbDataGeneratorConfig {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        https://dbatools.io/Test-DbaDbDataGeneratorConfig
+        https://docs.dbatools.io/#Test-DbaDbDataGeneratorConfig
 
     .EXAMPLE
         Test-DbaDbDataGeneratorConfig -FilePath C:\temp\_datamasking\db1.json

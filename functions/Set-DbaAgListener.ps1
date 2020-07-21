@@ -50,7 +50,7 @@ function Set-DbaAgListener {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgListener
+        https://docs.dbatools.io/#Set-DbaAgListener
 
     .EXAMPLE
         PS C:\> Set-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -Port 14333

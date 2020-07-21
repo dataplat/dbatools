@@ -45,7 +45,7 @@ function Set-DbaAgentJobCategory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaAgentJobCategory
+        https://docs.dbatools.io/#Set-DbaAgentJobCategory
 
     .EXAMPLE
         PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'

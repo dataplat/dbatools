@@ -68,7 +68,7 @@ function Set-DbaTempDbConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaTempDbConfig
+        https://docs.dbatools.io/#Set-DbaTempDbConfig
 
     .EXAMPLE
         PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileSize 1000

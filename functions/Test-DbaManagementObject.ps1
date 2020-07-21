@@ -29,7 +29,7 @@ function Test-DbaManagementObject {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaManagementObject
+        https://docs.dbatools.io/#Test-DbaManagementObject
 
     .EXAMPLE
         PS C:\> Test-DbaManagementObject -VersionNumber 13

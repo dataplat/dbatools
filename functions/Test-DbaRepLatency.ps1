@@ -47,7 +47,7 @@ function Test-DbaRepLatency {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaRepLatency
+        https://docs.dbatools.io/#Test-DbaRepLatency
 
     .EXAMPLE
         PS C:\> Test-DbaRepLatency -SqlInstance sql2008, sqlserver2012

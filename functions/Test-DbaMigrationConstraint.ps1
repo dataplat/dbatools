@@ -60,7 +60,7 @@ function Test-DbaMigrationConstraint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaMigrationConstraint
+        https://docs.dbatools.io/#Test-DbaMigrationConstraint
 
     .EXAMPLE
         PS C:\> Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster

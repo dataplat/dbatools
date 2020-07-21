@@ -45,7 +45,7 @@ function Stop-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaEndpoint
+        https://docs.dbatools.io/#Stop-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Stop-DbaEndpoint -SqlInstance sql2017a -AllEndpoints

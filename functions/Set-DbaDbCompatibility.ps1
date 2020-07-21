@@ -57,7 +57,7 @@ function Set-DbaDbCompatibility {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbCompatibility
+        https://docs.dbatools.io/#Set-DbaDbCompatibility
 
     .EXAMPLE
         PS C:\> Set-DbaDbCompatibility -SqlInstance localhost\sql2017

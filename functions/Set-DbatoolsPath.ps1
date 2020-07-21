@@ -23,7 +23,7 @@ function Set-DbatoolsPath {
         Configuration scopes are the default locations configurations are being stored at.
 
     .LINK
-        https://dbatools.io/Set-DbatoolsPath
+        https://docs.dbatools.io/#Set-DbatoolsPath
 
     .EXAMPLE
         PS C:\> Set-DbatoolsPath -Name 'temp' -Path 'C:\temp'

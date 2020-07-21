@@ -45,7 +45,7 @@ function Start-DbaEndpoint {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Start-DbaEndpoint
+        https://docs.dbatools.io/#Start-DbaEndpoint
 
     .EXAMPLE
         PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints

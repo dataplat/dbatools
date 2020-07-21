@@ -40,7 +40,7 @@ function Set-DbaSpn {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaSpn
+        https://docs.dbatools.io/#Set-DbaSpn
 
     .EXAMPLE
         PS C:\> Set-DbaSpn -SPN MSSQLSvc/SQLSERVERA.domain.something -ServiceAccount domain\account

@@ -52,7 +52,7 @@ function Sync-DbaLoginPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Sync-DbaLoginPermission
+        https://docs.dbatools.io/#Sync-DbaLoginPermission
 
     .EXAMPLE
         PS C:\> Sync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster

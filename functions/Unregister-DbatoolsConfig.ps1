@@ -36,7 +36,7 @@ function Unregister-DbatoolsConfig {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Unregister-DbatoolsConfig
+        https://docs.dbatools.io/#Unregister-DbatoolsConfig
 
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig | Unregister-DbatoolsConfig

@@ -50,7 +50,7 @@ function Set-DbaDbOwner {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbOwner
+        https://docs.dbatools.io/#Set-DbaDbOwner
 
     .EXAMPLE
         PS C:\> Set-DbaDbOwner -SqlInstance localhost

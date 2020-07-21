@@ -48,7 +48,7 @@ function Stop-DbaAgentJob {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Stop-DbaAgentJob
+        https://docs.dbatools.io/#Stop-DbaAgentJob
 
     .EXAMPLE
         PS C:\> Stop-DbaAgentJob -SqlInstance localhost
