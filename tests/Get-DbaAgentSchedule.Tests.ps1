@@ -29,6 +29,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not BeNullOrEmpty
         }
     }
+    
+    Context "Handles multiple instances" {
+        $null = New-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
+        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2,$script:instance3
+        It "Results contain two instances" {
+            ($results | Select-Object SqlInstance -Unique).Count | Should -Be 2
+        }
+        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance3 -schedule dbatoolsci_MonthlyTest
+        $Schedules.DROP()
+    }
 
     Context "Monthly schedule is correct" {
         $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyTest
