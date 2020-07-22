@@ -105,9 +105,18 @@ function Invoke-DbaQuery {
         Executes a query with ReadOnly application intent on aglistener1.
 
     .EXAMPLE
-        PS C:\>Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
 
         Executes a stored procedure Example_SP using SQL Parameters
+
+    .EXAMPLE
+        PS C:\> $QueryParameters = @{
+            "StartDate" = $startdate;
+            "EndDate" = $enddate;
+        };
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters $QueryParameters -CommandType StoredProcedure
+
+        Executes a stored procedure Example_SP using multiple SQL Parameters
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
