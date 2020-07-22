@@ -15,12 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "returns a CurrentRunStatus of not Idle and supports pipe" {
-        $null = Get-DbaAgentJob -SqlInstance $script:instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob
         $results.CurrentRunStatus -ne 'Idle' | Should Be $true
     }
 
     It "does not run all jobs" {
         $null = Start-DbaAgentJob -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
         $warn -match 'use one of the job' | Should Be $true
+    }
+
+    It "returns on multiple server inputs" {
+        $results2 = Start-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+        ($results2.SqlInstance).Count | Should -Be 2
     }
 }
