@@ -177,6 +177,7 @@ function Export-DbaLogin {
         [string]$DestinationVersion,
         [switch]$NoPrefix,
         [switch]$Passthru,
+        [switch]$ObjectLevel,
         [switch]$EnableException
     )
 
@@ -262,7 +263,7 @@ function Export-DbaLogin {
 
             if ($Login) {
                 if ($Login[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Login') {
-                    $serverLogins = $serverLogins | Where-Object { $_ -in $Login }
+                    $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login.Name }
                 } else {
                     $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login }
                 }
@@ -456,42 +457,63 @@ function Export-DbaLogin {
                         $dbUserName = $db.username
 
                         $outsql += "`r`nUSE [$dbName]`r`n"
-                        try {
-                            $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
-                            $outsql += $sql
-                        } catch {
-                            Write-Message -Level Warning -Message "User cannot be found in selected database"
-                        }
 
-                        # Skipping updating dbowner
+                        if ($ObjectLevel) {
+                            # Exporting all permissions
+                            $scriptOptions = New-DbaScriptingOption
+                            $scriptVersion = $sourceDb.CompatibilityLevel
+                            $scriptOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
+                            $scriptOptions.AllowSystemObjects = $true
+                            $scriptOptions.IncludeDatabaseRoleMemberships = $true
+                            $scriptOptions.ContinueScriptingOnError = $false
+                            $scriptOptions.IncludeDatabaseContext = $false
+                            $scriptOptions.IncludeIfNotExists = $true
+                            # BatchSeparator
+                            try {
+                                $userScript = Export-DbaUser -SqlInstance $server -Database $dbName -User $dbUsername -Passthru -ScriptingOptionsObject $scriptOptions -EnableException:$EnableException
+                                write-host $userScript
+                                $outsql += $userScript
+                            } catch {
+                                Write-Message -Level Warning -Message "Failed to extract permissions for user $dbUserName"
+                            }
+                        } else {
+                            try {
+                                $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
+                                $outsql += $sql
+                            } catch {
+                                Write-Message -Level Warning -Message "User cannot be found in selected database"
+                            }
 
-                        # Database Roles: db_owner, db_datareader, etc
-                        foreach ($role in $sourceDb.Roles) {
-                            if ($role.EnumMembers() -contains $dbUserName) {
-                                $roleName = $role.Name
-                                if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                    $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                                } else {
-                                    $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                            # Skipping updating dbowner
+
+                            # Database Roles: db_owner, db_datareader, etc
+                            foreach ($role in $sourceDb.Roles) {
+                                if ($role.EnumMembers() -contains $dbUserName) {
+                                    $roleName = $role.Name
+                                    if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                        $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
+                                    } else {
+                                        $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                                    }
                                 }
                             }
-                        }
 
-                        # Connect, Alter Any Assembly, etc
-                        $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
-                        foreach ($perm in $perms) {
-                            $permState = $perm.PermissionState
-                            $permType = $perm.PermissionType
-                            $grantor = $perm.Grantor
+                            # Connect, Alter Any Assembly, etc
+                            $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
+                            foreach ($perm in $perms) {
+                                $permState = $perm.PermissionState
+                                $permType = $perm.PermissionType
+                                $grantor = $perm.Grantor
 
-                            if ($permState -eq "GrantWithGrant") {
-                                $grantWithGrant = "WITH GRANT OPTION"
-                                $permState = "GRANT"
-                            } else {
-                                $grantWithGrant = $null
+                                if ($permState -eq "GrantWithGrant") {
+                                    $grantWithGrant = "WITH GRANT OPTION"
+                                    $permState = "GRANT"
+                                } else {
+                                    $grantWithGrant = $null
+                                }
+
+                                $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
                             }
-
-                            $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
                         }
                     }
                 }

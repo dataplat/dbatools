@@ -380,15 +380,13 @@ function Copy-DbaLogin {
         } else {
             $loginsCollection += Get-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -Login $Login -EnableException:$EnableException
         }
-        foreach ($loginObject in $loginsCollection) {
-            $sourceServer = $loginObject[0].Parent
-            $sourceLoginName = $loginObject.Name
-            $sourceVersionMajor = $sourceServer.VersionMajor
 
-            if ($OutFile) {
-                Export-DbaLogin -SqlInstance $sourceServer -FilePath $OutFile -Login $sourceLoginName -ExcludeLogin $ExcludeLogin
-                continue
-            }
+        if ($OutFile) {
+            return (Export-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -FilePath $OutFile -Login $loginsCollection -ObjectLevel:$ObjectLevel -ExcludeLogin $ExcludeLogin -EnableException:$EnableException)
+        }
+        foreach ($loginObject in $loginsCollection) {
+            $sourceServer = $loginObject.Parent
+            $sourceVersionMajor = $sourceServer.VersionMajor
 
             foreach ($destinstance in $Destination) {
                 try {

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabase', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabase', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'ObjectLevel', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -44,6 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $null = $server.Query("GRANT SELECT ON sys.databases TO [$login2] WITH GRANT OPTION")
             $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
+            $server.Databases[$dbname2].ExecuteNonQuery("GRANT SELECT ON sys.tables TO [$user2] WITH GRANT OPTION")
         } catch {
             $_
         }
@@ -75,7 +76,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Match 'Job'
         }
         It "Should exclude Go when exporting" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -BatchSeparator '' -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should Not Match 'Go'
@@ -100,6 +101,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $allfiles += $file.FullName
             $results | Should Not Match "$login2|$dbname2"
             $results | Should Match "$login1|$dbname1"
+        }
+        It "Should Export with object level permissions" {
+            $results = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -ObjectLevel -PassThru -WarningAction SilentlyContinue
+            $results | Should Match "$login2|$dbname2"
+            $results | Should Not Match "$login1|$dbname1"
+            $results | Should Match "GRANT SELECT ON \[sys\]\.\[tables\] .*$login2.* WITH GRANT OPTION"
         }
         foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
             It "Should Export for the SQLVersion $version" {
