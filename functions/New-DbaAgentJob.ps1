@@ -395,11 +395,11 @@ function New-DbaAgentJob {
 
                     # If a schedule needs to be attached
                     if ($Schedule) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
                     if ($ScheduleId) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
                     }
                 } catch {
                     Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
