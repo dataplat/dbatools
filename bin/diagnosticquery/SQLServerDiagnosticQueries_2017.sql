@@ -18,7 +18,7 @@
             "source": [
                 "# **SQL Server 2017 Diagnostic Information Queries**\r\n",
                 "- Glenn Berry \r\n",
-                "- Last Modified: July 3, 2020\r\n",
+                "- Last Modified: July 8, 2020\r\n",
                 "- Twitter: GlennAlanBerry\r\n",
                 "- Blog: https://glennsqlperformance.com/\r\n",
                 "\r\n",
@@ -177,7 +177,6 @@
                 "such as the ProcessID for SQL Server and your collation\r\n",
                 "> **Note:** Some columns will be NULL on older SQL Server builds\r\n",
                 "\r\n",
-                "`SERVERPROPERTY('IsTempdbMetadataMemoryOptimized')` is a new option for SQL Server 2019\r\n",
                 "\r\n",
                 "[SERVERPROPERTY (Transact-SQL)](https://bit.ly/2eeaXeI)\r\n",
                 ""
@@ -767,7 +766,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Hardware information from SQL Server 2019  (Query 17) (Hardware Info)"
+                "## Hardware information from SQL Server 2017  (Query 17) (Hardware Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "c56711f5-409f-4e52-ba2c-d9769daff5da"
@@ -1439,7 +1438,9 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "10178c97-5516-44e0-85d5-2c2a2351b390",
-                "tags": []
+                "tags": [
+                    "hide_input"
+                ]
             },
             "outputs": [],
             "execution_count": null
@@ -3229,7 +3230,8 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 67) (Table Sizes)\r\n",
+                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 67) (Buffer Usage)\r\n",
+                "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],\r\n",
                 "OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, \r\n",
                 "CAST(COUNT(*)/128.0 AS DECIMAL(10, 2)) AS [Buffer size(MB)],  \r\n",

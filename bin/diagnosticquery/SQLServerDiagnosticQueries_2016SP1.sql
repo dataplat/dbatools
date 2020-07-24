@@ -16,7 +16,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "# **SQL Server 2014 Diagnostic Information Queries**\r\n",
+                "# **SQL Server 2016 SP1 Diagnostic Information Queries**\r\n",
                 "- Glenn Berry \r\n",
                 "- Last Modified: July 7, 2020\r\n",
                 "- Twitter: GlennAlanBerry\r\n",
@@ -75,7 +75,7 @@
             "cell_type": "markdown",
             "source": [
                 "Useful links related to the above query:\r\n",
-                "* [SQL Server 2014 build versions](https://bit.ly/2HpmYOG)\r\n",
+                "* [SQL Server 2016 build versions](https://bit.ly/2epkTDT)\r\n",
                 "* [Download and install Azure Data Studio](https://bit.ly/2vgke1A)"
             ],
             "metadata": {
@@ -145,7 +145,7 @@
                 "SERVERPROPERTY('ProductMajorVersion') AS [ProductMajorVersion], \r\n",
                 "SERVERPROPERTY('ProductMinorVersion') AS [ProductMinorVersion], \r\n",
                 "SERVERPROPERTY('ProductBuild') AS [ProductBuild], \r\n",
-                "SERVERPROPERTY('ProductBuildType') AS [ProductBuildType],\t\t      -- Is this a GDR or OD hotfix (NULL if on a CU build)\r\n",
+                "SERVERPROPERTY('ProductBuildType') AS [ProductBuildType],\t\t\t  -- Is this a GDR or OD hotfix (NULL if on a CU build)\r\n",
                 "SERVERPROPERTY('ProductUpdateReference') AS [ProductUpdateReference], -- KB article number that is applicable for this build\r\n",
                 "SERVERPROPERTY('ProcessID') AS [ProcessID],\r\n",
                 "SERVERPROPERTY('Collation') AS [Collation], \r\n",
@@ -157,7 +157,9 @@
                 "SERVERPROPERTY('InstanceDefaultDataPath') AS [InstanceDefaultDataPath],\r\n",
                 "SERVERPROPERTY('InstanceDefaultLogPath') AS [InstanceDefaultLogPath],\r\n",
                 "SERVERPROPERTY('BuildClrVersion') AS [Build CLR Version],\r\n",
-                "SERVERPROPERTY('IsXTPSupported') AS [IsXTPSupported];"
+                "SERVERPROPERTY('IsXTPSupported') AS [IsXTPSupported],\r\n",
+                "SERVERPROPERTY('IsPolybaseInstalled') AS [IsPolybaseInstalled],\t\t\t\t\r\n",
+                "SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];"
             ],
             "metadata": {
                 "azdata_cell_guid": "fd8bc7f4-b027-4ce3-9adc-a05d7feb7988",
@@ -213,6 +215,7 @@
             "cell_type": "markdown",
             "source": [
                 "**Focus on these settings:**\r\n",
+                "- automatic soft-NUMA disabled (should be 0 in most cases)\r\n",
                 "- backup checksum default (should be 1)\r\n",
                 "- backup compression default (should be 1 in most cases)\r\n",
                 "- clr enabled (only enable if it is needed)\r\n",
@@ -262,19 +265,15 @@
                 "\r\n",
                 "Common trace flags that should be enabled in most cases:\r\n",
                 "\r\n",
-                "- **TF 1117** - [When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points](https://bit.ly/2GY1kOl)\r\n",
-                "- **TF 1118** - [Helps alleviate allocation contention in tempdb](https://bit.ly/2GY1kOl)\r\n",
-                "- **TF 2371** - [Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)](https://bit.ly/30KO4Hh)\r\n",
-                "- **TF 3226** - [Supresses logging of successful database backup messages to the SQL Server Error Log](https://bit.ly/38zDNAK)\r\n",
-                "- **TF 3449** - [Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)](https://bit.ly/2uj0h5M)\r\n",
-                "- **TF 6533** - [Spatial performance improvements in SQL Server 2012 and 2014](https://bit.ly/2v7C7ze)\r\n",
+                "- **TF 460**  - [Improvement: Optional replacement for \"String or binary data would be truncated\" message with extended information in SQL Server 2017](https://bit.ly/2sboMli)\r\n",
+                "- **TF 3226** - [Supresses logging of successful database backup messages to the SQL Server Error Log](https://bit.ly/38zDNAK )\r\n",
                 "- **TF 6534** - [Enables use of native code to improve performance with spatial data](https://bit.ly/2HrQUpU)       \r\n",
-                "- **TF 8079** - [Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2](https://bit.ly/29B7oR8)\r\n",
-                "\r\n",
+                "- **TF 7745** - [Prevents Query Store data from being written to disk in case of a failover or shutdown command](https://bit.ly/2GU69Km)\r\n",
+                "- **TF 7752** - [Enables asynchronous load of Query Store](https://bit.ly/2GU69Km)\r\n",
                 "\r\n",
                 "[DBCC TRACEON - Trace Flags (Transact-SQL)](https://bit.ly/2FuSvPg)\r\n",
                 "\r\n",
-                "[Recommended updates and configuration options for SQL Server 2012 and SQL Server 2014 used with high-performance workloads](https://bit.ly/2Hy3zIZ)"
+                "[Recommended updates and configuration options for SQL Server 2017 and 2016 with high-performance workloads](https://bit.ly/2VVRGTY)"
             ],
             "metadata": {
                 "azdata_cell_guid": "141c6882-a3ce-4ec9-a132-6b2c8143b336"
@@ -283,41 +282,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Returns status of instant file initialization (Query 6) (IFI Status)"
-            ],
-            "metadata": {
-                "azdata_cell_guid": "84c3a1ad-0018-4393-b0a3-2d0d8037322f"
-            }
-        },
-        {
-            "cell_type": "code",
-            "source": [
-                "-- Returns status of instant file initialization (Query 6) (IFI Status)\r\n",
-                "EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization';"
-            ],
-            "metadata": {
-                "azdata_cell_guid": "a17ff3d6-23e2-46da-885a-f32444b08d00"
-            },
-            "outputs": [],
-            "execution_count": null
-        },
-        {
-            "cell_type": "markdown",
-            "source": [
-                "- Lets you determine whether Instant File Initialization (IFI) is enabled for the instance\r\n",
-                "- This should be enabled in the vast majority of cases\r\n",
-                "- Note: This query won't return any results if the SQL Server error log has been recycled\r\n",
-                "\r\n",
-                "[Database Instant File Initialization](https://bit.ly/2nTX74y)"
-            ],
-            "metadata": {
-                "azdata_cell_guid": "5ae069ae-0c98-4c90-83cc-9da0eb3c1b65"
-            }
-        },
-        {
-            "cell_type": "markdown",
-            "source": [
-                "## SQL Server Process Address space info  (Query 7) (Process Memory)"
+                "## SQL Server Process Address space info  (Query 6) (Process Memory)"
             ],
             "metadata": {
                 "azdata_cell_guid": "dd724a46-dfcc-4dcc-8cd7-b22b2a746688"
@@ -326,7 +291,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- SQL Server Process Address space info  (Query 7) (Process Memory)\r\n",
+                "-- SQL Server Process Address space info  (Query 6) (Process Memory)\r\n",
                 "-- (shows whether locked pages is enabled, among other things)\r\n",
                 "SELECT physical_memory_in_use_kb/1024 AS [SQL Server Memory Usage (MB)],\r\n",
                 "\t   locked_page_allocations_kb/1024 AS [SQL Server Locked Pages Allocation (MB)],\r\n",
@@ -364,7 +329,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## SQL Server Services information (Query 8) (SQL Server Services Info)"
+                "## SQL Server Services information (Query 7) (SQL Server Services Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "813d193b-0730-4aaa-a1fa-2b1b272da7fb"
@@ -373,9 +338,10 @@
         {
             "cell_type": "code",
             "source": [
-                "-- SQL Server Services information (Query 8) (SQL Server Services Info)\r\n",
+                "-- SQL Server Services information (Query 7) (SQL Server Services Info)\r\n",
                 "SELECT servicename, process_id, startup_type_desc, status_desc, \r\n",
-                "last_startup_time, service_account, is_clustered, cluster_nodename, [filename]\r\n",
+                "last_startup_time, service_account, is_clustered, cluster_nodename, [filename], \r\n",
+                "instant_file_initialization_enabled\r\n",
                 "FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);"
             ],
             "metadata": {
@@ -393,7 +359,7 @@
                 "- Tells you the account being used for the SQL Server Service and the SQL Agent Service\r\n",
                 "- Shows the process_id, when they were last started, and their current status\r\n",
                 "- Also shows whether you are running on a failover cluster instance, and what node you are running on\r\n",
-                "\r\n",
+                "- Also shows whether IFI is enabled\r\n",
                 "\r\n",
                 "[sys.dm_server_services (Transact-SQL)](https://bit.ly/2oKa1Un)"
             ],
@@ -404,7 +370,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Last backup information by database  (Query 9) (Last Backup By Database)"
+                "## Last backup information by database  (Query 8) (Last Backup By Database)"
             ],
             "metadata": {
                 "azdata_cell_guid": "6e2d2211-2025-418c-89ac-99ada11f122e"
@@ -413,7 +379,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Last backup information by database  (Query 9) (Last Backup By Database)\r\n",
+                "-- Last backup information by database  (Query 8) (Last Backup By Database)\r\n",
                 "SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], \r\n",
                 "       d.log_reuse_wait_desc AS [Log Reuse Wait Desc],\r\n",
                 "    MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],\r\n",
@@ -448,7 +414,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get SQL Server Agent jobs and Category information (Query 10) (SQL Server Agent Jobs)"
+                "## Get SQL Server Agent jobs and Category information (Query 9) (SQL Server Agent Jobs)"
             ],
             "metadata": {
                 "azdata_cell_guid": "29ee78b2-aea2-437c-b74c-e25e18a21d85"
@@ -457,7 +423,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get SQL Server Agent jobs and Category information (Query 10) (SQL Server Agent Jobs)\r\n",
+                "-- Get SQL Server Agent jobs and Category information (Query 9) (SQL Server Agent Jobs)\r\n",
                 "SELECT sj.name AS [Job Name], sj.[description] AS [Job Description], SUSER_SNAME(sj.owner_sid) AS [Job Owner],\r\n",
                 "sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], \r\n",
                 "sj.notify_email_operator_id, sj.notify_level_email, sc.name AS [CategoryName],\r\n",
@@ -503,7 +469,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)"
+                "## Get SQL Server Agent Alert Information (Query 10) (SQL Server Agent Alerts)"
             ],
             "metadata": {
                 "azdata_cell_guid": "573ded7e-e88d-4f22-acaf-fbc7d50f5cc2"
@@ -512,7 +478,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)\r\n",
+                "-- Get SQL Server Agent Alert Information (Query 10) (SQL Server Agent Alerts)\r\n",
                 "SELECT name, event_source, message_id, severity, [enabled], has_notification, \r\n",
                 "       delay_between_responses, occurrence_count, last_occurrence_date, last_occurrence_time\r\n",
                 "FROM msdb.dbo.sysalerts WITH (NOLOCK)\r\n",
@@ -540,7 +506,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Host information (Query 12) (Windows Info)"
+                "## Host information (Query 11) (Windows Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "7ceed0ca-74fe-4001-a142-2aaf6477c75d"
@@ -549,7 +515,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Windows information (Query 12) (Windows Info)\r\n",
+                "-- Windows information (Query 11) (Windows Info)\r\n",
                 "SELECT windows_release, windows_service_pack_level, \r\n",
                 "       windows_sku, os_language_version\r\n",
                 "FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);"
@@ -566,7 +532,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "[Hardware and Software Requirements for Installing SQL Server 2014](https://bit.ly/1yRYXkQ)"
+                "[Hardware and Software Requirements for Installing SQL Server 2016](https://bit.ly/2JJIUTl)"
             ],
             "metadata": {
                 "azdata_cell_guid": "2fc1319b-b067-4a6a-85bb-3da123585959"
@@ -575,7 +541,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## SQL Server NUMA Node information  (Query 13) (SQL Server NUMA Info)"
+                "## SQL Server NUMA Node information  (Query 12) (SQL Server NUMA Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "41af2734-b348-4d22-9c56-a9a5680c4df9"
@@ -584,7 +550,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- SQL Server NUMA Node information  (Query 13) (SQL Server NUMA Info)\r\n",
+                "-- SQL Server NUMA Node information  (Query 12) (SQL Server NUMA Info)\r\n",
                 "SELECT node_id, node_state_desc, memory_node_id, processor_group, online_scheduler_count, \r\n",
                 "       idle_scheduler_count, active_worker_count, avg_load_balance, resource_monitor_state\r\n",
                 "FROM sys.dm_os_nodes WITH (NOLOCK) \r\n",
@@ -592,9 +558,7 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "12aad206-63d7-45e5-931b-d7d3b6ba0473",
-                "tags": [
-                    "hide_input"
-                ]
+                "tags": []
             },
             "outputs": [],
             "execution_count": null
@@ -605,7 +569,7 @@
                 "Gives you some useful information about the composition and relative load on your NUMA nodes\r\n",
                 "\r\n",
                 "- You want to see an equal number of schedulers on each NUMA node\r\n",
-                "- Watch out if SQL Server 2014 Standard Edition has been installed on a physical or virtual machine with more than four sockets or more than 16 physical cores\r\n",
+                "- Watch out if SQL Server 2016 Standard Edition has been installed on a physical or virtual machine with more than four sockets or more than 24 physical cores\r\n",
                 "\r\n",
                 "[sys.dm_os_nodes (Transact-SQL)](https://bit.ly/2pn5Mw8)\r\n",
                 "\r\n",
@@ -618,7 +582,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Good basic information about OS memory amounts and state  (Query 14) (System Memory)"
+                "## Good basic information about OS memory amounts and state  (Query 13) (System Memory)"
             ],
             "metadata": {
                 "azdata_cell_guid": "f9868d6a-c014-434b-8826-6509aeb88db5"
@@ -627,7 +591,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Good basic information about OS memory amounts and state  (Query 14) (System Memory)\r\n",
+                "-- Good basic information about OS memory amounts and state  (Query 13) (System Memory)\r\n",
                 "SELECT total_physical_memory_kb/1024 AS [Physical Memory (MB)], \r\n",
                 "       available_physical_memory_kb/1024 AS [Available Memory (MB)], \r\n",
                 "       total_page_file_kb/1024 AS [Page File Commit Limit (MB)],\r\n",
@@ -676,7 +640,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get information about your cluster nodes and their status  (Query 15) (Cluster Node Properties)\r\n",
+                "## Get information about your cluster nodes and their status  (Query 14) (Cluster Node Properties)\r\n",
                 "\r\n",
                 "> Skip this query  if you know you don't have a clustered instance."
             ],
@@ -687,7 +651,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get information about your cluster nodes and their status  (Query 15) (Cluster Node Properties)\r\n",
+                "-- Get information about your cluster nodes and their status  (Query 14) (Cluster Node Properties)\r\n",
                 "-- (if your database server is in a failover cluster)\r\n",
                 "SELECT NodeName, status_description, is_current_owner\r\n",
                 "FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);"
@@ -715,7 +679,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get information about any AG cluster this instance is a part of (Query 16) (AG Cluster)\r\n",
+                "## Get information about any AG cluster this instance is a part of (Query 15) (AG Cluster)\r\n",
                 "> Skip this query  if you know you don't have a clustered instance."
             ],
             "metadata": {
@@ -725,7 +689,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get information about any AG cluster this instance is a part of (Query 16) (AG Cluster)\r\n",
+                "-- Get information about any AG cluster this instance is a part of (Query 15) (AG Cluster)\r\n",
                 "SELECT cluster_name, quorum_type_desc, quorum_state_desc\r\n",
                 "FROM sys.dm_hadr_cluster WITH (NOLOCK) OPTION (RECOMPILE);"
             ],
@@ -750,7 +714,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Good overview of AG health and status (Query 17) (AG Status)\r\n",
+                "## Good overview of AG health and status (Query 16) (AG Status)\r\n",
                 "> Skip this query  if you know you don't have a clustered instance."
             ],
             "metadata": {
@@ -760,7 +724,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Good overview of AG health and status (Query 17) (AG Status)\r\n",
+                "-- Good overview of AG health and status (Query 16) (AG Status)\r\n",
                 "SELECT ag.name AS [AG Name], ar.replica_server_name, ar.availability_mode_desc, adc.[database_name], \r\n",
                 "       drs.is_local, drs.is_primary_replica, drs.synchronization_state_desc, drs.is_commit_participant, \r\n",
                 "\t   drs.synchronization_health_desc, drs.recovery_lsn, drs.truncation_lsn, drs.last_sent_lsn, \r\n",
@@ -800,7 +764,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Hardware information from SQL Server 2014  (Query 18) (Hardware Info)"
+                "## Hardware information from SQL Server 2016 (Query 17) (Hardware Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "c56711f5-409f-4e52-ba2c-d9769daff5da"
@@ -809,7 +773,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Hardware information from SQL Server 2014 (Query 18) (Hardware Info)\r\n",
+                "-- Hardware information from SQL Server 2016 (Query 17) (Hardware Info)\r\n",
                 "SELECT cpu_count AS [Logical CPU Count], scheduler_count, \r\n",
                 "       hyperthread_ratio AS [Hyperthread Ratio],\r\n",
                 "       cpu_count/hyperthread_ratio AS [Physical CPU Count], \r\n",
@@ -820,7 +784,9 @@
                 "\t   affinity_type_desc AS [Affinity Type], \r\n",
                 "       sqlserver_start_time AS [SQL Server Start Time],\r\n",
                 "\t   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],\r\n",
-                "\t   virtual_machine_type_desc AS [Virtual Machine Type]\r\n",
+                "\t   virtual_machine_type_desc AS [Virtual Machine Type],\r\n",
+                "\t   softnuma_configuration_desc AS [Soft NUMA Configuration], \r\n",
+                "\t   sql_memory_model_desc -- New in SQL Server 2016\r\n",
                 "FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);"
             ],
             "metadata": {
@@ -841,7 +807,18 @@
                 "It merely indicates that you have a hypervisor running on your host\r\n",
                 "\r\n",
                 "[sys.dm_os_sys_info (Transact-SQL)](https://bit.ly/2pczOYs)\r\n",
-                ""
+                "\r\n",
+                "Soft NUMA configuration was a new column for SQL Server 2016\r\n",
+                "- OFF = Soft-NUMA feature is OFF\r\n",
+                "- ON = SQL Server automatically determines the NUMA node sizes for Soft-NUMA\r\n",
+                "- MANUAL = Manually configured soft-NUMA\r\n",
+                "\r\n",
+                "[Configure SQL Server to Use Soft-NUMA (SQL Server)](https://bit.ly/2HTpKJt)\r\n",
+                "\r\n",
+                "sql_memory_model_desc values (Added in SQL Server 2016 SP1)\r\n",
+                "- CONVENTIONAL\r\n",
+                "- LOCK_PAGES\r\n",
+                "- LARGE_PAGES"
             ],
             "metadata": {
                 "azdata_cell_guid": "84a101cc-0378-4a9e-83f3-5b6da75453b9"
@@ -850,7 +827,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get System Manufacturer and model number from SQL Server Error log (Query 19) (System Manufacturer)"
+                "## Get System Manufacturer and model number from SQL Server Error log (Query 18) (System Manufacturer)"
             ],
             "metadata": {
                 "azdata_cell_guid": "3eedfa3e-9fbe-4abd-a5a3-ba9b773cab2b"
@@ -859,7 +836,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get System Manufacturer and model number from SQL Server Error log (Query 19) (System Manufacturer)\r\n",
+                "-- Get System Manufacturer and model number from SQL Server Error log (Query 18) (System Manufacturer)\r\n",
                 "EXEC sys.xp_readerrorlog 0, 1, N'Manufacturer';"
             ],
             "metadata": {
@@ -886,7 +863,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get BIOS date from Windows Registry (Query 20) (BIOS Date)"
+                "## Get BIOS date from Windows Registry (Query 19) (BIOS Date)"
             ],
             "metadata": {
                 "azdata_cell_guid": "cb9fd18a-e405-40e4-a2af-d9be8dffe36f"
@@ -895,7 +872,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get BIOS date from Windows Registry (Query 20) (BIOS Date)\r\n",
+                "-- Get BIOS date from Windows Registry (Query 19) (BIOS Date)\r\n",
                 "EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\\DESCRIPTION\\System\\BIOS', N'BiosReleaseDate';"
             ],
             "metadata": {
@@ -921,7 +898,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get processor description from Windows Registry  (Query 21) (Processor Description)"
+                "## Get processor description from Windows Registry  (Query 20) (Processor Description)"
             ],
             "metadata": {
                 "azdata_cell_guid": "d36e4da6-6371-4324-a021-582f7cd2dbba"
@@ -930,7 +907,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get processor description from Windows Registry  (Query 21) (Processor Description)\r\n",
+                "-- Get processor description from Windows Registry  (Query 20) (Processor Description)\r\n",
                 "EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0', N'ProcessorNameString';"
             ],
             "metadata": {
@@ -959,7 +936,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get information on location, time and size of any memory dumps from SQL Server  (Query 22) (Memory Dump Info)"
+                "## Get information on location, time and size of any memory dumps from SQL Server  (Query 21) (Memory Dump Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "53481628-9dc1-496c-b1a6-f0e3c28c9ffe"
@@ -968,7 +945,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get information on location, time and size of any memory dumps from SQL Server  (Query 22) (Memory Dump Info)\r\n",
+                "-- Get information on location, time and size of any memory dumps from SQL Server  (Query 21) (Memory Dump Info)\r\n",
                 "SELECT [filename], creation_time, size_in_bytes/1048576.0 AS [Size (MB)]\r\n",
                 "FROM sys.dm_server_memory_dumps WITH (NOLOCK) \r\n",
                 "ORDER BY creation_time DESC OPTION (RECOMPILE);"
@@ -996,7 +973,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at Suspect Pages table (Query 23) (Suspect Pages)"
+                "## Look at Suspect Pages table (Query 22) (Suspect Pages)"
             ],
             "metadata": {
                 "azdata_cell_guid": "db0d1c4c-2a1a-4fa9-bbeb-b87e8cd0fe17"
@@ -1005,7 +982,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at Suspect Pages table (Query 23) (Suspect Pages)\r\n",
+                "-- Look at Suspect Pages table (Query 22) (Suspect Pages)\r\n",
                 "SELECT DB_NAME(database_id) AS [Database Name], [file_id], page_id, \r\n",
                 "       event_type, error_count, last_update_date \r\n",
                 "FROM msdb.dbo.suspect_pages WITH (NOLOCK)\r\n",
@@ -1043,7 +1020,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get number of data files in tempdb database (Query 24) (TempDB Data Files)"
+                "## Get number of data files in tempdb database (Query 23) (TempDB Data Files)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0d5055e2-2117-48c8-be77-1bbb4af676c1"
@@ -1052,7 +1029,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get number of data files in tempdb database (Query 24) (TempDB Data Files)\r\n",
+                "-- Get number of data files in tempdb database (Query 23) (TempDB Data Files)\r\n",
                 "EXEC sys.xp_readerrorlog 0, 1, N'The tempdb database has';"
             ],
             "metadata": {
@@ -1069,8 +1046,7 @@
             "source": [
                 "Returns the number of data files in the tempdb database\r\n",
                 "- 4-8 data files that are all the same size is a good starting point\r\n",
-                "- This query will return no results if your error log has been recycled since the instance was last started\r\n",
-                "- This will be blank unless you have Service Pack 2 or later"
+                "- This query will return no results if your error log has been recycled since the instance was last started"
             ],
             "metadata": {
                 "azdata_cell_guid": "632d349b-c763-4b59-9a34-e1004916c791"
@@ -1079,7 +1055,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## File names and paths for all user and system databases on instance  (Query 25) (Database Filenames and Paths)"
+                "## File names and paths for all user and system databases on instance  (Query 24) (Database Filenames and Paths)"
             ],
             "metadata": {
                 "azdata_cell_guid": "eae14ae0-696c-4790-b6a3-a7c7e79a6201"
@@ -1088,7 +1064,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- File names and paths for all user and system databases on instance  (Query 25) (Database Filenames and Paths)\r\n",
+                "-- File names and paths for all user and system databases on instance  (Query 24) (Database Filenames and Paths)\r\n",
                 "SELECT DB_NAME([database_id]) AS [Database Name], \r\n",
                 "       [file_id], [name], physical_name, [type_desc], state_desc,\r\n",
                 "\t   is_percent_growth, growth, \r\n",
@@ -1125,7 +1101,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Volume info for all LUNS that have database files on the current instance (Query 26) (Volume Info)"
+                "## Volume info for all LUNS that have database files on the current instance (Query 25) (Volume Info)"
             ],
             "metadata": {
                 "azdata_cell_guid": "20a2d365-d06d-4f80-8b2e-55d5f7466068"
@@ -1134,7 +1110,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Volume info for all LUNS that have database files on the current instance (Query 26) (Volume Info)\r\n",
+                "-- Volume info for all LUNS that have database files on the current instance (Query 25) (Volume Info)\r\n",
                 "SELECT DISTINCT vs.volume_mount_point, vs.file_system_type, vs.logical_volume_name, \r\n",
                 "CONVERT(DECIMAL(18,2), vs.total_bytes/1073741824.0) AS [Total Size (GB)],\r\n",
                 "CONVERT(DECIMAL(18,2), vs.available_bytes/1073741824.0) AS [Available Size (GB)],  \r\n",
@@ -1170,7 +1146,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Drive level latency information (Query 27) (Drive Level Latency)"
+                "## Drive level latency information (Query 26) (Drive Level Latency)"
             ],
             "metadata": {
                 "azdata_cell_guid": "43f20e94-8a19-487b-b17f-906f77e1d353"
@@ -1179,7 +1155,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Drive level latency information (Query 27) (Drive Level Latency)\r\n",
+                "-- Drive level latency information (Query 26) (Drive Level Latency)\r\n",
                 "SELECT tab.[Drive], tab.volume_mount_point AS [Volume Mount Point], \r\n",
                 "\tCASE \r\n",
                 "\t\tWHEN num_of_reads = 0 THEN 0 \r\n",
@@ -1239,7 +1215,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Calculates average latency per read, per write, and per total input/output for each database file  (Query 28) (IO Latency by File)"
+                "## Calculates average latency per read, per write, and per total input/output for each database file  (Query 27) (IO Latency by File)"
             ],
             "metadata": {
                 "azdata_cell_guid": "e8034da3-9f7e-43df-82bc-27e103a3978c"
@@ -1248,7 +1224,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Calculates average latency per read, per write, and per total input/output for each database file  (Query 28) (IO Latency by File)\r\n",
+                "-- Calculates average latency per read, per write, and per total input/output for each database file  (Query 27) (IO Latency by File)\r\n",
                 "SELECT DB_NAME(fs.database_id) AS [Database Name], CAST(fs.io_stall_read_ms/(1.0 + fs.num_of_reads) AS NUMERIC(10,1)) AS [avg_read_latency_ms],\r\n",
                 "CAST(fs.io_stall_write_ms/(1.0 + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_write_latency_ms],\r\n",
                 "CAST((fs.io_stall_read_ms + fs.io_stall_write_ms)/(1.0 + fs.num_of_reads + fs.num_of_writes) AS NUMERIC(10,1)) AS [avg_io_latency_ms],\r\n",
@@ -1286,7 +1262,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look for I/O requests taking longer than 15 seconds in the six most recent SQL Server Error Logs (Query 29) (IO Warnings)"
+                "## Look for I/O requests taking longer than 15 seconds in the six most recent SQL Server Error Logs (Query 28) (IO Warnings)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9c8a87dc-3649-4813-acbf-563c4b42ba87"
@@ -1295,7 +1271,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look for I/O requests taking longer than 15 seconds in the six most recent SQL Server Error Logs (Query 29) (IO Warnings)\r\n",
+                "-- Look for I/O requests taking longer than 15 seconds in the six most recent SQL Server Error Logs (Query 28) (IO Warnings)\r\n",
                 "CREATE TABLE #IOWarningResults(LogDate datetime, ProcessInfo sysname, LogText nvarchar(1000));\r\n",
                 "\r\n",
                 "\tINSERT INTO #IOWarningResults \r\n",
@@ -1348,7 +1324,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Resource Governor Resource Pool information (Query 30) (RG Resource Pools)"
+                "## Resource Governor Resource Pool information (Query 29) (RG Resource Pools)"
             ],
             "metadata": {
                 "azdata_cell_guid": "288fd42f-85f0-4245-a264-b42b7bd71251"
@@ -1357,7 +1333,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Resource Governor Resource Pool information (Query 30) (RG Resource Pools)\r\n",
+                "-- Resource Governor Resource Pool information (Query 29) (RG Resource Pools)\r\n",
                 "SELECT pool_id, [Name], statistics_start_time,\r\n",
                 "       min_memory_percent, max_memory_percent,  \r\n",
                 "       max_memory_kb/1024 AS [max_memory_mb],  \r\n",
@@ -1388,7 +1364,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Recovery model, log reuse wait description, log file size, log usage size  (Query 31) (Database Properties)"
+                "## Recovery model, log reuse wait description, log file size, log usage size  (Query 30) (Database Properties)"
             ],
             "metadata": {
                 "azdata_cell_guid": "011889f4-ab02-4cc4-b95e-f0bfce336b07"
@@ -1397,18 +1373,21 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Recovery model, log reuse wait description, log file size, log usage size  (Query 31) (Database Properties)\r\n",
+                "-- Recovery model, log reuse wait description, log file size, log usage size  (Query 30) (Database Properties)\r\n",
                 "-- and compatibility level for all databases on instance\r\n",
                 "SELECT db.[name] AS [Database Name], SUSER_SNAME(db.owner_sid) AS [Database Owner], db.recovery_model_desc AS [Recovery Model], \r\n",
                 "db.state_desc, db.containment_desc, db.log_reuse_wait_desc AS [Log Reuse Wait Description], \r\n",
                 "CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Log Size (MB)], CONVERT(DECIMAL(18,2), lu.cntr_value/1024.0) AS [Log Used (MB)],\r\n",
                 "CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT)AS DECIMAL(18,2)) * 100 AS [Log Used %], \r\n",
-                "db.[compatibility_level] AS [DB Compatibility Level], db.page_verify_option_desc AS [Page Verify Option], \r\n",
+                "db.[compatibility_level] AS [DB Compatibility Level], \r\n",
+                "db.is_mixed_page_allocation_on, db.page_verify_option_desc AS [Page Verify Option], \r\n",
                 "db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_async_on, db.is_parameterization_forced, \r\n",
                 "db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_close_on, db.is_auto_shrink_on, \r\n",
-                "db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_encrypted,\r\n",
+                "db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor,\r\n",
                 "db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_on, \r\n",
                 "db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,\r\n",
+                "db.is_query_store_on, db.is_sync_with_backup, \r\n",
+                "db.is_supplemental_logging_enabled, db.is_remote_data_archive_enabled,\r\n",
                 "db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length      \r\n",
                 "FROM sys.databases AS db WITH (NOLOCK)\r\n",
                 "INNER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)\r\n",
@@ -1445,7 +1424,15 @@
                 "- What is target_recovery_time_in_seconds?\r\n",
                 "- Is Delayed Durability enabled?\r\n",
                 "- Make sure auto_shrink and auto_close are not enabled!\r\n",
-                ""
+                "\r\n",
+                "is_mixed_page_allocation_on is a new property for SQL Server 2016. Equivalent to TF 1118 for a user database\r\n",
+                "\r\n",
+                "[SQL Server 2016: Changes in default behavior for autogrow and allocations for tempdb and user databases](https://bit.ly/2evRZSR)\r\n",
+                "\r\n",
+                "A non-zero value for target_recovery_time_in_seconds means that indirect checkpoint is enabled \r\n",
+                "If the setting has a zero value it indicates that automatic checkpoint is enabled\r\n",
+                "\r\n",
+                "[Changes in SQL Server 2016 Checkpoint Behavior](https://bit.ly/2pdggk3)"
             ],
             "metadata": {
                 "azdata_cell_guid": "87c25aa8-958a-40e2-aacb-3b7ebafbb282"
@@ -1454,7 +1441,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Missing Indexes for all databases by Index Advantage  (Query 32) (Missing Indexes All Databases)"
+                "## Missing Indexes for all databases by Index Advantage  (Query 31) (Missing Indexes All Databases)"
             ],
             "metadata": {
                 "azdata_cell_guid": "630e96b9-c67c-43d4-935b-e0dd561dc8ac"
@@ -1463,7 +1450,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Missing Indexes for all databases by Index Advantage  (Query 32) (Missing Indexes All Databases)\r\n",
+                "-- Missing Indexes for all databases by Index Advantage  (Query 31) (Missing Indexes All Databases)\r\n",
                 "SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage],\r\n",
                 "FORMAT(migs.last_user_seek, 'yyyy-MM-dd HH:mm:ss') AS [last_user_seek], mid.[statement] AS [Database.Schema.Table],\r\n",
                 "COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table],\r\n",
@@ -1506,7 +1493,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get VLF Counts for all databases on the instance (Query 33) (VLF Counts)"
+                "## Get VLF Counts for all databases on the instance (Query 32) (VLF Counts)"
             ],
             "metadata": {
                 "azdata_cell_guid": "74e5c58c-81fc-4adb-a1a2-e589b957a957"
@@ -1515,7 +1502,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get VLF Counts for all databases on the instance (Query 33) (VLF Counts)\r\n",
+                "-- Get VLF Counts for all databases on the instance (Query 32) (VLF Counts)\r\n",
                 "-- (adapted from Michelle Ufford) \r\n",
                 "CREATE TABLE #VLFInfo (RecoveryUnitID int, FileID  int,\r\n",
                 "\t\t\t\t\t   FileSize bigint, StartOffset bigint,\r\n",
@@ -1570,7 +1557,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get CPU utilization by database (Query 34) (CPU Usage by Database)"
+                "## Get CPU utilization by database (Query 33) (CPU Usage by Database)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9571542a-c0f2-4940-925c-3f093bef68fd"
@@ -1579,7 +1566,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get CPU utilization by database (Query 34) (CPU Usage by Database)\r\n",
+                "-- Get CPU utilization by database (Query 33) (CPU Usage by Database)\r\n",
                 "WITH DB_CPU_Stats\r\n",
                 "AS\r\n",
                 "(SELECT pa.DatabaseID, DB_Name(pa.DatabaseID) AS [Database Name], SUM(qs.total_worker_time/1000) AS [CPU_Time_Ms]\r\n",
@@ -1617,7 +1604,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get I/O utilization by database (Query 35) (IO Usage By Database)"
+                "## Get I/O utilization by database (Query 34) (IO Usage By Database)"
             ],
             "metadata": {
                 "azdata_cell_guid": "4a21658f-4a40-413d-b5df-ba343bfdb094"
@@ -1626,7 +1613,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get I/O utilization by database (Query 35) (IO Usage By Database)\r\n",
+                "-- Get I/O utilization by database (Query 34) (IO Usage By Database)\r\n",
                 "WITH Aggregate_IO_Statistics\r\n",
                 "AS (SELECT DB_NAME(database_id) AS [Database Name],\r\n",
                 "    CAST(SUM(num_of_bytes_read + num_of_bytes_written) / 1048576 AS DECIMAL(12, 2)) AS [ioTotalMB],\r\n",
@@ -1667,7 +1654,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get total buffer usage by database for current instance  (Query 36) (Total Buffer Usage by Database)"
+                "## Get total buffer usage by database for current instance  (Query 35) (Total Buffer Usage by Database)"
             ],
             "metadata": {
                 "azdata_cell_guid": "e525a356-0a95-470b-bdd8-3200554d78ca"
@@ -1676,7 +1663,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get total buffer usage by database for current instance  (Query 36) (Total Buffer Usage by Database)\r\n",
+                "-- Get total buffer usage by database for current instance  (Query 35) (Total Buffer Usage by Database)\r\n",
                 "-- This make take some time to run on a busy instance\r\n",
                 "WITH AggregateBufferPoolUsage\r\n",
                 "AS\r\n",
@@ -1711,7 +1698,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Isolate top waits for server instance since last restart or wait statistics clear  (Query 37) (Top Waits)"
+                "## Isolate top waits for server instance since last restart or wait statistics clear  (Query 36) (Top Waits)"
             ],
             "metadata": {
                 "azdata_cell_guid": "f2e7ad2d-e602-45e6-8f6c-209ef090da40"
@@ -1723,7 +1710,7 @@
                 "-- Clear Wait Stats with this command\r\n",
                 "-- DBCC SQLPERF('sys.dm_os_wait_stats', CLEAR);\r\n",
                 "\r\n",
-                "-- Isolate top waits for server instance since last restart or wait statistics clear  (Query 37) (Top Waits)\r\n",
+                "-- Isolate top waits for server instance since last restart or wait statistics clear  (Query 36) (Top Waits)\r\n",
                 "WITH [Waits] \r\n",
                 "AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],\r\n",
                 "          (wait_time_ms - signal_wait_time_ms) / 1000.0 AS [ResourceS],\r\n",
@@ -1735,27 +1722,38 @@
                 "    WHERE [wait_type] NOT IN (\r\n",
                 "        N'BROKER_EVENTHANDLER', N'BROKER_RECEIVE_WAITFOR', N'BROKER_TASK_STOP',\r\n",
                 "\t\tN'BROKER_TO_FLUSH', N'BROKER_TRANSMITTER', N'CHECKPOINT_QUEUE',\r\n",
-                "        N'CHKPT', N'CLR_AUTO_EVENT', N'CLR_MANUAL_EVENT', N'CLR_SEMAPHORE',\r\n",
+                "        N'CHKPT', N'CLR_AUTO_EVENT', N'CLR_MANUAL_EVENT', N'CLR_SEMAPHORE', \r\n",
                 "        N'DBMIRROR_DBM_EVENT', N'DBMIRROR_EVENTS_QUEUE', N'DBMIRROR_WORKER_QUEUE',\r\n",
                 "\t\tN'DBMIRRORING_CMD', N'DIRTY_PAGE_POLL', N'DISPATCHER_QUEUE_SEMAPHORE',\r\n",
                 "        N'EXECSYNC', N'FSAGENT', N'FT_IFTS_SCHEDULER_IDLE_WAIT', N'FT_IFTSHC_MUTEX',\r\n",
                 "        N'HADR_CLUSAPI_CALL', N'HADR_FILESTREAM_IOMGR_IOCOMPLETION', N'HADR_LOGCAPTURE_WAIT', \r\n",
                 "\t\tN'HADR_NOTIFICATION_DEQUEUE', N'HADR_TIMER_TASK', N'HADR_WORK_QUEUE',\r\n",
-                "        N'KSOURCE_WAKEUP', N'LAZYWRITER_SLEEP', N'LOGMGR_QUEUE', N'ONDEMAND_TASK_QUEUE',\r\n",
-                "        N'PWAIT_ALL_COMPONENTS_INITIALIZED', \r\n",
-                "\t\tN'PREEMPTIVE_OS_AUTHENTICATIONOPS', N'PREEMPTIVE_OS_CREATEFILE', N'PREEMPTIVE_OS_GENERICOPS',\r\n",
-                "\t\tN'PREEMPTIVE_OS_LIBRARYOPS', N'PREEMPTIVE_OS_QUERYREGISTRY',\r\n",
+                "        N'KSOURCE_WAKEUP', N'LAZYWRITER_SLEEP', N'LOGMGR_QUEUE', \r\n",
+                "\t\tN'MEMORY_ALLOCATION_EXT', N'ONDEMAND_TASK_QUEUE',\r\n",
+                "\t\tN'PARALLEL_REDO_DRAIN_WORKER', N'PARALLEL_REDO_LOG_CACHE', N'PARALLEL_REDO_TRAN_LIST',\r\n",
+                "\t\tN'PARALLEL_REDO_WORKER_SYNC', N'PARALLEL_REDO_WORKER_WAIT_WORK',\r\n",
                 "\t\tN'PREEMPTIVE_HADR_LEASE_MECHANISM', N'PREEMPTIVE_SP_SERVER_DIAGNOSTICS',\r\n",
+                "\t\tN'PREEMPTIVE_OS_LIBRARYOPS', N'PREEMPTIVE_OS_COMOPS', N'PREEMPTIVE_OS_CRYPTOPS',\r\n",
+                "\t\tN'PREEMPTIVE_OS_PIPEOPS', N'PREEMPTIVE_OS_AUTHENTICATIONOPS',\r\n",
+                "\t\tN'PREEMPTIVE_OS_GENERICOPS', N'PREEMPTIVE_OS_VERIFYTRUST',\r\n",
+                "\t\tN'PREEMPTIVE_OS_FILEOPS', N'PREEMPTIVE_OS_DEVICEOPS', N'PREEMPTIVE_OS_QUERYREGISTRY',\r\n",
+                "\t\tN'PREEMPTIVE_OS_WRITEFILE',\r\n",
+                "\t\tN'PREEMPTIVE_XE_CALLBACKEXECUTE', N'PREEMPTIVE_XE_DISPATCHER',\r\n",
+                "\t\tN'PREEMPTIVE_XE_GETTARGETSTATE', N'PREEMPTIVE_XE_SESSIONCOMMIT',\r\n",
+                "\t\tN'PREEMPTIVE_XE_TARGETINIT', N'PREEMPTIVE_XE_TARGETFINALIZE',\r\n",
+                "        N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',\r\n",
                 "\t\tN'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP',\r\n",
-                "        N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'QDS_SHUTDOWN_QUEUE', N'REQUEST_FOR_DEADLOCK_SEARCH',\r\n",
+                "\t\tN'QDS_ASYNC_QUEUE',\r\n",
+                "        N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'REQUEST_FOR_DEADLOCK_SEARCH',\r\n",
                 "\t\tN'RESOURCE_QUEUE', N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH', N'SLEEP_DBSTARTUP',\r\n",
                 "\t\tN'SLEEP_DCOMSTARTUP', N'SLEEP_MASTERDBREADY', N'SLEEP_MASTERMDREADY',\r\n",
                 "        N'SLEEP_MASTERUPGRADED', N'SLEEP_MSDBSTARTUP', N'SLEEP_SYSTEMTASK', N'SLEEP_TASK',\r\n",
                 "        N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT', N'SP_SERVER_DIAGNOSTICS_SLEEP',\r\n",
                 "\t\tN'SQLTRACE_BUFFER_FLUSH', N'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', N'SQLTRACE_WAIT_ENTRIES',\r\n",
                 "\t\tN'WAIT_FOR_RESULTS', N'WAITFOR', N'WAITFOR_TASKSHUTDOWN', N'WAIT_XTP_HOST_WAIT',\r\n",
-                "\t\tN'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', N'WAIT_XTP_CKPT_CLOSE', N'XE_DISPATCHER_JOIN',\r\n",
-                "        N'XE_DISPATCHER_WAIT', N'XE_TIMER_EVENT')\r\n",
+                "\t\tN'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', N'WAIT_XTP_CKPT_CLOSE', N'WAIT_XTP_RECOVERY',\r\n",
+                "\t\tN'XE_BUFFERMGR_ALLPROCESSED_EVENT', N'XE_DISPATCHER_JOIN',\r\n",
+                "        N'XE_DISPATCHER_WAIT', N'XE_LIVE_TARGET_TVF', N'XE_TIMER_EVENT')\r\n",
                 "    AND waiting_tasks_count > 0)\r\n",
                 "SELECT\r\n",
                 "    MAX (W1.wait_type) AS [WaitType],\r\n",
@@ -1807,7 +1805,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get a count of SQL connections by IP address (Query 38) (Connection Counts by IP Address)"
+                "## Get a count of SQL connections by IP address (Query 37) (Connection Counts by IP Address)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0299b6cd-25bd-4e92-be3d-1b0a26828a90"
@@ -1816,7 +1814,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get a count of SQL connections by IP address (Query 38) (Connection Counts by IP Address)\r\n",
+                "-- Get a count of SQL connections by IP address (Query 37) (Connection Counts by IP Address)\r\n",
                 "SELECT ec.client_net_address, es.[program_name], es.[host_name], es.login_name, \r\n",
                 "COUNT(ec.session_id) AS [connection count] \r\n",
                 "FROM sys.dm_exec_sessions AS es WITH (NOLOCK) \r\n",
@@ -1848,7 +1846,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get Average Task Counts (run multiple times)  (Query 39) (Avg Task Counts)"
+                "## Get Average Task Counts (run multiple times)  (Query 38) (Avg Task Counts)"
             ],
             "metadata": {
                 "azdata_cell_guid": "ed4204b4-820a-4266-adc0-ae5fb48360a8"
@@ -1857,7 +1855,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get Average Task Counts (run multiple times)  (Query 39) (Avg Task Counts)\r\n",
+                "-- Get Average Task Counts (run multiple times)  (Query 38) (Avg Task Counts)\r\n",
                 "SELECT AVG(current_tasks_count) AS [Avg Task Count], \r\n",
                 "AVG(work_queue_count) AS [Avg Work Queue Count],\r\n",
                 "AVG(runnable_tasks_count) AS [Avg Runnable Task Count],\r\n",
@@ -1894,7 +1892,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Detect blocking (run multiple times)  (Query 40) (Detect Blocking)"
+                "## Detect blocking (run multiple times)  (Query 39) (Detect Blocking)"
             ],
             "metadata": {
                 "azdata_cell_guid": "76df2148-9a87-4642-9dfa-aae374ca8be1"
@@ -1903,7 +1901,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Detect blocking (run multiple times)  (Query 40) (Detect Blocking)\r\n",
+                "-- Detect blocking (run multiple times)  (Query 39) (Detect Blocking)\r\n",
                 "SELECT t1.resource_type AS [lock type], DB_NAME(resource_database_id) AS [database],\r\n",
                 "t1.resource_associated_entity_id AS [blk object],t1.request_mode AS [lock req],  -- lock requested\r\n",
                 "t1.request_session_id AS [waiter sid], t2.wait_duration_ms AS [wait time],       -- spid of waiter  \r\n",
@@ -1948,7 +1946,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 41) (CPU Utilization History)"
+                "## Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 40) (CPU Utilization History)"
             ],
             "metadata": {
                 "azdata_cell_guid": "e99406d7-9d91-4cc8-8486-21421e4fcca5"
@@ -1957,7 +1955,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 41) (CPU Utilization History)\r\n",
+                "-- Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 40) (CPU Utilization History)\r\n",
                 "DECLARE @ts_now bigint = (SELECT ms_ticks FROM sys.dm_os_sys_info WITH (NOLOCK)); \r\n",
                 "\r\n",
                 "SELECT TOP(256) SQLProcessUtilization AS [SQL Server Process CPU Utilization], \r\n",
@@ -1998,7 +1996,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get top total worker time queries for entire instance (Query 42) (Top Worker Time Queries)"
+                "## Get top total worker time queries for entire instance (Query 41) (Top Worker Time Queries)"
             ],
             "metadata": {
                 "azdata_cell_guid": "1d29e3a6-eaa1-40b2-a10f-4f9ea9b3135c"
@@ -2007,7 +2005,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get top total worker time queries for entire instance (Query 42) (Top Worker Time Queries)\r\n",
+                "-- Get top total worker time queries for entire instance (Query 41) (Top Worker Time Queries)\r\n",
                 "SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], \r\n",
                 "REPLACE(REPLACE(LEFT(t.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text],  \r\n",
                 "qs.total_worker_time AS [Total Worker Time], qs.min_worker_time AS [Min Worker Time],\r\n",
@@ -2050,7 +2048,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 43) (PLE by NUMA Node)"
+                "## Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 42) (PLE by NUMA Node)"
             ],
             "metadata": {
                 "azdata_cell_guid": "20f52f6d-f822-4866-9148-d9b30fc07911"
@@ -2059,7 +2057,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 43) (PLE by NUMA Node)\r\n",
+                "-- Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 42) (PLE by NUMA Node)\r\n",
                 "SELECT @@SERVERNAME AS [Server Name], RTRIM([object_name]) AS [Object Name], \r\n",
                 "       instance_name, cntr_value AS [Page Life Expectancy]\r\n",
                 "FROM sys.dm_os_performance_counters WITH (NOLOCK)\r\n",
@@ -2091,7 +2089,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Memory Grants Pending value for current instance  (Query 44) (Memory Grants Pending)"
+                "## Memory Grants Pending value for current instance  (Query 43) (Memory Grants Pending)"
             ],
             "metadata": {
                 "azdata_cell_guid": "44308f96-e53e-4ead-94cb-281f705da51e"
@@ -2100,7 +2098,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Memory Grants Pending value for current instance  (Query 44) (Memory Grants Pending)\r\n",
+                "-- Memory Grants Pending value for current instance  (Query 43) (Memory Grants Pending)\r\n",
                 "SELECT @@SERVERNAME AS [Server Name], RTRIM([object_name]) AS [Object Name], cntr_value AS [Memory Grants Pending]                                                                                                       \r\n",
                 "FROM sys.dm_os_performance_counters WITH (NOLOCK)\r\n",
                 "WHERE [object_name] LIKE N'%Memory Manager%' -- Handles named instances\r\n",
@@ -2128,7 +2126,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Memory Clerk Usage for instance  (Query 45) (Memory Clerk Usage)"
+                "## Memory Clerk Usage for instance  (Query 44) (Memory Clerk Usage)"
             ],
             "metadata": {
                 "azdata_cell_guid": "c4c3cac5-c806-414d-a1bf-7e759ea761b1"
@@ -2137,7 +2135,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Memory Clerk Usage for instance  (Query 45) (Memory Clerk Usage)\r\n",
+                "-- Memory Clerk Usage for instance  (Query 44) (Memory Clerk Usage)\r\n",
                 "-- Look for high value for CACHESTORE_SQLCP (Ad-hoc query plans)\r\n",
                 "SELECT TOP(10) mc.[type] AS [Memory Clerk Type], \r\n",
                 "       CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) AS [Memory Usage (MB)] \r\n",
@@ -2177,7 +2175,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 46) (Ad hoc Queries)"
+                "## Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 45) (Ad hoc Queries)"
             ],
             "metadata": {
                 "azdata_cell_guid": "8c166c58-ca7f-4fa5-9f6f-d4570ddf2020"
@@ -2186,7 +2184,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 46) (Ad hoc Queries)\r\n",
+                "-- Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 45) (Ad hoc Queries)\r\n",
                 "SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], t.[text] AS [Query Text], \r\n",
                 "cp.objtype AS [Object Type], cp.cacheobjtype AS [Cache Object Type],  \r\n",
                 "cp.size_in_bytes/1024 AS [Plan Size in KB]\r\n",
@@ -2223,7 +2221,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get top total logical reads queries for entire instance (Query 47) (Top Logical Reads Queries)"
+                "## Get top total logical reads queries for entire instance (Query 46) (Top Logical Reads Queries)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0e3c4eb0-fc86-4b8d-acdd-33b1b348315c"
@@ -2232,7 +2230,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get top total logical reads queries for entire instance (Query 47) (Top Logical Reads Queries)\r\n",
+                "-- Get top total logical reads queries for entire instance (Query 46) (Top Logical Reads Queries)\r\n",
                 "SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name],\r\n",
                 "REPLACE(REPLACE(LEFT(t.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text], \r\n",
                 "qs.total_logical_reads AS [Total Logical Reads],\r\n",
@@ -2276,7 +2274,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get top average elapsed time queries for entire instance (Query 48) (Top Avg Elapsed Time Queries)"
+                "## Get top average elapsed time queries for entire instance (Query 47) (Top Avg Elapsed Time Queries)"
             ],
             "metadata": {
                 "azdata_cell_guid": "15ea813a-a0d7-4718-a194-61fe13f68453"
@@ -2285,7 +2283,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get top average elapsed time queries for entire instance (Query 48) (Top Avg Elapsed Time Queries)\r\n",
+                "-- Get top average elapsed time queries for entire instance (Query 47) (Top Avg Elapsed Time Queries)\r\n",
                 "SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], \r\n",
                 "REPLACE(REPLACE(LEFT(t.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text],  \r\n",
                 "qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],\r\n",
@@ -2319,6 +2317,47 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "6d559a6d-2736-43e1-a294-2c81ed6339c0"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## Look at UDF execution statistics (Query 48) (UDF Stats by DB)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "1f3a49be-1fc5-4674-a450-9c7c59ef2d4f"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Look at UDF execution statistics (Query 48) (UDF Stats by DB)\r\n",
+                "SELECT TOP (25) DB_NAME(database_id) AS [Database Name], \r\n",
+                "\t\t   OBJECT_NAME(object_id, database_id) AS [Function Name],\r\n",
+                "\t\t   total_worker_time, execution_count, total_elapsed_time,  \r\n",
+                "           total_elapsed_time/execution_count AS [avg_elapsed_time],  \r\n",
+                "           last_elapsed_time, last_execution_time, cached_time, [type_desc] \r\n",
+                "FROM sys.dm_exec_function_stats WITH (NOLOCK) \r\n",
+                "ORDER BY total_worker_time DESC OPTION (RECOMPILE);"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "b5d74b0b-2a19-4359-a39d-6f48babc9415",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "[sys.dm_exec_function_stats (Transact-SQL)](https://bit.ly/2q1Q6BM)\r\n",
+                "\r\n",
+                "[Showplan Enhancements for UDFs](https://bit.ly/2LVqiQ1)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "867a3ce4-b2d4-4bbb-a3e9-9a997f00b21a"
             }
         },
         {
@@ -2368,7 +2407,8 @@
                 "CAST((f.size/128.0) AS DECIMAL(15,2)) - \r\n",
                 "CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [Used Space in MB],\r\n",
                 "f.[file_id], fg.name AS [Filegroup Name],\r\n",
-                "f.is_percent_growth, f.growth, fg.is_default, fg.is_read_only\r\n",
+                "f.is_percent_growth, f.growth, fg.is_default, fg.is_read_only, \r\n",
+                "fg.is_autogrow_all_files\r\n",
                 "FROM sys.database_files AS f WITH (NOLOCK) \r\n",
                 "LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)\r\n",
                 "ON f.data_space_id = fg.data_space_id\r\n",
@@ -2388,8 +2428,9 @@
             "source": [
                 "Look at how large and how full the files are and where they are located\r\n",
                 "- Make sure the transaction log is not full!!\r\n",
+                "- is_autogrow_all_files was new for SQL Server 2016. Equivalent to TF 1117 for user databases\r\n",
                 "\r\n",
-                ""
+                "[SQL Server 2016: Changes in default behavior for autogrow and allocations for tempdb and user databases](https://bit.ly/2evRZSR)"
             ],
             "metadata": {
                 "azdata_cell_guid": "a05e2235-d5e1-496c-b4e4-1c9e4794d7a8"
@@ -2442,7 +2483,66 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## I/O Statistics by file for the current database  (Query 51) (IO Stats By File)"
+                "## Get database scoped configuration values for current database (Query 51) (Database-scoped Configurations)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "454ec670-3a7a-462b-8d48-cdcad3ec052f"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Get database scoped configuration values for current database (Query 51) (Database-scoped Configurations)\r\n",
+                "SELECT configuration_id, name, [value] AS [value_for_primary], value_for_secondary\r\n",
+                "FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "3aaf1153-d510-4a91-9a70-f165b15ea216",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "This lets you see the value of these new properties for the current database\r\n",
+                "\r\n",
+                "Clear plan cache for current database:\r\n",
+                "- `ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE;`\r\n",
+                ""
+            ],
+            "metadata": {
+                "azdata_cell_guid": "088271f4-bdeb-4ee8-82e3-e7d9346a4172"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE;"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "42fc55ca-2890-4e67-a881-1575c06a4dd2"
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "\r\n",
+                "[ALTER DATABASE SCOPED CONFIGURATION (Transact-SQL)](https://bit.ly/2sOH7nb)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "057660b3-65d2-454f-8d7f-fe32f92ab0bf"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## I/O Statistics by file for the current database  (Query 52) (IO Stats By File)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0f37264e-c938-4288-8ae0-0758acd3c24d"
@@ -2451,7 +2551,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- I/O Statistics by file for the current database  (Query 51) (IO Stats By File)\r\n",
+                "-- I/O Statistics by file for the current database  (Query 52) (IO Stats By File)\r\n",
                 "SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,\r\n",
                 "df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(10, 2)) AS [Size on Disk (MB)],\r\n",
                 "vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,\r\n",
@@ -2490,7 +2590,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get most frequently executed queries for this database (Query 52) (Query Execution Counts)"
+                "## Get most frequently executed queries for this database (Query 53) (Query Execution Counts)"
             ],
             "metadata": {
                 "azdata_cell_guid": "3cea974b-f126-4cab-86fc-4ce7e006de36"
@@ -2499,7 +2599,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get most frequently executed queries for this database (Query 52) (Query Execution Counts)\r\n",
+                "-- Get most frequently executed queries for this database (Query 53) (Query Execution Counts)\r\n",
                 "SELECT TOP(50) LEFT(t.[text], 50) AS [Short Query Text], qs.execution_count AS [Execution Count],\r\n",
                 "qs.total_logical_reads AS [Total Logical Reads],\r\n",
                 "qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],\r\n",
@@ -2539,7 +2639,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## **Queries 53 through 58 are the \"Bad Man List\" for stored procedures**"
+                "## **Queries 54 through 59 are the \"Bad Man List\" for stored procedures**"
             ],
             "metadata": {
                 "azdata_cell_guid": "a79de6e1-5d2f-4608-b282-8fa000b0c8a1"
@@ -2548,7 +2648,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Execution Count (Query 53) (SP Execution Counts)"
+                "## Top Cached SPs By Execution Count (Query 54) (SP Execution Counts)"
             ],
             "metadata": {
                 "azdata_cell_guid": "49f07abb-c2ca-418d-9b03-05d76604658a"
@@ -2557,7 +2657,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Execution Count (Query 53) (SP Execution Counts)\r\n",
+                "-- Top Cached SPs By Execution Count (Query 54) (SP Execution Counts)\r\n",
                 "SELECT TOP(100) p.name AS [SP Name], qs.execution_count AS [Execution Count],\r\n",
                 "ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],\r\n",
                 "qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],\r\n",
@@ -2598,7 +2698,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Avg Elapsed Time (Query 54) (SP Avg Elapsed Time)"
+                "## Top Cached SPs By Avg Elapsed Time (Query 55) (SP Avg Elapsed Time)"
             ],
             "metadata": {
                 "azdata_cell_guid": "d9d2dbfa-d50b-4758-9727-9a2bb85f114b"
@@ -2607,7 +2707,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Avg Elapsed Time (Query 54) (SP Avg Elapsed Time)\r\n",
+                "-- Top Cached SPs By Avg Elapsed Time (Query 55) (SP Avg Elapsed Time)\r\n",
                 "SELECT TOP(25) p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], \r\n",
                 "qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_count, \r\n",
                 "ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], \r\n",
@@ -2646,7 +2746,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 55) (SP Worker Time)"
+                "## Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 56) (SP Worker Time)"
             ],
             "metadata": {
                 "azdata_cell_guid": "62d3d97f-4f28-430f-870f-8f5d2710665a"
@@ -2655,7 +2755,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 55) (SP Worker Time)\r\n",
+                "-- Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 56) (SP Worker Time)\r\n",
                 "SELECT TOP(25) p.name AS [SP Name], qs.total_worker_time AS [TotalWorkerTime], \r\n",
                 "qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count, \r\n",
                 "ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],\r\n",
@@ -2694,7 +2794,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 56) (SP Logical Reads)"
+                "## Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 57) (SP Logical Reads)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0c5f4b2b-0f1e-4b6b-b3ef-a0a4289255cb"
@@ -2703,7 +2803,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 56) (SP Logical Reads)\r\n",
+                "-- Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 57) (SP Logical Reads)\r\n",
                 "SELECT TOP(25) p.name AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], \r\n",
                 "qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_count, \r\n",
                 "ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], \r\n",
@@ -2742,7 +2842,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 57) (SP Physical Reads)"
+                "## Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 58) (SP Physical Reads)"
             ],
             "metadata": {
                 "azdata_cell_guid": "4cb0b8cf-ac19-4062-90f8-46c0f1b99d13"
@@ -2751,7 +2851,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 57) (SP Physical Reads)\r\n",
+                "-- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 58) (SP Physical Reads)\r\n",
                 "SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalReads], \r\n",
                 "qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, \r\n",
                 "qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],\r\n",
@@ -2789,7 +2889,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Top Cached SPs By Total Logical Writes (Query 58) (SP Logical Writes)"
+                "## Top Cached SPs By Total Logical Writes (Query 59) (SP Logical Writes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "24fb6506-9956-4708-b9ad-77d1ce74233c"
@@ -2798,7 +2898,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Top Cached SPs By Total Logical Writes (Query 58) (SP Logical Writes)\r\n",
+                "-- Top Cached SPs By Total Logical Writes (Query 59) (SP Logical Writes)\r\n",
                 "-- Logical writes relate to both memory and disk I/O pressure \r\n",
                 "SELECT TOP(25) p.name AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrites], \r\n",
                 "qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_count,\r\n",
@@ -2839,7 +2939,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Lists the top statements by average input/output usage for the current database  (Query 59) (Top IO Statements)"
+                "## Lists the top statements by average input/output usage for the current database  (Query 60) (Top IO Statements)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9b89a916-a359-4328-a297-94914d05b4ff"
@@ -2848,7 +2948,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Lists the top statements by average input/output usage for the current database  (Query 59) (Top IO Statements)\r\n",
+                "-- Lists the top statements by average input/output usage for the current database  (Query 60) (Top IO Statements)\r\n",
                 "SELECT TOP(50) OBJECT_NAME(qt.objectid, dbid) AS [SP Name],\r\n",
                 "(qs.total_logical_reads + qs.total_logical_writes) /qs.execution_count AS [Avg IO], qs.execution_count AS [Execution Count],\r\n",
                 "SUBSTRING(qt.[text],qs.statement_start_offset/2, \r\n",
@@ -2883,7 +2983,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Possible Bad NC Indexes (writes > reads)  (Query 60) (Bad NC Indexes)"
+                "## Possible Bad NC Indexes (writes > reads)  (Query 61) (Bad NC Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "015decc0-fce5-4334-9afd-7ca74087bac0"
@@ -2892,7 +2992,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Possible Bad NC Indexes (writes > reads)  (Query 60) (Bad NC Indexes)\r\n",
+                "-- Possible Bad NC Indexes (writes > reads)  (Query 61) (Bad NC Indexes)\r\n",
                 "SELECT SCHEMA_NAME(o.[schema_id]) AS [Schema Name], \r\n",
                 "OBJECT_NAME(s.[object_id]) AS [Table Name],\r\n",
                 "i.name AS [Index Name], i.index_id, \r\n",
@@ -2935,7 +3035,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Missing Indexes for current database by Index Advantage  (Query 61) (Missing Indexes)"
+                "## Missing Indexes for current database by Index Advantage  (Query 62) (Missing Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "533323aa-8cb7-4093-8d82-93d0090ec47d"
@@ -2944,7 +3044,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Missing Indexes for current database by Index Advantage  (Query 61) (Missing Indexes)\r\n",
+                "-- Missing Indexes for current database by Index Advantage  (Query 62) (Missing Indexes)\r\n",
                 "SELECT DISTINCT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage], \r\n",
                 "migs.last_user_seek, mid.[statement] AS [Database.Schema.Table],\r\n",
                 "mid.equality_columns, mid.inequality_columns, mid.included_columns,\r\n",
@@ -2986,7 +3086,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Find missing index warnings for cached plans in the current database  (Query 62) (Missing Index Warnings)"
+                "## Find missing index warnings for cached plans in the current database  (Query 63) (Missing Index Warnings)"
             ],
             "metadata": {
                 "azdata_cell_guid": "642e72dd-3375-470f-a36d-6a5e40151c0a"
@@ -2995,7 +3095,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Find missing index warnings for cached plans in the current database  (Query 62) (Missing Index Warnings)\r\n",
+                "-- Find missing index warnings for cached plans in the current database  (Query 63) (Missing Index Warnings)\r\n",
                 "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], \r\n",
                 "               cp.objtype, cp.usecounts, cp.size_in_bytes, qp.query_plan\r\n",
@@ -3027,7 +3127,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 63) (Buffer Usage)"
+                "## Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 64) (Buffer Usage)"
             ],
             "metadata": {
                 "azdata_cell_guid": "b8719781-9935-47fe-9cce-1475fd0c5dde"
@@ -3036,7 +3136,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 63) (Buffer Usage)\r\n",
+                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 64) (Buffer Usage)\r\n",
                 "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],\r\n",
                 "OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, \r\n",
@@ -3085,7 +3185,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get Table names, row counts, and compression status for clustered index or heap  (Query 64) (Table Sizes)"
+                "## Get Table names, row counts, and compression status for clustered index or heap  (Query 65) (Table Sizes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0180bfe5-9ef8-4155-95e5-1014e1ba6b2f"
@@ -3094,7 +3194,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 64) (Table Sizes)\r\n",
+                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 65) (Table Sizes)\r\n",
                 "SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [ObjectName], \r\n",
                 "SUM(p.Rows) AS [RowCount], p.data_compression_desc AS [Compression Type]\r\n",
                 "FROM sys.partitions AS p WITH (NOLOCK)\r\n",
@@ -3135,7 +3235,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get some key table properties (Query 65) (Table Properties)"
+                "## Get some key table properties (Query 66) (Table Properties)"
             ],
             "metadata": {
                 "azdata_cell_guid": "f4afcbe8-bbfe-43c6-b394-5acf2002c590"
@@ -3144,12 +3244,13 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get some key table properties (Query 65) (Table Properties)\r\n",
+                "-- Get some key table properties (Query 66) (Table Properties)\r\n",
                 "SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.index_id, \r\n",
                 "       p.data_compression_desc AS [Index Data Compression],\r\n",
                 "       t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, \r\n",
                 "       t.is_tracked_by_cdc, t.lock_escalation_desc, t.is_filetable, \r\n",
-                "\t   t.is_memory_optimized, t.durability_desc  -- new for SQL Server 2014\r\n",
+                "\t   t.is_memory_optimized, t.durability_desc, \r\n",
+                "\t   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external -- new for SQL Server 2016\r\n",
                 "FROM sys.tables AS t WITH (NOLOCK)\r\n",
                 "INNER JOIN sys.partitions AS p WITH (NOLOCK)\r\n",
                 "ON t.[object_id] = p.[object_id]\r\n",
@@ -3170,6 +3271,7 @@
             "source": [
                 "Gives you some good information about your tables\r\n",
                 "- is_memory_optimized and durability_desc were new in SQL Server 2014\r\n",
+                "- temporal_type_desc, is_remote_data_archive_enabled, is_external were new in SQL Server 2016\r\n",
                 "\r\n",
                 "[sys.tables (Transact-SQL)](https://bit.ly/2Gk7998)"
             ],
@@ -3180,7 +3282,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## When were Statistics last updated on all indexes?  (Query 66) (Statistics Update)"
+                "## When were Statistics last updated on all indexes?  (Query 67) (Statistics Update)"
             ],
             "metadata": {
                 "azdata_cell_guid": "8f276f88-0917-4dfd-b558-362066d8b3af"
@@ -3189,7 +3291,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- When were Statistics last updated on all indexes?  (Query 66) (Statistics Update)\r\n",
+                "-- When were Statistics last updated on all indexes?  (Query 67) (Statistics Update)\r\n",
                 "SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],\r\n",
                 "      i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], \r\n",
                 "      s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary,\r\n",
@@ -3233,7 +3335,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at most frequently modified indexes and statistics (Query 67) (Volatile Indexes)"
+                "## Look at most frequently modified indexes and statistics (Query 68) (Volatile Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "1c6607f6-bb73-48cd-bd31-3d265f109012"
@@ -3242,7 +3344,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at most frequently modified indexes and statistics (Query 67) (Volatile Indexes)\r\n",
+                "-- Look at most frequently modified indexes and statistics (Query 68) (Volatile Indexes)\r\n",
                 "SELECT o.[name] AS [Object Name], o.[object_id], o.[type_desc], s.[name] AS [Statistics Name], \r\n",
                 "       s.stats_id, s.no_recompute, s.auto_created, s.is_incremental, s.is_temporary,\r\n",
                 "\t   sp.modification_counter, sp.[rows], sp.rows_sampled, sp.last_updated\r\n",
@@ -3275,7 +3377,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get fragmentation info for all indexes above a certain size in the current database  (Query 68) (Index Fragmentation)"
+                "## Get fragmentation info for all indexes above a certain size in the current database  (Query 69) (Index Fragmentation)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9031de0d-fc38-4219-8a88-9728f0ebc79d"
@@ -3284,7 +3386,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get fragmentation info for all indexes above a certain size in the current database  (Query 68) (Index Fragmentation)\r\n",
+                "-- Get fragmentation info for all indexes above a certain size in the current database  (Query 69) (Index Fragmentation)\r\n",
                 "-- Note: This query could take some time on a very large database\r\n",
                 "SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],\r\n",
                 "OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, \r\n",
@@ -3323,7 +3425,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 69) (Overall Index Usage - Reads)"
+                "## Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 70) (Overall Index Usage - Reads)"
             ],
             "metadata": {
                 "azdata_cell_guid": "1a3ff6ab-165b-411d-8baf-713b6f322dc2"
@@ -3332,7 +3434,7 @@
         {
             "cell_type": "code",
             "source": [
-                "--- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 69) (Overall Index Usage - Reads)\r\n",
+                "--- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 70) (Overall Index Usage - Reads)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, \r\n",
                 "       s.user_seeks, s.user_scans, s.user_lookups,\r\n",
                 "\t   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], \r\n",
@@ -3368,7 +3470,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 70) (Overall Index Usage - Writes)"
+                "## Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 71) (Overall Index Usage - Writes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "a3dafd2f-5693-492e-8e7b-f558c4ec624e"
@@ -3377,7 +3479,7 @@
         {
             "cell_type": "code",
             "source": [
-                "--- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 70) (Overall Index Usage - Writes)\r\n",
+                "--- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 71) (Overall Index Usage - Writes)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,\r\n",
                 "\t   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], \r\n",
                 "\t   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,\r\n",
@@ -3411,7 +3513,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get in-memory OLTP index usage (Query 71) (XTP Index Usage)"
+                "## Get in-memory OLTP index usage (Query 72) (XTP Index Usage)"
             ],
             "metadata": {
                 "azdata_cell_guid": "7fb895d5-7d7c-49d1-b459-bea8648eee59"
@@ -3420,7 +3522,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get in-memory OLTP index usage (Query 71) (XTP Index Usage)\r\n",
+                "-- Get in-memory OLTP index usage (Query 72) (XTP Index Usage)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],\r\n",
                 "       i.[type_desc], xis.scans_started, xis.scans_retries, \r\n",
                 "\t   xis.rows_touched, xis.rows_returned\r\n",
@@ -3454,7 +3556,50 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get lock waits for current database (Query 72) (Lock Waits)"
+                "## Look at Columnstore index physical statistics (Query 73) (Columnstore Index Physical Stat)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "f708aa73-505b-4aaa-9c7a-f1ed5c8b2366"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Look at Columnstore index physical statistics (Query 73) (Columnstore Index Physical Stat)\r\n",
+                "SELECT OBJECT_NAME(ps.object_id) AS [TableName],  \r\n",
+                "\ti.[name] AS [IndexName], ps.index_id, ps.partition_number,\r\n",
+                "\tps.delta_store_hobt_id, ps.state_desc, ps.total_rows, ps.size_in_bytes,\r\n",
+                "\tps.trim_reason_desc, ps.generation, ps.transition_to_compressed_state_desc,\r\n",
+                "\tps.has_vertipaq_optimization, ps.deleted_rows,\r\n",
+                "\t100 * (ISNULL(ps.deleted_rows, 0))/ps.total_rows AS [Fragmentation]\r\n",
+                "FROM sys.dm_db_column_store_row_group_physical_stats AS ps WITH (NOLOCK)\r\n",
+                "INNER JOIN sys.indexes AS i WITH (NOLOCK)\r\n",
+                "ON ps.object_id = i.object_id \r\n",
+                "AND ps.index_id = i.index_id\r\n",
+                "ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "08085237-8152-4c51-b600-7325b1a3548c",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "[sys.dm_db_column_store_row_group_physical_stats (Transact-SQL)](https://bit.ly/2q276XQ)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "1220c55f-75d8-40d7-bf05-69b75801620c"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## Get lock waits for current database (Query 74) (Lock Waits)"
             ],
             "metadata": {
                 "azdata_cell_guid": "58df2dd4-b3ff-4947-9cef-407ff9d74ca2"
@@ -3463,7 +3608,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get lock waits for current database (Query 72) (Lock Waits)\r\n",
+                "-- Get lock waits for current database (Query 74) (Lock Waits)\r\n",
                 "SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,\r\n",
                 "\t\tSUM(ios.row_lock_wait_count) AS [total_row_lock_waits], \r\n",
                 "\t\tSUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],\r\n",
@@ -3502,7 +3647,91 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get input buffer information for the current database (Query 73) (Input Buffer)"
+                "## Look at UDF execution statistics (Query 75) (UDF Statistics)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "4bc1f2be-a361-4e8c-a11f-43a8b9d31278"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Look at UDF execution statistics (Query 75) (UDF Statistics)\r\n",
+                "SELECT OBJECT_NAME(object_id) AS [Function Name], execution_count,\r\n",
+                "\t   total_worker_time, total_logical_reads, total_physical_reads, total_elapsed_time, \r\n",
+                "\t   total_elapsed_time/execution_count AS [avg_elapsed_time],\r\n",
+                "\t   FORMAT(cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]\r\n",
+                "FROM sys.dm_exec_function_stats WITH (NOLOCK) \r\n",
+                "WHERE database_id = DB_ID()\r\n",
+                "ORDER BY total_worker_time DESC OPTION (RECOMPILE); "
+            ],
+            "metadata": {
+                "azdata_cell_guid": "ba01047c-7f3d-4458-9c59-1d9e6a61dd14",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "New for SQL Server 2016\r\n",
+                "- Helps you investigate scalar UDF performance issues\r\n",
+                "- Does not return information for table valued functions\r\n",
+                "\r\n",
+                "[sys.dm_exec_function_stats (Transact-SQL)](https://bit.ly/2q1Q6BM)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "cd874542-572c-43a6-824f-705362654485"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## Get QueryStore Options for this database (Query 76) (QueryStore Options)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "04fecb8a-6fa8-4aae-9cc0-22f4aa0419e4"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Get QueryStore Options for this database (Query 76) (QueryStore Options)\r\n",
+                "SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],\r\n",
+                "       current_storage_size_mb, [max_storage_size_mb], \r\n",
+                "\t   query_capture_mode_desc, size_based_cleanup_mode_desc\r\n",
+                "FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "fbfb5d86-cd44-49e3-9a63-12be523945d4",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "New for SQL Server 2016\r\n",
+                "- Requires that Query Store is enabled for this database\r\n",
+                "- Make sure that the actual_state_desc is the same as desired_state_desc\r\n",
+                "- Make sure that the current_storage_size_mb is less than the max_storage_size_mb\r\n",
+                "\r\n",
+                "[Tuning Workload Performance with Query Store](https://bit.ly/1kHSl7w)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "43d3591d-de83-4648-897b-17916dd22574"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## Get input buffer information for the current database (Query 77) (Input Buffer)"
             ],
             "metadata": {
                 "azdata_cell_guid": "414cd580-c270-4284-a0e9-dc913d5003d3"
@@ -3511,7 +3740,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get input buffer information for the current database (Query 73) (Input Buffer)\r\n",
+                "-- Get input buffer information for the current database (Query 77) (Input Buffer)\r\n",
                 "SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],\r\n",
                 "       es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,\r\n",
                 "       es.[status], ib.event_info AS [Input Buffer]\r\n",
@@ -3535,7 +3764,6 @@
             "source": [
                 "Gives you input buffer information from all non-system sessions for the current database\r\n",
                 "- Replaces `DBCC INPUTBUFFER`\r\n",
-                "- Requires SQL Server 2014 SP2 or later\r\n",
                 "\r\n",
                 "[New DMF for retrieving input buffer in SQL Serve](https://bit.ly/2uHKMbz)r\r\n",
                 "\r\n",
@@ -3548,7 +3776,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at recent Full backups for the current database (Query 74) (Recent Full Backups)"
+                "## Look at recent Full backups for the current database (Query 79) (Recent Full Backups)"
             ],
             "metadata": {
                 "azdata_cell_guid": "d419108a-d2fc-41a7-9524-6c42038ab4a8"
@@ -3557,7 +3785,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at recent Full backups for the current database (Query 74) (Recent Full Backups)\r\n",
+                "-- Look at recent Full backups for the current database (Query 79) (Recent Full Backups)\r\n",
                 "SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,\r\n",
                 "CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],\r\n",
                 "CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],\r\n",
@@ -3574,9 +3802,7 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "36537d06-fc40-4acc-a5db-62244c742a73",
-                "tags": [
-                    "hide_input"
-                ]
+                "tags": []
             },
             "outputs": [],
             "execution_count": null
@@ -3592,7 +3818,8 @@
                 "- Are you doing encrypted backups?\r\n",
                 "- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?\r\n",
                 "- Where are the backups going to?\r\n",
-                ""
+                "\r\n",
+                "In SQL Server 2016, native SQL Server backup compression [actually works much better](https://bit.ly/28Rpb2x) with databases that are using TDE than in previous versions"
             ],
             "metadata": {
                 "azdata_cell_guid": "bea45ff6-935f-4849-ae99-0f55bada6386"
