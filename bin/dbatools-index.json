@@ -23579,7 +23579,7 @@
                        ],
                        [
                            "TableLock",
-                           "If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.\nPer Microsoft \"Obtain a bulk update lock for the duration of the bulk copy operation. When not\r\nspecified, row locks are used.\"",
+                           "If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used.\nPer Microsoft \"Obtain a bulk update lock for the duration of the bulk copy operation. When not\r\nspecified, row locks are used.\"",
                            "",
                            false,
                            "false",
@@ -24336,7 +24336,7 @@
     },
     {
         "Name":  "Install-DbaFirstResponderKit",
-        "Description":  "Downloads, extracts and installs the First Responder Kit stored procedures:\nsp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.\n\nFirst Responder Kit links:\nhttp://FirstResponderKit.org\nhttps://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
+        "Description":  "Downloads, extracts and installs the First Responder Kit stored procedures\n\nFirst Responder Kit links:\nhttp://FirstResponderKit.org\nhttps://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
         "Tags":  [
                      "Community",
                      "FirstResponderKit"
@@ -24367,7 +24367,7 @@
                        ],
                        [
                            "Branch",
-                           "Specifies an alternate branch of the First Responder Kit to install. (main or dev)",
+                           "Specifies an alternate branch of the First Responder Kit to install.\r\nAllowed values:\r\n    main (default)\r\n    dev",
                            "",
                            false,
                            "false",
@@ -28575,7 +28575,7 @@
         "CommandName":  "Invoke-DbaQuery",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaQuery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance . -Query \u0027SELECT * FROM users WHERE Givenname = @name\u0027 -SqlParameters @{ Name = \"Maria\" }\nExecutes a simple query against the users table using SQL Parameters.\r\nThis avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.\r\nKeep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.\r\nWhile it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.\r\nThe inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query \"select something from readonlydb.dbo.atable\"\nExecutes a query with ReadOnly application intent on aglistener1.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance \"server1\" -Database tempdb -Query \"Example_SP\" -SqlParameters @{ Name = \"Maria\" } -CommandType StoredProcedure\nExecutes a stored procedure Example_SP using SQL Parameters",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance . -Query \u0027SELECT * FROM users WHERE Givenname = @name\u0027 -SqlParameters @{ Name = \"Maria\" }\nExecutes a simple query against the users table using SQL Parameters.\r\nThis avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.\r\nKeep in mind the limitations inherent in parameters - it is quite impossible to use them for content references.\r\nWhile it is possible to parameterize a where condition, it is impossible to use this to select which columns to select.\r\nThe inserted text will always be treated as string content, and not as a reference to any SQL entity (such as columns, tables or databases).\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance aglistener1 -ReadOnly -Query \"select something from readonlydb.dbo.atable\"\nExecutes a query with ReadOnly application intent on aglistener1.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance \"server1\" -Database tempdb -Query \"Example_SP\" -SqlParameters @{ Name = \"Maria\" } -CommandType StoredProcedure\nExecutes a stored procedure Example_SP using SQL Parameters\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$QueryParameters = @{\n\"StartDate\" = $startdate;\r\n    \"EndDate\" = $enddate;\r\n};\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance \"server1\" -Database tempdb -Query \"Example_SP\" -SqlParameters $QueryParameters -CommandType StoredProcedure\nExecutes a stored procedure Example_SP using multiple SQL Parameters",
         "Params":  [
                        [
                            "SqlInstance",
@@ -28667,7 +28667,7 @@
                        ],
                        [
                            "MessagesToOutput",
-                           "Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail",
+                           "Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too.",
                            "",
                            false,
                            "false",
@@ -41925,7 +41925,7 @@
         "CommandName":  "Set-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday\nChanges the schedule for Job1 with the name daily to have a new name weekly\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime \u0027230000\u0027\nChanges the start time of the schedule for Job1 to 11 PM for multiple jobs\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name daily to enabled on multiple servers\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName \u0027daily\u0027 -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled on multiple servers using pipe line",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday\nChanges the schedule for Job1 with the name daily to have a new name weekly\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime \u0027230000\u0027\nChanges the start time of the schedule for Job1 to 11 PM for multiple jobs\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name daily to enabled on multiple servers\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName daily -Enabled\nChanges the schedule for Job1 with the name \u0027daily\u0027 to enabled on multiple servers using pipe line",
         "Params":  [
                        [
                            "SqlInstance",
@@ -42017,7 +42017,7 @@
                        ],
                        [
                            "FrequencyRelativeInterval",
-                           "A job\u0027s occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).",
+                           "A job\u0027s occurrence of FrequencyInterval in each month, if FrequencyType is 32 (MonthlyRelative).",
                            "",
                            false,
                            "false",

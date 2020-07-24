@@ -19456,19 +19456,19 @@ function Get-DbaAgentSchedule {
             } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
             }
-        }
 
-        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
+            $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
 
-        foreach ($currentschedule in $scheduleCollection) {
-            $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
+            foreach ($currentschedule in $scheduleCollection) {
+                $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
 
-            $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
-            $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
-            $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-            $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
+                $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
+                $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
+                $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
 
-            Select-DefaultView -InputObject $currentschedule -Property $defaults
+                Select-DefaultView -InputObject $currentschedule -Property $defaults
+            }
         }
     }
 }
@@ -23484,6 +23484,7 @@ function Get-DbaDbEncryption {
                         $returnCertificate.Owner = $serverCertificate.Owner
                         $returnCertificate.Object = $serverCertificate
                         $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
+                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties | Where-Object( { $psitem.name -eq 'EncryptionAlgorithm' }).value
                     }
 
                     $returnCertificate
@@ -35745,7 +35746,7 @@ function Get-DbaTopResourceUsage {
         }
 
         if ($ExcludeDatabase) {
-            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') notin '$($excludedatabase -join '', '')'"
+            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') not in ('$($excludedatabase -join '', '')')"
         }
 
         if ($ExcludeSystem) {
@@ -38851,6 +38852,7 @@ function Import-DbaCsv {
     }
 }
 
+
 #.ExternalHelp dbatools-Help.xml
 function Import-DbaPfDataCollectorSetTemplate {
     
@@ -39544,121 +39546,137 @@ function Install-DbaFirstResponderKit {
         }
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
-
         $temp = [System.IO.Path]::GetTempPath()
-        $zipfile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
-        $zipfolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
-        $FRKLocation = "FRK_$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
-        if ($LocalFile) {
-            if (-not(Test-Path $LocalFile)) {
-                Stop-Function -Message "$LocalFile doesn't exist"
-                return
-            }
-            if (-not($LocalFile.EndsWith('.zip'))) {
-                Stop-Function -Message "$LocalFile should be a zip file"
-                return
-            }
-        }
+        $zipFile = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch.zip"
+        $zipFolder = Join-Path -Path $temp -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
+        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
 
         if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if ($zipfile | Test-Path) {
-                Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
-            }
-            if ($zipfolder | Test-Path) {
-                Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
+            if (Test-Path $zipFile) {
+                if ($PSCmdlet.ShouldProcess($zipFile, "File found, dropping $zipFile")) {
+                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                }
             }
 
-            $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
-                if (Test-Windows -NoWarn) {
-                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                if (-not (Test-Path $LocalFile)) {
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
+                        Stop-Function -Message "$LocalFile doesn't exist"
+                        return
+                    }
                 }
-                Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
+                if (Test-Path $LocalFile -PathType Container) {
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
+                        Stop-Function -Message "$LocalFile should be a zip file"
+                        return
+                    }
+                }
+                if (Test-Windows -NoWarn) {
+                    if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
+                        Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    }
+                }
+                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
+                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
+                }
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
-
-                try {
-
+                if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
                     try {
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        try {
+                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
+                        } catch {
+                            # Try with default proxy and usersettings
+                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
+                        }
+
+                        # Unblock if there's a block
+                        if (Test-Windows -NoWarn) {
+                            Unblock-File $zipFile -ErrorAction SilentlyContinue
+                        }
+
+                        Expand-Archive -Path $zipFile -DestinationPath $temp -Force
+                        Remove-Item -Path $zipFile
                     } catch {
-                        # Try with default proxy and usersettings
-                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
+                        return
                     }
-
-                    # Unblock if there's a block
-                    if (Test-Windows -NoWarn) {
-                        Unblock-File $zipfile -ErrorAction SilentlyContinue
-                    }
-
-                    Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
-                    Remove-Item -Path $zipfile
-                } catch {
-                    Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
-                    return
                 }
             }
 
             ## Copy it into local area
-            if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            } else {
-                $null = New-Item -Path $LocalCachedCopy -ItemType Container
+            if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
+                if (Test-Path -Path $LocalCachedCopy -PathType Container) {
+                    Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
+                } else {
+                    $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                }
+                Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $LocalCachedCopy
             }
-            Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
         }
     }
 
-
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
             }
+            if ($PSCmdlet.ShouldProcess($database, "Installing FRK procedures in $database on $instance")) {
+                Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
+                $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
+                $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
-            Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
-            $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-            $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
-            # Install/Update each FRK stored procedure
-            foreach ($script in (Get-ChildItem $LocalCachedCopy -Recurse -Filter "sp_*.sql")) {
-                $scriptname = $script.Name
-                $scriptError = $false
-                if ($scriptname -ne "sp_BlitzRS.sql") {
+                # Install/Update each FRK stored procedure
+                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                foreach ($script in $sqlScripts) {
+                    $scriptName = $script.Name
+                    $scriptError = $false
 
-                    if ($scriptname -eq "sp_BlitzQueryStore.sql") {
-                        if ($server.VersionMajor -lt 13) { continue }
+                    $baseres = [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $Database
+                        Name         = $script.BaseName
+                        Status       = $null
                     }
-                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
+
+                    if ($scriptName -eq "sp_BlitzQueryStore.sql" -and ($server.VersionMajor -lt 13)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2016, skipping $scriptName"
+                        $baseres.Status = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($scriptName -eq "sp_BlitzInMemoryOLTP.sql" -and ($server.VersionMajor -lt 12)) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2014, skipping $scriptName"
+                        $baseres.Status = 'Skipped'
+                        $baseres
+                        continue
+                    }
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
                         try {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
                         } catch {
-                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
                         }
-                        $baseres = @{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $Database
-                            Name         = $script.BaseName
-                        }
+
                         if ($scriptError) {
-                            $baseres['Status'] = 'Error'
+                            $baseres.Status = 'Error'
                         } elseif ($script.BaseName -in $allprocedures) {
-                            $baseres['Status'] = 'Updated'
+                            $baseres.Status = 'Updated'
                         } else {
-                            $baseres['Status'] = 'Installed'
+                            $baseres.Status = 'Installed'
                         }
-                        [PSCustomObject]$baseres
+                        $baseres
                     }
                 }
             }
@@ -39666,7 +39684,6 @@ function Install-DbaFirstResponderKit {
         }
     }
 }
-
 
 #.ExternalHelp dbatools-Help.xml
 function Install-DbaInstance {
@@ -40053,9 +40070,15 @@ function Install-DbaInstance {
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($canonicVersion -ge '13.0') {
+            if ($canonicVersion -ge '13.0' -and (-Not $configNode.SQLTEMPDBFILECOUNT)) {
                 # configure the number of cores
-                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
+                # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
+                try {
+                    [int]$cores = $cpuInfo | Measure-Object NumberOfLogicalProcessors -Sum -ErrorAction Stop | Select-Object -ExpandProperty sum
+                } catch {
+                    [int]$cores = $cpuInfo | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                }
                 if ($cores -gt 8) {
                     $cores = 8
                 }
@@ -40575,6 +40598,7 @@ function Install-DbaSqlWatch {
             return
         }
 
+        $totalSteps = $stepCounter + $SqlInstance.Count * 2
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
@@ -40583,7 +40607,7 @@ function Install-DbaSqlWatch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance" -TotalSteps $totalSteps
 
 
                 try {
@@ -40593,7 +40617,7 @@ function Install-DbaSqlWatch {
                         RegisterDataTierApplication = $true
                     }
 
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
                     $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
 
@@ -42989,35 +43013,67 @@ function Invoke-DbaDbDataMasking {
                         # Go through the composites
                         if ($columnsWithActions.Count -ge 1) {
                             foreach ($columnObject in $columnsWithActions) {
-                                foreach ($columnAction in $columnObject.Action) {
-                                    $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+                                [bool]$validAction = $true
 
-                                    if ($columnAction.Category -eq 'DateTime') {
-                                        switch ($columnAction.Type) {
-                                            "Add" {
-                                                $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
-                                            }
-                                            "Subtract" {
-                                                $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
-                                            }
+                                $columnAction = $columnobject.Action
+
+                                $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+
+                                if ($columnAction.Category -eq 'DateTime') {
+                                    switch ($columnAction.Type) {
+                                        "Add" {
+                                            $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
                                         }
-                                    } elseif ($columnAction.Category -eq 'Number') {
-                                        switch ($columnAction.Type) {
-                                            "Add" {
-                                                $query += "[$($columnObject.Name)] + $($columnAction.Value);"
-                                            }
-                                            "Divide" {
-                                                $query += "[$($columnObject.Name)] / $($columnAction.Value);"
-                                            }
-                                            "Multiply" {
-                                                $query += "[$($columnObject.Name)] * $($columnAction.Value);"
-                                            }
-                                            "Subtract" {
-                                                $query += "[$($columnObject.Name)] - $($columnAction.Value);"
-                                            }
+                                        "Subtract" {
+                                            $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
+                                        }
+                                        default {
+                                            $validAction = $false
                                         }
                                     }
-                                    # Add the query to the rest
+                                } elseif ($columnAction.Category -eq 'Number') {
+                                    switch ($columnAction.Type) {
+                                        "Add" {
+                                            $query += "[$($columnObject.Name)] + $($columnAction.Value);"
+                                        }
+                                        "Divide" {
+                                            $query += "[$($columnObject.Name)] / $($columnAction.Value);"
+                                        }
+                                        "Multiply" {
+                                            $query += "[$($columnObject.Name)] * $($columnAction.Value);"
+                                        }
+                                        "Subtract" {
+                                            $query += "[$($columnObject.Name)] - $($columnAction.Value);"
+                                        }
+                                        default {
+                                            $validAction = $false
+                                        }
+                                    }
+                                } elseif ($columnAction.Category -eq 'Column') {
+                                    switch ($columnAction.Type) {
+                                        "Set" {
+                                            if ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'bit', 'bool', 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $query += "$($columnAction.Value)"
+                                            } elseif ($columnobject.ColumnType -in '*date*', 'time', 'uniqueidentifier') {
+                                                $query += "'$($columnAction.Value)'"
+                                            } else {
+                                                $query += "'$($columnAction.Value)'"
+                                            }
+                                        }
+                                        "Nullify" {
+                                            if ($columnobject.Nullable) {
+                                                $query += "NULL"
+                                            } else {
+                                                $validAction = $false
+                                            }
+                                        }
+                                        default {
+                                            $validAction = $false
+                                        }
+                                    }
+                                }
+                                # Add the query to the rest
+                                if ($validAction) {
                                     $null = $stringBuilder.AppendLine($query)
                                 }
                             }
@@ -43238,8 +43294,6 @@ function Invoke-DbaDbDataMasking {
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-
-                                #$progressParams
                                 #Write-ProgressHelper @progressParams
 
                                 try {
@@ -49003,11 +49057,11 @@ function New-DbaAgentJob {
 
                     # If a schedule needs to be attached
                     if ($Schedule) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
                     if ($ScheduleId) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
                     }
                 } catch {
                     Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
@@ -49015,7 +49069,7 @@ function New-DbaAgentJob {
             }
 
             # Return the job
-            return $currentjob
+            $currentjob
         }
     }
 
@@ -49978,7 +50032,7 @@ function New-DbaAgentSchedule {
                     }
 
                     # Output the job schedule
-                    return $JobSchedule
+                    $JobSchedule
                 }
             }
         } # foreach object instance
@@ -63325,7 +63379,7 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
+        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 62, 64, 65, 127)]
         [object[]]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
@@ -63434,7 +63488,7 @@ function Set-DbaAgentSchedule {
                         4 { $Interval += 4 }
                         8 { $Interval += 8 }
                         16 { $Interval += 16 }
-                        31 { $Interval += 32 }
+                        32 { $Interval += 32 }
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
@@ -66569,7 +66623,7 @@ function Set-DbaSpConfigure {
         }
 
         foreach ($configobject in $InputObject) {
-            $server = $InputObject.Parent
+            $server = $configobject.Parent
             $currentRunValue = $configobject.RunningValue
             $currentConfigValue = $configobject.ConfiguredValue
             $minValue = $configobject.MinValue
@@ -70765,9 +70819,9 @@ function Test-DbaDbDataMaskingConfig {
 
         $requiredColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType')
 
-        $allowedActionCategories = @('datetime', 'number')
+        $allowedActionCategories = @('datetime', 'number', 'column')
         $allowedActionSubCategories = @('year', 'quarter', 'month', 'dayofyear', 'day', 'week', 'weekday', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond')
-        $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Subtract')
+        $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Nullify', 'Set', 'Subtract')
 
         $allowedDateTimeTypes = @('date', 'datetime', 'datetime2', 'smalldatetime', 'time')
         $allowedNumberTypes = @('bigint', 'bit', 'int', 'money', 'smallint')
@@ -70911,7 +70965,7 @@ function Test-DbaDbDataMaskingConfig {
                         }
                     }
 
-                    if ($null -eq $column.Action.Value -and $column.Action.Type -in $allowedActionTypes) {
+                    if ($column.Action.Category -ne 'Column' -and $column.Action.Type -ne 'Nullify' -and $null -eq $column.Action.Value -and $column.Action.Type -in $allowedActionTypes) {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name

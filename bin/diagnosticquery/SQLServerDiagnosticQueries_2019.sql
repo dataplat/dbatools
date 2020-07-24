@@ -18,7 +18,7 @@
             "source": [
                 "# **SQL Server 2019 Diagnostic Information Queries**\r\n",
                 "- Glenn Berry \r\n",
-                "- Last Modified: July 2, 2020\r\n",
+                "- Last Modified: July 15, 2020\r\n",
                 "- Twitter: GlennAlanBerry\r\n",
                 "- Blog: https://glennsqlperformance.com/\r\n",
                 "\r\n",
@@ -913,7 +913,9 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "bd098885-6c92-4000-a275-71730bb7ab19",
-                "tags": []
+                "tags": [
+                    "hide_input"
+                ]
             },
             "outputs": [],
             "execution_count": null
@@ -2475,7 +2477,9 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "afab3607-97d0-406c-829f-e4eee79b1ee9",
-                "tags": []
+                "tags": [
+                    "hide_input"
+                ]
             },
             "outputs": [],
             "execution_count": null
@@ -2624,7 +2628,10 @@
                 "ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE;"
             ],
             "metadata": {
-                "azdata_cell_guid": "42fc55ca-2890-4e67-a881-1575c06a4dd2"
+                "azdata_cell_guid": "42fc55ca-2890-4e67-a881-1575c06a4dd2",
+                "tags": [
+                    "hide_input"
+                ]
             },
             "outputs": [],
             "execution_count": null
@@ -3240,7 +3247,8 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 67) (Table Sizes)\r\n",
+                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 67) (Buffer Usage)\r\n",
+                "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],\r\n",
                 "OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, \r\n",
                 "CAST(COUNT(*)/128.0 AS DECIMAL(10, 2)) AS [Buffer size(MB)],  \r\n",
@@ -3268,7 +3276,9 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "e24ea355-502e-4e1a-b17c-1c5e67d930d4",
-                "tags": []
+                "tags": [
+                    "hide_input"
+                ]
             },
             "outputs": [],
             "execution_count": null
