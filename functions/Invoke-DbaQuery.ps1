@@ -44,7 +44,7 @@ function Invoke-DbaQuery {
         If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
     .PARAMETER MessagesToOutput
-        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
+        Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too.
 
     .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
@@ -105,9 +105,18 @@ function Invoke-DbaQuery {
         Executes a query with ReadOnly application intent on aglistener1.
 
     .EXAMPLE
-        PS C:\>Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
 
         Executes a stored procedure Example_SP using SQL Parameters
+
+    .EXAMPLE
+        PS C:\> $QueryParameters = @{
+            "StartDate" = $startdate;
+            "EndDate" = $enddate;
+        };
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters $QueryParameters -CommandType StoredProcedure
+
+        Executes a stored procedure Example_SP using multiple SQL Parameters
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
