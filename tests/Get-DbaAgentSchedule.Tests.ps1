@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000  -Force
     }
     Afterall {
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 -schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest
+        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest
         $Schedules.DROP()
     }
 
@@ -28,6 +28,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Results are not empty" {
             $results | Should Not BeNullOrEmpty
         }
+    }
+    
+    Context "Handles multiple instances" {
+        $null = New-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
+        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2,$script:instance3
+        It "Results contain two instances" {
+            ($results | Select-Object SqlInstance -Unique).Count | Should -Be 2
+        }
+        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance3 -schedule dbatoolsci_MonthlyTest
+        $Schedules.DROP()
     }
 
     Context "Monthly schedule is correct" {
@@ -52,8 +62,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have correct description" {
             $datetimeFormat = (Get-culture).DateTimeFormat
-            $startDate = Get-Date $results.ActiveStartDate -format $datetimeFormat.ShortDatePattern
-            $results.Description | Should Be "Occurs every month on day 10 of that month at 12:00:00 AM. Schedule will be used starting on $startDate."
+            $startDate = Get-Date $results.ActiveStartDate -Format $datetimeFormat.ShortDatePattern
+            $startTime = Get-Date '00:00:00' -Format $datetimeFormat.LongTimePattern
+            $results.Description | Should Be "Occurs every month on day 10 of that month at $startTime. Schedule will be used starting on $startDate."
         }
     }
 }

@@ -47,11 +47,8 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
 
-    .PARAMETER FrequencySubdayInterval
-        The number of subday type periods to occur between each execution of a job.
-
     .PARAMETER FrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+        A job's occurrence of FrequencyInterval in each month, if FrequencyType is 32 (MonthlyRelative).
 
     .PARAMETER FrequencyRecurrenceFactor
         The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
@@ -119,7 +116,7 @@ function Set-DbaAgentSchedule {
         Changes the schedule for Job1 with the name daily to enabled on multiple servers
 
     .EXAMPLE
-        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName daily -Enabled
 
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
@@ -140,7 +137,7 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
+        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 62, 64, 65, 127)]
         [object[]]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
@@ -249,7 +246,7 @@ function Set-DbaAgentSchedule {
                         4 { $Interval += 4 }
                         8 { $Interval += 8 }
                         16 { $Interval += 16 }
-                        31 { $Interval += 32 }
+                        32 { $Interval += 32 }
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
