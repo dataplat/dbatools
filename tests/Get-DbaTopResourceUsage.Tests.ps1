@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $results = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -Database master
-
+    $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -ExcludeDatabase master
     Context "Command returns proper info" {
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
@@ -31,6 +31,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have correct properties for Duration" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ObjectName,QueryHash,TotalElapsedTimeMs,ExecutionCount,AverageDurationMs,QueryTotalElapsedTimeMs,QueryText'.Split(',')
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        }
+
+        It "No results for excluded database" {
+            $resultsExcluded.Database -notcontains 'master' | Should Be $true
         }
     }
 }
