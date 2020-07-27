@@ -58,7 +58,7 @@ function Install-DbaFirstResponderKit {
         https://www.brentozar.com/responder
 
     .LINK
-        https://dbatools.io/Install-DbaFirstResponderKit
+        https://docs.dbatools.io/#Install-DbaFirstResponderKit
 
     .EXAMPLE
         PS C:\> Install-DbaFirstResponderKit -SqlInstance server1 -Database master
