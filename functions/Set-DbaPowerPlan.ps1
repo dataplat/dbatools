@@ -175,10 +175,21 @@ function Set-DbaPowerPlan {
 
                             $cimInstance = Get-CimInstance -Namespace root\cimv2\power -ClassName win32_PowerPlan -Filter "ElementName = '$powerPlanRequested'" -CimSession $CIMSession
                             if ($cimInstance) {
-                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession
+                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession -ErrorAction SilentlyContinue
                                 if (!$cimResult) {
-                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
-                                    return
+                                    Write-Message -Level Verbose -Message "Maybe $computer is a windows server 2019 - activate method is broken there, so we try to use powercfg."
+                                    try {
+                                        $powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
+                                        $scriptBlock = { powercfg /setactive $using:powerPlanGuid }
+                                        if ($IncludeCred) {
+                                            Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential
+                                        } else {
+                                            Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock
+                                        }
+                                    } catch {
+                                        Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
+                                        return
+                                    }
                                 }
                             } else {
                                 Stop-Function -Message "Couldn't find the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
