@@ -175,21 +175,21 @@ function Set-DbaPowerPlan {
 
                             $cimInstance = Get-CimInstance -Namespace root\cimv2\power -ClassName win32_PowerPlan -Filter "ElementName = '$powerPlanRequested'" -CimSession $CIMSession
                             if ($cimInstance) {
-                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession -ErrorAction SilentlyContinue
-                                if (!$cimResult) {
-                                    Write-Message -Level Verbose -Message "Maybe $computer is a windows server 2019 - activate method is broken there, so we try to use powercfg."
-                                    try {
-                                        $powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
-                                        $scriptBlock = { powercfg /setactive $using:powerPlanGuid }
-                                        if ($IncludeCred) {
-                                            Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential
-                                        } else {
-                                            Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock
-                                        }
-                                    } catch {
-                                        Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
-                                        return
-                                    }
+                                # Because the activate method for powerplans is broken on windows server 2019, we use the powrprof.dll instead
+                                [System.Guid]$powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
+                                $scriptBlock = {
+                                    $powerSetActiveSchemeDefinition = '[DllImport("powrprof.dll", CharSet = CharSet.Auto)] public static extern uint PowerSetActiveScheme(IntPtr RootPowerKey, Guid SchemeGuid);'
+                                    $powrprof = Add-Type -MemberDefinition $powerSetActiveSchemeDefinition -Name 'Win32PowerSetActiveScheme' -Namespace 'Win32Functions' -PassThru
+                                    $powrprof::PowerSetActiveScheme([System.IntPtr]::Zero, $using:powerPlanGuid)
+                                }
+                                if ($IncludeCred) {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Raw -Credential $Credential
+                                } else {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Raw
+                                }
+                                if ($returnCode -ne 0) {
+                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer (ReturnCode: $returnCode)." -Category ConnectionError -Target $computer
+                                    return
                                 }
                             } else {
                                 Stop-Function -Message "Couldn't find the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
