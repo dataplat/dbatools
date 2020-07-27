@@ -178,14 +178,15 @@ function Set-DbaPowerPlan {
                                 # Because the activate method for powerplans is broken on windows server 2019, we use the powrprof.dll instead
                                 [System.Guid]$powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
                                 $scriptBlock = {
+                                    Param ($Guid)
                                     $powerSetActiveSchemeDefinition = '[DllImport("powrprof.dll", CharSet = CharSet.Auto)] public static extern uint PowerSetActiveScheme(IntPtr RootPowerKey, Guid SchemeGuid);'
                                     $powrprof = Add-Type -MemberDefinition $powerSetActiveSchemeDefinition -Name 'Win32PowerSetActiveScheme' -Namespace 'Win32Functions' -PassThru
-                                    $powrprof::PowerSetActiveScheme([System.IntPtr]::Zero, $using:powerPlanGuid)
+                                    $powrprof::PowerSetActiveScheme([System.IntPtr]::Zero, $Guid)
                                 }
                                 if ($IncludeCred) {
-                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Raw -Credential $Credential
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw -Credential $Credential
                                 } else {
-                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -Raw
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw
                                 }
                                 if ($returnCode -ne 0) {
                                     Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer (ReturnCode: $returnCode)." -Category ConnectionError -Target $computer
