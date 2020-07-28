@@ -103,6 +103,7 @@ function Get-DbaPermission {
                         , [GranteeType] = pr.type_desc
                         , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
                         , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
+                            + CASE WHEN sp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.server_permissions sp
                         JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
                         LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
