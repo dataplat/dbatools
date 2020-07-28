@@ -95,7 +95,7 @@ function Get-DbaPermission {
                         , [PermState] = state_desc
                         , [PermissionName] = permission_name
                         , [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
-                        , [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
+                        , [Securable] = CASE    WHEN class = 100 THEN @@SERVERNAME
                                                 WHEN class = 105 THEN OBJECT_NAME(major_id)
                                                 ELSE OBJECT_NAME(major_id)
                                                 END
@@ -111,7 +111,7 @@ function Get-DbaPermission {
                     $ExcludeSystemObjectssql
 
                     UNION ALL
-                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                    SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                             , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                             , SERVERPROPERTY('ServerName') AS SqlInstance
                             , [database] = ''
@@ -150,7 +150,7 @@ function Get-DbaPermission {
                     , [PermState] = state_desc
                     , [PermissionName] = permission_name
                     , [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
-                    , [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
+                    , [Securable] = CASE    WHEN class = 0 THEN DB_NAME()
                                             WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
                                             WHEN class = 3 THEN SCHEMA_NAME(major_id)
                                             WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
@@ -169,7 +169,7 @@ function Get-DbaPermission {
                 $ExcludeSystemObjectssql
 
                 UNION ALL
-                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                         , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                         , SERVERPROPERTY('ServerName') AS SqlInstance
                         , [database] = DB_NAME()
