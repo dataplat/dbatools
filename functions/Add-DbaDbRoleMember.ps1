@@ -141,7 +141,7 @@ function Add-DbaDbRoleMember {
 
                 foreach ($username in $User) {
                     if ($db.Users.Name -contains $username) {
-                        if ($members.Name -notcontains $username) {
+                        if ($members -notcontains $username) {
                             if ($PSCmdlet.ShouldProcess($instance, "Adding User $username to role: $dbRole in database $db")) {
                                 Write-Message -Level 'Verbose' -Message "Adding User $username to role: $dbRole in database $db on $instance"
                                 $dbRole.AddMember($username)
