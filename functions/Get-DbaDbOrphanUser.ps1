@@ -90,6 +90,7 @@ function Get-DbaDbOrphanUser {
                 foreach ($db in $DatabaseCollection) {
                     try {
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
+                        $UsersToWork = @()
                         $UsersToWork += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
                         $UsersToWork += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                         if ($UsersToWork.Count -gt 0) {
