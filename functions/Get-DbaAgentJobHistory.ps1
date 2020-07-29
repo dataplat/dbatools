@@ -32,6 +32,9 @@ function Get-DbaAgentJobHistory {
     .PARAMETER EndDate
         The DateTime before which the history is wanted. If unspecified, all available records will be processed.
 
+    .PARAMETER OutcomeType
+        The CompletionResult to filter the history for. Valid values are: Failed, Succeeded, Retry, Cancelled, InProgress, Unknown
+
     .PARAMETER ExcludeJobSteps
         Use this switch to discard all job steps, and return only the job totals
 
@@ -115,6 +118,8 @@ function Get-DbaAgentJobHistory {
         [object[]]$ExcludeJob,
         [DateTime]$StartDate = "1900-01-01",
         [DateTime]$EndDate = $(Get-Date),
+        [ValidateSet('Failed', 'Succeeded', 'Retry', 'Cancelled', 'InProgress', 'Unknown')]
+        [Microsoft.SqlServer.Management.Smo.Agent.CompletionResult]$OutcomeType,
         [switch]$ExcludeJobSteps,
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
@@ -127,6 +132,9 @@ function Get-DbaAgentJobHistory {
         $filter.StartRunDate = $StartDate
         $filter.EndRunDate = $EndDate
 
+        if (Test-Bound OutcomeType) {
+            $filter.OutcomeTypes = $OutcomeType
+        }
 
         if ($ExcludeJobSteps -and $WithOutputFile) {
             Stop-Function -Message "You can't use -ExcludeJobSteps and -WithOutputFile together"
