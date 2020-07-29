@@ -328,7 +328,7 @@ function Invoke-DbaDbDataMasking {
                             $columnString += ",[$($identityColumn)]"
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         }
-                        [array]$data = $db.Query($query)
+                        [array]$data = $db.Query($Query)
 
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
