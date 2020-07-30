@@ -149,6 +149,14 @@ function Add-DbaAgDatabase {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
             }
 
+            if ($SeedingMode -eq "Automatic" -and $primary.VersionMajor -lt 13) {
+                Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Continue
+            }
+
+            if (-not $UseLastBackup -and -not $SharedPath -and $SeedingMode -ne 'Automatic') {
+                Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group" -Continue
+            }
+
             if (-not $Secondary) {
                 try {
                     $secondarynames = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name
@@ -204,16 +212,7 @@ function Add-DbaAgDatabase {
                     Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($primary.Name)"
                 }
 
-                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
-                    Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
-
-                    if (-not $SharedPath -and -not $UseLastBackup) {
-                        Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
-                    }
-                }
-
-
-                if ($SeedingMode -and $secondaryInstance.VersionMajor -gt 12) {
+                if ($SeedingMode -and $secondaryInstance.VersionMajor -ge 13) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
                 }
