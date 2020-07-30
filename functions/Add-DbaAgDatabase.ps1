@@ -153,9 +153,11 @@ function Add-DbaAgDatabase {
                 Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Continue
             }
 
-            if (-not $UseLastBackup -and -not $SharedPath -and $SeedingMode -ne 'Automatic') {
-                Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group" -Continue
-            }
+            # disabled, we first have to discuss the need for this test and the consequences of this test
+            # was not active in previous version due to wrong placement
+            #            if (-not $UseLastBackup -and -not $SharedPath -and $SeedingMode -ne 'Automatic') {
+            #                Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group" -Continue
+            #            }
 
             if (-not $Secondary) {
                 try {
