@@ -213,7 +213,7 @@ function Add-DbaAgDatabase {
                 }
 
 
-                if ($SeedingMode) {
+                if ($SeedingMode -and $secondaryInstance.VersionMajor -gt 12) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
                 }
