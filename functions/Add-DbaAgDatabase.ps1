@@ -111,7 +111,7 @@ function Add-DbaAgDatabase {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode,
+        [string]$SeedingMode = 'Manual',
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$EnableException
