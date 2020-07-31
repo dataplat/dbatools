@@ -107,6 +107,11 @@ function Get-DbaAgentJobHistory {
 
         Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql2016 -OutcomeType Failed
+
+        Returns only the failed SQL Agent Job execution results for the sql2016 SQL Server instance.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
