@@ -275,19 +275,19 @@ function Get-DbaAgentSchedule {
             } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
             }
-        }
 
-        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
+            $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
 
-        foreach ($currentschedule in $scheduleCollection) {
-            $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
+            foreach ($currentschedule in $scheduleCollection) {
+                $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
 
-            $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
-            $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
-            $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-            $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
+                $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
+                $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
+                $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
 
-            Select-DefaultView -InputObject $currentschedule -Property $defaults
+                Select-DefaultView -InputObject $currentschedule -Property $defaults
+            }
         }
     }
 }

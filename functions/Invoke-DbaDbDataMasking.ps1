@@ -446,35 +446,67 @@ function Invoke-DbaDbDataMasking {
                         # Go through the composites
                         if ($columnsWithActions.Count -ge 1) {
                             foreach ($columnObject in $columnsWithActions) {
-                                foreach ($columnAction in $columnObject.Action) {
-                                    $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+                                [bool]$validAction = $true
 
-                                    if ($columnAction.Category -eq 'DateTime') {
-                                        switch ($columnAction.Type) {
-                                            "Add" {
-                                                $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
-                                            }
-                                            "Subtract" {
-                                                $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
-                                            }
+                                $columnAction = $columnobject.Action
+
+                                $query = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = "
+
+                                if ($columnAction.Category -eq 'DateTime') {
+                                    switch ($columnAction.Type) {
+                                        "Add" {
+                                            $query += "DATEADD($($columnAction.SubCategory), $($columnAction.Value), [$($columnObject.Name)]);"
                                         }
-                                    } elseif ($columnAction.Category -eq 'Number') {
-                                        switch ($columnAction.Type) {
-                                            "Add" {
-                                                $query += "[$($columnObject.Name)] + $($columnAction.Value);"
-                                            }
-                                            "Divide" {
-                                                $query += "[$($columnObject.Name)] / $($columnAction.Value);"
-                                            }
-                                            "Multiply" {
-                                                $query += "[$($columnObject.Name)] * $($columnAction.Value);"
-                                            }
-                                            "Subtract" {
-                                                $query += "[$($columnObject.Name)] - $($columnAction.Value);"
-                                            }
+                                        "Subtract" {
+                                            $query += "DATEADD($($columnAction.SubCategory), - $($columnAction.Value), [$($columnObject.Name)]);"
+                                        }
+                                        default {
+                                            $validAction = $false
                                         }
                                     }
-                                    # Add the query to the rest
+                                } elseif ($columnAction.Category -eq 'Number') {
+                                    switch ($columnAction.Type) {
+                                        "Add" {
+                                            $query += "[$($columnObject.Name)] + $($columnAction.Value);"
+                                        }
+                                        "Divide" {
+                                            $query += "[$($columnObject.Name)] / $($columnAction.Value);"
+                                        }
+                                        "Multiply" {
+                                            $query += "[$($columnObject.Name)] * $($columnAction.Value);"
+                                        }
+                                        "Subtract" {
+                                            $query += "[$($columnObject.Name)] - $($columnAction.Value);"
+                                        }
+                                        default {
+                                            $validAction = $false
+                                        }
+                                    }
+                                } elseif ($columnAction.Category -eq 'Column') {
+                                    switch ($columnAction.Type) {
+                                        "Set" {
+                                            if ($columnobject.ColumnType -like '*int*' -or $columnobject.ColumnType -in 'bit', 'bool', 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                $query += "$($columnAction.Value)"
+                                            } elseif ($columnobject.ColumnType -in '*date*', 'time', 'uniqueidentifier') {
+                                                $query += "'$($columnAction.Value)'"
+                                            } else {
+                                                $query += "'$($columnAction.Value)'"
+                                            }
+                                        }
+                                        "Nullify" {
+                                            if ($columnobject.Nullable) {
+                                                $query += "NULL"
+                                            } else {
+                                                $validAction = $false
+                                            }
+                                        }
+                                        default {
+                                            $validAction = $false
+                                        }
+                                    }
+                                }
+                                # Add the query to the rest
+                                if ($validAction) {
                                     $null = $stringBuilder.AppendLine($query)
                                 }
                             }
@@ -695,8 +727,6 @@ function Invoke-DbaDbDataMasking {
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-
-                                #$progressParams
                                 #Write-ProgressHelper @progressParams
 
                                 try {
