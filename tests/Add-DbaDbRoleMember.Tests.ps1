@@ -67,5 +67,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $roleDB.UserName -contains $user2 | Should Be $false
             $roleDBAfter.UserName -contains $user2 | Should Be $true
         }
+
+        It 'Skip adding user to role if already a member' {
+            $messages = Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User $user1 -Database $dbname -confirm:$false -Verbose 4>&1
+            $messageCount = ($messages -match 'Adding user').Count
+
+            $messageCount | Should Be 0
+        }
     }
 }
