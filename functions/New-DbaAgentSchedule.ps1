@@ -533,7 +533,6 @@ function New-DbaAgentSchedule {
 
                             }
 
-                            # Output the job schedule
                             $JobSchedule
                         }
                     }
