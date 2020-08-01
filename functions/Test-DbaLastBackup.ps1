@@ -94,6 +94,15 @@ function Test-DbaLastBackup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER MaxTransferSize
+        Parameter to set the unit of transfer. Values must be a multiple of 64kb and a max of 4GB
+        Parameter is used as passtrough for Restore-DbaDatabase.
+
+    .PARAMETER BufferCount
+        Number of I/O buffers to use to perform the operation.
+        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Parameter is used as passtrough for Restore-DbaDatabase.
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -175,7 +184,9 @@ function Test-DbaLastBackup {
         [string]$AzureCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [int]$MaxTransferSize,
+        [int]$BufferCount
     )
     process {
         if ($SqlInstance) {
@@ -392,10 +403,29 @@ function Test-DbaLastBackup {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
                         try {
+                            $RestoreSplat = @{
+                                SqlInstance = $destserver
+                                RestoredDatabaseNamePrefix = $prefix
+                                DestinationFilePrefix = $Prefix
+                                DestinationDataDirectory = $datadirectory
+                                DestinationLogDirectory = $logdirectory
+                                IgnoreLogBackup = $IgnoreLogBackup
+                                AzureCredential = $AzureCredential
+                                TrustDbBackupHistory = $true
+                                EnableException = $true
+                            }
+
+                            if(Test-Bound "MaxTransferSize"){
+                                $RestoreSplat.Add('MaxTransferSize', $MaxTransferSize)
+                            }
+                            if(Test-Bound "BufferCount"){
+                                $RestoreSplat.Add('BufferCount', $BufferCount)
+                            }
+
                             if ($verifyonly) {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @RestoreSplat -VerifyOnly:$VerifyOnly
                             } else {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @RestoreSplat
                                 Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
                             }
                         } catch {
