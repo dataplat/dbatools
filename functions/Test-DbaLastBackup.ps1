@@ -403,7 +403,7 @@ function Test-DbaLastBackup {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
                         try {
-                            $RestoreSplat = @{
+                            $restoreSplat = @{
                                 SqlInstance = $destserver
                                 RestoredDatabaseNamePrefix = $prefix
                                 DestinationFilePrefix = $Prefix
@@ -423,9 +423,9 @@ function Test-DbaLastBackup {
                             }
 
                             if ($verifyonly) {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase @RestoreSplat -VerifyOnly:$VerifyOnly
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly:$VerifyOnly
                             } else {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase @RestoreSplat
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
                                 Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
                             }
                         } catch {
