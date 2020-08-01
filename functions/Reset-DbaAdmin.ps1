@@ -280,12 +280,12 @@ function Reset-DbaAdmin {
                     $instanceServices = Get-Service -ErrorAction Stop | Where-Object {
                         $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
                     }
-                    $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
+                    $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
                 } else {
                     $instanceServices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
                         $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
                     }
-                    $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
+                    $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
                 }
             } catch {
                 Stop-Function -Message "Cannot connect to WMI on $hostName or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
@@ -312,9 +312,9 @@ function Reset-DbaAdmin {
 
             if ($null -ne $checkcluster) {
                 $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName |
-                Where-Object {
-                    $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)"
-                }
+                    Where-Object {
+                        $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)"
+                    }
             }
 
 
@@ -378,10 +378,10 @@ function Reset-DbaAdmin {
                     Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
                     if ($isClustered) {
-                        $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
+                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object {
                             $_.BringOnline(60)
                         }
-                        $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object {
+                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object {
                             $_.BringOnline(60)
                         }
                     } else {
@@ -482,10 +482,10 @@ function Reset-DbaAdmin {
                 try {
                     Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
                     if ($isClustered -eq $true) {
-                        $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
+                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object {
                             $_.BringOnline(60)
                         }
-                        $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object {
+                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object {
                             $_.BringOnline(60)
                         }
                     } else {
