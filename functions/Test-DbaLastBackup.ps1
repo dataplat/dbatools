@@ -416,10 +416,10 @@ function Test-DbaLastBackup {
                             }
 
                             if(Test-Bound "MaxTransferSize"){
-                                $RestoreSplat.Add('MaxTransferSize', $MaxTransferSize)
+                                $restoreSplat.Add('MaxTransferSize', $MaxTransferSize)
                             }
                             if(Test-Bound "BufferCount"){
-                                $RestoreSplat.Add('BufferCount', $BufferCount)
+                                $restoreSplat.Add('BufferCount', $BufferCount)
                             }
 
                             if ($verifyonly) {
