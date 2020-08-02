@@ -95,7 +95,7 @@ function Test-DbaLastBackup {
 
     .PARAMETER BufferCount
         Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Refererence: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
         Parameter is used as passtrough for Restore-DbaDatabase.
 
     .PARAMETER EnableException
