@@ -393,7 +393,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbName
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
+                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -Sum ).Sum
 
                 if ($MaxSize -and $MaxSize -lt $totalsize) {
                     $success = "The backup size for $dbName ($totalsize MB) exceeds the specified maximum size ($MaxSize MB)."
@@ -413,21 +413,21 @@ function Test-DbaLastBackup {
                         $startRestore = Get-Date
                         try {
                             $restoreSplat = @{
-                                SqlInstance = $destserver
+                                SqlInstance                = $destserver
                                 RestoredDatabaseNamePrefix = $prefix
-                                DestinationFilePrefix = $Prefix
-                                DestinationDataDirectory = $datadirectory
-                                DestinationLogDirectory = $logdirectory
-                                IgnoreLogBackup = $IgnoreLogBackup
-                                AzureCredential = $AzureCredential
-                                TrustDbBackupHistory = $true
-                                EnableException = $true
+                                DestinationFilePrefix      = $Prefix
+                                DestinationDataDirectory   = $datadirectory
+                                DestinationLogDirectory    = $logdirectory
+                                IgnoreLogBackup            = $IgnoreLogBackup
+                                AzureCredential            = $AzureCredential
+                                TrustDbBackupHistory       = $true
+                                EnableException            = $true
                             }
 
-                            if(Test-Bound "MaxTransferSize"){
+                            if (Test-Bound "MaxTransferSize") {
                                 $restoreSplat.Add('MaxTransferSize', $MaxTransferSize)
                             }
-                            if(Test-Bound "BufferCount"){
+                            if (Test-Bound "BufferCount") {
                                 $restoreSplat.Add('BufferCount', $BufferCount)
                             }
 
