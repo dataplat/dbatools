@@ -95,7 +95,7 @@ function Test-DbaLastBackup {
 
     .PARAMETER BufferCount
         Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Refererence: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
         Parameter is used as passtrough for Restore-DbaDatabase.
 
     .PARAMETER EnableException
@@ -159,6 +159,15 @@ function Test-DbaLastBackup {
 
         Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
 
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -NoCheck -MaxTransferSize 4194302 -BufferCount 24
+
+        Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure).
+        The Restore will use more memory for reading the backup files. Do not set these values to high or you can get an Out of Memory error!!!
+        When running the restore with these additional parameters and there is other server activity it could affect server OLTP performance. Please use with causion.
+        Prior to running, you should check memory and server resources before configure it to run automatically.
+        More information:
+        https://www.mssqltips.com/sqlservertip/4935/optimize-sql-server-database-restore-performance/
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationCredential and AzureCredential")]
