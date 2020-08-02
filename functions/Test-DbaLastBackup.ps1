@@ -89,11 +89,6 @@ function Test-DbaLastBackup {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
     .PARAMETER MaxTransferSize
         Parameter to set the unit of transfer. Values must be a multiple of 64kb and a max of 4GB
         Parameter is used as passtrough for Restore-DbaDatabase.
@@ -102,6 +97,11 @@ function Test-DbaLastBackup {
         Number of I/O buffers to use to perform the operation.
         Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
         Parameter is used as passtrough for Restore-DbaDatabase.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
@@ -184,9 +184,9 @@ function Test-DbaLastBackup {
         [string]$AzureCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException,
         [int]$MaxTransferSize,
-        [int]$BufferCount
+        [int]$BufferCount,
+        [switch]$EnableException
     )
     process {
         if ($SqlInstance) {
