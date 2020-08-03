@@ -104,6 +104,8 @@ function Install-DbaMaintenanceSolution {
         This will drop and then recreate the Ola Hallengren's Solution objects
         The cleanup script will drop and recreate:
         - TABLE [dbo].[CommandLog]
+        - TABLE [dbo].[Queue]
+        - TABLE [dbo].[QueueDatabase]
         - STORED PROCEDURE [dbo].[CommandExecute]
         - STORED PROCEDURE [dbo].[DatabaseBackup]
         - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
@@ -296,7 +298,7 @@ function Install-DbaMaintenanceSolution {
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
                 $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table @('CommandLog', 'Queue', 'QueueDatabase') -IncludeSystemDBs | Where-Object Database -eq $Database
 
                 if ($null -ne $procs -or $null -ne $table) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
@@ -312,27 +314,25 @@ function Install-DbaMaintenanceSolution {
             $db = $server.Databases[$Database]
 
             if ($Solution -notcontains 'All') {
-                $required = @('CommandExecute.sql')
-            }
-
-            if ($LogToTable) {
-                $required += 'CommandLog.sql'
+                $required = @('CommandLog.sql', 'Queue.sql', 'QueueDatabase.sql', 'CommandExecute.sql') # Make all support procedures / tables required.
             }
 
             if ($Solution -contains 'Backup') {
-                $required += 'DatabaseBackup.sql'
+                $required += @('DatabaseBackup.sql')
             }
 
             if ($Solution -contains 'IntegrityCheck') {
-                $required += 'DatabaseIntegrityCheck.sql'
+                $required += @('DatabaseIntegrityCheck.sql')
             }
 
             if ($Solution -contains 'IndexOptimize') {
-                $required += 'IndexOptimize.sql'
+                $required += @('IndexOptimize.sql')
             }
 
             if ($Solution -contains 'All') {
-                $required += 'MaintenanceSolution.sql'
+                # Added Queue.sql and QueueDatabase.sql here as well since they are not included in the MaintenanceSolution.sql
+                # CommandLog.sql not necessary since it is embedded within MaintenanceSolution.sql
+                $required += @('Queue.sql', 'QueueDatabase.sql', 'MaintenanceSolution.sql')
             }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -347,6 +347,10 @@ function Install-DbaMaintenanceSolution {
                 [string]$CleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
+                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[QueueDatabase];
+                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[Queue];
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
                             IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
