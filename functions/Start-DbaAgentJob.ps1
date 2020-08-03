@@ -127,60 +127,60 @@ function Start-DbaAgentJob {
             if ($ExcludeJob) {
                 $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
-        }
 
-        # Loop through each of the jobs
-        foreach ($currentjob in $InputObject) {
-            $server = $currentjob.Parent.Parent
-            $status = $currentjob.CurrentRunStatus
+            # Loop through each of the jobs
+            foreach ($currentjob in $InputObject) {
+                $server = $currentjob.Parent.Parent
+                $status = $currentjob.CurrentRunStatus
 
-            if ($status -ne 'Idle') {
-                Stop-Function -Message "$currentjob on $server is not idle ($status)" -Target $currentjob -Continue
-            }
+                if ($status -ne 'Idle') {
+                    Stop-Function -Message "$currentjob on $server is not idle ($status)" -Target $currentjob -Continue
+                }
 
-            If ($Pscmdlet.ShouldProcess($server, "Starting job $currentjob")) {
-                # Start the job
-                $lastrun = $currentjob.LastRunDate
-                Write-Message -Level Verbose -Message "Last run date was $lastrun"
-                $null = $currentjob.Start()
+                If ($Pscmdlet.ShouldProcess($server, "Starting job $currentjob")) {
+                    # Start the job
+                    $lastrun = $currentjob.LastRunDate
+                    Write-Message -Level Verbose -Message "Last run date was $lastrun"
+                    $null = $currentjob.Start()
 
-                # Wait and refresh so that it has a chance to change status
-                Start-Sleep -Milliseconds $SleepPeriod
-                $currentjob.Refresh()
-
-                $i = 0
-                # Check if the status is Idle
-                while (($currentjob.CurrentRunStatus -eq 'Idle' -and $i++ -lt 60)) {
-                    Write-Message -Level Verbose -Message "Job $($currentjob.Name) status is $($currentjob.CurrentRunStatus)"
-                    Write-Message -Level Verbose -Message "Job $($currentjob.Name) last run date is $($currentjob.LastRunDate)"
-
-                    Write-Message -Level Verbose -Message "Sleeping for $SleepPeriod ms and refreshing"
+                    # Wait and refresh so that it has a chance to change status
                     Start-Sleep -Milliseconds $SleepPeriod
                     $currentjob.Refresh()
 
-                    # If it failed fast, speed up output
-                    if ($lastrun -ne $currentjob.LastRunDate) {
-                        $i = 600
-                    }
-                }
+                    $i = 0
+                    # Check if the status is Idle
+                    while (($currentjob.CurrentRunStatus -eq 'Idle' -and $i++ -lt 60)) {
+                        Write-Message -Level Verbose -Message "Job $($currentjob.Name) status is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "Job $($currentjob.Name) last run date is $($currentjob.LastRunDate)"
 
-                # Wait for the job
-                if (Test-Bound -ParameterName Wait) {
-                    while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        $currentRunStatus = $currentjob.CurrentRunStatus
-                        $currentStep = $currentjob.CurrentRunStep
-                        $jobStepsCount = $currentjob.JobSteps.Count
-                        $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
-                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
-                        $currentStepRetries = $currentjob.RetryAttempts
-                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
-                        Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
-                        Start-Sleep -Seconds $WaitPeriod
+                        Write-Message -Level Verbose -Message "Sleeping for $SleepPeriod ms and refreshing"
+                        Start-Sleep -Milliseconds $SleepPeriod
                         $currentjob.Refresh()
+
+                        # If it failed fast, speed up output
+                        if ($lastrun -ne $currentjob.LastRunDate) {
+                            $i = 600
+                        }
                     }
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
-                } else {
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
+
+                    # Wait for the job
+                    if (Test-Bound -ParameterName Wait) {
+                        while ($currentjob.CurrentRunStatus -ne 'Idle') {
+                            $currentRunStatus = $currentjob.CurrentRunStatus
+                            $currentStep = $currentjob.CurrentRunStep
+                            $jobStepsCount = $currentjob.JobSteps.Count
+                            $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
+                            if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
+                            $currentStepRetries = $currentjob.RetryAttempts
+                            if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
+                            Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
+                            Start-Sleep -Seconds $WaitPeriod
+                            $currentjob.Refresh()
+                        }
+                        Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
+                    } else {
+                        Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
+                    }
                 }
             }
         }
