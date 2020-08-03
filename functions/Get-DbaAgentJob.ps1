@@ -79,10 +79,16 @@ function Get-DbaAgentJob {
         PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
+
     .EXAMPLE
-       PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
 
         Exports all SSRS jobs from SQL instance sqlserver2014a to a file.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -Database msdb
+
+        Finds all jobs on sqlserver2014a that T-SQL job steps associated with msdb database
     #>
     [CmdletBinding()]
     param (
@@ -119,9 +125,7 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object {
-                    $_.JobSteps.DatabaseName -in $Database
-                }
+                $jobs = $jobs | Where-Object { $_.JobSteps | Where-Object DatabaseName -in $Database }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
