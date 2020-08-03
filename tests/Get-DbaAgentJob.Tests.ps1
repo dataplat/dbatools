@@ -75,40 +75,37 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.name -contains "dbatoolsci_testjob_cat2" | Should Be $False
         }
     }
-    Context "Command gets jobs with specified database" {
+    Context "Command gets jobs when databases are specified" {
         BeforeAll {
-            $jobName = "dbatoolsci_dbfilter_(Get-Random)"
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Disabled
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-x" -Subsystem TransactSql -Database "msdb"
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-y" -Subsystem TransactSql -Database "tempdb"
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
+            $jobName1 = "dbatoolsci_dbfilter_$(Get-Random)"
+            $jobName2 = "dbatoolsci_dbfilter_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1 -Disabled
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName1 -StepName "TSQL-x" -Subsystem TransactSql -Database "msdb"
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName1 -StepName "TSQL-y" -Subsystem TransactSql -Database "tempdb"
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName1 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
+
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName2 -Disabled
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName2 -StepName "TSQL-x" -Subsystem TransactSql -Database "msdb"
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName2 -StepName "TSQL-y" -Subsystem TransactSql -Database "model"
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName2 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1, $jobName2
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Database tempdb
-        It "Returns results" {
-            $results.Count | Should -BeGreaterOrEqual 1
+        $resultSingleDatabase = Get-DbaAgentJob -SqlInstance $script:instance2 -Database tempdb
+        It "Returns result with single database" {
+            $resultSingleDatabase.Count | Should -BeGreaterOrEqual 1
         }
-        It "Should return job for Database: tempdb" {
-            $results.name -contains $jobName | Should -BeTrue
+        It "Returns job result for Database: tempdb" {
+            $resultSingleDatabase.name -contains $jobName1 | Should -BeTrue
+        }
+
+        $resultMultipleDatabases = Get-DbaAgentJob -SqlInstance $script:instance2 -Database tempdb, model
+        It "Returns both jobs with double database" {
+            $resultMultipleDatabases.Count | Should -BeGreaterOrEqual 2
+        }
+        It "Includes job result for Database: model" {
+            $resultMultipleDatabases.name -contains $jobName2 | Should -BeTrue
         }
     }
-}            $jobName = "dbatoolsci_dbfilter_(Get-Random)"
-$null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Disabled
-$null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-x" -Subsystem TransactSql -Database "msdb"
-$null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-y" -Subsystem TransactSql -Database "tempdb"
-$null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
-}
-AfterAll {
-    $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
-}
-$results = Get-DbaAgentJob -SqlInstance $script:instance2 -Database tempdb
-It "Returns results" {
-    $results.Count | Should -BeGreaterOrEqual 1
-}
-It "Should return job for Database: tempdb" {
-    $results.name -contains $jobName | Should -BeTrue
-}
-}
 }
