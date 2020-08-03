@@ -120,7 +120,7 @@ function Get-DbaAgentJob {
             }
             if ($Database) {
                 $jobs = $jobs | Where-Object {
-                    $_.JobSteps.DatabaseName -in $Database
+                    $_.JobSteps.DatabaseName | Where-Object { [string]$_ -in $Database }
                 }
             }
             if ($Category) {
