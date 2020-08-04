@@ -1,13 +1,13 @@
 function Remove-DbaServerRole {
     <#
     .SYNOPSIS
-        Deletes specified database certificate
+        Deletes specified server-level role.
 
     .DESCRIPTION
-        Deletes specified database certificate
+        Deletes specified server-level role.
 
     .PARAMETER SqlInstance
-        The SQL Server to create the certificates on.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,7 +17,7 @@ function Remove-DbaServerRole {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER ServerRole
-        The server-role that will be removed
+        The server-role that will be removed.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -31,7 +31,7 @@ function Remove-DbaServerRole {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER InputObject
-        Piped server-role objects
+        Piped server-role objects.
 
     .NOTES
         Tags: ServerRole, Instance, Security
