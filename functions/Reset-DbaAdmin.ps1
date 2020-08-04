@@ -184,7 +184,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Verbose -Message "First attempt using ICMP failed. Trying to connect using sockets. This may take up to 20 seconds."
                     $tcp = New-Object System.Net.Sockets.TcpClient
                     try {
-                        $tcp.Connect($hostName, 135)
+                        $tcp.Connect($baseaddress, 135)
                         $tcp.Close()
                         $tcp.Dispose()
                     } catch {
@@ -227,23 +227,23 @@ function Reset-DbaAdmin {
 
             Write-Message -Level Verbose -Message "Detecting login type."
             # Is login a Windows login? If so, does it exist?
-            if ($login -match "\\") {
+            if ($Login -match "\\") {
                 Write-Message -Level Verbose -Message "Windows login detected. Checking to ensure account is valid."
                 $windowslogin = $true
                 try {
                     if ($hostName -eq $env:COMPUTERNAME) {
-                        $account = New-Object System.Security.Principal.NTAccount($args)
+                        $account = New-Object System.Security.Principal.NTAccount($Login)
                         #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
                         $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
                     } else {
-                        Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $login -ScriptBlock {
+                        Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $Login -ScriptBlock {
                             $account = New-Object System.Security.Principal.NTAccount($args)
                             #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
                             $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
                         }
                     }
                 } catch {
-                    Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $login. Trying anyway."
+                    Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $Login. Trying anyway."
                 }
             }
 
@@ -251,16 +251,15 @@ function Reset-DbaAdmin {
             if (-not $windowslogin -and -not $SecurePassword) {
                 Write-Message -Level Verbose -Message "SQL login detected"
                 do {
-                    $Password = Read-Host -AsSecureString "Please enter a new password for $login"
-                } while ($Password.Length -eq 0)
+                    $password = Read-Host -AsSecureString "Please enter a new password for $Login"
+                } while ($password.Length -eq 0)
             }
 
             If ($SecurePassword) {
-                $Password = $SecurePassword
+                $password = $SecurePassword
             }
 
             # Get instance and service display name, then get services
-            $instanceName = $null
             $instanceName = $instance.InstanceName
             if (-not $instanceName) {
                 $instanceName = "MSSQLSERVER"
@@ -378,54 +377,54 @@ function Reset-DbaAdmin {
             }
 
             # Get login. If it doesn't exist, create it.
-            if ($pscmdlet.ShouldProcess($instance, "Adding login $login if it doesn't exist")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $login if it doesn't exist"
+            if ($pscmdlet.ShouldProcess($instance, "Adding login $Login if it doesn't exist")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $Login if it doesn't exist"
                 if ($windowslogin) {
-                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-                    BEGIN CREATE LOGIN [$login] FROM WINDOWS END"
+                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] FROM WINDOWS END"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't create Windows login."
                     }
 
-                } elseif ($login -ne "sa") {
+                } elseif ($Login -ne "sa") {
                     # Create new sql user
-                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-                    BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
+                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't create SQL login."
                     }
                 }
             }
 
-            # If $login is a SQL Login, Mixed mode authentication is required.
+            # If $Login is a SQL Login, Mixed mode authentication is required.
             if ($windowslogin -ne $true) {
-                if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $login and ensuring account is unlocked")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $login and ensuring account is unlocked"
+                if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $Login and ensuring account is unlocked")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $Login and ensuring account is unlocked"
                     $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
                     }
 
-                    $sql = "ALTER LOGIN [$login] WITH CHECK_POLICY = OFF
-                    ALTER LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)' UNLOCK"
+                    $sql = "ALTER LOGIN [$Login] WITH CHECK_POLICY = OFF
+                    ALTER LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)' UNLOCK"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't unlock account."
                     }
                 }
             }
 
-            if ($pscmdlet.ShouldProcess($instance, "Enabling $login")) {
+            if ($pscmdlet.ShouldProcess($instance, "Enabling $Login")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring login is enabled"
-                $sql = "ALTER LOGIN [$login] ENABLE"
+                $sql = "ALTER LOGIN [$Login] ENABLE"
                 if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                     Write-Message -Level Warning -Message "Couldn't enable login."
                 }
             }
 
-            if ($login -ne "sa") {
-                if ($pscmdlet.ShouldProcess($instance, "Ensuring $login exists within sysadmin role")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $login exists within sysadmin role"
-                    $sql = "EXEC sp_addsrvrolemember '$login', 'sysadmin'"
+            if ($Login -ne "sa") {
+                if ($pscmdlet.ShouldProcess($instance, "Ensuring $Login exists within sysadmin role")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $Login exists within sysadmin role"
+                    $sql = "EXEC sp_addsrvrolemember '$Login', 'sysadmin'"
                     if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
                         Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
                     }
@@ -449,8 +448,8 @@ function Reset-DbaAdmin {
 
             if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
-                if ($securePassword) {
-                    $cred = New-Object System.Management.Automation.PSCredential ($Login, $securePassword)
+                if ($SecurePassword) {
+                    $cred = New-Object System.Management.Automation.PSCredential ($Login, $SecurePassword)
                     Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
                 } elseif ($SqlCredential) {
                     Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
@@ -462,6 +461,7 @@ function Reset-DbaAdmin {
                     }
                 }
             }
+
         }
     }
     end {
