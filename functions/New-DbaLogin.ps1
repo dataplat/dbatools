@@ -477,10 +477,17 @@ function New-DbaLogin {
                         if ($currentDenyWindowsLogin) {
                             try {
                                 $newLogin.DenyWindowsLogin = $true
-                                $newLogin.Apply()
-                                Write-Message -Level Verbose -Message "Login $loginName has been denied on $instance."
+                                $newLogin.Alter()
+                                Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                             } catch {
-                                Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                                Write-Message -Level Verbose -Message "Failed to deny from logging in $loginName on $instance using SMO, trying T-SQL."
+                                try {
+                                    $sql = "DENY CONNECT SQL TO [{0}]" -f $newLogin.Name
+                                    $null = $server.Query($sql)
+                                    Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
+                                } catch {
+                                    Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                                }
                             }
                         }
                         #Display results
