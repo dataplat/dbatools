@@ -392,10 +392,9 @@ function New-DbaLogin {
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
 
-                            # leaving it here to test
+                            # DENY CONNECT SQL
                             if ($currentDenyWindowsLogin) {
                                 Write-Message -Level VeryVerbose -Message "Setting $loginName DenyWindowsLogin to $currentDenyWindowsLogin"
-                                $withParams += ", DENY_LOGIN" # gotta check this one
                                 $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
                             }
 
@@ -474,9 +473,9 @@ function New-DbaLogin {
                             }
                         }
                         #Process the DenyWindowsLogin property
-                        if ($currentDenyWindowsLogin) {
+                        if ($currentDenyWindowsLogin -ne $newLogin.DenyWindowsLogin) {
                             try {
-                                $newLogin.DenyWindowsLogin = $true
+                                $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
                                 $newLogin.Alter()
                                 Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                             } catch {
