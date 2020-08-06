@@ -468,9 +468,20 @@ function Export-DbaLogin {
                             $scriptOptions.ContinueScriptingOnError = $false
                             $scriptOptions.IncludeDatabaseContext = $false
                             $scriptOptions.IncludeIfNotExists = $true
-                            # BatchSeparator
+
+                            $exportSplat = @{
+                                SqlInstance            = $server
+                                Database               = $dbName
+                                User                   = $dbUsername
+                                ScriptingOptionsObject = $scriptOptions
+                            }
+                            # remove batch separator if the $BatchSeparator string is empty
+                            if (-Not $BatchSeparator) {
+                                $scriptOptions.NoCommandTerminator = $true
+                                $exportSplat.ExcludeGoBatchSeparator = $true
+                            }
                             try {
-                                $userScript = Export-DbaUser -SqlInstance $server -Database $dbName -User $dbUsername -Passthru -ScriptingOptionsObject $scriptOptions -EnableException
+                                $userScript = Export-DbaUser @exportSplat -Passthru -EnableException
                                 $outsql += $userScript
                             } catch {
                                 Stop-Function -Message "Failed to extract permissions for user $dbUserName in database $dbName" -Continue -ErrorRecord $_

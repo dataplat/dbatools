@@ -72,10 +72,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Match 'Job'
         }
         It "Should exclude Go when exporting" {
-            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
-            $results | Should Not Match 'Go'
+            $results | Should Not Match 'GO'
+            $results | Should Match "GRANT SELECT ON OBJECT::\[sys\]\.\[tables\] TO \[$user2\] WITH GRANT OPTION"
+            $results | Should Match "CREATE USER \[$user2\] FOR LOGIN \[$login2\]"
+            $results | Should Match "IF NOT EXISTS"
+            $results | Should Match "USE \[$dbname2\]"
         }
         It "Should exclude a specific login" {
             $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue
