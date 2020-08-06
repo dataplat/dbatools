@@ -497,6 +497,7 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $result.MaskingType
                             SubType         = $result.MaskingSubType
                             Format          = $null
+                            Separator       = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
