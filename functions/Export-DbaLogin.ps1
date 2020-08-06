@@ -80,6 +80,9 @@ function Export-DbaLogin {
         -- UTF8: Encodes in UTF-8 format.
         -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
 
+    .PARAMETER ObjectLevel
+        Include object-level permissions for each user associated with copied login.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
