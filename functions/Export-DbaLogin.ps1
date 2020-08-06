@@ -470,11 +470,10 @@ function Export-DbaLogin {
                             $scriptOptions.IncludeIfNotExists = $true
                             # BatchSeparator
                             try {
-                                $userScript = Export-DbaUser -SqlInstance $server -Database $dbName -User $dbUsername -Passthru -ScriptingOptionsObject $scriptOptions -EnableException:$EnableException
-                                write-host $userScript
+                                $userScript = Export-DbaUser -SqlInstance $server -Database $dbName -User $dbUsername -Passthru -ScriptingOptionsObject $scriptOptions -EnableException
                                 $outsql += $userScript
                             } catch {
-                                Write-Message -Level Warning -Message "Failed to extract permissions for user $dbUserName"
+                                Stop-Function -Message "Failed to extract permissions for user $dbUserName in database $dbName" -Continue -ErrorRecord $_
                             }
                         } else {
                             try {
