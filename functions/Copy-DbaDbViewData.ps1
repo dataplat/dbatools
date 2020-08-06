@@ -417,7 +417,7 @@ function Copy-DbaDbViewData {
                             RowsCopied          = $rowstotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed
                         }
-                    }                   }
+                    }
                 } catch {
                     Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
                 }
