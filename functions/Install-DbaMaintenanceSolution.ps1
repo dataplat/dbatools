@@ -297,8 +297,8 @@ function Install-DbaMaintenanceSolution {
             }
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
-                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table @('CommandLog', 'Queue', 'QueueDatabase') -IncludeSystemDBs | Where-Object Database -eq $Database
+                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -In 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table @('CommandLog', 'Queue', 'QueueDatabase') -IncludeSystemDBs | Where-Object Database -EQ $Database
 
                 if ($null -ne $procs -or $null -ne $table) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
@@ -369,7 +369,7 @@ function Install-DbaMaintenanceSolution {
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
                     Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
-                    $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
+                    $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -Match "hallengren"
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
