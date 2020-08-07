@@ -232,7 +232,7 @@ function Install-DbaMaintenanceSolution {
 
         function Get-DbaOlaWithParameters($listOfFiles) {
 
-            [hashtable]$fileContents = [ordered]@{ }
+            $fileContents = [ordered] @{}
             foreach ($file in $listOfFiles) {
                 $fileContents[$file] = Get-Content -Path $file -Raw
             }
