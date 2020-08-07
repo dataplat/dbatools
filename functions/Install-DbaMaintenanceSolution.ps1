@@ -232,7 +232,7 @@ function Install-DbaMaintenanceSolution {
 
         function Get-DbaOlaWithParameters($listOfFiles) {
 
-            $fileContents = [ordered] @{}
+            $fileContents = [ordered]@{ }
             foreach ($file in $listOfFiles) {
                 $fileContents[$file] = Get-Content -Path $file -Raw
             }
@@ -345,21 +345,21 @@ function Install-DbaMaintenanceSolution {
             $CleanupQuery = $null
             if ($ReplaceExisting) {
                 [string]$CleanupQuery = $("
-                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[CommandLog];
-                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[QueueDatabase];
-                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[Queue];
-                            IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[CommandExecute];
-                            IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[DatabaseBackup];
-                            IF OBJECT_ID('[dbo].[DatabaseIntegrityCheck]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[DatabaseIntegrityCheck];
-                            IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[IndexOptimize];
-                            ")
+                    IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
+                        DROP TABLE [dbo].[CommandLog];
+                    IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                        DROP TABLE [dbo].[QueueDatabase];
+                    IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                        DROP TABLE [dbo].[Queue];
+                    IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
+                        DROP PROCEDURE [dbo].[CommandExecute];
+                    IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
+                        DROP PROCEDURE [dbo].[DatabaseBackup];
+                    IF OBJECT_ID('[dbo].[DatabaseIntegrityCheck]', 'P') IS NOT NULL
+                        DROP PROCEDURE [dbo].[DatabaseIntegrityCheck];
+                    IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
+                        DROP PROCEDURE [dbo].[IndexOptimize];
+                    ")
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
