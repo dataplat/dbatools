@@ -148,7 +148,9 @@ function Export-DbaScript {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        if ($IsWindows -ne $false) {
+            $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        } else { $executingUser = $env:USER }
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
