@@ -32,6 +32,9 @@ Function Invoke-DbaAdvancedUpdate {
     .PARAMETER ExtractPath
         Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
 
+    .PARAMETER ArgumentList
+        A list of extra arguments to pass to the execution file.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -72,6 +75,7 @@ Function Invoke-DbaAdvancedUpdate {
         [string]$Authentication = 'Credssp',
         [pscredential]$Credential,
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -145,7 +149,7 @@ Function Invoke-DbaAdvancedUpdate {
             # Extract file
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Extracting $($currentAction.Installer) to $spExtractPath"
             Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath"
-            $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
+            $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList @("/x`:`"$spExtractPath`"", "/quiet") -Fallback
             if (-not $extractResult.Successful) {
                 $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a location instead using -ExportPath"
                 $output.Notes += $msg
@@ -159,13 +163,13 @@ Function Invoke-DbaAdvancedUpdate {
                 $instanceClause = '/allinstances'
             }
             if ($currentAction.Build -like "10.0.*") {
-                $argumentList = @('/quiet', $instanceClause)
+                $programArgumentList = $ArgumentList + @('/quiet', $instanceClause)
             } else {
-                $argumentList = @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
+                $programArgumentList = $ArgumentList + @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
             }
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
             Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-            $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList $argumentList -WorkingDirectory $spExtractPath -Fallback
+            $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList $programArgumentList -WorkingDirectory $spExtractPath -Fallback
             $output.ExitCode = $updateResult.ExitCode
             if ($updateResult.Successful) {
                 $output.Successful = $true

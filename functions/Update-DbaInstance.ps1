@@ -82,6 +82,9 @@ function Update-DbaInstance {
         Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
         Default: 50
 
+    .PARAMETER ArgumentList
+        A list of extra arguments to pass to the execution file.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -153,6 +156,13 @@ function Update-DbaInstance {
         Does not prompt for confirmation.
         Extracts the files in local driver on Server1 C:\temp.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ArgumentList "/SkipRules=RebootRequiredCheck"
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch.
+        Additional command line parameters would be passed to the executable.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -179,6 +189,7 @@ function Update-DbaInstance {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -418,6 +429,7 @@ function Update-DbaInstance {
                 EnableException = $EnableException
                 ExtractPath     = $ExtractPath
                 Authentication  = $Authentication
+                ArgumentList    = $ArgumentList
             }
             Invoke-DbaAdvancedUpdate @updateSplat
         }
