@@ -38,6 +38,9 @@ function Get-DbaRandomizedValue {
     .PARAMETER Symbol
         Use a symbol in front of the value i.e. $100,12
 
+    .PARAMETER Separator
+        Some masking types support separators
+
     .PARAMETER Value
         This is the value that needs to be used for several possible transformations.
         One example is the subtype "Shuffling" where the value will be shuffled.
@@ -104,6 +107,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Separator,
         [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
@@ -418,6 +422,31 @@ function Get-DbaRandomizedValue {
                 'internet' {
                     if ($randSubType -eq 'password') {
                         $script:faker.Internet.Password($Max)
+                    } elseif ($randSubType -eq 'mac') {
+                        if ($Separator) {
+                            $script:faker.Internet.Mac($Separator)
+                        } else {
+                            if (-not $Format -or $Format -eq "##:##:##:##:##:##") {
+                                $script:faker.Internet.Mac()
+                            } elseif ($Format -eq "############") {
+                                $script:faker.Internet.Mac("")
+                            } else {
+                                $newMacArray = $Format.ToCharArray()
+
+                                $macAddress = $script:faker.Internet.Mac("")
+                                $macArray = $macAddress.ToCharArray()
+
+                                $macIndex = 0
+                                for ($i = 0; $i -lt $formatArray.Count; $i++) {
+                                    if ($newMacArray[$i] -eq "#") {
+                                        $newMacArray[$i] = $macArray[$macIndex]
+                                        $macIndex++
+                                    }
+                                }
+
+                                $newMacArray -join ""
+                            }
+                        }
                     } else {
                         $script:faker.Internet.$RandomizerSubType()
                     }
