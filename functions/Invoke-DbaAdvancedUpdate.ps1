@@ -33,7 +33,8 @@ Function Invoke-DbaAdvancedUpdate {
         Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
 
     .PARAMETER ArgumentList
-        A list of extra arguments to pass to the execution file.
+        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
+        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

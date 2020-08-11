@@ -83,7 +83,8 @@ function Update-DbaInstance {
         Default: 50
 
     .PARAMETER ArgumentList
-        A list of extra arguments to pass to the execution file.
+        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
+        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
