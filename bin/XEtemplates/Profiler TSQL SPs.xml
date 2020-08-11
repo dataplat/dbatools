@@ -1,0 +1,101 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+  <event_session name="Profiler TSQL SPs" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Profiler Equivalents</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Profiler TSQL SPs</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'TSQL_SPs' template in Profiler. Captures detailed information about all executing stored procedures. Use to analyze the component steps of stored procedures. Add the sql_statement_recompile event if you suspect that procedures are being recompiled.</templateDescription>
+    <event package="sqlserver" name="existing_connection">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+    </event>
+    <event package="sqlserver" name="login">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+      <parameter name="collect_options_text" value="1" />
+    </event>
+    <event package="sqlserver" name="logout">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+    </event>
+    <event package="sqlserver" name="module_end">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />                  
+    </event>
+    <event package="sqlserver" name="module_start">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+    </event>       
+    <event package="sqlserver" name="rpc_starting">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="sp_statement_starting">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>       
+    <event package="sqlserver" name="sql_batch_starting">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="session_id" />            
+      <action package="sqlserver" name="server_instance_name" />            
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>        
+  </event_session>
+</event_sessions>

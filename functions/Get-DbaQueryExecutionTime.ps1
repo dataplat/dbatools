@@ -1,99 +1,94 @@
-Function Get-DbaQueryExecutionTime
-{
-<# 
-.SYNOPSIS 
-Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
+function Get-DbaQueryExecutionTime {
+    <#
+    .SYNOPSIS
+        Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
 
-.DESCRIPTION 
-Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
+    .DESCRIPTION
+        Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
 
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$cred = Get-Credential, this pass this $cred to the param. 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER MaxResultsPerDb
-Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER MinExecs
-Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER MinExecMs
-Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER NoSystemDb
-Allows you to suppress output on system databases
+    .PARAMETER MaxResultsPerDb
+        Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
 
-.NOTES 
-Author: Brandon Abshire, netnerds.net
-Tags: Query, Performance
+    .PARAMETER MinExecs
+        Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    .PARAMETER MinExecMs
+        Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
 
-.LINK 
-https://dbatools.io/Get-DbaQueryExecutionTime
+    .PARAMETER ExcludeSystem
+        Allows you to suppress output on system databases
 
-.EXAMPLE   
-Get-DbaQueryExecutionTime -SqlServer sql2008, sqlserver2012
-Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE   
-Get-DbaQueryExecutionTime -SqlServer sql2008 -Database TestDB
-Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
+    .NOTES
+        Tags: Query, Performance
+        Author: Brandon Abshire, netnerds.net
 
-.EXAMPLE   
-Get-DbaQueryExecutionTime -SqlServer sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
-Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, 
-limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Get-DbaQueryExecutionTime
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[string[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[parameter(Position = 1, Mandatory = $false)]
-		[int]$MaxResultsPerDb = 100,
-		[parameter(Position = 2, Mandatory = $false)]
-		[int]$MinExecs = 100,
-		[parameter(Position = 3, Mandatory = $false)]
-		[int]$MinExecMs = 500,
-		[parameter(Position = 4, Mandatory = $false)]
-		[switch]$NoSystemDb
-	)
-	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	BEGIN
-	{
-		
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		$MaxResultsPerDb = $psboundparameters.MaxResultsPerDb
-		$MinExecs = $psboundparameters.MinExecs
-		$MinExecMs = $psboundparameters.MinExecMs
-		
-		
-		$sql = ";With StatsCTE AS 
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
+
+        Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
+
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
+
+        Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
+
+    .EXAMPLE
+        PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
+
+        Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
+
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [int]$MaxResultsPerDb = 100,
+        [int]$MinExecs = 100,
+        [parameter(Position = 3)]
+        [int]$MinExecMs = 500,
+        [parameter(Position = 4)]
+        [Alias("ExcludeSystemDatabases")]
+        [switch]$ExcludeSystem,
+        [switch]$EnableException
+    )
+
+    begin {
+        $sql = ";With StatsCTE AS
             (
-			    SELECT 
-                    DB_NAME() as DatabaseName, 
+                SELECT
+                    DB_NAME() as DatabaseName,
                     (total_worker_time / execution_count) / 1000 AS AvgExec_ms ,
                     execution_count ,
                     max_worker_time / 1000 AS MaxExec_ms ,
@@ -105,16 +100,16 @@ limiting results to queries with more than 200 total executions and an execution
                     total_worker_time / 1000 as total_worker_time_ms,
                     total_elapsed_time / 1000 as total_elapsed_time_ms,
                     OBJECT_NAME(object_id) as SQLText,
-			        OBJECT_NAME(object_id) as full_statement_text
+                    OBJECT_NAME(object_id) as full_statement_text
                 FROM    sys.dm_exec_procedure_stats
                 WHERE   database_id = DB_ID()"
-		
-		If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-		If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
-		
-		$sql += "`n UNION
+
+        if ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+        if ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+
+        $sql += "`n UNION
             SELECT
-		        DB_NAME() as DatabaseName, 
+                DB_NAME() as DatabaseName,
                 ( qs.total_worker_time / qs.execution_count ) / 1000 AS AvgExec_ms ,
                 qs.execution_count ,
                 qs.max_worker_time / 1000 AS MaxExec_ms ,
@@ -126,142 +121,115 @@ limiting results to queries with more than 200 total executions and an execution
                     qs.total_worker_time / 1000 as total_worker_time_ms,
                     qs.total_elapsed_time / 1000 as total_elapsed_time_ms,
                     SUBSTRING(st.text, (qs.statement_start_offset/2)+1, 50) + '...' AS SQLText,
-			        SUBSTRING(st.text, (qs.statement_start_offset/2)+1,   
-				        ((CASE qs.statement_end_offset  
-				          WHEN -1 THEN DATALENGTH(st.text)  
-				         ELSE qs.statement_end_offset  
-				         END - qs.statement_start_offset)/2) + 1) AS full_statement_text
+                    SUBSTRING(st.text, (qs.statement_start_offset/2)+1,
+                        ((CASE qs.statement_end_offset
+                          WHEN -1 THEN DATALENGTH(st.text)
+                         ELSE qs.statement_end_offset
+                         END - qs.statement_start_offset)/2) + 1) AS full_statement_text
             FROM    sys.dm_exec_query_stats qs
             CROSS APPLY sys.dm_exec_plan_attributes(qs.plan_handle) as pa
             CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
             WHERE st.dbid = DB_ID() OR (pa.attribute = 'dbid' and pa.value = DB_ID())"
-		
-		If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-		If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
-		
-		If ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
-		Else
-		{
-			$sql += ")
+
+        if ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+        if ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+
+        if ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
+        else {
+            $sql += ")
                         SELECT "
-		}
-		
-		$sql += "`n     DatabaseName,
-	                    AvgExec_ms,
-	                    execution_count,
-	                    MaxExec_ms,
-	                    ProcName,
-	                    object_id,
-	                    type_desc,
-	                    cached_time,
-	                    last_execution_time,
-	                    total_worker_time_ms,
-	                    total_elapsed_time_ms,
+        }
+
+        $sql += "`n     DatabaseName,
+                        AvgExec_ms,
+                        execution_count,
+                        MaxExec_ms,
+                        ProcName,
+                        object_id,
+                        type_desc,
+                        cached_time,
+                        last_execution_time,
+                        total_worker_time_ms,
+                        total_elapsed_time_ms,
                         SQLText,
-	                    full_statement_text
+                        full_statement_text
                     FROM StatsCTE "
-		
-		If ($MinExecs -or $MinExecMs)
-		{
-			$sql += "`n WHERE `n"
-			
-			If ($MinExecs)
-			{
-				$sql += " execution_count >= " + $MinExecs
-			}
-			
-			If ($MinExecMs -gt 0 -and $MinExecs)
-			{
-				$sql += "`n AND AvgExec_ms >= " + $MinExecMs
-			}
-			elseif ($MinExecMs)
-			{
-				$sql += "`n AvgExecs_ms >= " + $MinExecMs
-			}
-		}
-		
-		
-		$sql += "`n ORDER BY AvgExec_ms DESC"
-	}
-	
-	PROCESS
-	{
-		if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs)
-		{
-			Write-Warning "Results may take time, depending on system resources and size of buffer cache."
-			Write-Warning "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
-		}
-		
-		foreach ($instance in $SqlInstance)
-		{
-			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
-			}
-			
-			if ($server.versionMajor -lt 10)
-			{
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
-				
-				Continue
-			}
-			
-			
-			$dbs = $server.Databases
-			
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
-			}
-			
-			if ($NoSystemDb)
-			{
-				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
-			}
-			
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
-			
-			foreach ($db in $dbs)
-			{
-				Write-Verbose "Processing $db on $instance"
-				
-				if ($db.IsAccessible -eq $false)
-				{
-					Write-Warning "The database $db is not accessible. Skipping database."
-					Continue
-				}
-				
-				foreach ($row in $db.ExecuteWithResults($sql).Tables[0])
-				{
-					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $row.DatabaseName
-						ProcName = $row.ProcName
-						ObjectID = $row.object_id
-						Type_Desc = $row.type_desc
-						Executions = $row.Execution_Count
-						AvgExec_ms = $row.AvgExec_ms
-						MaxExec_ms = $row.MaxExec_ms
-						Cached_Time = $row.cached_time
-						Last_Exec_Time = $row.last_execution_time
-						Total_Worker_Time_ms = $row.total_worker_time_ms
-						Total_Elapsed_Time_ms = $row.total_elapsed_time_ms
-						SQLText = $row.SQLText
-						Full_Statement_Text = $row.full_statement_text
-					} | Select-DefaultView -ExcludeProperty Full_Statement_Text
-				}
-			}
-		}
-	}
+
+        if ($MinExecs -or $MinExecMs) {
+            $sql += "`n WHERE `n"
+
+            if ($MinExecs) {
+                $sql += " execution_count >= " + $MinExecs
+            }
+
+            if ($MinExecMs -gt 0 -and $MinExecs) {
+                $sql += "`n AND AvgExec_ms >= " + $MinExecMs
+            } elseif ($MinExecMs) {
+                $sql += "`n AvgExecs_ms >= " + $MinExecMs
+            }
+        }
+
+        $sql += "`n ORDER BY AvgExec_ms DESC"
+    }
+    process {
+        if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs) {
+            Write-Message -Level Warning -Message "Results may take time, depending on system resources and size of buffer cache."
+            Write-Message -Level Warning -Message "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
+        }
+
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $dbs = $server.Databases
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
+            }
+
+            if ($ExcludeSystem) {
+                $dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+            }
+
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
+
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
+
+                if ($db.IsAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
+                    continue
+                }
+
+                try {
+                    foreach ($row in $db.ExecuteWithResults($sql).Tables.Rows) {
+                        [PSCustomObject]@{
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $row.DatabaseName
+                            ProcName           = $row.ProcName
+                            ObjectID           = $row.object_id
+                            TypeDesc           = $row.type_desc
+                            Executions         = $row.Execution_Count
+                            AvgExecMs          = $row.AvgExec_ms
+                            MaxExecMs          = $row.MaxExec_ms
+                            CachedTime         = $row.cached_time
+                            LastExecTime       = $row.last_execution_time
+                            TotalWorkerTimeMs  = $row.total_worker_time_ms
+                            TotalElapsedTimeMs = $row.total_elapsed_time_ms
+                            SQLText            = $row.SQLText
+                            FullStatementText  = $row.full_statement_text
+                        } | Select-DefaultView -ExcludeProperty FullStatementText
+                    }
+                } catch {
+                    Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
+                }
+            }
+        }
+    }
 }

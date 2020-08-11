@@ -1,0 +1,14 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+   <event_session name="Blocked Process Report" maxMemory="8" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Blocked Process Report</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Captures the blocked process report. In order to capture a blocked process report, you must have the blocked process threshold system configuration option enabled (To capture blocking processes, configure blocked threshold (Set-DbaSpConfigure -SqlInstance sql2017 -ConfigName BlockedProcessThreshold -Value 5). </templateDescription>
+      <event package="sqlserver" name="blocked_process_report" />
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="Blocked Process Report" />
+      </target>
+   </event_session>
+</event_sessions>

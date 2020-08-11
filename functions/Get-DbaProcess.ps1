@@ -1,187 +1,204 @@
-Function Get-DbaProcess
-{
-<#
-.SYNOPSIS
-This command displays SQL Server processes.
+function Get-DbaProcess {
+    <#
+    .SYNOPSIS
+        This command displays SQL Server processes.
 
-.DESCRIPTION
-This command displays processes associated with a spid, login, host, program or database.
+    .DESCRIPTION
+        This command displays processes associated with a spid, login, host, program or database.
 
-.PARAMETER SqlServer
-The SQL Server instance.
+        Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER Spids
-This parameter is auto-populated from -SqlServer. You can specify one or more Spids (including blocking spids) to be displayed.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Logins
-This parameter is auto-populated from-SqlServer and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER Hosts
-This parameter is auto-populated from -SqlServer and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER Programs
-This parameter is auto-populated from -SqlServer and allows only program names that have active processes. You can specify one or more Programs whose processes will be displayed.
+    .PARAMETER Spid
+        Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
 
-.PARAMETER Databases
-This parameter is auto-populated from -SqlServer and allows only database names that have active processes. You can specify one or more Databases whose processes will be displayed.
+    .PARAMETER Login
+        Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
 
-.PARAMETER Exclude
-This parameter is auto-populated from -SqlServer. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
+    .PARAMETER Hostname
+        Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
 
-Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
-	
-.PARAMETER Detailed
-Provides Detailed information
+    .PARAMETER Program
+        Specifies one or more program names with active processes to look for. Options for this parameter are auto-populated from the server.
 
-.PARAMETER NoSystemSpids
-Ignores the System Spids
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+    .PARAMETER Database
+        Specifies one or more databases with active processes to look for. Options for this parameter are auto-populated from the server.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    .PARAMETER ExcludeSpid
+        Specifies one ore more process IDs to exclude from display. Options for this parameter are auto-populated from the server.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+        This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    .PARAMETER ExcludeSystemSpids
+        If this switch is enabled, system Spids will be ignored.
 
-.LINK
-https://dbatools.io/Get-DbaProcess
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-Get-DbaProcess -SqlServer sqlserver2014a -Logins base\ctrlb, sa
+    .NOTES
+        Tags: Process, Session, ActivityMonitor
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to sqlserver2014a.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -SqlCredential $credential -Spids 56, 77
-	
-Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
+    .LINK
+        https://dbatools.io/Get-DbaProcess
 
-.EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
-	
-Shows information about the processes that were created in Microsoft SQL Server Management Studio.
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 
-.EXAMPLE   
-Get-DbaProcess -SqlServer sqlserver2014a -Hosts workstationx, server100
-	
-Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
-	
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[object]$SqlCredential,
-		[switch]$NoSystemSpids,
-		[switch]$Detailed
-	)
-	
-	DynamicParam { if ($sqlserver) { Get-ParamSqlAllProcessInfo -SqlServer $sqlserver -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$source = $sourceserver.DomainInstanceName
-		
-		$logins = $psboundparameters.Logins
-		$spids = $psboundparameters.Spids
-		$exclude = $psboundparameters.Exclude
-		$hosts = $psboundparameters.Hosts
-		$programs = $psboundparameters.Programs
-		$databases = $psboundparameters.Databases
-	}
-	
-	PROCESS
-	{
-		$allsessions = @()
-		
-		$processes = $sourceserver.EnumProcesses()
-		$servercolumn = $processes.Columns.Add("SqlServer", [object])
-		$servercolumn.SetOrdinal(0)
-		
-		foreach ($row in $processes)
-		{
-			$row["SqlServer"] = $sourceserver
-		}
-		
-		if ($logins.count -gt 0)
-		{
-			$allsessions += $processes | Where-Object { $_.Login -in $Logins -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($spids.count -gt 0)
-		{
-			$allsessions += $processes | Where-Object { ($_.Spid -in $spids -or $_.BlockingSpid -in $spids) -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($hosts.count -gt 0)
-		{
-			$allsessions += $processes | Where-Object { $_.Host -in $hosts -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($programs.count -gt 0)
-		{
-			$allsessions += $processes | Where-Object { $_.Program -in $programs -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($databases.count -gt 0)
-		{
-			$allsessions += $processes | Where-Object { $databases -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		# feel like I'm doing this wrong but it's 2am ;)
-		if ($logins -eq $null -and $spids -eq $null -and $spids -eq $exclude -and $hosts -eq $null -and $programs -eq $null -and $programs -eq $databases)
-		{
-			$allsessions = $processes
-		}
-		
-		if ($nosystemspids -eq $true)
-		{
-			$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
-		}
-		
-		if ($exclude.count -gt 0)
-		{
-			$allsessions = $allsessions | Where-Object { $exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
-		}
-		
-		if ($Detailed)
-		{
-			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
-					name = "Status"; expression = {
-						if ($_.Status -eq "") { "sleeping" }
-						else { $_.Status }
-					}
-				}, @{
-					name = "Command"; expression = {
-						if ($_.Command -eq "") { "AWAITING COMMAND" }
-						else { $_.Command }
-					}
-				}, Cpu, MemUsage, IsSystem)
-			
-			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
-		}
-		else
-		{
-			$object = ($allsessions | Select-Object SqlServer, Spid, Login, Host, Database, BlockingSpid, Program, @{
-					name = "Status"; expression = {
-						if ($_.Status -eq "") { "sleeping" }
-						else { $_.Status }
-					}
-				}, @{
-					name = "Command"; expression = {
-						if ($_.Command -eq "") { "AWAITING COMMAND" }
-						else { $_.Command }
-					}
-				})
-			
-			Select-DefaultView -InputObject $object -Property Spid, Login, Host, Database, BlockingSpid, Program, Status, Command
-		}
-	}
+        Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
+
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
+
+        Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
+
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
+
+        Shows information about the processes that were created in Microsoft SQL Server Management Studio.
+
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
+
+        Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
+
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [int[]]$Spid,
+        [int[]]$ExcludeSpid,
+        [string[]]$Database,
+        [string[]]$Login,
+        [string[]]$Hostname,
+        [string[]]$Program,
+        [switch]$ExcludeSystemSpids,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $sql = "SELECT DATEDIFF(MINUTE, s.last_request_end_time, GETDATE()) AS MinutesAsleep,
+                s.session_id AS spid,
+                s.host_process_id AS HostProcessId,
+                t.text AS Query,
+                s.login_time AS LoginTime,
+                s.client_version AS ClientVersion,
+                s.last_request_start_time AS LastRequestStartTime,
+                s.last_request_end_time AS LastRequestEndTime,
+                c.net_transport AS NetTransport,
+                c.encrypt_option AS EncryptOption,
+                c.auth_scheme AS AuthScheme,
+                c.net_packet_size AS NetPacketSize,
+                c.client_net_address AS ClientNetAddress
+            FROM sys.dm_exec_connections c
+            JOIN sys.dm_exec_sessions s
+                on c.session_id = s.session_id
+            CROSS APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+
+            if ($server.VersionMajor -gt 8) {
+                $results = $server.Query($sql)
+            } else {
+                $results = $null
+            }
+
+            $allSessions = @()
+
+            $processes = $server.EnumProcesses()
+
+            if ($Login) {
+                $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            if ($Spid) {
+                $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            if ($Hostname) {
+                $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            if ($Program) {
+                $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            if ($Database) {
+                $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
+                $allSessions = $processes
+            }
+
+            if ($ExcludeSystemSpids -eq $true) {
+                $allSessions = $allSessions | Where-Object { $_.Spid -gt 50 }
+            }
+
+            if ($Exclude) {
+                $allSessions = $allSessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allSessions.Spid }
+            }
+
+            foreach ($session in $allSessions) {
+
+                if ($session.Status -eq "") {
+                    $status = "sleeping"
+                } else {
+                    $status = $session.Status
+                }
+
+                if ($session.Command -eq "") {
+                    $command = "AWAITING COMMAND"
+                } else {
+                    $command = $session.Command
+                }
+
+                $row = $results | Where-Object { $_.Spid -eq $session.Spid }
+
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Parent -value $server
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Status -value $status
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Command -value $command
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name MinutesAsleep -value $row.MinutesAsleep
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LoginTime -value $row.LoginTime
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientVersion -value $row.ClientVersion
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastRequestStartTime -value $row.LastRequestStartTime
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastRequestEndTime -value $row.LastRequestEndTime
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetTransport -value $row.NetTransport
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name EncryptOption -value $row.EncryptOption
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name AuthScheme -value $row.AuthScheme
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetPacketSize -value $row.NetPacketSize
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientNetAddress -value $row.ClientNetAddress
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
+
+                Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, LoginTime, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, LastRequestStartTime, LastRequestEndTime, MinutesAsleep, ClientNetAddress, NetTransport, EncryptOption, AuthScheme, NetPacketSize, ClientVersion, HostProcessId, IsSystem, LastQuery
+            }
+        }
+    }
 }

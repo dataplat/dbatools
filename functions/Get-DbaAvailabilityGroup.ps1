@@ -1,183 +1,111 @@
-Function Get-DbaAvailabilityGroup
-{
-<#
-.SYNOPSIS 
-Outputs information of the Availabilty Group(s) found on the server.
+function Get-DbaAvailabilityGroup {
+    <#
+    .SYNOPSIS
+        Returns availability group objects from a SQL Server instance.
 
-.DESCRIPTION
-By default outputs a small set of information around the Availability Group found on the server.
+    .DESCRIPTION
+        Returns availability group objects from a SQL Server instance.
 
-.PARAMETER SqlServer
-The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
+        Default view provides most common set of properties for information on the Availability Group(s).
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
-.PARAMETER Detailed
-Output is expanded with more information around each Availability Group replica found on the server.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER AvailabilityGroups
-Specify the Availability Group name that you want to get information on.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER Simple
-Show only server name, availability groups and role.
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER Detailed
-Shows detailed information about the AGs including EndpointUrl and BackupPriority.
+    .PARAMETER AvailabilityGroup
+        Return only specific availability groups.
 
-.PARAMETER IsPrimary
-Returns true or false for the server passed in.
+    .PARAMETER IsPrimary
+        If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+    .NOTES
+        Tags: AvailabilityGroup, HA, AG
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
-.NOTES
-Tags: DisasterRecovery, Backup
-Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+    .LINK
+        https://dbatools.io/Get-DbaAvailabilityGroup
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+        Returns basic information on all the Availability Group(s) found on sqlserver2014a.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
-.LINK
-https://dbatools.io/Get-DbaAvailabilityGroup
+        Shows basic information on the Availability Group AG-a on sqlserver2014a.
 
-.EXAMPLE
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a
-Returns basic information on all the Availability Group(s) found on sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object *
 
-.EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Simple
-Show only server name, availability groups and role
+        Returns full object properties on all Availability Group(s) on sqlserver2014a.
 
-.EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -Detailed
-Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object -ExpandProperty PrimaryReplicaServerName
 
-.EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a
-Shows basic information on the Availability Group AG-a on sqlserver2014a
-	
-.EXAMPLE   
-Get-DbaAvailabilityGroup -SqlServer sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
-Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
-#>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[object]$SqlCredential,
-		[switch]$Simple,
-		[switch]$Detailed,
-		[switch]$IsPrimary
-	)
-	
-	DynamicParam { if ($sqlserver) { return Get-ParamSqlAvailabilityGroups -SqlServer $sqlserver[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		$agCollection = @()
-		$AvailabilityGroups = $PSBoundParameters.AvailabilityGroups
-	}
-	
-	PROCESS
-	{
-		foreach ($servername in $sqlserver)
-		{
-			$agReplicas = @()
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-			
-			$version = $server.VersionMajor
-			if ($version -lt 11) 
-			{
-				Write-Verbose "$server Major Version detected: $version"
-				Write-Warning "$server is version $version. Availability Groups are only supported in SQL Server 2012 and above."
-				continue
-			}
+        Returns the SQL Server instancename of the primary replica as a string
 
-			if (!$server.IsHadrEnabled)
-			{
-				Write-Warning "$server Availability Group is not configured."
-				continue
-			}
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
-			if ($AvailabilityGroups)
-			{
-				foreach ($ag in $AvailabilityGroups)
-				{
-					$agReplicas += $server.AvailabilityGroups[$ag].AvailabilityReplicas
-				}
-			}
-			else
-			{
-				$agReplicas += $server.AvailabilityGroups.AvailabilityReplicas
-			}
-			
-			if (!$agReplicas)
-			{
-				Write-Warning "[$servername] Availability Groups not found"
-                continue
-			}
-			
-			
-			foreach ($r in $agReplicas)
-			{
-				$agCollection += [pscustomobject]@{
-					AvailabilityGroup = $r.Parent.Name
-					ReplicaName = $r.name
-					Role = $r.Role
-					SyncState = $r.RollupSynchronizationState
-					AvailabilityMode = $r.AvailabilityMode
-					FailoverMode = $r.FailoverMode
-					ConnectionModeInPrimaryRole = $r.ConnectionModeInPrimaryRole
-					ReadableSecondary = $r.ConnectionModeInSecondaryRole
-					SessionTimeout = $r.SessionTimeout
-					EndpointUrl = $r.EndpointUrl
-					BackupPriority = $r.BackupPriority
-					ExcludeReplica = if ($r.BackupPriority -eq 0) { $true } else { $false }
-					QuorumVoteCount = $r.QuorumVoteCount
-					ReadonlyRoutingUrl = $r.ReadonlyRoutingConnectionUrl
-					ReadonlyRoutingList = $r.ReadonlyRoutingList -join ","
-				}
-			}
-			
-			$server.ConnectionContext.Disconnect()
-		}
-	}
-	
-	END
-	{
-		if ($AvailabilityGroups)
-		{
-			$agCollection = ($agCollection | Where-Object AvailabilityGroup -in $AvailabilityGroups)
-		}
-		
-		if ($IsPrimary)
-		{
-			return ($agCollection | Where-Object { $_.ReplicaName -in $sqlserver -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression={ $_.Role -eq "Primary" } } )
-		}
-		
-		if ($Simple)
-		{
-			return $agCollection | Select-Object ReplicaName, AvailabilityGroup, Role
-		}
-		
-		if ($Detailed)
-		{
-			return $agCollection
-		}
-		else
-		{
-			return ($agCollection | Select-Object AvailabilityGroup, ReplicaName, Role, SyncState, AvailabilityMode, FailoverMode)
-		}
-	}
+        Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$AvailabilityGroup,
+        [switch]$IsPrimary,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            } catch {
+                Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if (-not $server.IsHadrEnabled) {
+                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
+            }
+
+            $ags = $server.AvailabilityGroups
+
+            if ($AvailabilityGroup) {
+                $ags = $ags | Where-Object Name -in $AvailabilityGroup
+            }
+
+            foreach ($ag in $ags) {
+                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                if ($IsPrimary) {
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as AvailabilityGroup', 'IsPrimary'
+                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.LocalReplicaRole -eq "Primary")
+                    Select-DefaultView -InputObject $ag -Property $defaults
+                } else {
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'ClusterType', 'DtcSupportEnabled', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
+                    Select-DefaultView -InputObject $ag -Property $defaults
+                }
+            }
+        }
+    }
 }

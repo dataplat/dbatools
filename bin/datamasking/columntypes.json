@@ -1,0 +1,162 @@
+[
+    {
+        "TypeName": "Address",
+        "Synonym": [
+            "Address",
+            "Location",
+            "Headquarters",
+            "Street"
+        ]
+    },
+    {
+        "TypeName": "Bic",
+        "Synonym": [
+            "Bic",
+            "BicAddress"
+        ]
+    },
+    {
+        "TypeName": "Bitcoin",
+        "Synonym": [
+            "Bitcoin",
+            "BitcoinAddress"
+        ]
+    },
+    {
+        "TypeName": "Email",
+        "Synonym": [
+            "Email",
+            "E-mail",
+            "EmailAddress"
+        ]
+    },
+    {
+        "TypeName": "Ethereum",
+        "Synonym": [
+            "Ethereum",
+            "EthereumAddress"
+        ]
+    },
+    {
+        "TypeName": "Creditcard",
+        "Synonym": [
+            "Creditcard",
+            "CreditcardNumber"
+        ]
+    },
+    {
+        "TypeName": "CreditcardCVV",
+        "Synonym": [
+            "Cvv",
+            "CreditcardCvv"
+        ]
+    },
+    {
+        "TypeName": "City",
+        "Synonym": [
+            "City"
+        ]
+    },
+    {
+        "TypeName": "Company",
+        "Synonym": [
+            "Company",
+            "CompanyName"
+        ]
+    },
+    {
+        "TypeName": "Country",
+        "Synonym": [
+            "Country"
+        ]
+    },
+    {
+        "TypeName": "CountryCode",
+        "Synonym": [
+            "CountryCode"
+        ]
+    },
+    {
+        "TypeName": "Firstname",
+        "Synonym": [
+            "Firstname",
+            "Forename"
+        ]
+    },
+    {
+        "TypeName": "Fullname",
+        "Synonym": [
+            "Fullname",
+            "TypeName"
+        ]
+    },
+    {
+        "TypeName": "Iban",
+        "Synonym": [
+            "Iban",
+            "IbanNumber"
+        ]
+    },
+    {
+        "TypeName": "Lastname",
+        "Synonym": [
+            "Lastname",
+            "Surname"
+        ]
+    },
+    {
+        "TypeName": "Latitude",
+        "Synonym": [
+            "Latitude",
+            "Lat"
+        ]
+    },
+    {
+        "TypeName": "Longitude",
+        "Synonym": [
+            "Longitude",
+            "Lon"
+        ]
+    },
+    {
+        "TypeName": "Phone",
+        "Synonym": [
+            "Fax",
+            "FaxNumber",
+            "Phonenumber",
+            "Phone",
+            "Telephone",
+            "TelephoneNumber"
+        ]
+    },
+    {
+        "TypeName": "State",
+        "Synonym": [
+            "State"
+        ]
+    },
+    {
+        "TypeName": "StateAbbr",
+        "Synonym": [
+            "StateAbbreviation",
+            "StateCode"
+        ]
+    },
+    {
+        "TypeName": "Username",
+        "Synonym": [
+            "Login",
+            "LoginId",
+            "User",
+            "UserId"
+        ]
+    },
+    {
+        "TypeName": "Zipcode",
+        "Synonym": [
+            "Zipcode",
+            "Zip",
+            "Postalcode"
+        ]
+    }
+]

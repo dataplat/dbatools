@@ -1,162 +1,158 @@
-Function Get-DbaLastBackup
-{
-<#
-.SYNOPSIS
-Get date/time for last known backups
+function Get-DbaLastBackup {
+    <#
+    .SYNOPSIS
+        Get date/time for last known backups of databases.
 
-.DESCRIPTION
-Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
+    .DESCRIPTION
+        Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
 
-Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
+        Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
-.PARAMETER SqlServer
-The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Databases
-Return information for only specific databases
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER Exclude
-Return information for all but these specific databases
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER Simple
-Shows concise information including Server name, Database name, and the date the last time backups were performed
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-.NOTES
-Tags: DisasterRecovery, Backup
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .PARAMETER ExcludeDatabase
+        Specifies one or more database(s) to exclude from processing.
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+    .PARAMETER EnableException
+        If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-.LINK
- https://dbatools.io/Get-DbaLastBackup
+    .NOTES
+        Tags: DisasterRecovery, Backup
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-.EXAMPLE
-Get-DbaLastBackup -SqlServer ServerA\sql987
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
+    .LINK
+        https://dbatools.io/Get-DbaLastBackup
 
-.EXAMPLE
-Get-DbaLastBackup -SqlServer ServerA\sql987 -Simple
+    .EXAMPLE
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
 
-Returns a custom object with Server name, Database name, and the date the last time backups were performed
+        Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
-.EXAMPLE
-Get-DbaLastBackup -SqlServer ServerA\sql987 | Out-Gridview
+    .EXAMPLE
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
 
-Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
+        Returns a custom object with Server name, Database name, and the date the last time backups were performed.
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[PsCredential]$Credential,
-		[switch]$Simple
-	)
+    .EXAMPLE
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object *
 
-	DynamicParam {
-		if ($SqlServer) {
-			return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential
-		}
-	}
+        Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
 
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-	}
+    .EXAMPLE
+        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select-Object * | Out-Gridview
 
-	PROCESS
-	{
-		foreach ($servername in $SqlServer)
-		{
-            Write-Verbose "Connecting to $servername"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+        Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
-			}
-			catch
-			{
-				if ($SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
-			}
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$EnableException
+    )
+    begin {
+        function Get-DbaDateOrNull ($TimeSpan) {
+            if ($TimeSpan -eq 0) {
+                return $null
+            }
+            return $TimeSpan
+        }
+        $StartOfTime = [DbaTimeSpan](New-TimeSpan -Start ([datetime]0))
+    }
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$dbs = $server.Databases | Where-Object { $_.name -ne 'TempDb' }
+            $dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
 
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
-			}
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
+            }
 
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
+            # Get-DbaDbBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
+            $FullHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
+            $DiffHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
+            $IncrHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
 
+                $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
+                if ($null -ne $LastFullBackup) {
+                    $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
+                } else {
+                    $SinceFull_ = $StartOfTime
+                }
 
-			foreach ($db in $dbs)
-			{
-                $result = $null
-				Write-Verbose "Processing $($db.name) on $servername"
+                $LastDiffBackup = ($DiffHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
+                if ($null -ne $LastDiffBackup) {
+                    $SinceDiff_ = [DbaTimeSpan](New-TimeSpan -Start $LastDiffBackup)
+                } else {
+                    $SinceDiff_ = $StartOfTime
+                }
 
-				if ($db.IsAccessible -eq $false)
-				{
-					Write-Warning "The database $($db.name) on server $servername is not accessible. Skipping database."
-					Continue
-				}
-                # To avoid complicated manipulations on datetimes depending on locale settings and culture,
-                # dates are compared to 0, which represents 1/01/0001 0:00:00
-				$SinceFull = if ($db.LastBackupdate -eq 0) {""} else {(New-TimeSpan -Start $db.LastBackupdate).Tostring()}
-                $SinceFull = if ($db.LastBackupdate -eq 0) {""} else {$SinceFull.split('.')[0..($SinceFull.split('.').count - 2)] -join ' days ' }
+                $LastIncrBackup = ($IncrHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
+                if ($null -ne $LastIncrBackup) {
+                    $SinceLog_ = [DbaTimeSpan](New-TimeSpan -Start $LastIncrBackup)
+                } else {
+                    $SinceLog_ = $StartOfTime
+                }
 
-				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()}
-                $SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {""} else {$SinceDiff.split('.')[0..($SinceDiff.split('.').count - 2)] -join ' days ' }
+                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
 
-				$SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()}
-                $SinceLog = if ($db.LastLogBackupDate -eq 0) {""} else {$SinceLog.split('.')[0..($SinceLog.split('.').count - 2)] -join ' days ' }
+                if ($daysSinceDbCreated -lt 1 -and $SinceFull_ -eq 0) {
+                    $Status = 'New database, not backed up yet'
+                } elseif ($SinceFull_.Days -gt 0 -and $SinceDiff_.Days -gt 0) {
+                    $Status = 'No Full or Diff Back Up in the last day'
+                } elseif ($db.RecoveryModel -eq "Full" -and $SinceLog_.Hours -gt 0) {
+                    $Status = 'No Log Back Up in the last hour'
+                } else {
+                    $Status = 'OK'
+                }
 
-				$daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
-
-                If ($daysSinceDbCreated -lt 1 -and $db.LastBackupDate -eq 0) { $Status = 'New database, not backed up yet' }
-				elseif ((New-TimeSpan -Start $db.LastBackupDate).Days -gt 0 -and (New-TimeSpan -Start $db.LastDifferentialBackupDate).Days -gt 0){$Status = 'No Full or Diff Back Up in the last day'}
-				elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0){$Status = 'No Log Back Up in the last hour'}
-				else { $Status = 'OK' }
-				
-				$result = [PSCustomObject]@{
-					Server = $server.name
-					Database = $db.name
-                    RecoveryModel = $db.recoverymodel
-					LastFullBackup = if ( $db.LastBackupdate -eq 0 ) { $null } else { $db.LastBackupdate.tostring() }
-					LastDiffBackup = if ( $db.LastDifferentialBackupDate -eq 0 ) { $null } else { $db.LastDifferentialBackupDate.tostring() }
-					LastLogBackup = if ( $db.LastLogBackupDate -eq 0 ) { $null } else { $db.LastLogBackupDate.tostring() }
-                    SinceFull = $SinceFull
-                    SinceDiff = $SinceDiff
-					SinceLog = $SinceLog
-					DatabaseCreated = $db.createDate
-					DaysSinceDbCreated = $daysSinceDbCreated
-					Status = $status
-
-				}
-		    if ($Simple) { $result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup }
-		    else { $result }
-			}
+                $result = [PSCustomObject]@{
+                    ComputerName       = $server.ComputerName
+                    InstanceName       = $server.ServiceName
+                    SqlInstance        = $server.DomainInstanceName
+                    Database           = $db.Name
+                    RecoveryModel      = $db.RecoveryModel
+                    LastFullBackup     = [DbaDateTime]$LastFullBackup
+                    LastDiffBackup     = [DbaDateTime]$LastDiffBackup
+                    LastLogBackup      = [DbaDateTime]$LastIncrBackup
+                    SinceFull          = Get-DbaDateOrNull -TimeSpan $SinceFull_
+                    SinceDiff          = Get-DbaDateOrNull -TimeSpan $SinceDiff_
+                    SinceLog           = Get-DbaDateOrNull -TimeSpan $SinceLog_
+                    DatabaseCreated    = $db.createDate
+                    DaysSinceDbCreated = $daysSinceDbCreated
+                    Status             = $status
+                }
+                Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Database, LastFullBackup, LastDiffBackup, LastLogBackup
+            }
         }
     }
 }

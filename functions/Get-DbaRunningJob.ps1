@@ -1,108 +1,70 @@
-FUNCTION Get-DbaRunningJob
-{
-<#
-.SYNOPSIS
-Returns all non idle agent jobs running on the server.
+function Get-DbaRunningJob {
+    <#
+    .SYNOPSIS
+        Returns all non-idle Agent jobs running on the server
 
-.DESCRIPTION
-This function returns agent jobs that active on the SQL Server intance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format
+    .DESCRIPTION
+        This function returns agent jobs that active on the SQL Server instance when calling the command
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Detailed
-Returns more information about the running jobs than standard
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+        For MFA support, please use Connect-DbaInstance.
 
-.LINK
-https://dbatools.io/Get-DbaRunningJob
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAgentJob
 
-.EXAMPLE
-Get-DbaRunningJob -SqlServer localhost
-Returns any active jobs on the localhost
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-Get-DbaRunningJob -SqlServer localhost -Detailed
-Returns a detailed output of any active jobs on the localhost
+    .NOTES
+        Tags: Agent, Job
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
-.EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaRunningJob
-Returns all active jobs on multiple instances piped into the function
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$Detailed
-	)
-	BEGIN
-	{
-		$output = @()
-	}
-	PROCESS
-	{
-		FOREACH ($Server in $SqlServer)
-		{
-			TRY
-			{
-				$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlcredential
-			}
-			CATCH
-			{
-				Write-Verbose "Failed to connect to: $Server"
-				continue
-			}
-			
-			$jobs = $server.JobServer.jobs | Where-Object { $_.CurrentRunStatus -ne 'Idle' }
-			
-			IF (!$jobs)
-			{
-				Write-Verbose "No Jobs are currently running on: $Server"
-			}
-			ELSE
-			{
-				foreach ($job in $jobs)
-				{
-					$output += [pscustomobject]@{
-						ServerName = $Server.Name
-						Name = $job.name
-						Category = $job.Category
-						CurrentRunStatus = $job.CurrentRunStatus
-						CurrentRunStep = $job.CurrentRunStep
-						HasSchedule = $job.HasSchedule
-						LastRunDate = $job.LastRunDate
-						LastRunOutcome = $job.LastRunOutcome
-						JobStep = $job.JobSteps
-					}
-				}
-			}
-		}
-	}
-	END
-	{
-		IF ($Detailed -eq $true)
-		{
-			return $output | Sort-Object ServerName
-		}
-		ELSE
-		{
-			return ($output | Sort-Object ServerName | Select-Object ServerName, Name, Category, CurrentRunStatus, CurrentRunStep)
-		}
-	}
+    .LINK
+        https://dbatools.io/Get-DbaRunningJob
+
+    .EXAMPLE
+        PS C:\> Get-DbaRunningJob -SqlInstance sql2017
+
+        Returns any active jobs on sql2017
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2017, sql2019 | Get-DbaRunningJob
+
+        Returns all active jobs on multiple instances piped into the function.
+
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaRunningJob
+
+        Returns all active jobs on multiple instances piped into the function.
+
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
+        [switch]$EnableException
+    )
+    process {
+        if ($SqlInstance) {
+            Get-DbaAgentJob -SqlInstance $SqlInstance -SqlCredential $SqlCredential | Where-Object CurrentRunStatus -ne 'Idle'
+        }
+
+        $InputObject | Where-Object CurrentRunStatus -ne 'Idle'
+    }
 }

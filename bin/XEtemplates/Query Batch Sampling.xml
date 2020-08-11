@@ -1,0 +1,71 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+  <event_session name="Query Batch Sampling" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Query Batch Sampling</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Collects batch and RPC level statements as well as error information. You can use this template to understand the flow of queries that are executing on your system and track errors back to the queries that caused them. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
+    <event package="sqlserver" name="error_reported">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+            <leaf>
+              <comparator name="divides_by_uint64" package="package0"></comparator>
+              <global name="session_id" package="sqlserver"></global>
+              <value>5</value>
+            </leaf>
+            <leaf>
+              <comparator name="greater_than_uint64" package="package0"></comparator>
+              <global name="database_id" package="sqlserver"></global>
+              <value>4</value>
+            </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="rpc_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+			<leaf>
+			  <comparator name="divides_by_uint64" package="package0"></comparator>
+			  <global name="session_id" package="sqlserver"></global>
+			  <value>5</value>
+			</leaf>
+			<leaf>
+			  <comparator name="greater_than_uint64" package="package0"></comparator>
+			  <global name="database_id" package="sqlserver"></global>
+			  <value>4</value>
+			</leaf>
+		</and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="sql_batch_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+			 <leaf>
+			  <comparator name="divides_by_uint64" package="package0"></comparator>
+			  <global name="session_id" package="sqlserver"></global>
+			  <value>5</value>
+			</leaf>
+			<leaf>
+			  <comparator name="greater_than_uint64" package="package0"></comparator>
+			  <global name="database_id" package="sqlserver"></global>
+			  <value>4</value>
+			</leaf>
+        </and>
+      </predicate>
+    </event>
+    <target package="package0" name="ring_buffer" />
+  </event_session>
+</event_sessions>

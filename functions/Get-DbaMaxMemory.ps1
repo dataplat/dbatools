@@ -1,80 +1,85 @@
-Function Get-DbaMaxMemory
-{
-<# 
-.SYNOPSIS 
-Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
+function Get-DbaMaxMemory {
+    <#
+    .SYNOPSIS
+        Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
 
-.DESCRIPTION 
-This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total  physical installed on the server.
+    .DESCRIPTION
+        This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total physical installed on the server.
 
-.PARAMETER SqlServer
-Allows you to specify a comma separated list of servers to query.
+        Results are turned in megabytes (MB).
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-$cred = Get-Credential, then pass $cred variable to this parameter. 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.NOTES
-Tags: Memory
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+        For MFA support, please use Connect-DbaInstance.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+    .NOTES
+        Tags: MaxMemory, Memory
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK 
-https://dbatools.io/Get-DbaMaxMemory
+    .LINK
+        https://dbatools.io/Get-DbaMaxMemory
 
-.EXAMPLE   
-Get-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
+    .EXAMPLE
+        PS C:\> Get-DbaMaxMemory -SqlInstance sqlcluster, sqlserver2012
 
-Get memory settings for all servers within the SQL Server Central Management Server "sqlcluster".
+        Get memory settings for instances "sqlcluster" and "sqlserver2012". Returns results in megabytes (MB).
 
-.EXAMPLE 
-Get-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sqlcluster | Get-DbaMaxMemory | Where-Object { $_.MaxValue -gt $_.Total }
 
-Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
+        Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
-	)
-	
-	PROCESS
-	{
-		foreach ($servername in $sqlserver)
-        {	
-			Write-Verbose "Attempting to connect to $servername"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
-				continue
-			}
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize
 
-			$totalmemory = $server.PhysicalMemory
-			
-			# Some servers under-report by 1MB.
-			if (($totalmemory % 1024) -ne 0) { $totalmemory = $totalmemory + 1 }
+        Scans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
+    )
 
-			[pscustomobject]@{
-				Server = $server.name
-				TotalMB = $totalmemory
-				SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
-			}
-		}
-	}
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $totalMemory = $server.PhysicalMemory
+
+            # Some servers under-report by 1.
+            if (($totalMemory % 1024) -ne 0) {
+                $totalMemory = $totalMemory + 1
+            }
+
+            [pscustomobject]@{
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
+                Total        = [int]$totalMemory
+                MaxValue     = [int]$server.Configuration.MaxServerMemory.ConfigValue
+                Server       = $server # This will allowing piping a non-connected object
+            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Total, MaxValue
+        }
+    }
 }

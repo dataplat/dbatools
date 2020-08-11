@@ -1,180 +1,156 @@
-Function Get-DbaMsdtc
-{
-<#
-.SYNOPSIS
-Displays information about the Distributed Transactioon Coordinator (MSDTC) on a server
+function Get-DbaMsdtc {
+    <#
+    .SYNOPSIS
+        Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
 
-.DESCRIPTION
-Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
+    .DESCRIPTION
+        Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
 
-Requires: Windows administrator access on Servers
+        Requires: Windows administrator access on Servers
 
-.PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to.
+    .PARAMETER ComputerName
+        The target computer.
 
-.NOTES
-Tags: WSMan, CIM
-Author: Klaas Vandenberghe ( powerdbaklaas )
+    .PARAMETER Credential
+        Alternative credential
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+    .PARAMETER EnableException
+        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+    .NOTES
+        Tags: Msdtc, dtc
+        Author: Klaas Vandenberghe (@powerdbaklaas)
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaMsdtc
+    .LINK
+        https://dbatools.io/Get-DbaMsdtc
 
-.EXAMPLE
-Get-DbaMsdtc -ComputerName srv0042
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -ComputerName srv0042
 
-Get DTC status for the server srv0042
+        Get DTC status for the server srv0042
 
-ComputerName                 : srv0042
-DTCServiceName               : Distributed Transaction Coordinator
-DTCServiceState              : Running
-DTCServiceStatus             : OK
-DTCServiceStartMode          : Manual
-DTCServiceAccount            : NT AUTHORITY\NetworkService
-DTCCID_MSDTC                 : b2aefacb-85d1-46b8-8047-7bb88e08d38a
-DTCCID_MSDTCUIS              : 205bd32c-b022-4d0c-aa3e-2e5dc65c6d35
-DTCCID_MSDTCTIPGW            : 3e743aa0-ead6-4569-ba7b-fe1aaea0a1eb
-DTCCID_MSDTCXATM             : 667fc4b8-c2f5-4c3f-ad75-728b113f36c5
-networkDTCAccess             : 0
-networkDTCAccessAdmin        : 0
-networkDTCAccessClients      : 0
-networkDTCAccessInbound      : 0
-networkDTCAccessOutBound     : 0
-networkDTCAccessTip          : 0
-networkDTCAccessTransactions : 0
-XATransactions               : 0
+    .EXAMPLE
+        PS C:\> $Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
+        PS C:\> $Computers | Get-DbaMsdtc
 
+        Get DTC status for all the computers in a .txt file
 
-.EXAMPLE
-$Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
-$Computers | Get-DbaMsdtc
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -Computername $Computers | Where-Object { $_.dtcservicestate -ne 'running' }
 
-Get DTC status for all the computers in a .txt file
+        Get DTC status for all the computers where the MSDTC Service is not running
 
+    .EXAMPLE
+        PS C:\> Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
 
-.EXAMPLE
-Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
+        Get DTC status for the computer srv0042 and show in a grid view
 
-Get DTC status for all the computers where the MSDTC Service is not running
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [Alias('cn', 'host', 'Server')]
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [pscredential]$Credential,
+        [switch]$EnableException
+    )
 
-
-.EXAMPLE
-Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
-
-
-Get DTC status for the computer srv0042 and show in a grid view
-
-
-
-#>
-	
-	[CmdletBinding()]
-	Param (
-		[Parameter(ValueFromPipeline = $true)]
-		[Alias('cn', 'host', 'Server')]
-		[string[]]$Computername = $env:COMPUTERNAME
-	)
-	
-BEGIN
-	{
-    $functionName = (Get-PSCallstack)[0].Command
-    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
-		$query = "Select * FROM Win32_Service WHERE Name = 'MSDTC'"
-		$DTCSecurity = {
-			Get-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security |
-			Select-Object PSPath, PSComputerName, AccountName, networkDTCAccess,
-						  networkDTCAccessAdmin, networkDTCAccessClients, networkDTCAccessInbound,
-						  networkDTCAccessOutBound, networkDTCAccessTip, networkDTCAccessTransactions, XATransactions
-		}
-		$DTCCIDs = {
-			New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
-			Get-ItemProperty -Path HKCR:\CID\*\Description |
-			Select-Object @{ l = 'Data'; e = { $_.'(default)' } }, @{ l = 'CID'; e = { $_.PSParentPath.split('\')[-1] } }
-			Remove-PSDrive -Name HKCR | Out-Null
-		}
-	}
-PROCESS
-	{
-    ForEach ($Computer in $Computername)
-    {
-      $reg = $CIDs = $null
-      $CIDHash = @{}
-      if ( Test-PSRemoting -ComputerName $Computer )
-      {
-          $dtcservice = $null
-          Write-Verbose "$functionName - Getting DTC on $computer via WSMan"
-          $dtcservice = Get-Ciminstance -ComputerName $Computer -Query $query
-          if ( $null -eq $dtcservice )
-          {
-            Write-Warning "$functionName - Can't connect to CIM on $Computer via WSMan"
-          }
-
-          Write-Verbose "$functionName - Getting MSDTC Security Registry Values on $Computer"
-          $reg = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCSecurity
-          if ( $null -eq $reg )
-          {
-            Write-Warning "$functionName - Can't connect to MSDTC Security registry on $Computer"
-          }
-          Write-Verbose "$functionName - Getting MSDTC CID Registry Values on $Computer"
-          $CIDs = Invoke-Command -ComputerName $Computer -ScriptBlock $DTCCIDs
-          if ( $null -ne $CIDs )
-          {
-            foreach ($key in $CIDs) { $CIDHash.Add($key.Data, $key.CID) }
-          }
-          else
-          {
-            Write-Warning "$functionName - Can't connect to MSDTC CID registry on $Computer"
-          }
-      }
-      else
-      {
-          Write-Verbose "$functionName - PSRemoting is not enabled on $Computer"
-          try
-          {
-            Write-Verbose "$functionName - Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
-            $SessionParams = @{ }
-            $SessionParams.ComputerName = $Computer
-            $SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
-            $Session = New-CimSession @SessionParams
-            $dtcservice = Get-Ciminstance -CimSession $Session -Query $query
-          }
-          catch
-          {
-            Write-Warning "$functionName - Can't connect to CIM on $Computer via DCom"
-            continue
-          }
+    begin {
+        $query = "Select * FROM Win32_Service WHERE Name = 'MSDTC'"
+        $dtcSecurity = {
+            Get-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security |
+                Select-Object PSPath, PSComputerName, AccountName, networkDTCAccess,
+                networkDTCAccessAdmin, networkDTCAccessClients, networkDTCAccessInbound,
+                networkDTCAccessOutBound, networkDTCAccessTip, networkDTCAccessTransactions, XATransactions
         }
-        if ( $dtcservice )
-        {
-          [PSCustomObject]@{
-            ComputerName = $dtcservice.PSComputerName
-            DTCServiceName = $dtcservice.DisplayName
-            DTCServiceState = $dtcservice.State
-            DTCServiceStatus = $dtcservice.Status
-            DTCServiceStartMode = $dtcservice.StartMode
-            DTCServiceAccount = $dtcservice.StartName
-            DTCCID_MSDTC = $CIDHash['MSDTC']
-            DTCCID_MSDTCUIS = $CIDHash['MSDTCUIS']
-            DTCCID_MSDTCTIPGW = $CIDHash['MSDTCTIPGW']
-            DTCCID_MSDTCXATM = $CIDHash['MSDTCXATM']
-            networkDTCAccess = $reg.networkDTCAccess
-            networkDTCAccessAdmin = $reg.networkDTCAccessAdmin
-            networkDTCAccessClients = $reg.networkDTCAccessClients
-            networkDTCAccessInbound = $reg.networkDTCAccessInbound
-            networkDTCAccessOutBound = $reg.networkDTCAccessOutBound
-            networkDTCAccessTip = $reg.networkDTCAccessTip
-            networkDTCAccessTransactions = $reg.networkDTCAccessTransactions
-            XATransactions = $reg.XATransactions
-          }
+        $dtcCids = {
+            New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
+            Get-ItemProperty -Path HKCR:\CID\*\Description |
+                Select-Object @{ l = 'Data'; e = { $_.'(default)' } }, @{ l = 'CID'; e = { $_.PSParentPath.split('\')[-1] } }
+            Remove-PSDrive -Name HKCR | Out-Null
         }
     }
-	}
+    process {
+        foreach ($computer in $ComputerName.ComputerName) {
+            $reg = $cids = $null
+            $cidHash = @{ }
+            if ($Credential) {
+                $result = Test-PSRemoting -ComputerName $computer -Credential $Credential
+            } else {
+                $result = Test-PSRemoting -ComputerName $computer
+            }
+            if ($result) {
+                $dtcservice = $null
+                Write-Message -Level Verbose -Message "Getting DTC on $computer via WSMan"
+                $dtcservice = Get-CimInstance -ComputerName $computer -Query $query
+                if ( $null -eq $dtcservice ) {
+                    Write-Message -Level Warning -Message "Can't connect to CIM on $computer via WSMan"
+                }
+
+                Write-Message -Level Verbose -Message "Getting MSDTC Security Registry Values on $computer"
+                try {
+                    $reg = Invoke-Command2 -ComputerName $computer -ScriptBlock $dtcSecurity -Credential $Credential
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+                if ( $null -eq $reg ) {
+                    Write-Message -Level Warning -Message "Can't connect to MSDTC Security registry on $computer"
+                }
+                Write-Message -Level Verbose -Message "Getting MSDTC CID Registry Values on $computer"
+                try {
+                    $cids = Invoke-Command2 -ComputerName $computer -ScriptBlock $dtcCids -Credential $Credential
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
+                if ( $null -ne $cids ) {
+                    foreach ($key in $cids) {
+                        $cidHash.Add($key.Data, $key.CID)
+                    }
+                } else {
+                    Write-Message -Level Warning -Message "Can't connect to MSDTC CID registry on $computer"
+                }
+            } else {
+                Write-Message -Level Verbose -Message "PSRemoting is not enabled on $computer"
+                try {
+                    Write-Message -Level Verbose -Message "Failed To get DTC via WinRM. Getting DTC on $computer via DCom"
+                    $SessionParams = @{ }
+                    $SessionParams.ComputerName = $Computer
+                    $SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
+                    $Session = New-CimSession @SessionParams
+                    $dtcservice = Get-CimInstance -CimSession $Session -Query $query
+                } catch {
+                    Stop-Function -Message "Can't connect to CIM on $computer via DCom" -Target $computer -ErrorRecord $_ -Continue
+                }
+            }
+            if ( $dtcservice ) {
+                [PSCustomObject]@{
+                    ComputerName                 = $dtcservice.PSComputerName
+                    DTCServiceName               = $dtcservice.DisplayName
+                    DTCServiceState              = $dtcservice.State
+                    DTCServiceStatus             = $dtcservice.Status
+                    DTCServiceStartMode          = $dtcservice.StartMode
+                    DTCServiceAccount            = $dtcservice.StartName
+                    DTCCID_MSDTC                 = $cidHash['MSDTC']
+                    DTCCID_MSDTCUIS              = $cidHash['MSDTCUIS']
+                    DTCCID_MSDTCTIPGW            = $cidHash['MSDTCTIPGW']
+                    DTCCID_MSDTCXATM             = $cidHash['MSDTCXATM']
+                    networkDTCAccess             = $reg.networkDTCAccess
+                    networkDTCAccessAdmin        = $reg.networkDTCAccessAdmin
+                    networkDTCAccessClients      = $reg.networkDTCAccessClients
+                    networkDTCAccessInbound      = $reg.networkDTCAccessInbound
+                    networkDTCAccessOutBound     = $reg.networkDTCAccessOutBound
+                    networkDTCAccessTip          = $reg.networkDTCAccessTip
+                    networkDTCAccessTransactions = $reg.networkDTCAccessTransactions
+                    XATransactions               = $reg.XATransactions
+                }
+            }
+        }
+    }
 }

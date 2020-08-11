@@ -1,0 +1,87 @@
+cd C:\github\dbatools\bin\smo
+$phase1 = @()
+$leftover = @()
+dir *.dll | %{
+
+ $file = $_
+ try
+ {
+ Add-Type -Path $_.FullName -ErrorAction Stop
+ $phase1 += $_.FullName
+ }
+ catch { $leftover += $file.FullName }
+}
+
+$dep = @()
+dir *.dll | %{
+    try { $hello = $_.FullName; Add-Type -Path $_.FullName -ErrorAction Stop }
+    catch { write-warning $hello; $_.Exception.LoaderExceptions.FileName | %{ $dep += $_ }}
+}
+$dep | Select-Object -unique
+
+
+
+cd C:\github\dbatools\bin\smo
+$dir = "C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE"
+dir *.dll | %{
+ cp "$dir\$($_.Name)" . -EA ignore
+}
+
+$names
+
+cd C:\github\dbatools\bin\smo
+$newnames = @()
+foreach ($name in $names) {
+    if ((Get-ChildItem "$($name).dll" -EA Ignore)) {
+        $newnames += $name
+    }
+}
+$newnames -join "',`r`n'" | clip
+
+$newernames = @()
+$filenames = dir *.dll
+foreach ($name in $filenames.basename) {
+    if ($name -notin $newnames) {
+        $newernames += $name
+    }
+}
+$newernames -join "',`r`n'" | clip
+
+
+
+$names = @(
+    'Microsoft.SqlServer.Smo',
+    'Microsoft.SqlServer.SmoExtended',
+    'Microsoft.SqlServer.ConnectionInfo',
+    'Microsoft.SqlServer.BatchParser',
+    'Microsoft.SqlServer.BatchParserClient',
+    'Microsoft.SqlServer.Management.XEvent',
+    'Microsoft.SqlServer.Management.XEventDbScoped',
+    'Microsoft.SqlServer.Management.Sdk.Sfc',
+    'Microsoft.SqlServer.SqlWmiManagement',
+    'Microsoft.SqlServer.Management.RegisteredServers',
+    'Microsoft.SqlServer.Management.Collector',
+    'Microsoft.SqlServer.ConnectionInfoExtended',
+    'Microsoft.SqlServer.Management.IntegrationServices',
+    'Microsoft.SqlServer.SqlClrProvider',
+    'Microsoft.SqlServer.SqlTDiagm',
+    'Microsoft.SqlServer.SString',
+    'Microsoft.SqlServer.Dac',
+    'Microsoft.Data.Tools.Sql.BatchParser',
+    'Microsoft.Data.Tools.Utilities',
+    'Microsoft.SqlServer.Dmf',
+    'Microsoft.SqlServer.Dmf.Common',
+    'Microsoft.SqlServer.Types',
+    'Microsoft.SqlServer.XEvent.Linq',
+    'Microsoft.SqlServer.Replication',
+    'Microsoft.SqlServer.Rmo'
+)
+
+
+foreach ($name in $names) {
+    try {
+        $null = Add-Type -Path (Resolve-Path -Path "C:\github\dbatools\bin\smo\$name.dll") -ErrorAction Stop
+    } catch {
+        write-warning $name
+    }
+}

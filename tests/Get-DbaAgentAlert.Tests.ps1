@@ -1,41 +1,30 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
 
-if(-not $PSScriptRoot)
-{
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{}
-if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose",$True)
-}
-
-
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-Import-Module $PSScriptRoot\..\functions\$sut -Force
-Import-Module PSScriptAnalyzer
-## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
-$Rules = (Get-ScriptAnalyzerRule).Where{$_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
-$Name = $sut.Split('.')[0]
-
-    Describe 'Script Analyzer Tests' {
-            Context "Testing $Name for Standard Processing" {
-                foreach ($rule in $rules) { 
-                    $i = $rules.IndexOf($rule)
-                    It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                        (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\functions\$sut" -IncludeRule $rule.RuleName ).Count | Should Be 0 
-                    }
-                }
-            }
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Alert', 'ExcludeAlert'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
-   ## needs some proper tests for the function here
-    Describe "$Name Tests"{
-        Context "Some Tests" {
-              It "Should have some Pester Tests added" {
-                  $true | Should Be $true
-              }
-		}
     }
-    
-    
+}
+
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+        $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'dbatoolsci test alert',@message_id=0,@severity=6,@enabled=1,@delay_between_responses=0,@include_event_description_in=0,@category_name=N'[Uncategorized]',@job_id=N'00000000-0000-0000-0000-000000000000'")
+    }
+    AfterAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert'")
+    }
+
+    $results = Get-DbaAgentAlert -SqlInstance $script:instance2
+    It "gets the newly created alert" {
+        $results.Name -contains 'dbatoolsci test alert'
+    }
+}

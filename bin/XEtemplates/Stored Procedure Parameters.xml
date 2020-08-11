@@ -1,0 +1,48 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+   <event_session name="Stored Procedure Parameters" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Stored Procedure Parameters</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Captures what parameters were used when a stored procedure was executed.</templateDescription>
+      <event package="sqlserver" name="rpc_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="query_hash" />
+         <action package="sqlserver" name="query_plan_hash" />
+         <action package="sqlserver" name="sql_text" />
+         <parameter name="collect_output_parameters" value="1" />
+         <parameter name="collect_statement" value="1" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_uint64" package="package0" />
+               <global name="database_id" package="sqlserver" />
+               <value>4</value>
+            </leaf>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="sql_batch_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="query_hash" />
+         <action package="sqlserver" name="query_plan_hash" />
+         <action package="sqlserver" name="sql_text" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_uint64" package="package0" />
+               <global name="database_id" package="sqlserver" />
+               <value>4</value>
+            </leaf>
+         </predicate>
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="capture_parameters" />
+         <parameter name="max_rollover_files" value="0" />
+      </target>
+   </event_session>
+</event_sessions>

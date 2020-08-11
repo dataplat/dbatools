@@ -1,35 +1,35 @@
-Fixes # 
+<!-- Below information IS REQUIRED with every PR -->
+## Type of Change
+<!-- What type of change does your code introduce -->
+ - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )
+ - [ ] New feature (non-breaking change, adds functionality, fixes #<!--issue number--> )
+ - [ ] Breaking change (effects multiple commands or functionality, fixes #<!--issue number--> )
+ - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1)
+ - [ ] Adding code coverage to existing functionality
+ - [ ] Pester test is included
+ - [ ] If new file reference added for test, has is been added to github.com/sqlcollaborative/appveyor-lab ?
+ - [ ] Nunit test is included
+ - [ ] Documentation
+ - [ ] Build system
+ 
+<!-- Below this line you can erase anything that is not applicable -->
+### Purpose
+<!-- What is the purpose or goal of this PR? (doesn't have to be an essay) --> 
 
-Changes proposed in this pull request:
- - 
- - 
- - 
+### Approach
+<!-- How does this change solve that purpose -->
 
-How to test this code: 
-- [ ] 
-- [ ] 
+### Commands to test
+<!-- if these are the examples in the help just note it as such -->
 
-Has been tested on minimum requirements:
-- [ ]  Powershell 3
-- [ ]  Windows 7
-- [ ]  SQL Server 2000
+### Screenshots
+<!-- pictures say a thousand words without typing any of it -->
 
-Has been tested on maximum requirements:
-- [ ]  SQL Server vNext
-- [ ]  Windows 10
-- [ ]  Azure Database
-
-Tests for tester:
-- [ ] Working/useful help content, including link to command on dbatools web site
-- [ ] All examples work as advertised
-- [ ] Does not contain template content
-- [ ] Does not contain excessive/unnecessary amounts of comments
-- [ ] Works remotely
-- [ ] Works locally
-- [ ] Works on lower versions or throws error specifying version not supported
-- [ ] Works with named instances
-- [ ] Works with clustered instances
-- [ ] Handles offline/read only databases
-- [ ] Supports multiple servers (at the command line or piped from Get-SqlRegisteredServerName)
-- [ ] No un-handled errors which stop the command working with multiple servers
-
+### Learning
+<!-- Optional -->
+<!-- 
+	Include:
+	 - blog post that may have assisted in writing the code
+	 - blog post that were initial source
+	 - special or unique approach made to solve the problem
+-->

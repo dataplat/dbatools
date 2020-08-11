@@ -1,222 +1,151 @@
-Function Set-DbaTcpPort
-{
-<#
-.SYNOPSIS
-Changes the TCP port used by the specified SQL Server.
-	
-.DESCRIPTION
-This function changes the TCP port used by the specified SQL Server. 
-		
-.PARAMETER SqlServer
-The SQL Server that you're connecting to.
+function Set-DbaTcpPort {
+    <#
+    .SYNOPSIS
+        Changes the TCP port used by the specified SQL Server.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+    .DESCRIPTION
+        This function changes the TCP port used by the specified SQL Server.
 
-.PARAMETER IPAddress
-Wich IPAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new portnumber. 
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER Port
-TCPPort that SQLService should listen on.
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server instance as a different user
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+    .PARAMETER Credential
+        Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager)
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    .PARAMETER Port
+        TCPPort that SQLService should listen on.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+    .PARAMETER IpAddress
+        Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.LINK
-https://dbatools.io/Set-DbaTcpPort
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.EXAMPLE
-Set-DbaTcpPort -SqlServer sqlserver2014a -Port 1433
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-Sets the port number 1433 for allips on the default instance on sqlserver2014a
+    .NOTES
+        Tags: Service, Port, TCP, Configure
+        Author: @H0s0n77
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Set-DbaTcpPort -SqlServer winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433
+    .LINK
+        https://dbatools.io/Set-DbaTcpPort
 
-Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver	
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance sql2017 -Port 1433
 
-.EXAMPLE
-Set-DbaTcpPort -sqlserver 'SQLDB2014A' ,'SQLDB2016B' -port 1337
+        Sets the port number 1433 for all IP Addresses on the default instance on sql2017. Prompts for confirmation.
 
-Sets the port number 1337 for ALLIP's on sqlserver SQLDB2014A and SQLDB2016B
-#>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[Alias("SqlCredential")]
-		[PsCredential]$Credential,
-		[parameter(Mandatory = $true)]
-		[ValidateRange(1, 65535)]
-		[int]$Port,
-		[string[]]$IpAddress
-	)
-	BEGIN
-	{
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433 -Confirm:$false
 
-		if ($ipaddress.Length -eq 0)
-		{
-			$ipaddress = '0.0.0.0'
-		}
-        else
-        {
-            if ($SqlServer.count -gt 1)
-            {
-                throw '-IpAddress switch cannot be used with a collection of serveraddresses'
+        Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver. Does not prompt for confirmation.
+
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance sql2017, sql2019 -port 1337 -Credential ad\dba
+
+        Sets the port number 1337 for all IP Addresses on SqlInstance sql2017 and sql2019 using the credentials for ad\dba. Prompts for confirmation.
+
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$Credential,
+        [parameter(Mandatory)]
+        [ValidateRange(1, 65535)]
+        [int]$Port,
+        [IpAddress[]]$IpAddress,
+        [switch]$EnableException
+    )
+
+    begin {
+        if (-not $IpAddress) {
+            $IpAddress = '0.0.0.0'
+        } else {
+            if ($SqlInstance.Count -gt 1) {
+                Stop-Function -Message "-IpAddress switch cannot be used with a collection of serveraddresses" -Target $SqlInstance
+                return
             }
         }
-	}
-	PROCESS
-	{
-        
-        $servercount = $sqlserver.Count
-        foreach ($servername in $SqlServer)
-		{
-			try
-			{
-                $server = Connect-SqlServer -SqlServer "TCP:$servername" -SqlCredential $Credential
-          			}
+        $scriptblock = {
+            $computerName = $args[0]
+            $wmiInstanceName = $args[1]
+            $port = $args[2]
+            $IpAddress = $args[3]
+            $sqlInstanceName = $args[4]
 
-			catch
-			{
-				if ($servercount -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
-			}
-			
-			if ($server.VersionMajor -lt 9)
-			{
-				if ($servercount -eq 1)
-				{
-					throw 'SQL Server 2000 not supported.'
-				}
-				else
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
-			}
+            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computerName
+            $wmiinstance = $wmi.ServerInstances | Where-Object {
+                $_.Name -eq $wmiInstanceName
+            }
+            $tcp = $wmiinstance.ServerProtocols | Where-Object {
+                $_.DisplayName -eq 'TCP/IP'
+            }
+            $IpAddress = $tcp.IpAddresses | Where-Object {
+                $_.IpAddress -eq $IpAddress
+            }
+            $tcpPort = $IpAddress.IpAddressProperties | Where-Object {
+                $_.Name -eq 'TcpPort'
+            }
 
-        			$instancename = $server.instanceName
-				if ($instancename.length -eq 0)
-				{
-					$instancename = 'MSSQLSERVER'
-				}
-                if ($server.IsClustered)
-                {
-                    write-verbose "Instance is clustered fetching nodes..."
-                    $clusterquery = "select nodename from sys.dm_os_cluster_nodes where not nodename = '$($server.ComputerNamePhysicalNetBIOS)'"
-                    $clusterresult = $server.ConnectionContext.ExecuteWithResults("$clusterquery")	
-                    foreach ($row in $clusterresult.tables[0].rows) {$ClusterNodes +=  $row.Item(0) + " "}
-                    Write-Warning "$servername is a clustered instance, portchanges will be reflected on other nodes ( $clusternodes) after a failover..."
+            $oldPort = $tcpPort.Value
+            try {
+                $tcpPort.value = $port
+                $tcp.Alter()
+                [pscustomobject]@{
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
+                    PortNumber         = $Port
+                    Status             = "Success"
                 }
-                $scriptblock = {
-				$servername = $args[0]
-                $instancename = $args[1]
-                $port = $args[2]						
-                $ipaddress = $args[3]
-				$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
-				$instance = $wmi.ServerInstances | Where-Object { $_.Name -eq $instancename }
-				$tcp= $instance.ServerProtocols | Where-Object { $_.DisplayName -eq 'TCP/IP' }
-				$ipaddress = $tcp.IPAddresses | where-object {$_.IPAddress -eq $ipaddress }
-				$tcpport = $ipaddress.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
-                try
-                {
-                    $tcpport.value = $port
-				    $tcp.Alter()
+            } catch {
+                [pscustomobject]@{
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
+                    PortNumber         = $Port
+                    Status             = "Failed: $_"
                 }
-                catch
-                {
-                    return $_
+            }
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+
+        foreach ($instance in $SqlInstance) {
+            $wmiInstanceName = $instance.InstanceName
+            $computerName = $instance.ComputerName
+
+            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
+                try {
+                    $computerName = $instance.ComputerName
+                    $resolved = Resolve-DbaNetworkName -ComputerName $computerName
+                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                } catch {
+                    try {
+                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    } catch {
+                        Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
+                    }
                 }
-				}
-				try
-				{
-	                $ServernameNI = $servername.split("\")[0]
-                    $resolved = Resolve-DbaNetworkName -ComputerName $servernameNI -Verbose:$false
-					write-verbose "Writing TCPPort $port for $Servername to $($resolved.FQDN)..."
-                    $setport = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $instancename, $port, $ipaddress  
-                    if ($setport.length -eq 0)
-                    {
-                        if ($ipaddress -eq '0.0.0.0') 
-                        {
-                           Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port"
-                        }
-                        else
-                        {
-                            Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port"
-                        }
-                    }
-                    else
-                    {
-                        if ($ipaddress -eq '0.0.0.0') 
-                        {
-                           Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port" -NoNewline
-                           Write-Host " FAILED!" -ForegroundColor Red 
-                        }
-                        else
-                        {
-                            Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port" -NoNewline
-                            Write-Host " FAILED!" -ForegroundColor Red 
-                        }
-                    }
-                }   
-				catch
-				{
-					try
-                    {
-                        write-verbose "Failed to write TCPPort $port for $Servername to $($resolved.FQDN) trying computername $($server.ComputerNamePhysicalNetBIOS)...."
-                        $setport = Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $instancename, $port, $ipaddress  
-                        if ($setport.length -eq 0)
-                        {
-                            if ($ipaddress -eq '0.0.0.0') 
-                            {
-                                Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port"
-                            }
-                            else
-                            {
-                                Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port"
-                            }
-                        }
-                        else
-                        {
-                            if ($ipaddress -eq '0.0.0.0') 
-                            {
-                                Write-Host "SQLSERVER: $Servername IPADDRESS: ALLIP's PORT: $port" -NoNewline
-                                Write-Host " FAILED!" -ForegroundColor Red
-                            }
-                            else
-                            {
-                                Write-Host "SQLSERVER: $Servername IPADDRESS: $ipaddress PORT: $port" -NoNewline
-                                Write-Host " FAILED!" -ForegroundColor Red
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        Write-Warning "Could not write new TCPPort for $servername"
-                        Continue
-                    }
-				}
-                		
- }
-	}
-	END
-	{
-	        return 
-	}
+            }
+        }
+    }
 }

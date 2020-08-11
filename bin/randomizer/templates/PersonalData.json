@@ -1,0 +1,40 @@
+{
+    "Name": "Personal Data",
+    "Columns": [
+        {
+            "Name": "FirstName",
+            "Type": "Name",
+            "SubType": "FirstName"
+        },
+        {
+            "Name": "LastName",
+            "Type": "Name",
+            "SubType": "LastName"
+        },
+        {
+            "Name": "Address",
+            "Type": "Address",
+            "SubType": "StreetAddress"
+        },
+        {
+            "Name": "Zipcode",
+            "Type": "Address",
+            "SubType": "Zipcode"
+        },
+        {
+            "Name": "City",
+            "Type": "Address",
+            "SubType": "City"
+        },
+        {
+            "Name": "Country",
+            "Type": "Address",
+            "SubType": "Country"
+        },
+        {
+            "Name": "Birthday",
+            "Type": "Person",
+            "SubType": "DateOfBirth"
+        }
+    ]
+}

@@ -1,116 +1,97 @@
-﻿function Save-DbaDiagnosticQueryScript {
-<#
-.SYNOPSIS 
-Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
+function Save-DbaDiagnosticQueryScript {
+    <#
+    .SYNOPSIS
+        Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
 
-.DESCRIPTION
-The dbatools module will have the diagnostice queries pre-installed. Use this only to update to a more recent version or specific versions.
+    .DESCRIPTION
+        The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
 
-This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
+        This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
 
-Use this function to pre-download the scripts from a device with an Internet connection.
-	
-The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
+        Use this function to pre-download the scripts from a device with an Internet connection.
 
-.PARAMETER Path
-Specifies the path to the output
-	
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+        The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
 
-.NOTES
-Author: André Kamman (@AndreKamman), http://clouddba.io
+    .PARAMETER Path
+        Specifies the path to the output
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE   
-Save-DbaDiagnosticQueryScript -Path c:\temp
+    .NOTES
+        Tags: Community, GlennBerry
+        Author: Andre Kamman (@AndreKamman), https://andrekamman.com
 
-Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
-If Path is not specified, the "My Documents" location will be used
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-#>
-	[CmdletBinding()]
-	param (
-		[System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-		[Switch]$Silent
-	)
-	
-	if (-not (Test-Path $Path)) {
-		Stop-Function -Message "Path does not exist or access denied" -Target $path
-		return
-	}
-	
-	Add-Type -AssemblyName System.Web
-	
-	Write-Message -Level Output -Message "Downloading SQL Server Diagnostic Query scripts"
-	
-	$glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
-	$glenberrysql = @()
-	
-	Write-Message -Level Output -Message "Downloading $glenberryrss"
-	
-	try {
-		$rss = Invoke-WebRequest -uri $glenberryrss -UseBasicParsing -ErrorAction Stop
-	}
-	catch {
-		Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $rss -InnerErrorRecord $_
-		return
-	}
-	
-	foreach ($link in $rss.Links.outerHTML) {
-		if ($link -Match "https:\/\/dl.dropboxusercontent*(.+)\/SQL(.+)\.sql") {
-			$URL = $matches[0]
-			
-			if ([System.Web.HttpUtility]::UrlDecode($URL) -Match "SQL Server (.+) Diagnostic") {
-				$SQLVersion = $matches[1].Replace(" ", "")
-			}
-			
-			if ([System.Web.HttpUtility]::UrlDecode($URL) -Match "\((.+) (.+)\)") {
-				$FileYear = "{0}" -f $matches[2]
-				[int]$MonthNr = [CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf($matches[1]) + 1
-				$FileMonth = "{0:00}" -f $MonthNr
-			}
-			
-			$glenberrysql += [pscustomobject]@{
-				URL = $URL
-				SQLVersion = $SQLVersion
-				FileYear = $FileYear
-				FileMonth = $FileMonth
-				FileVersion = 0
-			}
-		}
-	}
-	
-	foreach ($group in $glenberrysql | Group-Object FileYear) {
-		$maxmonth = "{0:00}" -f ($group.Group.FileMonth | Measure-Object -Maximum).Maximum
-		foreach ($item in $glenberrysql | Where-Object FileYear -eq $group.Name) {
-			if ($item.FileMonth -eq "00") {
-				$item.FileMonth = $maxmonth
-			}
-		}
-	}
-	
-	foreach ($item in $glenberrysql) {
-		$item.FileVersion = "$($item.FileYear)$($item.FileMonth)"
-	}
-	
-	foreach ($item in $glenberrysql | Sort-Object FileVersion -Descending | Where-Object FileVersion -eq ($glenberrysql.FileVersion | Measure-Object -Maximum).Maximum) {
-		$filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $item.SQLVersion, $item.FileVersion
-		Write-Message -Level Output -Message "Downloading $($item.URL) to $filename"
-		
-		try {
-			Invoke-WebRequest -Uri $item.URL -OutFile $filename -ErrorAction Stop
-		}
-		catch {
-			Stop-Function -Message "Invoke-WebRequest failed: $_" -Target $filename -InnerErrorRecord $_
-			return
-		}
-	}
+    .LINK
+        https://dbatools.io/Save-DbaDiagnosticQueryScript
+
+    .EXAMPLE
+        PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp
+
+        Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
+        If Path is not specified, the "My Documents" location will be used.
+    #>
+    [CmdletBinding()]
+    param (
+        [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
+        [switch]$EnableException
+    )
+    function Get-WebData {
+        param ($uri)
+        try {
+            try {
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
+            } catch {
+                (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                $data = (Invoke-TlsWebRequest -Uri $uri -UseBasicParsing -ErrorAction Stop)
+            }
+            return $data
+        } catch {
+            Stop-Function -Message "Invoke-TlsWebRequest failed: $_" -Target $data -ErrorRecord $_
+            return
+        }
+    }
+
+    if (-not (Test-Path $Path)) {
+        Stop-Function -Message "Path does not exist or access denied" -Target $path
+        return
+    }
+
+    Add-Type -AssemblyName System.Web
+
+    $glennberryResources = "https://glennsqlperformance.com/resources/"
+    $DropboxLinkFilter = "*dropbox.com*"
+    $LinkTitleFilter = "*Diagnostic Information Queries*"
+    $ExcludeSpreadsheet = "*Results Spreadsheet*"
+
+    Write-Message -Level Verbose -Message "Downloading Glenn Berry Resources Page"
+    $page = Get-WebData -uri $glennberryResources
+
+    $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet } | ForEach-Object {
+            [pscustomobject]@{
+                URL        = $_.href
+                SQLVersion = $_.outerHTML -replace "<.+`">", "" -replace "</a>", "" -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
+            }
+        })
+
+    Write-Message -Level Verbose -Message "Found $($glenberrysql.Count) documents to download"
+    foreach ($doc in $glenberrysql) {
+        try {
+            $link = $doc.URL.ToString().Replace('dl=0', 'dl=1')
+            Write-Message -Level Verbose -Message "Downloading $link)"
+            Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
+            $filename = Join-Path -Path $Path  -ChildPath "SQLServerDiagnosticQueries_$($doc.SQLVersion).sql"
+            Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
+            Get-ChildItem -Path $filename
+        } catch {
+            Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
+            return
+        }
+    }
 }

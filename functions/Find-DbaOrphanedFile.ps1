@@ -1,278 +1,273 @@
-Function Find-DbaOrphanedFile
-{
-<#
-.SYNOPSIS 
-Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+function Find-DbaOrphanedFile {
+    <#
+    .SYNOPSIS
+        Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
-.DESCRIPTION
-This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+    .DESCRIPTION
+        This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
 
-By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
-	
-You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
-	
-.PARAMETER SqlServer
-The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+        You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
 
-.PARAMETER Path
-Used to specify extra directories to search in addition to the default data and log directories.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER FileType
-Used to specify other filetypes in addition to mdf, ldf, ndf. No dot required, just pass the extension.
-	
-.PARAMETER LocalOnly
-Shows only the local filenames
-	
-.PARAMETER RemoteOnly
-Shows only the remote filenames
-	
-.NOTES
-Tags: DisasterRecovery, Orphan
-Author: Sander Stad (@sqlstad), sqlstad.nl
-Requires: sysadmin access on SQL Servers
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
+        For MFA support, please use Connect-DbaInstance.
 
-.LINK
-https://dbatools.io/Find-DbaOrphanedFile
+    .PARAMETER Path
+        Specifies one or more directories to search in addition to the default data and log directories.
 
-.EXAMPLE
-Find-DbaOrphanedFile -SqlServer sqlserver2014a
-Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
+    .PARAMETER FileType
+        Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sqlserver2014a -SqlCredential $cred
-Logs into the SQL Server "sqlserver2014a" using alternative credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
+    .PARAMETER LocalOnly
+        If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -Path 'E:\Dir1', 'E:\Dir2'
-Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
-	
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -LocalOnly
-Returns only the local filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
+    .PARAMETER RemoteOnly
+        If this switch is enabled, only remote filenames will be returned.
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014 -RemoteOnly
-Returns only the remote filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
-	
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlServer sql2014, sql2016 -FileType fsf, mld
-Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
-	
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[parameter(Mandatory = $false)]
-		[object]$SqlCredential,
-		[parameter(Mandatory = $false)]
-		[string[]]$Path,
-		[string[]]$FileType,
-		[switch]$LocalOnly,
-		[switch]$RemoteOnly
-	)
-	BEGIN
-	{
-		function Get-SQLDirTreeQuery
-		{
-			param
-			(
-				$PathList
-			)
-			# use sysaltfiles in lower versions
+    .NOTES
+        Tags: Orphan, Database, DatabaseFile
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-			$q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
-			$q2 = "SET @dir = 'dirname';
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-				INSERT INTO #enum( fs_filename, depth, is_file )
-				EXEC xp_dirtree @dir, 1, 1;
+        Requires: sysadmin access on SQL Servers
 
-				UPDATE #enum
-				SET parent = @dir,
-				fs_filename = ltrim(rtrim(fs_filename))
-				WHERE parent IS NULL;"
+        Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
 
-			$query_files_sql = "SELECT e.fs_filename AS filename, e.parent
-					FROM #enum AS e
-					WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
-					AND is_file = 1;"
+    .LINK
+        https://dbatools.io/Find-DbaOrphanedFile
 
-			# build the query string based on how many directories they want to enumerate
-			$sql = $q1
-			$sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
-			$sql += $query_files_sql
-			Write-Debug $sql
-			return $sql
-		}
-		function Get-SqlFileStructure
-		{
-			param
-			(
-				[Parameter(Mandatory = $true, Position = 1)]
-				[Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
-			)
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 
-			if ($smoserver.versionMajor -eq 8)
-			{
-				$sql = "select filename from sysaltfiles"
-			}
-			else
-			{
-				$sql = "select physical_name as filename from sys.master_files"
-			}
+        Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-			$dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
-			$ftfiletable = $dbfiletable.Tables[0].Clone()
-			$dbfiletable.Tables[0].TableName = "data"
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
 
-			# Add support for Full Text Catalogs in Sql Server 2005 and below
-			if ($server.VersionMajor -lt 10)
-			{
-				$databaselist = $smoserver.Databases | select Name, IsFullTextEnabled
-				foreach ($db in $databaselist)
-				{
-					if($db.IsFullTextEnabled -eq $false) {
-						continue
-					}
-					$database = $db.name
-					$fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
+        Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-					foreach ($ftc in $fttable.Tables[0].rows)
-					{
-						$null = $ftfiletable.Rows.add($ftc.Path)
-					}
-				}
-			}
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 
-			$null = $dbfiletable.Tables.Add($ftfiletable)
-			return $dbfiletable.Tables.Filename
-		}
+        Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 
-		function Format-Path
-		{
-			param ($path)
-			$path = $path.Trim()
-			#Thank you windows 2000
-			$path = $path -replace '[^A-Za-z0-9 _\.\-\\:]', '__'
-			return $path
-		}
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 
-		$FileType += "mdf", "ldf", "ndf"
-		$systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf"
+        Returns only the local file paths for orphaned files.
 
-        $FileTypeComparison = $FileType | ForEach-Object {$_.ToLower()} | Where-Object { $_ } | Sort-Object | Get-Unique
-	}
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
 
-	PROCESS
-	{
-		foreach ($servername in $sqlserver)
-		{
-			# Reset all the arrays
-			$dirtreefiles = $valid = $paths = $matching = @()
+        Returns only the remote file path for orphaned files.
 
-			$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
 
-			# Get the default data and log directories from the instance
-			Write-Debug "Adding paths"
-			$paths += $server.RootDirectory + "\DATA"
-			$paths += Get-SqlDefaultPaths $server data
-			$paths += Get-SqlDefaultPaths $server log
-			$paths += $server.MasterDBPath
-			$paths += $server.MasterDBLogPath
-			$paths += $Path
-			$paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
-			$sql = Get-SQLDirTreeQuery $paths
-			$datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
+        Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 
-			foreach ($row in $datatable)
-			{
-				$fullpath = [IO.Path]::combine($row.parent, $row.filename)
-				$dirtreefiles += [pscustomobject]@{
-					FullPath = $fullpath
-					Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
-				}
-			}
-			$dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [pscredential]$SqlCredential,
+        [string[]]$Path,
+        [string[]]$FileType,
+        [switch]$LocalOnly,
+        [switch]$RemoteOnly,
+        [switch]$EnableException
+    )
 
-			$filestructure = Get-SqlFileStructure $server
+    begin {
+        function Get-SQLDirTreeQuery {
+            param($PathList)
+            # use sysaltfiles in lower versions
 
-			foreach ($file in $filestructure)
-			{
-				$valid += [IO.Path]::GetFullPath($(Format-Path $file))
-			}
+            $q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
+            $q2 = "SET @dir = 'dirname';
 
-			$valid = $valid | Sort-Object | Get-Unique
+                INSERT INTO #enum( fs_filename, depth, is_file )
+                EXEC xp_dirtree @dir, 1, 1;
 
-			foreach ($file in $dirtreefiles.Comparison)
-			{
-                foreach ($type in $FileTypeComparison)
-				{
-					if ($file.ToLower().EndsWith($type))
-					{
-						$matching += $file
+                UPDATE #enum
+                SET parent = @dir,
+                fs_filename = ltrim(rtrim(fs_filename))
+                WHERE parent IS NULL;"
+
+            $query_files_sql = "SELECT e.fs_filename AS filename, e.parent
+                    FROM #enum AS e
+                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
+                    AND is_file = 1;"
+
+            # build the query string based on how many directories they want to enumerate
+            $sql = $q1
+            $sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
+            $sql += $query_files_sql
+            Write-Message -Level Debug -Message $sql
+            return $sql
+        }
+        function Get-SqlFileStructure {
+            param
+            (
+                [Parameter(Mandatory, Position = 1)]
+                [Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
+            )
+            if ($smoserver.versionMajor -eq 8) {
+                $sql = "select filename from sysaltfiles"
+            } else {
+                $sql = "select physical_name as filename from sys.master_files"
+            }
+
+            $dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
+            $ftfiletable = $dbfiletable.Tables[0].Clone()
+            $dbfiletable.Tables[0].TableName = "data"
+
+            # Add support for Full Text Catalogs in Sql Server 2005 and below
+            if ($server.VersionMajor -lt 10) {
+                $databaselist = $smoserver.Databases | Select-Object -property  Name, IsFullTextEnabled
+                foreach ($db in $databaselist) {
+                    if ($db.IsFullTextEnabled -eq $false) {
+                        continue
+                    }
+                    $database = $db.name
+                    $fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
+                    foreach ($ftc in $fttable.Tables[0].rows) {
+                        $null = $ftfiletable.Rows.add($ftc.Path)
+                    }
+                }
+            }
+
+            $null = $dbfiletable.Tables.Add($ftfiletable)
+            return $dbfiletable.Tables.Filename
+        }
+
+        function Format-Path {
+            param ($path)
+
+            $path = $path.Trim()
+            #Thank you windows 2000
+            $path = $path -replace '[^A-Za-z0-9 _\.\-\\:]', '__'
+            return $path
+        }
+
+        $FileType += "mdf", "ldf", "ndf"
+        $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf", "model_msdbdata.mdf", "model_msdblog.ldf", "model_replicatedmaster.mdf", "model_replicatedmaster.ldf"
+
+        $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
+    }
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            # Reset all the arrays
+            $dirtreefiles = $valid = $paths = $matching = @()
+
+            $filestructure = Get-SqlFileStructure $server
+
+            # Get any paths associated with current data and log files
+            foreach ($file in $filestructure) {
+                $paths += Split-Path -Path $file -Parent
+            }
+
+            # Get the default data and log directories from the instance
+            Write-Message -Level Debug -Message "Adding paths"
+            $paths += $server.RootDirectory + "\DATA"
+            $paths += Get-SqlDefaultPaths $server data
+            $paths += Get-SqlDefaultPaths $server log
+            $paths += $server.MasterDBPath
+            $paths += $server.MasterDBLogPath
+            $paths += $Path
+            $paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
+            $sql = Get-SQLDirTreeQuery $paths
+            $datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
+
+            foreach ($row in $datatable) {
+                $fullpath = [IO.Path]::combine($row.parent, $row.filename)
+                $dirtreefiles += [pscustomobject]@{
+                    FullPath   = $fullpath
+                    Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
+                }
+            }
+            $dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
+
+            foreach ($file in $filestructure) {
+                $valid += [IO.Path]::GetFullPath($(Format-Path $file))
+            }
+
+            $valid = $valid | Sort-Object | Get-Unique
+
+            foreach ($file in $dirtreefiles.Comparison) {
+                foreach ($type in $FileTypeComparison) {
+                    if ($file.ToLowerInvariant().EndsWith($type)) {
+                        $matching += $file
                         break
-					}
-				}
-			}
+                    }
+                }
+            }
 
-            $dirtreematcher = @{}
-            foreach($el in $dirtreefiles) {
+            $dirtreematcher = @{ }
+            foreach ($el in $dirtreefiles) {
                 $dirtreematcher[$el.Comparison] = $el.Fullpath
             }
 
-			foreach ($file in $matching)
-			{
-				if ($file -notin $valid)
-				{
+            foreach ($file in $matching) {
+                if ($file -notin $valid) {
                     $fullpath = $dirtreematcher[$file]
 
-					$filename = Split-Path $fullpath -Leaf
+                    $filename = Split-Path $fullpath -Leaf
 
-					if ($filename -in $systemfiles) { continue }
+                    if ($filename -in $systemfiles) { continue }
 
-					$result = [pscustomobject]@{
-						Server = $server.name
-						Filename = $fullpath
-						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
-					}
+                    $result = [pscustomobject]@{
+                        Server         = $server.name
+                        ComputerName   = $server.ComputerName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        Filename       = $fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
+                    }
 
-					if ($LocalOnly -eq $true)
-					{
-						($result | Select-Object filename).filename
-						continue
-					}
+                    if ($LocalOnly -eq $true) {
+                        ($result | Select-Object filename).filename
+                        continue
+                    }
 
-					if ($RemoteOnly -eq $true)
-					{
-						($result | Select-Object remotefilename).remotefilename
-						continue
-					}
+                    if ($RemoteOnly -eq $true) {
+                        ($result | Select-Object remotefilename).remotefilename
+                        continue
+                    }
 
-					$result
+                    $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Filename, RemoteFilename
 
-				}
-			}
+                }
+            }
 
-		}
-	}
-	END
-	{
-		if ($result.count -eq 0)
-		{
-			Write-Output "No orphaned files found"
-		}
-	}
+        }
+    }
+    end {
+        if ($result.count -eq 0) {
+            Write-Message -Level Verbose -Message "No orphaned files found"
+        }
+    }
 }
