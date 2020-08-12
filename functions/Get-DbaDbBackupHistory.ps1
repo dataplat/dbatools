@@ -72,8 +72,8 @@ function Get-DbaDbBackupHistory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER AgCheck
-        Internal parameter used for getting history from AvailabilityGroups. If set, this will disable Availability Group support
+    .PARAMETER SuppressAgCheck
+        By default, when SqlInstance is part of an availability group, the history is also fetched from all replicas. If set, the history will be only fetched from SqlInstance.
 
     .NOTES
         Tags: DisasterRecovery, Backup
@@ -177,7 +177,8 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
-        [switch]$AgCheck,
+        [Alias("AgCheck")]
+        [switch]$SuppressAgCheck,
         [switch]$EnableException
     )
 
@@ -228,16 +229,16 @@ function Get-DbaDbBackupHistory {
             }
             $AgResults = @()
             $ProcessedAgDatabases = @()
-            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+            if (($server.AvailabilityGroups.count -gt 0) -and (Test-Bound -Not SuppressAgCheck)) {
                 $agShortInstance = $instance.FullName.split('.')[0]
                 if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
                     # We have a listener passed in, just query the dbs specified or all in the AG
                     $null = $PSBoundParameters.Remove('SqlInstance')
                     $null = $PSBoundParameters.Remove('IncludeCopyOnly')
-                    $null = $PsBoundParameters.Remove('AgCheck')
+                    $null = $PsBoundParameters.Remove('SuppressAgCheck')
                     Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
                     $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -SuppressAgCheck -IncludeCopyOnly
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     Foreach ($agr in $AgLoopResults) {
                         $agr.AvailabilityGroupName = $AvailabilityGroupName
@@ -308,7 +309,7 @@ function Get-DbaDbBackupHistory {
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+            if (($server.AvailabilityGroups.count -gt 0) -and (Test-Bound -Not SuppressAgCheck)) {
                 $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
                 $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
                 ForEach ($adb in $adbs) {
@@ -324,7 +325,7 @@ function Get-DbaDbBackupHistory {
                     }
                     $null = $PSBoundParameters.Remove('SqlInstance')
                     $null = $PSBoundParameters.Remove('Database')
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupListener -database $adb.Name @PSBoundParameters
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupListener -Database $adb.Name @PSBoundParameters
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     Foreach ($agr in $AgLoopResults) {
                         $agr.AvailabilityGroupName = $AvailabilityGroupName
@@ -385,8 +386,8 @@ function Get-DbaDbBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck
-                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$AgCheck
+                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -Raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -SuppressAgCheck:$SuppressAgCheck
+                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -Raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -SuppressAgCheck:$SuppressAgCheck
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
@@ -401,9 +402,9 @@ function Get-DbaDbBackupHistory {
                     }
                     if ($IncludeCopyOnly -eq $true) {
                         Write-Message -Level Verbose -Message 'Copy Only check'
-                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -Raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -SuppressAgCheck:$SuppressAgCheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     } else {
-                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -Raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -SuppressAgCheck:$SuppressAgCheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     }
                     #This line does the output for -Last!!!
                     $allBackups | Sort-Object -Property LastLsn, Type
