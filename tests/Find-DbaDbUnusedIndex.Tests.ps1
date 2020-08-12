@@ -26,22 +26,33 @@ Describe "$script:UnusedIndexCommandName Integration Tests" -Tags "IntegrationTe
             $server1 = Connect-DbaInstance -SqlInstance $script:instance1
             $server2 = Connect-DbaInstance -SqlInstance $script:instance2
             $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+
             $random = Get-Random
+            $dbName = "dbatoolsci_$random"
+
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
+
+            New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName
+            New-DbaDatabase -SqlInstance $script:instance2 -Name $dbName
+            New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
+
             $indexName = "dbatoolsci_index_$random"
             $tableName = "dbatoolsci_table_$random"
-            $sql = "CREATE TABLE $tableName (ID INTEGER);
+            $sql = "USE $dbName;
+                    CREATE TABLE $tableName (ID INTEGER);
                     CREATE INDEX $indexName ON $tableName (ID);
                     INSERT INTO $tableName (ID) VALUES (1);
                     SELECT ID FROM $tableName;"
-            $null = $server1.Query($sql, 'tempdb')
-            $null = $server2.Query($sql, 'tempdb')
-            $null = $server3.Query($sql, 'tempdb')
+            $null = $server1.Query($sql)
+            $null = $server2.Query($sql)
+            $null = $server3.Query($sql)
         }
         AfterAll {
-            $sql = "DROP TABLE $tableName;"
-            $null = $server1.Query($sql, 'tempdb')
-            $null = $server2.Query($sql, 'tempdb')
-            $null = $server3.Query($sql, 'tempdb')
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
         }
 
         It "Should find the 'unused' index on each test sql instance" {
@@ -57,19 +68,19 @@ Describe "$script:UnusedIndexCommandName Integration Tests" -Tags "IntegrationTe
 
                 foreach ($row in $results) {
                     if ($row["IndexName"] -eq $IndexNameToCheck) {
-                        Write-Host "$($IndexNameToCheck) was found on $($SqlInstance)"
+                        Write-Host "$($IndexNameToCheck) was found on $($SqlInstance) in database $($Database)"
                         return $true
                     }
                 }
 
-                Write-Host "$($IndexNameToCheck) was not found on $($SqlInstance)"
+                Write-Host "$($IndexNameToCheck) was not found on $($SqlInstance) in database $($Database)"
 
                 return $false
             }
 
-            $testSQLInstance1 = checkIfIndexIsReturned $script:instance1 tempdb $indexName 10
-            $testSQLInstance2 = checkIfIndexIsReturned $script:instance2 tempdb $indexName 10
-            $testSQLInstance3 = checkIfIndexIsReturned $script:instance3 tempdb $indexName 10
+            $testSQLInstance1 = checkIfIndexIsReturned $script:instance1 $dbName $indexName 10
+            $testSQLInstance2 = checkIfIndexIsReturned $script:instance2 $dbName $indexName 10
+            $testSQLInstance3 = checkIfIndexIsReturned $script:instance3 $dbName $indexName 10
 
             ($testSQLInstance1 -and $testSQLInstance2 -and $testSQLInstance3) | Should -Be $true
         }
@@ -115,9 +126,9 @@ Describe "$script:UnusedIndexCommandName Integration Tests" -Tags "IntegrationTe
                 return $false
             }
 
-            $testSQLInstance1 = checkReturnedColumns $script:instance1 tempdb $expectedColumnArray 10
-            $testSQLInstance2 = checkReturnedColumns $script:instance2 tempdb $expectedColumnArray 10
-            $testSQLInstance3 = checkReturnedColumns $script:instance3 tempdb $expectedColumnArray 10
+            $testSQLInstance1 = checkReturnedColumns $script:instance1 $dbName $expectedColumnArray 10
+            $testSQLInstance2 = checkReturnedColumns $script:instance2 $dbName $expectedColumnArray 10
+            $testSQLInstance3 = checkReturnedColumns $script:instance3 $dbName $expectedColumnArray 10
 
             ($testSQLInstance1 -and $testSQLInstance2 -and $testSQLInstance3) | Should -Be $true
         }

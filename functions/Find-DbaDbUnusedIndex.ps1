@@ -109,24 +109,24 @@ function Find-DbaDbUnusedIndex {
         AS
         (
             SELECT
-				s.object_id							AS object_id
-            ,	s.index_id							AS index_id
-            ,	SUM(s.used_page_count) * 8 / 1024.0	AS IndexSizeMB
-            ,	SUM(p.[rows]) 						AS [RowCount]
+                s.object_id                         AS object_id
+            ,   s.index_id                          AS index_id
+            ,   SUM(s.used_page_count) * 8 / 1024.0 AS IndexSizeMB
+            ,   SUM(p.[rows])                       AS [RowCount]
             --REPLACEPARAMCTE
             FROM
-				sys.dm_db_partition_stats AS s
+                sys.dm_db_partition_stats AS s
             INNER JOIN
-				sys.partitions p WITH (NOLOCK)
-				    ON s.[partition_id] = p.[partition_id]
+                sys.partitions p WITH (NOLOCK)
+                    ON s.[partition_id] = p.[partition_id]
                     AND s.[object_id] = p.[object_id]
                     AND s.index_id = p.index_id
             WHERE
-				s.index_id > 0 -- Exclude HEAPS
+                s.index_id > 0 -- Exclude HEAPS
                 AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
             GROUP BY
-				s.[object_id]
-            ,	s.index_id
+                s.[object_id]
+            ,...s.index_id
             --REPLACEPARAMCTE
         )
         SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
