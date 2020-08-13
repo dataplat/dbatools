@@ -126,7 +126,7 @@ function Find-DbaDbUnusedIndex {
                 AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
             GROUP BY
                 s.[object_id]
-            ,...s.index_id
+            ,   s.index_id
             --REPLACEPARAMCTE
         )
         SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
