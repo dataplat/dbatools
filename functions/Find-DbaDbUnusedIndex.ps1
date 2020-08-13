@@ -85,6 +85,12 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused indexes on all databases on sql2016
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2019 | Find-DbaDbUnusedIndex -UserSeeksLessThan 10 -UserScansLessThan 100 -UserLookupsLessThan 1000
+
+        Finds 'unused' indexes with user_seeks < 10, user_scans < 100, and user_lookups < 1000 on all databases on sql2019.
+        Note that these additional parameters provide flexibility to define what is considered an 'unused' index.
+
     #>
     [CmdletBinding()]
     param (
@@ -94,12 +100,12 @@ function Find-DbaDbUnusedIndex {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IgnoreUptime,
+        [ValidateRange(1, 1000000)][int]$UserSeeksLessThan = 1,
+        [ValidateRange(1, 1000000)][int]$UserScansLessThan = 1,
+        [ValidateRange(1, 1000000)][int]$UserLookupsLessThan = 1,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException,
-        [ValidateRange(1, 1000000)][Int]$UserSeeksLessThan = 1,
-        [ValidateRange(1, 1000000)][Int]$UserScansLessThan = 1,
-        [ValidateRange(1, 1000000)][Int]$UserLookupsLessThan = 1
+        [switch]$EnableException
     )
     begin {
         # Support Compression 2008+
