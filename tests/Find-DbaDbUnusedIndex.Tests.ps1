@@ -23,29 +23,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3"
+            try {
+                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3"
 
-            $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+                $server3 = Connect-DbaInstance -SqlInstance $script:instance3
 
-            $random = Get-Random
-            $dbName = "dbatoolsci_$random"
+                $random = Get-Random
+                $dbName = "dbatoolsci_$random"
 
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: Setting up the new database $dbName"
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
-            New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
+                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Setting up the new database $dbName"
+                Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
+                New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
 
-            $indexName = "dbatoolsci_index_$random"
-            $tableName = "dbatoolsci_table_$random"
-            $sql = "USE $dbName;
-                    CREATE TABLE $tableName (ID INTEGER);
-                    CREATE INDEX $indexName ON $tableName (ID);
-                    INSERT INTO $tableName (ID) VALUES (1);
-                    SELECT ID FROM $tableName;
-                    WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
+                $indexName = "dbatoolsci_index_$random"
+                $tableName = "dbatoolsci_table_$random"
+                $sql = "USE $dbName;
+                        CREATE TABLE $tableName (ID INTEGER);
+                        CREATE INDEX $indexName ON $tableName (ID);
+                        INSERT INTO $tableName (ID) VALUES (1);
+                        SELECT ID FROM $tableName;
+                        WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
 
-            $null = $server3.Query($sql)
+                $null = $server3.Query($sql)
 
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: Completed BeforeAll"
+                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Completed BeforeAll"
+            } catch {
+                Write-Message -Level Warning -Message "Exception during BeforeAll: $_.ScriptStackTrace"
+            }
         }
         AfterAll {
             Write-Message -Level Warning -Message "Debugging AppVeyor issue: AfterAll now removing $dbName"
@@ -80,7 +84,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
 
             Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3 to check $dbName for $indexName"
-            $testSQLInstance3 = checkIfIndexIsReturned $script:instance3 $dbName $indexName 10
+            $testSQLInstance3 = $false
+
+            try {
+                $testSQLInstance3 = checkIfIndexIsReturned $script:instance3 $dbName $indexName 10
+            } catch {
+                Write-Message -Level Warning -Message "Exception during checkIfIndexIsReturned: $_.ScriptStackTrace"
+            }
 
             $testSQLInstance3 | Should -Be $true
         }
@@ -127,7 +137,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
 
             Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3 to check columns returned from $dbName"
-            $testSQLInstance3 = checkReturnedColumns $script:instance3 $dbName $expectedColumnArray 10
+            $testSQLInstance3 = $false
+
+            try {
+                $testSQLInstance3 = checkReturnedColumns $script:instance3 $dbName $expectedColumnArray 10
+            } catch {
+                Write-Message -Level Warning -Message "Exception during checkReturnedColumns: $_.ScriptStackTrace"
+            }
 
             $testSQLInstance3 | Should -Be $true
         }
