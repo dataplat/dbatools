@@ -24,14 +24,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
             try {
-                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3"
+                Write-Message -Level Debug -Message "Connecting to $script:instance3"
+
+                try {
+                    $connectionResults = Test-DbaConnection -SqlInstance $script:instance3 -EnableException
+
+                    Write-Message -Level Warning -Message "Connection result for $script:instance3 was: $($connectionResults.ConnectSuccess)"
+                } catch {
+                    Write-Message -Level Warning -Message "$($_) : $($_.ScriptStackTrace)"
+                }
 
                 $server3 = Connect-DbaInstance -SqlInstance $script:instance3
 
                 $random = Get-Random
                 $dbName = "dbatoolsci_$random"
 
-                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Setting up the new database $dbName"
+                Write-Message -Level Debug -Message "Setting up the new database $dbName"
                 Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
                 New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
 
@@ -45,18 +53,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                         WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
 
                 $null = $server3.Query($sql)
-
-                Write-Message -Level Warning -Message "Debugging AppVeyor issue: Completed BeforeAll"
             } catch {
-                Write-Message -Level Warning -Message "Exception during BeforeAll: $_.ScriptStackTrace"
+                Write-Message -Level Warning -Message "$($_): $($_.ScriptStackTrace)"
             }
         }
         AfterAll {
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: AfterAll now removing $dbName"
             try {
                 Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false -EnableException
             } catch {
-                Write-Message -Level Warning -Message "Unable to drop database $dbName due to $_.ScriptStackTrace"
+                Write-Message -Level Warning -Message "Unable to drop database $dbName due to $($_): $($_.ScriptStackTrace)"
             }
         }
 
@@ -73,7 +78,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
                 foreach ($row in $results) {
                     if ($row["IndexName"] -eq $IndexNameToCheck) {
-                        Write-Message -Level Warning -Message "$($IndexNameToCheck) was found on $($SqlInstance) in database $($Database)"
+                        Write-Message -Level Debug -Message "$($IndexNameToCheck) was found on $($SqlInstance) in database $($Database)"
                         return $true
                     }
                 }
@@ -83,13 +88,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 return $false
             }
 
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3 to check $dbName for $indexName"
             $testSQLInstance3 = $false
 
             try {
                 $testSQLInstance3 = checkIfIndexIsReturned $script:instance3 $dbName $indexName 10
             } catch {
-                Write-Message -Level Warning -Message "Exception during checkIfIndexIsReturned: $_.ScriptStackTrace"
+                Write-Message -Level Warning -Message "$($_): $($_.ScriptStackTrace)"
             }
 
             $testSQLInstance3 | Should -Be $true
@@ -124,7 +128,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $ExpectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Warning -Message "Columns matched on $($SqlInstance)"
+                        Write-Message -Level Debug -Message "Columns matched on $($SqlInstance)"
                         return $true
                     } else {
                         Write-Message -Level Warning -Message "The columns specified in the expectedColumnList variable do not match these returned columns from $($SqlInstance): $($columnNamesReturned)"
@@ -136,13 +140,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 return $false
             }
 
-            Write-Message -Level Warning -Message "Debugging AppVeyor issue: Connecting to $script:instance3 to check columns returned from $dbName"
             $testSQLInstance3 = $false
 
             try {
                 $testSQLInstance3 = checkReturnedColumns $script:instance3 $dbName $expectedColumnArray 10
             } catch {
-                Write-Message -Level Warning -Message "Exception during checkReturnedColumns: $_.ScriptStackTrace"
+                Write-Message -Level Warning -Message "$($_): $($_.ScriptStackTrace)"
             }
 
             $testSQLInstance3 | Should -Be $true
