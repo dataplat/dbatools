@@ -23,11 +23,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
+            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $script:instance3"
+            Test-DbaConnection -SqlInstance $script:instance3
+
             $server3 = Connect-DbaInstance -SqlInstance $script:instance3
 
             $random = Get-Random
             $dbName = "dbatoolsci_$random"
 
+            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
             New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
 
@@ -44,7 +48,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false -EnableException
+            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex removing the database $dbName"
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
         }
 
         It "Should find the 'unused' index on each test sql instance" {
