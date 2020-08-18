@@ -167,8 +167,8 @@ function Find-DbaDbUnusedIndex {
         JOIN sys.schemas s
             ON t.schema_id = s.schema_id
         JOIN sys.indexes i
-            ON i.object_id = t.object_id LEFT OUTER
-        JOIN sys.dm_db_index_usage_stats iu
+            ON i.object_id = t.object_id
+        LEFT OUTER JOIN sys.dm_db_index_usage_stats iu
             ON iu.object_id = i.object_id
                 AND iu.index_id = i.index_id
         JOIN CTE_IndexSpace indexSpace
