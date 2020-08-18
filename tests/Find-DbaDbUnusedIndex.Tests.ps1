@@ -23,17 +23,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $script:instance3"
-            Test-DbaConnection -SqlInstance $script:instance3
+            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $script:instance2"
+            Test-DbaConnection -SqlInstance $script:instance2
 
-            $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+            $server3 = Connect-DbaInstance -SqlInstance $script:instance2
 
             $random = Get-Random
             $dbName = "dbatoolsci_$random"
 
             Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
-            New-DbaDatabase -SqlInstance $script:instance3 -Name $dbName
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+            New-DbaDatabase -SqlInstance $script:instance2 -Name $dbName
 
             $indexName = "dbatoolsci_index_$random"
             $tableName = "dbatoolsci_table_$random"
@@ -49,30 +49,30 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         AfterAll {
             Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex removing the database $dbName"
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
         }
 
         It "Should find the 'unused' index on each test sql instance" {
-            $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance3 -Database $dbName -IgnoreUptime -UserSeeksLessThan 10 -UserScansLessThan 10 -UserLookupsLessThan 10
+            $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance2 -Database $dbName -IgnoreUptime -UserSeeksLessThan 10 -UserScansLessThan 10 -UserLookupsLessThan 10
 
-            $testSQLInstance3 = $false
+            $testSQLinstance2 = $false
 
             foreach ($row in $results) {
                 if ($row["IndexName"] -eq $indexName) {
-                    $testSQLInstance3 = $true
+                    $testSQLinstance2 = $true
                 }
             }
 
-            $testSQLInstance3 | Should -Be $true
+            $testSQLinstance2 | Should -Be $true
         }
 
 
         It "Should return the expected columns on each test sql instance" {
             [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
 
-            $testSQLInstance3 = $false
+            $testSQLinstance2 = $false
 
-            $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance3 -Database $dbName -IgnoreUptime -UserSeeksLessThan 10 -UserScansLessThan 10 -UserLookupsLessThan 10
+            $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance2 -Database $dbName -IgnoreUptime -UserSeeksLessThan 10 -UserScansLessThan 10 -UserLookupsLessThan 10
 
             if ( ($null -ne $results) ) {
                 $row = $null
@@ -82,19 +82,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    $testSQLInstance3 = $false
+                    $testSQLinstance2 = $false
                 }
 
                 if ($null -ne $row) {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        $testSQLInstance3 = $true
+                        $testSQLinstance2 = $true
                     }
                 }
             }
 
-            $testSQLInstance3 | Should -Be $true
+            $testSQLinstance2 | Should -Be $true
         }
     }
 }
