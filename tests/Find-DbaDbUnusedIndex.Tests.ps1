@@ -59,7 +59,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             foreach ($row in $results) {
                 if ($row["IndexName"] -eq $indexName) {
+                    Write-Message -Level Debug -Message "$($indexName) was found on $($script:instance2) in database $($dbName)"
                     $testSQLinstance2 = $true
+                } else {
+                    Write-Message -Level Warning -Message "$($indexName) was not found on $($script:instance2) in database $($dbName)"
                 }
             }
 
@@ -82,6 +85,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
+                    Write-Message -Level Warning -Message "Unexpected results returned from $($SqlInstance): $($results)"
                     $testSQLinstance2 = $false
                 }
 
@@ -89,7 +93,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
+                        Write-Message -Level Debug -Message "Columns matched on $($script:instance2)"
                         $testSQLinstance2 = $true
+                    } else {
+                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnList variable do not match these returned columns from $($script:instance2): $($columnNamesReturned)"
                     }
                 }
             }
