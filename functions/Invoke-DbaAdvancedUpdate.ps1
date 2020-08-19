@@ -147,7 +147,7 @@ Function Invoke-DbaAdvancedUpdate {
             Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath"
             $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
             if (-not $extractResult.Successful) {
-                $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a location instead using -ExportPath"
+                $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a different location using -ExtractPath"
                 $output.Notes += $msg
                 Stop-Function -Message $msg
                 return $output
