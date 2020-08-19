@@ -76,6 +76,7 @@ function Test-DbaDbDataMaskingConfig {
         $randomizerTypes = Get-DbaRandomizedType
 
         $requiredColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType')
+        $allowedColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'Separator', 'SubType')
 
         $allowedActionCategories = @('datetime', 'number', 'column')
         $allowedActionSubCategories = @('year', 'quarter', 'month', 'dayofyear', 'day', 'week', 'weekday', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond')
@@ -97,24 +98,27 @@ function Test-DbaDbDataMaskingConfig {
 
                 # Test the column properties
                 $columnProperties = $column | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
-                $compareResult = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
+                $compareResultRequired = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
+                $compareResultAllowed = Compare-Object -ReferenceObject $allowedColumnProperties -DifferenceObject $columnProperties
 
-                if ($null -ne $compareResult) {
-                    if ($compareResult.SideIndicator -contains "<=") {
+                if ($null -ne $compareResultRequired) {
+                    if ($compareResultRequired.SideIndicator -contains "<=") {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
-                            Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                            Value  = ($compareResultRequired | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
                     }
+                }
 
-                    if ($compareResult.SideIndicator -contains "=>") {
+                if ($null -ne $compareResultAllowed) {
+                    if ($compareResultAllowed.SideIndicator -contains "=>") {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
-                            Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
-                            Error  = "The column contains a property that is not in the required properties. Please check the column"
+                            Value  = ($compareResultAllowed | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                            Error  = "The column contains a property that is not in the allowed properties. Please check the column"
                         }
                     }
                 }
