@@ -124,12 +124,12 @@ function Import-DbaCsv {
         The progress bar is pretty but can slow down imports. Use this parameter to quietly import.
 
     .PARAMETER Quote
-        Defines the default quote character wrapping every field.
+        Defines the default quote character wrapping every field.  Default is ".
 
     .PARAMETER Escape
         Defines the default escape character letting insert quotation characters inside a quoted field.
 
-        The escape character can be the same as the quote character.
+        The escape character can be the same as the quote character.  Default is ".
 
     .PARAMETER Comment
         Defines the default comment character indicating that a line is commented out. Default is #.
