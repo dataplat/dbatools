@@ -356,12 +356,71 @@ function Invoke-DbaDbDataMasking {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                         if ($columnMaskInfo) {
+                                            # make sure min is good
+                                            if ($columnMaskInfo.MinValue) {
+                                                $min = $columnMaskInfo.MinValue
+                                            } else {
+                                                if ($columnMaskInfo.CharacterString) {
+                                                    $min = 1
+                                                } else {
+                                                    $min = 0
+                                                }
+                                            }
+
+                                            # make sure max is good
+                                            if ($MaxValue) {
+                                                if ($columnMaskInfo.MaxValue -le $MaxValue) {
+                                                    $max = $columnMaskInfo.MaxValue
+                                                } else {
+                                                    $max = $MaxValue
+                                                }
+                                            } else {
+                                                $max = $columnMaskInfo.MaxValue
+                                            }
+
+                                            if (-not $columnMaskInfo.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                                $max = 10
+                                            }
+
+                                            if ((-not $columnMaskInfo.MinValue -or -not $columnMaskInfo.MaxValue) -and ($columnMaskInfo.ColumnType -match 'date')) {
+                                                if (-not $columnMaskInfo.MinValue) {
+                                                    $min = (Get-Date).AddDays(-365)
+                                                }
+                                                if (-not $columnMaskInfo.MaxValue) {
+                                                    $max = (Get-Date).AddDays(365)
+                                                }
+                                            }
+
+                                            if ($columnobject.CharacterString) {
+                                                $charstring = $columnMaskInfo.CharacterString
+                                            } else {
+                                                $charstring = $CharacterString
+                                            }
+
                                             # Generate a new value
                                             try {
                                                 if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                    $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                    $newValueParams = @{
+                                                        DataType = $columnMaskInfo.SubType
+                                                        Min      = $columnMaskInfo.MinValue
+                                                        Max      = $columnMaskInfo.MaxValue
+                                                        Locale   = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
                                                 } else {
-                                                    $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                    $newValueParams = @{
+                                                        RandomizerType    = $columnMaskInfo.MaskingType
+                                                        RandomizerSubtype = $columnMaskInfo.SubType
+                                                        Min               = $min
+                                                        Max               = $max
+                                                        CharacterString   = $charstring
+                                                        Format            = $columnMaskInfo.Format
+                                                        Separator         = $columnMaskInfo.Separator
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
                                                 }
 
                                             } catch {
@@ -388,10 +447,27 @@ function Invoke-DbaDbDataMasking {
                                                 if ($columnMaskInfo) {
                                                     # Generate a new value
                                                     try {
-                                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                        if (-not $columnMaskInfo.SubType -and $columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                            $newValueParams = @{
+                                                                DataType = $columnMaskInfo.SubType
+                                                                Min      = $columnMaskInfo.MinValue
+                                                                Max      = $columnMaskInfo.MaxValue
+                                                                Locale   = $Locale
+                                                            }
+
+                                                            $newValue = Get-DbaRandomizedValue @newValueParams
                                                         } else {
-                                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                            $newValueParams = @{
+                                                                RandomizerType    = $columnMaskInfo.MaskingType
+                                                                RandomizerSubtype = $columnMaskInfo.SubType
+                                                                Min               = $min
+                                                                Max               = $max
+                                                                CharacterString   = $charstring
+                                                                Format            = $columnMaskInfo.Format
+                                                                Separator         = $columnMaskInfo.Separator
+                                                                Locale            = $Locale
+                                                            }
+                                                            $newValue = Get-DbaRandomizedValue @newValueParams
                                                         }
 
                                                     } catch {
@@ -596,12 +672,6 @@ function Invoke-DbaDbDataMasking {
                                             $max = 10
                                         }
 
-                                        if ($columnobject.CharacterString) {
-                                            $charstring = $columnobject.CharacterString
-                                        } else {
-                                            $charstring = $CharacterString
-                                        }
-
                                         if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
                                             if (-not $columnobject.MinValue) {
                                                 $min = (Get-Date).AddDays(-365)
@@ -611,12 +681,26 @@ function Invoke-DbaDbDataMasking {
                                             }
                                         }
 
+                                        if ($columnobject.CharacterString) {
+                                            $charstring = $columnobject.CharacterString
+                                        } else {
+                                            $charstring = $CharacterString
+                                        }
+
                                         try {
                                             $newValue = $null
 
                                             if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
                                                 if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
-                                                    $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = ($row.$($columnobject.Name))
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
 
                                                     $newValue = ($newValue -join '')
                                                 } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
@@ -625,7 +709,14 @@ function Invoke-DbaDbDataMasking {
                                                     $commaIndex = $valueString.IndexOf(",")
                                                     $dotIndex = $valueString.IndexOf(".")
 
-                                                    $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = (($valueString -replace ',', '') -replace '\.', '') -join ''
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
 
                                                     if ($commaIndex -ne -1) {
                                                         $newValue = $newValue.Insert($commaIndex, ',')
@@ -636,9 +727,29 @@ function Invoke-DbaDbDataMasking {
                                                     }
                                                 }
                                             } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                                $newValueParams = @{
+                                                    DataType        = $columnobject.ColumnType
+                                                    Min             = $min
+                                                    Max             = $max
+                                                    CharacterString = $charstring
+                                                    Format          = $columnobject.Format
+                                                    Locale          = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                                $newValueParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    Min               = $min
+                                                    Max               = $max
+                                                    CharacterString   = $charstring
+                                                    Format            = $columnobject.Format
+                                                    Separator         = $columnobject.Separator
+                                                    Locale            = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             }
                                         } catch {
 
@@ -763,9 +874,28 @@ function Invoke-DbaDbDataMasking {
                                             $newValue = $null
 
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValueParams = @{
+                                                    DataType        = $columnobject.SubType
+                                                    CharacterString = $charstring
+                                                    Min             = $columnComposite.Min
+                                                    Max             = $columnComposite.Max
+                                                    Locale          = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype  -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValueParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    Min               = $min
+                                                    Max               = $max
+                                                    CharacterString   = $charstring
+                                                    Format            = $columnobject.Format
+                                                    Separator         = $columnobject.Separator
+                                                    Locale            = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             }
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_

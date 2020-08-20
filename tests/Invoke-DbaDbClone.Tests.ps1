@@ -14,11 +14,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    $dbname = "dbatoolsci_clonetest"
-    $clonedb = "dbatoolsci_clonetest_CLONE"
-    $clonedb2 = "dbatoolsci_clonetest_CLONE2"
     Context "Command functions as expected" {
         BeforeAll {
+            $dbname = "dbatoolsci_clonetest"
+            $clonedb = "dbatoolsci_clonetest_CLONE"
+            $clonedb2 = "dbatoolsci_clonetest_CLONE2"
+
             $server = Connect-DbaInstance -SqlInstance $script:instance2
             $server.Query("CREATE DATABASE $dbname")
         }

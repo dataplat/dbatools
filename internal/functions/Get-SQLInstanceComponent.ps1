@@ -304,13 +304,18 @@ function Get-SQLInstanceComponent {
                 Write-Message -Level Debug -Message $logEntry
             }
             foreach ($result in $results) {
-                #Replace first decimal of the minor build with a 0, since we're using build numbers here
-                #Refer to https://sqlserverbuilds.blogspot.com/
+                # If version is unknown that component should be excluded, otherwise it would fail on conversion. We have no use for versionless components anyways.
+                if (-Not $result.Version) {
+                    Write-Message -Level Warning -Message "Component $($result.InstanceName) on $($result.ComputerName) has an unknown version and was ommitted from the instance list"
+                    continue
+                }
+                # Replace first decimal of the minor build with a 0, since we're using build numbers here
+                # Refer to https://sqlserverbuilds.blogspot.com/
                 Write-Message -Level Debug -Message "Converting version $($result.Version) to [version]"
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ([string]$result.Version)
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
                 Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
-                #Find a proper build reference and replace Version property
+                # Find a proper build reference and replace Version property
                 $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
             }

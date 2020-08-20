@@ -91,7 +91,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance sqlpomf\sql2016 -Job $jobName -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Confirm:$false
         }
 
         It "Successfully gets job when not using Job param" {

@@ -125,14 +125,17 @@ function Import-DbaCsv {
 
     .PARAMETER Quote
         Defines the default quote character wrapping every field.
+        Default: double-quotes
 
     .PARAMETER Escape
         Defines the default escape character letting insert quotation characters inside a quoted field.
 
         The escape character can be the same as the quote character.
+        Default: double-quotes
 
     .PARAMETER Comment
-        Defines the default comment character indicating that a line is commented out. Default is #.
+        Defines the default comment character indicating that a line is commented out.
+        Default: hashtag
 
     .PARAMETER TrimmingOption
         Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.

@@ -392,10 +392,9 @@ function New-DbaLogin {
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
 
-                            # leaving it here to test
+                            # DENY CONNECT SQL
                             if ($currentDenyWindowsLogin) {
                                 Write-Message -Level VeryVerbose -Message "Setting $loginName DenyWindowsLogin to $currentDenyWindowsLogin"
-                                $withParams += ", DENY_LOGIN" # gotta check this one
                                 $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
                             }
 
@@ -474,17 +473,17 @@ function New-DbaLogin {
                             }
                         }
                         #Process the DenyWindowsLogin property
-                        if ($currentDenyWindowsLogin) {
+                        if ($currentDenyWindowsLogin -ne $newLogin.DenyWindowsLogin) {
                             try {
-                                $newLogin.DenyWindowsLogin = $true
-                                $newLogin.Apply()
-                                Write-Message -Level Verbose -Message "Login $loginName has been denied on $instance."
+                                $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
+                                $newLogin.Alter()
+                                Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                             } catch {
-                                Write-Message -Level Verbose -Message "Failed to set deny windows login priviledge $loginName on $instance using SMO, trying T-SQL."
+                                Write-Message -Level Verbose -Message "Failed to deny from logging in $loginName on $instance using SMO, trying T-SQL."
                                 try {
-                                    $sql = "ALTER LOGIN [$loginName] DENY_WINDOWS" #check this one
+                                    $sql = "DENY CONNECT SQL TO [{0}]" -f $newLogin.Name
                                     $null = $server.Query($sql)
-                                    Write-Message -Level Verbose -Message "Login $loginName is now denied of Windows login privileges on $instance."
+                                    Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                                 } catch {
                                     Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }

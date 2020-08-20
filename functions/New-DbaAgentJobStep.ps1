@@ -273,7 +273,6 @@ function New-DbaAgentJobStep {
                                 if ($tStep.OnFailureStepID -ge $StepId -and $tStep.OnFailureStepId -ne 0) {
                                     $tStep.OnFailureStepID = ($tStep.OnFailureStepID) + 1
                                 }
-                                $tStep.Alter()
                             }
                             $jobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {

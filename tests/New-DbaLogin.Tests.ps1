@@ -48,18 +48,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     } catch { <#nbd#> }
 
-    #create Windows login
-    $computer = [ADSI]"WinNT://$computerName"
-    try {
-        $user = [ADSI]"WinNT://$computerName/$credLogin,user"
-        if ($user.Name -eq $credLogin) {
-            $computer.Delete('User', $credLogin)
-        }
-    } catch { <#User does not exist#> }
+    if ($IsWindows -ne $false) {
+        #create Windows login
+        $computer = [ADSI]"WinNT://$computerName"
+        try {
+            $user = [ADSI]"WinNT://$computerName/$credLogin,user"
+            if ($user.Name -eq $credLogin) {
+                $computer.Delete('User', $credLogin)
+            }
+        } catch { <#User does not exist#> }
 
-    $user = $computer.Create("user", $credLogin)
-    $user.SetPassword($password)
-    $user.SetInfo()
+        $user = $computer.Create("user", $credLogin)
+        $user.SetPassword($password)
+        $user.SetInfo()
+    }
 
     #create credential
     $null = New-DbaCredential -SqlInstance $server1 -Name $credLogin -CredentialIdentity $credLogin -Password $securePassword -Force
@@ -99,7 +101,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.LoginType | Should be 'SqlLogin'
         }
         It "Should be created successfully - password and all the flags" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login port -Password $securePassword -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands
+            $results = New-DbaLogin -SqlInstance $server1 -Login port -Password $securePassword -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -DenyWindowsLogin
             $results.Name | Should Be "port"
             $results.Language | Should Be 'Nederlands'
             $results.EnumCredentials() | Should be $null
@@ -108,13 +110,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.PasswordExpirationEnabled | Should be $true
             $results.PasswordPolicyEnforced | Should be $true
             $results.LoginType | Should be 'SqlLogin'
+            $results.DenyWindowsLogin | Should Be $true
         }
-        It "Should be created successfully - Windows login" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin
-            $results.Name | Should Be "$winLogin"
-            $results.DefaultDatabase | Should be 'master'
-            $results.IsDisabled | Should be $false
-            $results.LoginType | Should be 'WindowsUser'
+        if ($IsWindows -ne $false) {
+            It "Should be created successfully - Windows login" {
+                $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin
+                $results.Name | Should Be "$winLogin"
+                $results.DefaultDatabase | Should be 'master'
+                $results.IsDisabled | Should be $false
+                $results.LoginType | Should be 'WindowsUser'
+            }
         }
         It "Should be created successfully - certificate" {
             $results = New-DbaLogin -SqlInstance $server1 -Login certifico -MapToCertificate $certificateName
@@ -169,13 +174,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $login1.PasswordPolicyEnforced | Should Not be $login2.PasswordPolicyEnforced
             $login1.Sid | Should Not be $login2.Sid
         }
-        It "Should create a disabled account with deny Windows login" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin -Disabled -DenyWindowsLogin
-            $results.Name | Should Be "$winLogin"
-            $results.DefaultDatabase | Should be 'master'
-            $results.IsDisabled | Should be $true
-            $results.DenyWindowsLogin | Should be $true
-            $results.LoginType | Should be 'WindowsUser'
+        if ($IsWindows -ne $false) {
+            It "Should create a disabled account with deny Windows login" {
+                $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin -Disabled -DenyWindowsLogin
+                $results.Name | Should Be "$winLogin"
+                $results.DefaultDatabase | Should be 'master'
+                $results.IsDisabled | Should be $true
+                $results.DenyWindowsLogin | Should be $true
+                $results.LoginType | Should be 'WindowsUser'
+            }
         }
     }
 

@@ -15,8 +15,35 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        function Remove-TempObjects {
+            param ($dbs)
+            function Remove-TempObject {
+                param ($db, $object)
+                $db.Query("DECLARE @obj int = OBJECT_ID('$object'); IF @obj IS NOT NULL
+                BEGIN
+                    IF (SELECT type_desc FROM sys.objects WHERE object_id = @obj) = 'VIEW' DROP VIEW $object
+                    ELSE DROP TABLE $object
+                END")
+            }
+            foreach ($d in $dbs) {
+                Remove-TempObject $d dbo.dbatoolsci_example
+                Remove-TempObject $d dbo.dbatoolsci_example2
+                Remove-TempObject $d dbo.dbatoolsci_example3
+                Remove-TempObject $d dbo.dbatoolsci_example4
+                Remove-TempObject $d dbo.dbatoolsci_view_example
+                Remove-TempObject $d dbo.dbatoolsci_view_example2
+                Remove-TempObject $d dbo.dbatoolsci_view_example3
+                Remove-TempObject $d dbo.dbatoolsci_view_example4
+                Remove-TempObject $d dbo.dbatoolsci_view_will_exist
+                Remove-TempObject $d dbo.dbatoolsci_view_example_table
+                Remove-TempObject $d dbo.dbatoolsci_view_example2_table
+                Remove-TempObject $d dbo.dbatoolsci_view_example3_table
+                Remove-TempObject $d dbo.dbatoolsci_view_example4_table
+            }
+        }
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        Remove-TempObjects $db, $db2
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
             SELECT top 10 1
@@ -39,22 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             FROM sys.objects")
     }
     AfterAll {
-        try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example2")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example3")
-            $null = $db.Query("DROP VIEW dbo.dbatoolsci_view_example4")
-            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example3")
-            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example4")
-            $null = $db2.Query("DROP TABLE dbo.dbatoolsci_view_example")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_view_will_exist")
-        } catch {
-            $null = 1
-        }
+        Remove-TempObjects $db, $db2
     }
 
     It "copies the table data" {
