@@ -489,6 +489,7 @@ function Restore-DbaDatabase {
             }
             if ($Continue) {
                 Write-Message -Message "Called with continue, so assume we have an existing db in norecovery"
+                $WithReplace = $True
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
                 $LastRestoreType = Get-DbaDbRestoreHistory -SqlInstance $RestoreInstance -Last
             }
