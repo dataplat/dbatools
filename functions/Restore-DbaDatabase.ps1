@@ -132,6 +132,7 @@ function Restore-DbaDatabase {
 
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
+        When specified, WithReplace will be set to true
 
     .PARAMETER StandbyDirectory
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
