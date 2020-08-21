@@ -59,6 +59,7 @@ function Invoke-DbaAdvancedRestore {
 
     .PARAMETER Continue
         Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
+        Using this parameter will set WithReplace to True
 
     .PARAMETER AzureCredential
         AzureCredential required to connect to blob storage holding the backups
