@@ -121,6 +121,12 @@ function Copy-DbaDatabase {
     .PARAMETER SetSourceOffline
         If this switch is enabled, the Source database will be set to Offline after being copied.
 
+    .PARAMETER KeepCDC
+        Indicates whether CDC information should be copied as part of the database
+
+    .PARAMETER KeepReplication
+        Indicates whether replication configuration should be copied as part of the database copy operation
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -239,6 +245,10 @@ function Copy-DbaDatabase {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$NoCopyOnly,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$KeepCDC,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$KeepReplication,
         [switch]$SetSourceOffline,
         [string]$NewName,
         [string]$Prefix,
@@ -1218,7 +1228,7 @@ function Copy-DbaDatabase {
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
                                 } else {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
