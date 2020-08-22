@@ -111,7 +111,7 @@ function Add-DbaAgDatabase {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode,
+        [string]$SeedingMode = 'Manual',
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$EnableException
@@ -137,16 +137,20 @@ function Add-DbaAgDatabase {
             $allbackups = @{
             }
 
-            $Primary = $db.Parent
+            $primary = $db.Parent
             # check primary, should be run against primary
-            $ag = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
+            $ag = Get-DbaAvailabilityGroup -SqlInstance $primary -AvailabilityGroup $AvailabilityGroup
 
             if (-not $ag.Parent) {
-                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($db.Parent.Name)" -Continue
+                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($primary.Name)" -Continue
             }
 
             if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
+            }
+
+            if ($SeedingMode -eq "Automatic" -and $primary.VersionMajor -lt 13) {
+                Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Continue
             }
 
             if (-not $Secondary) {
@@ -170,12 +174,12 @@ function Add-DbaAgDatabase {
 
             if ($SeedingMode -eq "Automatic") {
                 # first check
-                if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.Name
+                if ($Pscmdlet.ShouldProcess($primary, "Backing up $db to NUL")) {
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.Name
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($primary.Name)")) {
                 try {
                     $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
                     # something is up with .net create(), force a stop
@@ -198,29 +202,20 @@ function Add-DbaAgDatabase {
                     $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
                 }
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
+                $agreplica = Get-DbaAgReplica -SqlInstance $primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
 
                 if (-not $agreplica) {
-                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($Primary.Name)"
+                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($primary.Name)"
                 }
 
-                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
-                    Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
-
-                    if (-not $SharedPath -and -not $UseLastBackup) {
-                        Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
-                    }
-                }
-
-
-                if ($SeedingMode) {
+                if ($SeedingMode -and $secondaryInstance.VersionMajor -ge 13) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
                 }
                 $agreplica.Refresh()
                 $SeedingModeReplica = $agreplica.SeedingMode
 
-                $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
+                $primarydb = Get-DbaDatabase -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.name
 
                 if ($SeedingModeReplica -ne 'Automatic') {
                     try {
@@ -234,7 +229,7 @@ function Add-DbaAgDatabase {
                             }
                             Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                         }
-                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
+                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
                             $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
