@@ -59,6 +59,7 @@ function Invoke-DbaAdvancedRestore {
 
     .PARAMETER Continue
         Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
+        When specified, WithReplace will be set to true
 
     .PARAMETER AzureCredential
         AzureCredential required to connect to blob storage holding the backups
@@ -175,6 +176,9 @@ function Invoke-DbaAdvancedRestore {
     }
     end {
         if (Test-FunctionInterrupt) { return }
+        if ($Continue -eq $True) {
+            $WithReplace = $True
+        }
         $databases = $internalHistory.Database | Select-Object -Unique
         foreach ($database in $databases) {
             $databaseRestoreStartTime = Get-Date
