@@ -176,7 +176,7 @@ function Invoke-DbaAdvancedRestore {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-        if ($continue -eq $True) {
+        if ($Continue -eq $True) {
             $WithReplace = $True
         }
         $databases = $internalHistory.Database | Select-Object -Unique
