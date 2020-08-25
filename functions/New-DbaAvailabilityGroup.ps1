@@ -302,6 +302,11 @@ function New-DbaAvailabilityGroup {
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking perquisites"
 
+        if (-not $server.IsHadrEnabled) {
+            Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance." -Target $Primary
+            return
+        }
+
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
             Stop-Function -Message "Availability group named $Name already exists on $Primary"
@@ -350,11 +355,16 @@ function New-DbaAvailabilityGroup {
             $secondaries = @()
             foreach ($computer in $Secondary) {
                 try {
-                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
+                    $second = Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                    Stop-Function -Message "Error occurred while establishing connection to $computer" -Category ConnectionError -ErrorRecord $_ -Target $computer
                     return
                 }
+                if (-not $second.IsHadrEnabled) {
+                    Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $computer. Use Enable-DbaAgHadr to configure the instance." -Target $computer
+                    return
+                }
+                $secondaries += $second
             }
 
             if ($SeedingMode -eq "Automatic") {
