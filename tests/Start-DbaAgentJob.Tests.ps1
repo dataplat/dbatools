@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -16,17 +16,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Start a job" {
         BeforeAll {
-            $jobName = "dbatoolsci_job_$(get-random)"
-            $null = New-DbaAgentJob -SqlInstance $script:instance2,$script:instance3 -Job $jobName
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2,$script:instance3 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
+            $jobName = "dbatoolsci_job_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2,$script:instance3 -Job $jobName -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName -Confirm:$false
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
             $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName | Start-DbaAgentJob
             $results.CurrentRunStatus -ne 'Idle' | Should Be $true
+            $results.CurrentRunStatus -ne $null | Should Be $true
         }
 
         It "does not run all jobs" {
