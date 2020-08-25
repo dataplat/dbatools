@@ -119,17 +119,7 @@ function Start-DbaAgentJob {
         [int]$SleepPeriod = 300,
         [switch]$EnableException
     )
-    process {
-        if ((Test-Bound -not -ParameterName AllJobs) -and (Test-Bound -not -ParameterName Job) -and (Test-Bound -not -ParameterName InputObject)) {
-            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs."
-            return
-        }
-
-        if ((Test-Bound -not -ParameterName Wait) -and (Test-Bound -ParameterName Parallel)) {
-            Stop-Function -Message "Please use the -Wait switch when using -Parallel."
-            return
-        }
-
+    begin {
         [ScriptBlock]$waitBlock = {
             param(
                 [Microsoft.SqlServer.Management.Smo.Agent.Job]$currentjob,
@@ -137,16 +127,27 @@ function Start-DbaAgentJob {
                 [int]$WaitPeriod
             )
             [string]$server = $currentjob.Parent.Parent.Name
-            [string]$currentRunStatus = $currentjob.CurrentRunStatus
             [string]$currentStep = $currentjob.CurrentRunStep
             [int]$currentStepId = $currentstep.Split('()')[0].Trim()
             [string]$currentStepName = $currentstep.Split('()')[1]
+            [string]$currentRunStatus = $currentjob.CurrentRunStatus
             [int]$jobStepsCount = $currentjob.JobSteps.Count
             [int]$currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
             [int]$currentStepRetries = $currentjob.JobSteps[$currentStepName].RetryAttempts
             Write-Message -Level Verbose -Message "Server: $server - $currentjob is $currentRunStatus, currently on Job Step '$currentStepName' ($currentStepId of $jobStepsCount), and has tried $currentStepRetryAttempts of $currentStepRetries retry attempts"
-            if ((Test-Bound -ParameterName Wait) -and (Test-Bound -ParameterName WaitPeriod) ) { Start-Sleep -Seconds $WaitPeriod }
+            if (($Wait) -and ($WaitPeriod) ) { Start-Sleep -Seconds $WaitPeriod }
             $currentjob.Refresh()
+        }
+    }
+    process {
+        if ((Test-Bound -not -ParameterName AllJobs) -and (Test-Bound -not -ParameterName Job) -and (Test-Bound -not -ParameterName InputObject)) {
+            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs."
+            return
+        }
+
+        if ((-not $Wait) -and ($Parallel)) {
+            Stop-Function -Message "Please use the -Wait(:`$true) switch when using -Parallel(:`$true)."
+            return
         }
 
         # Loop through each of the instances and store agent jobs
@@ -208,28 +209,30 @@ function Start-DbaAgentJob {
                     }
                 }
 
-                if ((Test-Bound -ParameterName Wait) -and (Test-Bound -not -ParameterName Parallel)) {
-                    # Wait for the job each job in a serialized fashion.
+                if (($Wait) -and (-not $Parallel)) {
+                    # Wait for each job in a serialized fashion.
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
                         Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob, $true, $WaitPeriod)
                     }
                     Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
-                } elseif (Test-Bound -not -ParameterName Parallel) {
+                } elseif (-not $Parallel) {
                     Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
                 }
             }
         }
 
         # Wait for each job to be done in parallel
-        if (Test-Bound -ParameterName Parallel) {
-            while ($InputObject.Where( { $PSItem.CurrentRunStatus -ne 'Idle' } ).Count -gt 0) {
-                foreach ($currentjob in $InputObject.Where( { $PSItem.CurrentRunStatus -ne 'Idle' } )) {
+        if ($Parallel) {
+            while ($InputObject.CurrentRunStatus -contains 'Executing') {
+                foreach ($currentjob in $InputObject) {
                     Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob)
                 }
                 Start-Sleep -Seconds $WaitPeriod
             }
-            # We can be sloppy with -Job since Get-DbaAgentJob will filter out per server, just don't query each server more than once.
-            Get-DbaAgentJob -SqlInstance $($InputObject.Parent.Parent | Select-Object -Unique) -Job $InputObject
+            Get-DbaAgentJob -SqlInstance $($InputObject.Parent.Parent | Select-Object -Unique) -Job $($InputObject.Name | Select-Object -Unique);
         }
+    }
+    end {
+
     }
 }
