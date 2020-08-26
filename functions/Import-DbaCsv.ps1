@@ -560,8 +560,14 @@ function Import-DbaCsv {
                                 try {
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
                                     $ColumnMapping = @{ }
-                                    $firstline -split $Delimiter | ForEach-Object {
-                                        $ColumnMapping.Add($_, $_)
+                                    # turns out split doesn't play nicely with | below we conditionally escape it
+                                    if ($Delimiter -eq "|") {
+                                        $ColumnMapColumns = $firstline -split '\|'
+                                    } else {
+                                        $ColumnMapColumns = $firstline -split $Delimiter
+                                    }
+                                    foreach ($ColumnMapColumn in $ColumnMapColumns) {
+                                        $ColumnMapping.Add($ColumnMapColumn, $ColumnMapColumn)
                                     }
                                     $ColumnMap += $ColumnMapping
                                 } catch {
