@@ -564,12 +564,10 @@ function Get-DbaDbBackupHistory {
                         JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                         JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
                         JOIN (
-                            SELECT database_guid, last_recovery_fork_guid
-                            FROM (SELECT database_guid, last_recovery_fork_guid, ROW_NUMBER() OVER (ORDER BY backup_finish_date DESC) AS rn
-                                  FROM msdb..backupset
-                                  WHERE database_name = '$($db.Name)'
-                                 ) AS bs
-                            WHERE rn = 1
+                            SELECT TOP 1 database_guid, last_recovery_fork_guid
+                            FROM msdb..backupset
+                            WHERE database_name = '$($db.Name)'
+                            ORDER BY backup_finish_date DESC
                             ) AS last_guids ON last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
                     WHERE (type = '$first' OR type = '$second')
                     $whereCopyOnly
