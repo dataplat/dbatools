@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -18,19 +18,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
             $jobName = "dbatoolsci_job_$(Get-Random)"
             $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+
+            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName | Start-DbaAgentJob
         }
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName -Confirm:$false
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
-            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName | Start-DbaAgentJob
             $results.CurrentRunStatus -ne 'Idle' | Should Be $true
         }
 
         It "returns a CurrentRunStatus of not null and supports pipe" {
-            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName | Start-DbaAgentJob
             $results.CurrentRunStatus -ne $null | Should Be $true
         }
 
