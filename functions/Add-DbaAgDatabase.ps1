@@ -56,7 +56,7 @@ function Add-DbaAgDatabase {
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
 
     .PARAMETER UseLastBackup
-        Use the last full backup of database.
+        Use the last full and log backup of database. A log backup must be the last backup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -166,9 +166,15 @@ function Add-DbaAgDatabase {
                 $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
             }
 
-            if ($SeedingMode -ne "Automatic") {
+            if ($SeedingMode -eq "Manual") {
                 if (((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup).Year -eq 1) {
                     Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
+                }
+                if ($UseLastBackup) {
+                    $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
+                    if ($allbackups[$db].Type -notcontains 'Log') {
+                        Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). A log backup must be the last backup taken." -Continue
+                    }
                 }
             }
 
@@ -220,13 +226,9 @@ function Add-DbaAgDatabase {
                 if ($SeedingModeReplica -ne 'Automatic') {
                     try {
                         if (-not $allbackups[$db]) {
-                            if ($UseLastBackup) {
-                                $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                            } else {
-                                $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                                $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                                $allbackups[$db] = $fullbackup, $logbackup
-                            }
+                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            $allbackups[$db] = $fullbackup, $logbackup
                             Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                         }
                         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $primary")) {
