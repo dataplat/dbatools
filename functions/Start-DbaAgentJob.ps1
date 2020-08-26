@@ -232,7 +232,4 @@ function Start-DbaAgentJob {
             Get-DbaAgentJob -SqlInstance $($InputObject.Parent.Parent | Select-Object -Unique) -Job $($InputObject.Name | Select-Object -Unique);
         }
     }
-    end {
-
-    }
 }
