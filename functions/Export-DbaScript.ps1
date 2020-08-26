@@ -292,7 +292,7 @@ function Export-DbaScript {
                                     } else {
                                         $scriptpart = "$scriptpart`r`n"
                                     }
-                                    $scriptpart #| Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                    $scriptpart
                                 }
                                 $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 $ScriptingOptionsObject.FileName = $soFileName
@@ -304,7 +304,7 @@ function Export-DbaScript {
                                 } else {
                                     $scriptpart = "$scriptpart`r`n"
                                 }
-                                $scriptpart #| Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                $scriptpart
                             }
                             $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
