@@ -300,11 +300,11 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking prerequisites"
-        $prerequisitesFailed = $false
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
+        $requirementsFailed = $false
 
         if (-not $server.IsHadrEnabled) {
-            $prerequisitesFailed = $true
+            $requirementsFailed = $true
             Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance."
         }
 
@@ -322,7 +322,7 @@ function New-DbaAvailabilityGroup {
                 }
 
                 if (-not $second.IsHadrEnabled) {
-                    $prerequisitesFailed = $true
+                    $requirementsFailed = $true
                     Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $instance. Use Enable-DbaAgHadr to configure the instance."
                 }
 
@@ -338,7 +338,7 @@ function New-DbaAvailabilityGroup {
             }
         }
 
-        if ($prerequisitesFailed) {
+        if ($requirementsFailed) {
             Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
             return
         }
