@@ -269,7 +269,6 @@ function Get-DbaDbBackupHistory {
 
             if ($server.VersionMajor -ge 12) {
                 $compressedFlag = $true
-                $encryptedFlag = $true
                 # 2014 introduced encryption
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
