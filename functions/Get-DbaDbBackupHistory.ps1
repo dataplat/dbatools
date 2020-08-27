@@ -482,6 +482,8 @@ function Get-DbaDbBackupHistory {
                     #     and given the lsn are composed in the first part by the VLF SeqID, it happens seldomly that for the same database_name backupset holds
                     #     last_lsn out of order. To avoid this behaviour, we filter by database_guid choosing the guid that has MAX(backup_finish_date), as we know
                     #     last_lsn cannot be out-of-order for the same database, and the same database cannot have different database_guid
+                    #   - because someone could restore a very old backup with low lsn values and continue to use this database we filter
+                    #     not only by database_guid but also by the recovery fork of the last backup (see issue #6730 for more details)
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
@@ -564,16 +566,13 @@ function Get-DbaDbBackupHistory {
                         JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                         JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
                         JOIN (
-                        SELECT DISTINCT database_guid, database_name, backup_finish_date
-                        FROM msdb..backupset
-                        WHERE backupset.database_name = '$($db.Name)') dbguid ON dbguid.database_name =  backupset.database_name AND dbguid.database_guid = backupset.database_guid
-                    JOIN (
-                        SELECT database_name, MAX(backup_finish_date) max_finish_date
-                        FROM msdb..backupset
-                        WHERE backupset.database_name = '$($db.Name)'
-                        GROUP BY database_name) dbguid_support ON dbguid_support.database_name = backupset.database_name AND dbguid.backup_finish_date = dbguid_support.max_finish_date
-                    WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
-                    AND (type = '$first' OR type = '$second')
+                            SELECT TOP 1 database_guid, last_recovery_fork_guid
+                            FROM msdb..backupset
+                            WHERE database_name = '$($db.Name)'
+                            ORDER BY backup_finish_date DESC
+                            ) AS last_guids ON last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
+                    WHERE (type = '$first' OR type = '$second')
+                    $whereCopyOnly
                     $devTypeFilterWhere
                     $sinceSqlFilter
                     $recoveryForkSqlFilter
