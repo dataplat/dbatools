@@ -300,7 +300,48 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking perquisites"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
+        $requirementsFailed = $false
+
+        if (-not $server.IsHadrEnabled) {
+            $requirementsFailed = $true
+            Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance."
+        }
+
+        if ($Secondary) {
+            $secondaries = @()
+            if ($SeedingMode -eq "Automatic") {
+                $primarypath = Get-DbaDefaultPath -SqlInstance $server
+            }
+            foreach ($instance in $Secondary) {
+                try {
+                    $second = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
+                    $secondaries += $second
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
+                }
+
+                if (-not $second.IsHadrEnabled) {
+                    $requirementsFailed = $true
+                    Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $instance. Use Enable-DbaAgHadr to configure the instance."
+                }
+
+                if ($SeedingMode -eq "Automatic") {
+                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
+                    if ($primarypath.Data -ne $secondarypath.Data) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default data paths do not match. Trying anyway."
+                    }
+                    if ($primarypath.Log -ne $secondarypath.Log) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default log paths do not match. Trying anyway."
+                    }
+                }
+            }
+        }
+
+        if ($requirementsFailed) {
+            Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
+            return
+        }
 
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
@@ -346,31 +387,6 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        if ($Secondary) {
-            $secondaries = @()
-            foreach ($computer in $Secondary) {
-                try {
-                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
-                    return
-                }
-            }
-
-            if ($SeedingMode -eq "Automatic") {
-                $primarypath = Get-DbaDefaultPath -SqlInstance $server
-                foreach ($second in $secondaries) {
-                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
-                    if ($primarypath.Data -ne $secondarypath.Data) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($second) default data paths do not match. Trying anyway."
-                    }
-                    if ($primarypath.Log -ne $secondarypath.Log) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($second) default log paths do not match. Trying anyway."
-                    }
-                }
-            }
-        }
-
         # database checks
         if ($Database) {
             $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
@@ -378,18 +394,18 @@ function New-DbaAvailabilityGroup {
 
         foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 return
             }
 
             if ($primarydb.Status -ne "Normal") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current state: $($primarydb.Status)"
+                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current state: $($primarydb.Status)"
                 return
             }
 
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackup)) {
-                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
+                    Stop-Function -Message "$($primarydb.Name) not set to full recovery. UseLastBackup cannot be used."
                     return
                 } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
