@@ -18,9 +18,10 @@
             "source": [
                 "# **SQL Server 2019 Diagnostic Information Queries**\r\n",
                 "- Glenn Berry \r\n",
-                "- Last Modified: July 15, 2020\r\n",
+                "- Last Modified: August 20, 2020\r\n",
                 "- Twitter: GlennAlanBerry\r\n",
                 "- Blog: https://glennsqlperformance.com/\r\n",
+                "- YouTube: https://bit.ly/2PkoAM1 \r\n",
                 "\r\n",
                 "> **Copyright (C) 2020 Glenn Berry** \\\r\n",
                 "All rights reserved.\\\r\n",
@@ -383,11 +384,16 @@
                 "SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], \r\n",
                 "       d.log_reuse_wait_desc AS [Log Reuse Wait Desc],\r\n",
                 "    MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],\r\n",
+                "\tMAX(CASE WHEN [type] = 'D' THEN bmf.physical_device_name ELSE NULL END) AS [Last Full Backup Location],\r\n",
                 "    MAX(CASE WHEN [type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],\r\n",
-                "    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup]\r\n",
+                "\tMAX(CASE WHEN [type] = 'I' THEN bmf.physical_device_name ELSE NULL END) AS [Last Differential Backup Location],\r\n",
+                "    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],\r\n",
+                "\tMAX(CASE WHEN [type] = 'L' THEN bmf.physical_device_name ELSE NULL END) AS [Last Log Backup Location]\r\n",
                 "FROM sys.databases AS d WITH (NOLOCK)\r\n",
                 "LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)\r\n",
-                "ON bs.[database_name] = d.[name] \r\n",
+                "ON bs.[database_name] = d.[name]\r\n",
+                "LEFT OUTER JOIN msdb.dbo.backupmediafamily AS bmf WITH (NOLOCK)\r\n",
+                "ON bs.media_set_id = bmf.media_set_id \r\n",
                 "AND bs.backup_finish_date > GETDATE()- 30\r\n",
                 "WHERE d.name <> N'tempdb'\r\n",
                 "GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name] \r\n",
@@ -395,9 +401,7 @@
             ],
             "metadata": {
                 "azdata_cell_guid": "3f0b33ef-048e-4791-8b22-e097413a971d",
-                "tags": [
-                    "hide_input"
-                ]
+                "tags": []
             },
             "outputs": [],
             "execution_count": null
@@ -2746,7 +2750,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## **Queries 57 through 62 are the \"Bad Man List\" for stored procedures**"
+                "## **Queries 57 through 63 are the \"Bad Man List\" for stored procedures**"
             ],
             "metadata": {
                 "azdata_cell_guid": "a79de6e1-5d2f-4608-b282-8fa000b0c8a1"
@@ -3046,7 +3050,56 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Lists the top statements by average input/output usage for the current database  (Query 63) (Top IO Statements)"
+                "## Cached SPs Missing Indexes by Execution Count (Query 63) (SP Missing Index)"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "84836546-9ff0-4fea-a4be-bb866db3b174"
+            }
+        },
+        {
+            "cell_type": "code",
+            "source": [
+                "-- Cached SPs Missing Indexes by Execution Count (Query 63) (SP Missing Index)\r\n",
+                "SELECT TOP(25) p.name AS [SP Name], qs.execution_count AS [Execution Count],\r\n",
+                "ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],\r\n",
+                "qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],\r\n",
+                "qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    \r\n",
+                "qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],\r\n",
+                "FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], \r\n",
+                "FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]\r\n",
+                "-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan\r\n",
+                "FROM sys.procedures AS p WITH (NOLOCK)\r\n",
+                "INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)\r\n",
+                "ON p.[object_id] = qs.[object_id]\r\n",
+                "CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp\r\n",
+                "WHERE qs.database_id = DB_ID()\r\n",
+                "AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0\r\n",
+                "AND CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%'\r\n",
+                "ORDER BY qs.execution_count DESC OPTION (RECOMPILE);"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "164f006e-985e-42fc-ad36-cf09f342300d",
+                "tags": [
+                    "hide_input"
+                ]
+            },
+            "outputs": [],
+            "execution_count": null
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "This helps you find the most frequently executed cached stored procedures that have missing index warnings\r\n",
+                "- This can often help you find index tuning candidates"
+            ],
+            "metadata": {
+                "azdata_cell_guid": "75158aa1-f0e0-4e96-b9db-fbe054db634b"
+            }
+        },
+        {
+            "cell_type": "markdown",
+            "source": [
+                "## Lists the top statements by average input/output usage for the current database  (Query 64) (Top IO Statements)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9b89a916-a359-4328-a297-94914d05b4ff"
@@ -3055,7 +3108,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Lists the top statements by average input/output usage for the current database  (Query 63) (Top IO Statements)\r\n",
+                "-- Lists the top statements by average input/output usage for the current database  (Query 64) (Top IO Statements)\r\n",
                 "SELECT TOP(50) OBJECT_NAME(qt.objectid, dbid) AS [SP Name],\r\n",
                 "(qs.total_logical_reads + qs.total_logical_writes) /qs.execution_count AS [Avg IO], qs.execution_count AS [Execution Count],\r\n",
                 "SUBSTRING(qt.[text],qs.statement_start_offset/2, \r\n",
@@ -3090,7 +3143,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Possible Bad NC Indexes (writes > reads)  (Query 64) (Bad NC Indexes)"
+                "## Possible Bad NC Indexes (writes > reads)  (Query 65) (Bad NC Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "015decc0-fce5-4334-9afd-7ca74087bac0"
@@ -3099,7 +3152,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Possible Bad NC Indexes (writes > reads)  (Query 64) (Bad NC Indexes)\r\n",
+                "-- Possible Bad NC Indexes (writes > reads)  (Query 65) (Bad NC Indexes)\r\n",
                 "SELECT SCHEMA_NAME(o.[schema_id]) AS [Schema Name], \r\n",
                 "OBJECT_NAME(s.[object_id]) AS [Table Name],\r\n",
                 "i.name AS [Index Name], i.index_id, \r\n",
@@ -3142,7 +3195,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Missing Indexes for current database by Index Advantage  (Query 65) (Missing Indexes)"
+                "## Missing Indexes for current database by Index Advantage  (Query 66) (Missing Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "533323aa-8cb7-4093-8d82-93d0090ec47d"
@@ -3151,7 +3204,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Missing Indexes for current database by Index Advantage  (Query 65) (Missing Indexes)\r\n",
+                "-- Missing Indexes for current database by Index Advantage  (Query 66) (Missing Indexes)\r\n",
                 "SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage], \r\n",
                 "FORMAT(migs.last_user_seek, 'yyyy-MM-dd HH:mm:ss') AS [last_user_seek], mid.[statement] AS [Database.Schema.Table], \r\n",
                 "COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table], \r\n",
@@ -3197,7 +3250,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Find missing index warnings for cached plans in the current database  (Query 66) (Missing Index Warnings)"
+                "## Find missing index warnings for cached plans in the current database  (Query 67) (Missing Index Warnings)"
             ],
             "metadata": {
                 "azdata_cell_guid": "642e72dd-3375-470f-a36d-6a5e40151c0a"
@@ -3206,7 +3259,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Find missing index warnings for cached plans in the current database  (Query 66) (Missing Index Warnings)\r\n",
+                "-- Find missing index warnings for cached plans in the current database  (Query 67) (Missing Index Warnings)\r\n",
                 "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], \r\n",
                 "               cp.objtype, cp.usecounts, cp.size_in_bytes, qp.query_plan\r\n",
@@ -3238,7 +3291,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 67) (Buffer Usage)"
+                "## Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 68) (Buffer Usage)"
             ],
             "metadata": {
                 "azdata_cell_guid": "b8719781-9935-47fe-9cce-1475fd0c5dde"
@@ -3247,7 +3300,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 67) (Buffer Usage)\r\n",
+                "-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 68) (Buffer Usage)\r\n",
                 "-- Note: This query could take some time on a busy instance\r\n",
                 "SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],\r\n",
                 "OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, \r\n",
@@ -3296,7 +3349,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get Table names, row counts, and compression status for clustered index or heap  (Query 68) (Table Sizes)"
+                "## Get Table names, row counts, and compression status for clustered index or heap  (Query 69) (Table Sizes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "0180bfe5-9ef8-4155-95e5-1014e1ba6b2f"
@@ -3305,7 +3358,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 68) (Table Sizes)\r\n",
+                "-- Get Table names, row counts, and compression status for clustered index or heap  (Query 69) (Table Sizes)\r\n",
                 "SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [ObjectName], \r\n",
                 "SUM(p.Rows) AS [RowCount], p.data_compression_desc AS [Compression Type]\r\n",
                 "FROM sys.partitions AS p WITH (NOLOCK)\r\n",
@@ -3346,7 +3399,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get some key table properties (Query 69) (Table Properties)"
+                "## Get some key table properties (Query 70) (Table Properties)"
             ],
             "metadata": {
                 "azdata_cell_guid": "f4afcbe8-bbfe-43c6-b394-5acf2002c590"
@@ -3355,7 +3408,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get some key table properties (Query 69) (Table Properties)\r\n",
+                "-- Get some key table properties (Query 70) (Table Properties)\r\n",
                 "SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.index_id, \r\n",
                 "       p.data_compression_desc AS [Index Data Compression],\r\n",
                 "       t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, \r\n",
@@ -3393,7 +3446,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## When were Statistics last updated on all indexes?  (Query 70) (Statistics Update)"
+                "## When were Statistics last updated on all indexes?  (Query 71) (Statistics Update)"
             ],
             "metadata": {
                 "azdata_cell_guid": "8f276f88-0917-4dfd-b558-362066d8b3af"
@@ -3402,7 +3455,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- When were Statistics last updated on all indexes?  (Query 70) (Statistics Update)\r\n",
+                "-- When were Statistics last updated on all indexes?  (Query 71) (Statistics Update)\r\n",
                 "SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],\r\n",
                 "      i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], \r\n",
                 "      s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary,\r\n",
@@ -3446,7 +3499,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at most frequently modified indexes and statistics (Query 71) (Volatile Indexes)"
+                "## Look at most frequently modified indexes and statistics (Query 72) (Volatile Indexes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "1c6607f6-bb73-48cd-bd31-3d265f109012"
@@ -3455,7 +3508,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at most frequently modified indexes and statistics (Query 71) (Volatile Indexes)\r\n",
+                "-- Look at most frequently modified indexes and statistics (Query 72) (Volatile Indexes)\r\n",
                 "SELECT o.[name] AS [Object Name], o.[object_id], o.[type_desc], s.[name] AS [Statistics Name], \r\n",
                 "       s.stats_id, s.no_recompute, s.auto_created, s.is_incremental, s.is_temporary,\r\n",
                 "\t   sp.modification_counter, sp.[rows], sp.rows_sampled, sp.last_updated\r\n",
@@ -3488,7 +3541,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get fragmentation info for all indexes above a certain size in the current database  (Query 72) (Index Fragmentation)"
+                "## Get fragmentation info for all indexes above a certain size in the current database  (Query 73) (Index Fragmentation)"
             ],
             "metadata": {
                 "azdata_cell_guid": "9031de0d-fc38-4219-8a88-9728f0ebc79d"
@@ -3497,7 +3550,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get fragmentation info for all indexes above a certain size in the current database  (Query 72) (Index Fragmentation)\r\n",
+                "-- Get fragmentation info for all indexes above a certain size in the current database  (Query 73) (Index Fragmentation)\r\n",
                 "-- Note: This query could take some time on a very large database\r\n",
                 "SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],\r\n",
                 "OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, \r\n",
@@ -3536,7 +3589,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 73) (Overall Index Usage - Reads)"
+                "## Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 74) (Overall Index Usage - Reads)"
             ],
             "metadata": {
                 "azdata_cell_guid": "1a3ff6ab-165b-411d-8baf-713b6f322dc2"
@@ -3545,7 +3598,7 @@
         {
             "cell_type": "code",
             "source": [
-                "--- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 73) (Overall Index Usage - Reads)\r\n",
+                "--- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 74) (Overall Index Usage - Reads)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, \r\n",
                 "       s.user_seeks, s.user_scans, s.user_lookups,\r\n",
                 "\t   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], \r\n",
@@ -3581,7 +3634,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 74) (Overall Index Usage - Writes)"
+                "## Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 75) (Overall Index Usage - Writes)"
             ],
             "metadata": {
                 "azdata_cell_guid": "a3dafd2f-5693-492e-8e7b-f558c4ec624e"
@@ -3590,7 +3643,7 @@
         {
             "cell_type": "code",
             "source": [
-                "--- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 74) (Overall Index Usage - Writes)\r\n",
+                "--- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 75) (Overall Index Usage - Writes)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,\r\n",
                 "\t   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], \r\n",
                 "\t   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,\r\n",
@@ -3624,7 +3677,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get in-memory OLTP index usage (Query 75) (XTP Index Usage)"
+                "## Get in-memory OLTP index usage (Query 76) (XTP Index Usage)"
             ],
             "metadata": {
                 "azdata_cell_guid": "7fb895d5-7d7c-49d1-b459-bea8648eee59"
@@ -3633,7 +3686,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get in-memory OLTP index usage (Query 75) (XTP Index Usage)\r\n",
+                "-- Get in-memory OLTP index usage (Query 76) (XTP Index Usage)\r\n",
                 "SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],\r\n",
                 "       i.[type_desc], xis.scans_started, xis.scans_retries, \r\n",
                 "\t   xis.rows_touched, xis.rows_returned\r\n",
@@ -3667,7 +3720,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at Columnstore index physical statistics (Query 76) (Columnstore Index Physical Stat)"
+                "## Look at Columnstore index physical statistics (Query 77) (Columnstore Index Physical Stat)"
             ],
             "metadata": {
                 "azdata_cell_guid": "f708aa73-505b-4aaa-9c7a-f1ed5c8b2366"
@@ -3676,7 +3729,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at Columnstore index physical statistics (Query 76) (Columnstore Index Physical Stat)\r\n",
+                "-- Look at Columnstore index physical statistics (Query 77) (Columnstore Index Physical Stat)\r\n",
                 "SELECT OBJECT_NAME(ps.object_id) AS [TableName],  \r\n",
                 "\ti.[name] AS [IndexName], ps.index_id, ps.partition_number,\r\n",
                 "\tps.delta_store_hobt_id, ps.state_desc, ps.total_rows, ps.size_in_bytes,\r\n",
@@ -3710,7 +3763,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get lock waits for current database (Query 77) (Lock Waits)"
+                "## Get lock waits for current database (Query 78) (Lock Waits)"
             ],
             "metadata": {
                 "azdata_cell_guid": "58df2dd4-b3ff-4947-9cef-407ff9d74ca2"
@@ -3719,7 +3772,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get lock waits for current database (Query 77) (Lock Waits)\r\n",
+                "-- Get lock waits for current database (Query 78) (Lock Waits)\r\n",
                 "SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,\r\n",
                 "\t\tSUM(ios.row_lock_wait_count) AS [total_row_lock_waits], \r\n",
                 "\t\tSUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],\r\n",
@@ -3758,7 +3811,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at UDF execution statistics (Query 78) (UDF Statistics)"
+                "## Look at UDF execution statistics (Query 79) (UDF Statistics)"
             ],
             "metadata": {
                 "azdata_cell_guid": "4bc1f2be-a361-4e8c-a11f-43a8b9d31278"
@@ -3767,7 +3820,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at UDF execution statistics (Query 78) (UDF Statistics)\r\n",
+                "-- Look at UDF execution statistics (Query 79) (UDF Statistics)\r\n",
                 "SELECT OBJECT_NAME(object_id) AS [Function Name], execution_count,\r\n",
                 "\t   total_worker_time, total_logical_reads, total_physical_reads, total_elapsed_time, \r\n",
                 "\t   total_elapsed_time/execution_count AS [avg_elapsed_time],\r\n",
@@ -3801,7 +3854,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Determine which scalar UDFs are in-lineable (Query 79) (Inlineable UDFs)"
+                "## Determine which scalar UDFs are in-lineable (Query 80) (Inlineable UDFs)"
             ],
             "metadata": {
                 "azdata_cell_guid": "fbd0a13d-9fa3-4af4-be6d-e14c6e0004b7"
@@ -3810,7 +3863,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Determine which scalar UDFs are in-lineable (Query 79) (Inlineable UDFs)\r\n",
+                "-- Determine which scalar UDFs are in-lineable (Query 80) (Inlineable UDFs)\r\n",
                 "SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type\r\n",
                 "FROM sys.sql_modules AS m WITH (NOLOCK) \r\n",
                 "LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)\r\n",
@@ -3841,7 +3894,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get QueryStore Options for this database (Query 80) (QueryStore Options)"
+                "## Get QueryStore Options for this database (Query 81) (QueryStore Options)"
             ],
             "metadata": {
                 "azdata_cell_guid": "04fecb8a-6fa8-4aae-9cc0-22f4aa0419e4"
@@ -3850,7 +3903,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get QueryStore Options for this database (Query 80) (QueryStore Options)\r\n",
+                "-- Get QueryStore Options for this database (Query 81) (QueryStore Options)\r\n",
                 "SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],\r\n",
                 "       current_storage_size_mb, [max_storage_size_mb], \r\n",
                 "\t   query_capture_mode_desc, size_based_cleanup_mode_desc\r\n",
@@ -3882,7 +3935,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get input buffer information for the current database (Query 81) (Input Buffer)"
+                "## Get input buffer information for the current database (Query 82) (Input Buffer)"
             ],
             "metadata": {
                 "azdata_cell_guid": "414cd580-c270-4284-a0e9-dc913d5003d3"
@@ -3891,7 +3944,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get input buffer information for the current database (Query 81) (Input Buffer)\r\n",
+                "-- Get input buffer information for the current database (Query 82) (Input Buffer)\r\n",
                 "SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],\r\n",
                 "       es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,\r\n",
                 "       es.[status], ib.event_info AS [Input Buffer]\r\n",
@@ -3927,7 +3980,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)"
+                "## Get any resumable index rebuild operation information (Query 83) (Resumable Index Rebuild)"
             ],
             "metadata": {
                 "azdata_cell_guid": "db25476b-da67-4b59-accb-1d426a1bfa5d"
@@ -3936,7 +3989,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)\r\n",
+                "-- Get any resumable index rebuild operation information (Query 83) (Resumable Index Rebuild)\r\n",
                 "SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],\r\n",
                 "       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, iro.start_time, iro.percent_complete\r\n",
                 "FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)\r\n",
@@ -3963,7 +4016,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Get database automatic tuning options (Query 83) (Automatic Tuning Options)"
+                "## Get database automatic tuning options (Query 84) (Automatic Tuning Options)"
             ],
             "metadata": {
                 "azdata_cell_guid": "5b5aa22a-ec08-4883-9ba3-5b493dcfad62"
@@ -3972,7 +4025,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Get database automatic tuning options (Query 83) (Automatic Tuning Options)\r\n",
+                "-- Get database automatic tuning options (Query 84) (Automatic Tuning Options)\r\n",
                 "SELECT [name], desired_state_desc, actual_state_desc, reason_desc\r\n",
                 "FROM sys.database_automatic_tuning_options WITH (NOLOCK)\r\n",
                 "OPTION (RECOMPILE);"
@@ -3998,7 +4051,7 @@
         {
             "cell_type": "markdown",
             "source": [
-                "## Look at recent Full backups for the current database (Query 84) (Recent Full Backups)"
+                "## Look at recent Full backups for the current database (Query 85) (Recent Full Backups)"
             ],
             "metadata": {
                 "azdata_cell_guid": "d419108a-d2fc-41a7-9524-6c42038ab4a8"
@@ -4007,7 +4060,7 @@
         {
             "cell_type": "code",
             "source": [
-                "-- Look at recent Full backups for the current database (Query 84) (Recent Full Backups)\r\n",
+                "-- Look at recent Full backups for the current database (Query 85) (Recent Full Backups)\r\n",
                 "SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,\r\n",
                 "CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],\r\n",
                 "CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],\r\n",
