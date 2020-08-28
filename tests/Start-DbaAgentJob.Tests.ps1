@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'WaitPeriod', 'SleepPeriod', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -16,17 +16,25 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Start a job" {
         BeforeAll {
-            $jobName = "dbatoolsci_job_$(get-random)"
-            $null = New-DbaAgentJob -SqlInstance $script:instance2,$script:instance3 -Job $jobName
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2,$script:instance3 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
+            $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
+            $jobName1,$jobName2 = $jobs
+            foreach ($job in $jobs) {
+                $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $job
+                $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+            }
+
+            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1 | Start-DbaAgentJob
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2,$script:instance3 -Job $jobName -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobs -Confirm:$false
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
-            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName | Start-DbaAgentJob
             $results.CurrentRunStatus -ne 'Idle' | Should Be $true
+        }
+
+        It "returns a CurrentRunStatus of not null and supports pipe" {
+            $results.CurrentRunStatus -ne $null | Should Be $true
         }
 
         It "does not run all jobs" {
@@ -35,7 +43,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "returns on multiple server inputs" {
-            $results2 = Start-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName
+            $results2 = Start-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName2
             ($results2.SqlInstance).Count | Should -Be 2
         }
     }
