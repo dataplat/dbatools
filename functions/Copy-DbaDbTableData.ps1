@@ -235,8 +235,7 @@ function Copy-DbaDbTableData {
         if ((Test-Bound -ParameterName View) -and (Test-Bound -ParameterName Table)) {
             Stop-Function -Message "Only one of [View|Table] may be specified."
             return
-        }
-        elseif ( Test-Bound -ParameterName View ) {
+        } elseif ( Test-Bound -ParameterName View ) {
             $SourceObject = $View
         }
         
@@ -265,8 +264,7 @@ function Copy-DbaDbTableData {
                     
                     if ( Test-Bound -ParameterName View ) {
                         $dbObject = Get-DbaDbView -SqlInstance $server -View $sourceDataObject -Database $Database -EnableException -Verbose:$false
-                    }
-                    else {
+                    } else {
                         $dbObject = Get-DbaDbTable -SqlInstance $server -Table $sourceDataObject -Database $Database -EnableException -Verbose:$false
                     }
                     
@@ -335,8 +333,7 @@ function Copy-DbaDbTableData {
                             $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
                             # cleanup
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
-                        }
-                        else {
+                        } else {
                             $tablescript = $sqlObject | Export-DbaScript -Passthru | Out-String
                             $schemaNameToReplace = $sqlObject.Schema
                             $tableNameToReplace = $sqlObject.Name
@@ -420,7 +417,7 @@ function Copy-DbaDbTableData {
                         # Add RowCount output
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
-                                Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
+                                Write-Progress -Id 1 -Activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
                             })
                     }
 
@@ -431,7 +428,7 @@ function Copy-DbaDbTableData {
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
                         if ($rowCount -is [int]) {
-                            Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
+                            Write-Progress -Id 1 -Activity "Inserting rows" -Status "Complete" -Completed
                         }
 
                         $server.ConnectionContext.SqlConnectionObject.Close()
