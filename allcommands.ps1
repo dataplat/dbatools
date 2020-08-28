@@ -15,7 +15,7 @@ function Add-DbaAgDatabase {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode,
+        [string]$SeedingMode = 'Manual',
         [string]$SharedPath,
         [switch]$UseLastBackup,
         [switch]$EnableException
@@ -41,16 +41,20 @@ function Add-DbaAgDatabase {
             $allbackups = @{
             }
 
-            $Primary = $db.Parent
+            $primary = $db.Parent
             # check primary, should be run against primary
-            $ag = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
+            $ag = Get-DbaAvailabilityGroup -SqlInstance $primary -AvailabilityGroup $AvailabilityGroup
 
             if (-not $ag.Parent) {
-                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($db.Parent.Name)" -Continue
+                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($primary.Name)" -Continue
             }
 
             if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
                 Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
+            }
+
+            if ($SeedingMode -eq "Automatic" -and $primary.VersionMajor -lt 13) {
+                Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Continue
             }
 
             if (-not $Secondary) {
@@ -66,20 +70,26 @@ function Add-DbaAgDatabase {
                 $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
             }
 
-            if ($SeedingMode -ne "Automatic") {
+            if ($SeedingMode -eq "Manual") {
                 if (((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup).Year -eq 1) {
                     Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
+                }
+                if ($UseLastBackup) {
+                    $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
+                    if ($allbackups[$db].Type -notcontains 'Log') {
+                        Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). A log backup must be the last backup taken." -Continue
+                    }
                 }
             }
 
             if ($SeedingMode -eq "Automatic") {
                 # first check
-                if ($Pscmdlet.ShouldProcess($Primary, "Backing up $db to NUL")) {
-                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.Name
+                if ($Pscmdlet.ShouldProcess($primary, "Backing up $db to NUL")) {
+                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.Name
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($primary.Name)")) {
                 try {
                     $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
                     # something is up with .net create(), force a stop
@@ -102,43 +112,30 @@ function Add-DbaAgDatabase {
                     $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
                 }
 
-                $agreplica = Get-DbaAgReplica -SqlInstance $Primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
+                $agreplica = Get-DbaAgReplica -SqlInstance $primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
 
                 if (-not $agreplica) {
-                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($Primary.Name)"
+                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($primary.Name)"
                 }
 
-                if ($SeedingMode -eq "Automatic" -and $secondaryInstance.VersionMajor -le 12) {
-                    Stop-Function -Continue -Message "Automatic seeding mode not supported on SQL Server versions prior to 2016 - Instance $($secondaryInstance.Name)"
-
-                    if (-not $SharedPath -and -not $UseLastBackup) {
-                        Stop-Function -Continue -Message "Automatic seeding not supported and no $SharedPath provided. Database not added to instance $($secondaryInstance.Name)"
-                    }
-                }
-
-
-                if ($SeedingMode) {
+                if ($SeedingMode -and $secondaryInstance.VersionMajor -ge 13) {
                     $agreplica.SeedingMode = $SeedingMode
                     $agreplica.Alter()
                 }
                 $agreplica.Refresh()
                 $SeedingModeReplica = $agreplica.SeedingMode
 
-                $primarydb = Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $db.name
+                $primarydb = Get-DbaDatabase -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.name
 
                 if ($SeedingModeReplica -ne 'Automatic') {
                     try {
                         if (-not $allbackups[$db]) {
-                            if ($UseLastBackup) {
-                                $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                            } else {
-                                $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                                $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                                $allbackups[$db] = $fullbackup, $logbackup
-                            }
+                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            $allbackups[$db] = $fullbackup, $logbackup
                             Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
                         }
-                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
+                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
                             $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
@@ -630,7 +627,7 @@ function Add-DbaDbRoleMember {
 
                 foreach ($username in $User) {
                     if ($db.Users.Name -contains $username) {
-                        if ($members.Name -notcontains $username) {
+                        if ($members -notcontains $username) {
                             if ($PSCmdlet.ShouldProcess($instance, "Adding User $username to role: $dbRole in database $db")) {
                                 Write-Message -Level 'Verbose' -Message "Adding User $username to role: $dbRole in database $db on $instance"
                                 $dbRole.AddMember($username)
@@ -644,6 +641,7 @@ function Add-DbaDbRoleMember {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Add-DbaPfDataCollectorCounter {
@@ -4897,6 +4895,10 @@ function Copy-DbaDatabase {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$NoCopyOnly,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$KeepCDC,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$KeepReplication,
         [switch]$SetSourceOffline,
         [string]$NewName,
         [string]$Prefix,
@@ -5855,7 +5857,7 @@ function Copy-DbaDatabase {
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
                                 } else {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
@@ -7352,6 +7354,8 @@ function Copy-DbaDbViewData {
                         $tempTableName = "$($sqlview.Name)_table"
                         $createquery = "SELECT * INTO tempdb..$tempTableName FROM [$($sqlview.Schema)].[$($sqlview.Name)] WHERE 1=2"
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery -EnableException
+                        #refreshing table list to make sure get-dbadbtable will find the new table
+                        $server.Databases['tempdb'].Tables.Refresh($true)
                         $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
                         $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
@@ -8403,15 +8407,13 @@ function Copy-DbaLogin {
         } else {
             $loginsCollection += Get-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -Login $Login -EnableException:$EnableException
         }
-        foreach ($loginObject in $loginsCollection) {
-            $sourceServer = $loginObject[0].Parent
-            $sourceLoginName = $loginObject.Name
-            $sourceVersionMajor = $sourceServer.VersionMajor
 
-            if ($OutFile) {
-                Export-DbaLogin -SqlInstance $sourceServer -FilePath $OutFile -Login $sourceLoginName -ExcludeLogin $ExcludeLogin
-                continue
-            }
+        if ($OutFile) {
+            return (Export-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -FilePath $OutFile -Login $loginsCollection -ObjectLevel:$ObjectLevel -ExcludeLogin $ExcludeLogin -EnableException:$EnableException)
+        }
+        foreach ($loginObject in $loginsCollection) {
+            $sourceServer = $loginObject.Parent
+            $sourceVersionMajor = $sourceServer.VersionMajor
 
             foreach ($destinstance in $Destination) {
                 try {
@@ -13301,6 +13303,7 @@ function Export-DbaLogin {
         [string]$DestinationVersion,
         [switch]$NoPrefix,
         [switch]$Passthru,
+        [switch]$ObjectLevel,
         [switch]$EnableException
     )
 
@@ -13386,7 +13389,7 @@ function Export-DbaLogin {
 
             if ($Login) {
                 if ($Login[0].GetType().FullName -eq 'Microsoft.SqlServer.Management.Smo.Login') {
-                    $serverLogins = $serverLogins | Where-Object { $_ -in $Login }
+                    $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login.Name }
                 } else {
                     $serverLogins = $serverLogins | Where-Object { $_.Name -in $Login }
                 }
@@ -13580,42 +13583,73 @@ function Export-DbaLogin {
                         $dbUserName = $db.username
 
                         $outsql += "`r`nUSE [$dbName]`r`n"
-                        try {
-                            $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
-                            $outsql += $sql
-                        } catch {
-                            Write-Message -Level Warning -Message "User cannot be found in selected database"
-                        }
 
-                        # Skipping updating dbowner
+                        if ($ObjectLevel) {
+                            # Exporting all permissions
+                            $scriptOptions = New-DbaScriptingOption
+                            $scriptVersion = $sourceDb.CompatibilityLevel
+                            $scriptOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
+                            $scriptOptions.AllowSystemObjects = $true
+                            $scriptOptions.IncludeDatabaseRoleMemberships = $true
+                            $scriptOptions.ContinueScriptingOnError = $false
+                            $scriptOptions.IncludeDatabaseContext = $false
+                            $scriptOptions.IncludeIfNotExists = $true
 
-                        # Database Roles: db_owner, db_datareader, etc
-                        foreach ($role in $sourceDb.Roles) {
-                            if ($role.EnumMembers() -contains $dbUserName) {
-                                $roleName = $role.Name
-                                if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                    $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                                } else {
-                                    $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                            $exportSplat = @{
+                                SqlInstance            = $server
+                                Database               = $dbName
+                                User                   = $dbUsername
+                                ScriptingOptionsObject = $scriptOptions
+                            }
+                            # remove batch separator if the $BatchSeparator string is empty
+                            if (-Not $BatchSeparator) {
+                                $scriptOptions.NoCommandTerminator = $true
+                                $exportSplat.ExcludeGoBatchSeparator = $true
+                            }
+                            try {
+                                $userScript = Export-DbaUser @exportSplat -Passthru -EnableException
+                                $outsql += $userScript
+                            } catch {
+                                Stop-Function -Message "Failed to extract permissions for user $dbUserName in database $dbName" -Continue -ErrorRecord $_
+                            }
+                        } else {
+                            try {
+                                $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
+                                $outsql += $sql
+                            } catch {
+                                Write-Message -Level Warning -Message "User cannot be found in selected database"
+                            }
+
+                            # Skipping updating dbowner
+
+                            # Database Roles: db_owner, db_datareader, etc
+                            foreach ($role in $sourceDb.Roles) {
+                                if ($role.EnumMembers() -contains $dbUserName) {
+                                    $roleName = $role.Name
+                                    if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                        $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
+                                    } else {
+                                        $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                                    }
                                 }
                             }
-                        }
 
-                        # Connect, Alter Any Assembly, etc
-                        $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
-                        foreach ($perm in $perms) {
-                            $permState = $perm.PermissionState
-                            $permType = $perm.PermissionType
-                            $grantor = $perm.Grantor
+                            # Connect, Alter Any Assembly, etc
+                            $perms = $sourceDb.EnumDatabasePermissions($dbUserName)
+                            foreach ($perm in $perms) {
+                                $permState = $perm.PermissionState
+                                $permType = $perm.PermissionType
+                                $grantor = $perm.Grantor
 
-                            if ($permState -eq "GrantWithGrant") {
-                                $grantWithGrant = "WITH GRANT OPTION"
-                                $permState = "GRANT"
-                            } else {
-                                $grantWithGrant = $null
+                                if ($permState -eq "GrantWithGrant") {
+                                    $grantWithGrant = "WITH GRANT OPTION"
+                                    $permState = "GRANT"
+                                } else {
+                                    $grantWithGrant = $null
+                                }
+
+                                $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
                             }
-
-                            $outsql += "$permState $permType TO [$userName] $grantWithGrant AS [$grantor]"
                         }
                     }
                 }
@@ -13869,7 +13903,9 @@ function Export-DbaScript {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        if ($IsWindows -ne $false) {
+            $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        } else { $executingUser = $env:USER }
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
@@ -14005,25 +14041,27 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $soFileName
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
-                                foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                     } else {
                                         $scriptpart = "$scriptpart`r`n"
                                     }
-                                    $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                    $scriptpart
                                 }
+                                $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                            $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                 } else {
                                     $scriptpart = "$scriptpart`r`n"
                                 }
-                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                $scriptpart
                             }
+                            $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
                     }
 
@@ -15577,7 +15615,7 @@ function Find-DbaDatabase {
                     # they probably put asterisks thinking it's a like
                     $Pattern = $Pattern -replace '\*', ''
                     $Pattern = $Pattern -replace '\%', ''
-                    $dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+                    $dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property.ToString() -match $pattern }
                 }
             }
 
@@ -15593,6 +15631,13 @@ function Find-DbaDatabase {
 
                 if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
 
+                $res = $db.Query("
+                SELECT 'proc' AS t, COUNT(*) AS numFound FROM sys.procedures WHERE is_ms_shipped = 0
+                UNION ALL
+                SELECT 'tables' AS t, COUNT(*) AS numFound FROM sys.tables WHERE is_ms_shipped = 0
+                UNION ALL
+                SELECT 'views' AS t, COUNT(*) AS numFound FROM sys.views WHERE is_ms_shipped = 0")
+
                 [PSCustomObject]@{
                     ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
@@ -15602,9 +15647,9 @@ function Find-DbaDatabase {
                     Owner              = $db.Owner
                     CreateDate         = $db.CreateDate
                     ServiceBrokerGuid  = $db.ServiceBrokerGuid
-                    Tables             = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
-                    StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
-                    Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
+                    Tables             = ($res | Where-Object t -eq 'tables').numFound
+                    StoredProcedures   = ($res | Where-Object t -eq 'proc').numFound
+                    Views              = ($res | Where-Object t -eq 'views').numFound
                     ExtendedProperties = $extendedproperties
                 }
             }
@@ -16287,13 +16332,42 @@ function Find-DbaDbUnusedIndex {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IgnoreUptime,
+        [ValidateRange(1, 1000000)][int]$Seeks = 1,
+        [ValidateRange(1, 1000000)][int]$Scans = 1,
+        [ValidateRange(1, 1000000)][int]$Lookups = 1,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
         # Support Compression 2008+
-        $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+        $sql = "
+        ;WITH
+            CTE_IndexSpace
+        AS
+        (
+            SELECT
+                s.object_id                         AS object_id
+            ,   s.index_id                          AS index_id
+            ,   SUM(s.used_page_count) * 8 / 1024.0 AS IndexSizeMB
+            ,   SUM(p.[rows])                       AS [RowCount]
+            --REPLACEPARAMCTE
+            FROM
+                sys.dm_db_partition_stats AS s
+            INNER JOIN
+                sys.partitions p WITH (NOLOCK)
+                    ON s.[partition_id] = p.[partition_id]
+                    AND s.[object_id] = p.[object_id]
+                    AND s.index_id = p.index_id
+            WHERE
+                s.index_id > 0 -- Exclude HEAPS
+                AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
+            GROUP BY
+                s.[object_id]
+            ,   s.index_id
+            --REPLACEPARAMCTE
+        )
+        SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME(database_id) AS 'Database'
         ,s.name AS 'Schema'
@@ -16318,25 +16392,43 @@ function Find-DbaDbUnusedIndex {
         ,last_system_scan  as 'LastSystemScan'
         ,last_system_lookup  as 'LastSystemLookup'
         ,last_system_update as 'LastSystemUpdate'
+        ,COALESCE(indexSpace.IndexSizeMB, 0) AS 'IndexSizeMB'
+        ,COALESCE(indexSpace.[RowCount], 0) AS 'RowCount'
+        --REPLACEPARAMSELECT
         FROM sys.tables t
         JOIN sys.schemas s
             ON t.schema_id = s.schema_id
         JOIN sys.indexes i
-            ON i.object_id = t.object_id LEFT OUTER
-        JOIN sys.dm_db_index_usage_stats iu
+            ON i.object_id = t.object_id
+        LEFT OUTER JOIN sys.dm_db_index_usage_stats iu
             ON iu.object_id = i.object_id
                 AND iu.index_id = i.index_id
+        JOIN CTE_IndexSpace indexSpace
+            ON indexSpace.index_id = i.index_id
+                AND indexSpace.object_id = i.object_id
         WHERE iu.database_id = DB_ID()
                 AND OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
-                AND user_seeks = 0
-                AND user_scans = 0
-                AND user_lookups = 0
+                AND user_seeks < $Seeks
+                AND user_scans < $Scans
+                AND user_lookups < $Lookups
                 AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
+
+        # Replacement values for the SQL above
+        $replaceParamCTE = "--REPLACEPARAMCTE"
+        $replaceValueCTE = ", p.data_compression_desc"
+        $replaceParamSelect = "--REPLACEPARAMSELECT"
+        $replaceValueSelect = ", indexSpace.data_compression_desc AS CompressionDescription"
     }
 
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        # Return a warning if the database specified was not found
+        if ($null -eq $InputObject -or $InputObject.Count -eq 0) {
+            Write-Message -Level Warning -Message "Database [$Database] was not found on [$SqlInstance]."
+            continue
         }
 
         foreach ($db in $InputObject) {
@@ -16374,8 +16466,15 @@ function Find-DbaDbUnusedIndex {
                 Write-Message -Level Verbose -Message "The SQL Service on $instance was restarted on $lastRestart, which may not be long enough for a solid evaluation."
             }
 
+            
+            $sqlToRun = $sql
+
+            if ($server.VersionMajor -gt 9) {
+                $sqlToRun = $sqlToRun.Replace($replaceParamCTE, $replaceValueCTE).Replace($replaceParamSelect, $replaceValueSelect)
+            }
+
             try {
-                $db.Query($sql)
+                $db.Query($sqlToRun)
             } catch {
                 Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
             }
@@ -18689,9 +18788,7 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object {
-                    $_.JobSteps.DatabaseName -in $Database
-                }
+                $jobs = $jobs | Where-Object { $_.JobSteps | Where-Object DatabaseName -in $Database }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
@@ -18776,6 +18873,8 @@ function Get-DbaAgentJobHistory {
         [object[]]$ExcludeJob,
         [DateTime]$StartDate = "1900-01-01",
         [DateTime]$EndDate = $(Get-Date),
+        [ValidateSet('Failed', 'Succeeded', 'Retry', 'Cancelled', 'InProgress', 'Unknown')]
+        [Microsoft.SqlServer.Management.Smo.Agent.CompletionResult]$OutcomeType,
         [switch]$ExcludeJobSteps,
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
@@ -18788,6 +18887,9 @@ function Get-DbaAgentJobHistory {
         $filter.StartRunDate = $StartDate
         $filter.EndRunDate = $EndDate
 
+        if (Test-Bound OutcomeType) {
+            $filter.OutcomeTypes = $OutcomeType
+        }
 
         if ($ExcludeJobSteps -and $WithOutputFile) {
             Stop-Function -Message "You can't use -ExcludeJobSteps and -WithOutputFile together"
@@ -21950,7 +22052,6 @@ function Get-DbaDbBackupHistory {
 
             if ($server.VersionMajor -ge 12) {
                 $compressedFlag = $true
-                $encryptedFlag = $true
                 # 2014 introduced encryption
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
@@ -22163,6 +22264,8 @@ function Get-DbaDbBackupHistory {
                     #     and given the lsn are composed in the first part by the VLF SeqID, it happens seldomly that for the same database_name backupset holds
                     #     last_lsn out of order. To avoid this behaviour, we filter by database_guid choosing the guid that has MAX(backup_finish_date), as we know
                     #     last_lsn cannot be out-of-order for the same database, and the same database cannot have different database_guid
+                    #   - because someone could restore a very old backup with low lsn values and continue to use this database we filter
+                    #     not only by database_guid but also by the recovery fork of the last backup (see issue #6730 for more details)
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
@@ -22245,16 +22348,13 @@ function Get-DbaDbBackupHistory {
                         JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                         JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
                         JOIN (
-                        SELECT DISTINCT database_guid, database_name, backup_finish_date
-                        FROM msdb..backupset
-                        WHERE backupset.database_name = '$($db.Name)') dbguid ON dbguid.database_name =  backupset.database_name AND dbguid.database_guid = backupset.database_guid
-                    JOIN (
-                        SELECT database_name, MAX(backup_finish_date) max_finish_date
-                        FROM msdb..backupset
-                        WHERE backupset.database_name = '$($db.Name)'
-                        GROUP BY database_name) dbguid_support ON dbguid_support.database_name = backupset.database_name AND dbguid.backup_finish_date = dbguid_support.max_finish_date
-                    WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
-                    AND (type = '$first' OR type = '$second')
+                            SELECT TOP 1 database_guid, last_recovery_fork_guid
+                            FROM msdb..backupset
+                            WHERE database_name = '$($db.Name)'
+                            ORDER BY backup_finish_date DESC
+                            ) AS last_guids ON last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
+                    WHERE (type = '$first' OR type = '$second')
+                    $whereCopyOnly
                     $devTypeFilterWhere
                     $sinceSqlFilter
                     $recoveryForkSqlFilter
@@ -25027,8 +25127,9 @@ function Get-DbaDbOrphanUser {
                 foreach ($db in $DatabaseCollection) {
                     try {
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
-                        $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
-
+                        $UsersToWork = @()
+                        $UsersToWork += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                        $UsersToWork += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                         if ($UsersToWork.Count -gt 0) {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             foreach ($user in $UsersToWork) {
@@ -26014,7 +26115,6 @@ function Get-DbaDbTable {
             $server = $db.Parent
             Write-Message -Level Verbose -Message "Processing $db"
 
-            $db.Tables.Refresh($true) # This will ensure the list of tables is up-to-date
             if ($fqtns) {
                 $tables = @()
                 foreach ($fqtn in $fqtns) {
@@ -31305,7 +31405,7 @@ function Get-DbaPermission {
                         , [PermState] = state_desc
                         , [PermissionName] = permission_name
                         , [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
-                        , [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
+                        , [Securable] = CASE    WHEN class = 100 THEN @@SERVERNAME
                                                 WHEN class = 105 THEN OBJECT_NAME(major_id)
                                                 ELSE OBJECT_NAME(major_id)
                                                 END
@@ -31313,6 +31413,7 @@ function Get-DbaPermission {
                         , [GranteeType] = pr.type_desc
                         , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
                         , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
+                            + CASE WHEN sp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.server_permissions sp
                         JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
                         LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
@@ -31320,7 +31421,7 @@ function Get-DbaPermission {
                     $ExcludeSystemObjectssql
 
                     UNION ALL
-                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                    SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                             , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                             , SERVERPROPERTY('ServerName') AS SqlInstance
                             , [database] = ''
@@ -31359,7 +31460,7 @@ function Get-DbaPermission {
                     , [PermState] = state_desc
                     , [PermissionName] = permission_name
                     , [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
-                    , [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
+                    , [Securable] = CASE    WHEN class = 0 THEN DB_NAME()
                                             WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
                                             WHEN class = 3 THEN SCHEMA_NAME(major_id)
                                             WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
@@ -31378,7 +31479,7 @@ function Get-DbaPermission {
                 $ExcludeSystemObjectssql
 
                 UNION ALL
-                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                         , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                         , SERVERPROPERTY('ServerName') AS SqlInstance
                         , [database] = DB_NAME()
@@ -32853,6 +32954,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Separator,
         [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
@@ -33167,6 +33269,31 @@ function Get-DbaRandomizedValue {
                 'internet' {
                     if ($randSubType -eq 'password') {
                         $script:faker.Internet.Password($Max)
+                    } elseif ($randSubType -eq 'mac') {
+                        if ($Separator) {
+                            $script:faker.Internet.Mac($Separator)
+                        } else {
+                            if (-not $Format -or $Format -eq "##:##:##:##:##:##") {
+                                $script:faker.Internet.Mac()
+                            } elseif ($Format -eq "############") {
+                                $script:faker.Internet.Mac("")
+                            } else {
+                                $newMacArray = $Format.ToCharArray()
+
+                                $macAddress = $script:faker.Internet.Mac("")
+                                $macArray = $macAddress.ToCharArray()
+
+                                $macIndex = 0
+                                for ($i = 0; $i -lt $formatArray.Count; $i++) {
+                                    if ($newMacArray[$i] -eq "#") {
+                                        $newMacArray[$i] = $macArray[$macIndex]
+                                        $macIndex++
+                                    }
+                                }
+
+                                $newMacArray -join ""
+                            }
+                        }
                     } else {
                         $script:faker.Internet.$RandomizerSubType()
                     }
@@ -41179,100 +41306,103 @@ function Invoke-DbaAdvancedRestore {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-        $Databases = $internalHistory.Database | Select-Object -Unique
-        foreach ($Database in $Databases) {
-            $DatabaseRestoreStartTime = Get-Date
-            if ($Database -in $Server.Databases.Name) {
-                if (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
-                    if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
+        if ($Continue -eq $True) {
+            $WithReplace = $True
+        }
+        $databases = $internalHistory.Database | Select-Object -Unique
+        foreach ($database in $databases) {
+            $databaseRestoreStartTime = Get-Date
+            if ($database -in $server.Databases.Name) {
+                if (-not $OutputScriptOnly -and -not $VerifyOnly -and $server.DatabaseEngineEdition -ne "SqlManagedInstance") {
+                    if ($Pscmdlet.ShouldProcess("Killing processes in $database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
-                            Write-Message -Level Verbose -Message "Killing processes on $Database"
-                            $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
-                            $null = $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate", 'master')
+                            Write-Message -Level Verbose -Message "Killing processes on $database"
+                            $null = Stop-DbaProcess -SqlInstance $server -Database $database -WarningAction Silentlycontinue
+                            $null = $server.Query("Alter database $database set offline with rollback immediate; alter database $database set restricted_user; Alter database $database set online with rollback immediate", 'master')
                             $server.ConnectionContext.Connect()
                         } catch {
-                            Write-Message -Level Verbose -Message "No processes to kill in $Database"
+                            Write-Message -Level Verbose -Message "No processes to kill in $database"
                         }
                     }
-                } elseif (-not $OutputScriptOnly -and -not $VerifyOnly -and $Server.DatabaseEngineEdition -eq "SqlManagedInstance") {
-                    if ($Pscmdlet.ShouldProcess("Dropping $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if database exist, ", "Database Exists and WithReplace specified, need to drop database to restore")) {
+                } elseif (-not $OutputScriptOnly -and -not $VerifyOnly -and $server.DatabaseEngineEdition -eq "SqlManagedInstance") {
+                    if ($Pscmdlet.ShouldProcess("Dropping $database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if database exist, ", "Database Exists and WithReplace specified, need to drop database to restore")) {
                         try {
                             Write-Message -Level Verbose "$SqlInstance is a Managed instance so dropping database was WithReplace not supported"
-                            $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
-                            $null = Remove-DbaDatabase -SqlInstance $Server -Database $Database -Confirm:$false
+                            $null = Stop-DbaProcess -SqlInstance $server -Database $database -WarningAction Silentlycontinue
+                            $null = Remove-DbaDatabase -SqlInstance $server -Database $database -Confirm:$false
                             $server.ConnectionContext.Connect()
                         } catch {
-                            Write-Message -Level Verbose -Message "No processes to kill in $Database"
+                            Write-Message -Level Verbose -Message "No processes to kill in $database"
                         }
                     }
 
                 } elseif (-not $WithReplace -and (-not $VerifyOnly)) {
-                    Write-Message -Level verbose -Message "$Database exists and WithReplace not specified, stopping"
+                    Write-Message -Level verbose -Message "$database exists and WithReplace not specified, stopping"
                     continue
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
-            $backups = @($internalHistory | Where-Object { $_.Database -eq $Database } | Sort-Object -Property Type, FirstLsn)
+            $backups = @($internalHistory | Where-Object { $_.Database -eq $database } | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
 
             foreach ($backup in $backups) {
-                $FileRestoreStartTime = Get-Date
-                $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+                $fileRestoreStartTime = Get-Date
+                $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
-                    $Restore.NoRecovery = $True
+                    $restore.NoRecovery = $True
                 } elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
-                    $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (Get-Date -Format yyyMMddHHmmss) + ".bak"
-                    Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
+                    $restore.StandbyFile = $StandByDirectory + "\" + $database + (Get-Date -Format yyyyMMddHHmmss) + ".bak"
+                    Write-Message -Level Verbose -Message "Setting standby on last file $($restore.StandbyFile)"
                 } else {
-                    $Restore.NoRecovery = $False
+                    $restore.NoRecovery = $False
                 }
                 if (-not [string]::IsNullOrEmpty($StopMark)) {
                     if ($StopBefore -eq $True) {
-                        $Restore.StopBeforeMarkName = $StopMark
+                        $restore.StopBeforeMarkName = $StopMark
                         if ($null -ne $StopAfterDate) {
-                            $Restore.StopBeforeMarkAfterDate = $StopAfterDate
+                            $restore.StopBeforeMarkAfterDate = $StopAfterDate
                         }
                     } else {
-                        $Restore.StopAtMarkName = $StopMark
+                        $restore.StopAtMarkName = $StopMark
                         if ($null -ne $StopAfterDate) {
-                            $Restore.StopAtMarkAfterDate = $StopAfterDate
+                            $restore.StopAtMarkAfterDate = $StopAfterDate
                         }
                     }
-                } elseif ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
-                    $Restore.ToPointInTime = $null
+                } elseif ($RestoreTime -gt (Get-Date) -or $backup.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                    $restore.ToPointInTime = $null
                 } else {
-                    if ($RestoreTime -ne $Restore.RestoreTime) {
-                        $Restore.ToPointInTime = $backup.RestoreTime
+                    if ($RestoreTime -ne $backup.RestoreTime) {
+                        $restore.ToPointInTime = $backup.RestoreTime
                     } else {
-                        $Restore.ToPointInTime = $RestoreTime
+                        $restore.ToPointInTime = $RestoreTime
                     }
                 }
 
-                $Restore.Database = $database
-                if ($Server.DatabaseEngineEdition -ne "SqlManagedInstance") {
-                    $Restore.ReplaceDatabase = $WithReplace
+                $restore.Database = $database
+                if ($server.DatabaseEngineEdition -ne "SqlManagedInstance") {
+                    $restore.ReplaceDatabase = $WithReplace
                 }
                 if ($MaxTransferSize) {
-                    $Restore.MaxTransferSize = $MaxTransferSize
+                    $restore.MaxTransferSize = $MaxTransferSize
                 }
                 if ($BufferCount) {
-                    $Restore.BufferCount = $BufferCount
+                    $restore.BufferCount = $BufferCount
                 }
                 if ($BlockSize) {
-                    $Restore.Blocksize = $BlockSize
+                    $restore.Blocksize = $BlockSize
                 }
                 if ($KeepReplication) {
-                    $Restore.KeepReplication = $KeepReplication
+                    $restore.KeepReplication = $KeepReplication
                 }
                 if ($true -ne $Continue -and ($null -eq $Pages)) {
                     foreach ($file in $backup.FileList) {
-                        $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-                        $MoveFile.LogicalFileName = $File.LogicalName
-                        $MoveFile.PhysicalFileName = $File.PhysicalName
-                        $null = $Restore.RelocateFiles.Add($MoveFile)
+                        $moveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
+                        $moveFile.LogicalFileName = $file.LogicalName
+                        $moveFile.PhysicalFileName = $file.PhysicalName
+                        $null = $restore.RelocateFiles.Add($moveFile)
                     }
                 }
-                $Action = switch ($backup.Type) {
+                $action = switch ($backup.Type) {
                     '1' { 'Database' }
                     '2' { 'Log' }
                     '5' { 'Database' }
@@ -41280,57 +41410,57 @@ function Invoke-DbaAdvancedRestore {
                     Default { 'Database' }
                 }
 
-                Write-Message -Level Debug -Message "restore action = $Action"
-                $Restore.Action = $Action
-                foreach ($File in $backup.FullName) {
+                Write-Message -Level Debug -Message "restore action = $action"
+                $restore.Action = $action
+                foreach ($file in $backup.FullName) {
                     Write-Message -Message "Adding device $file" -Level Debug
-                    $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    $Device.Name = $file
+                    $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+                    $device.Name = $file
                     if ($file.StartsWith("http")) {
-                        $Device.devicetype = "URL"
+                        $device.devicetype = "URL"
                     } else {
-                        $Device.devicetype = "File"
+                        $device.devicetype = "File"
                     }
 
                     if ($AzureCredential) {
-                        $Restore.CredentialName = $AzureCredential
+                        $restore.CredentialName = $AzureCredential
                     }
 
-                    $Restore.FileNumber = $backup.Position
-                    $Restore.Devices.Add($Device)
+                    $restore.FileNumber = $backup.Position
+                    $restore.Devices.Add($device)
                 }
                 Write-Message -Level Verbose -Message "Performing restore action"
-                $ConfirmMessage = "`n Restore Database $Database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
-                if ($Pscmdlet.ShouldProcess("$Database on $SqlInstance `n `n", $ConfirmMessage)) {
+                $confirmMessage = "`n Restore Database $database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
+                if ($Pscmdlet.ShouldProcess("$database on $SqlInstance `n `n", $confirmMessage)) {
                     try {
-                        $RestoreComplete = $true
-                        if ($KeepCDC -and $Restore.NoRecovery -eq $false) {
-                            $script = $Restore.Script($server)
+                        $restoreComplete = $true
+                        if ($KeepCDC -and $restore.NoRecovery -eq $false) {
+                            $script = $restore.Script($server)
                             if ($script -like '*WITH*') {
                                 $script = $script.TrimEnd() + ' , KEEP_CDC'
                             } else {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
-                        } elseif ($null -ne $Pages -and $Action -eq 'Database') {
-                            $script = $Restore.Script($server)
+                        } elseif ($null -ne $Pages -and $action -eq 'Database') {
+                            $script = $restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 1 -activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         } elseif ($OutputScriptOnly) {
-                            $script = $Restore.Script($server)
+                            $script = $restore.Script($server)
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
-                            Write-Progress -id 1 -activity "Verifying $Database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                            $Verify = $Restore.SqlVerify($server)
-                            Write-Progress -id 1 -activity "Verifying $Database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            $Verify = $restore.SqlVerify($server)
+                            Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
@@ -41341,24 +41471,24 @@ function Invoke-DbaAdvancedRestore {
                         } else {
                             $outerProgress = $BackupCnt / $Backups.Count * 100
                             if ($BackupCnt -eq 1) {
-                                Write-Progress -id 1 -Activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
+                                Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
-                            $script = $Restore.Script($Server)
+                            $script = $restore.Script($server)
                             $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                             }
-                            $Restore.add_PercentComplete($percentcomplete)
-                            $Restore.PercentCompleteNotification = 1
-                            $Restore.SqlRestore($Server)
+                            $restore.add_PercentComplete($percentcomplete)
+                            $restore.PercentCompleteNotification = 1
+                            $restore.SqlRestore($server)
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
-                            Write-Progress -id 1 -Activity "Restoring $Database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
+                            Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     } catch {
                         Write-Message -Level Verbose -Message "Failed, Closing Server connection"
-                        $RestoreComplete = $False
+                        $restoreComplete = $False
                         $ExitError = $_.Exception.InnerException
-                        Stop-Function -Message "Failed to restore db $Database, stopping" -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_ -Continue
                         break
                     } finally {
                         if ($OutputScriptOnly -eq $false) {
@@ -41372,10 +41502,10 @@ function Invoke-DbaAdvancedRestore {
                                 DatabaseName           = $backup.Database
                                 DatabaseOwner          = $server.ConnectionContext.TrueLogin
                                 Owner                  = $server.ConnectionContext.TrueLogin
-                                NoRecovery             = $Restore.NoRecovery
+                                NoRecovery             = $restore.NoRecovery
                                 WithReplace            = $WithReplace
                                 KeepReplication        = $KeepReplication
-                                RestoreComplete        = $RestoreComplete
+                                RestoreComplete        = $restoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
                                 BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count / 1mb, 2) } else { $null }
@@ -41391,15 +41521,15 @@ function Invoke-DbaAdvancedRestore {
                                 RestoreTargetTime      = if ($RestoreTime -lt (Get-Date)) { $RestoreTime } else { 'Latest' }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
-                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $FileRestoreStartTime).TotalSeconds
-                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $DatabaseRestoreStartTime).TotalSeconds
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date) - $fileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date) - $databaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, BackupFile, BackupFilesCount, BackupSize, CompressedBackupSize, Database, Owner, DatabaseRestoreTime, FileRestoreTime, NoRecovery, RestoreComplete, RestoredFile, RestoredFilesCount, Script, RestoreDirectory, WithReplace
                         } else {
                             $script
                         }
-                        if ($Restore.Devices.Count -gt 0) {
-                            $Restore.Devices.Clear()
+                        if ($restore.Devices.Count -gt 0) {
+                            $restore.Devices.Clear()
                         }
                         Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
                         $server.ConnectionContext.Disconnect()
@@ -41416,6 +41546,7 @@ function Invoke-DbaAdvancedRestore {
     }
 }
 
+
 #.ExternalHelp dbatools-Help.xml
 Function Invoke-DbaAdvancedUpdate {
     
@@ -41428,6 +41559,7 @@ Function Invoke-DbaAdvancedUpdate {
         [string]$Authentication = 'Credssp',
         [pscredential]$Credential,
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -41501,9 +41633,9 @@ Function Invoke-DbaAdvancedUpdate {
             # Extract file
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Extracting $($currentAction.Installer) to $spExtractPath"
             Write-Message -Level Verbose -Message "Extracting $($currentAction.Installer) to $spExtractPath"
-            $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList "/x`:`"$spExtractPath`" /quiet" -Fallback
+            $extractResult = Invoke-Program @execParams -Path $currentAction.Installer -ArgumentList @("/x`:`"$spExtractPath`"", "/quiet") -Fallback
             if (-not $extractResult.Successful) {
-                $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a location instead using -ExportPath"
+                $msg = "Extraction failed with exit code $($extractResult.ExitCode), try specifying a different location using -ExtractPath"
                 $output.Notes += $msg
                 Stop-Function -Message $msg
                 return $output
@@ -41515,13 +41647,13 @@ Function Invoke-DbaAdvancedUpdate {
                 $instanceClause = '/allinstances'
             }
             if ($currentAction.Build -like "10.0.*") {
-                $argumentList = @('/quiet', $instanceClause)
+                $programArgumentList = $ArgumentList + @('/quiet', $instanceClause)
             } else {
-                $argumentList = @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
+                $programArgumentList = $ArgumentList + @('/quiet', $instanceClause, '/IAcceptSQLServerLicenseTerms')
             }
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Now installing update SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel) from $spExtractPath"
             Write-Message -Level Verbose -Message "Starting installation from $spExtractPath"
-            $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList $argumentList -WorkingDirectory $spExtractPath -Fallback
+            $updateResult = Invoke-Program @execParams -Path "$spExtractPath\setup.exe" -ArgumentList $programArgumentList -WorkingDirectory $spExtractPath -Fallback
             $output.ExitCode = $updateResult.ExitCode
             if ($updateResult.Successful) {
                 $output.Successful = $true
@@ -42923,12 +43055,71 @@ function Invoke-DbaDbDataMasking {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
 
                                         if ($columnMaskInfo) {
+                                            # make sure min is good
+                                            if ($columnMaskInfo.MinValue) {
+                                                $min = $columnMaskInfo.MinValue
+                                            } else {
+                                                if ($columnMaskInfo.CharacterString) {
+                                                    $min = 1
+                                                } else {
+                                                    $min = 0
+                                                }
+                                            }
+
+                                            # make sure max is good
+                                            if ($MaxValue) {
+                                                if ($columnMaskInfo.MaxValue -le $MaxValue) {
+                                                    $max = $columnMaskInfo.MaxValue
+                                                } else {
+                                                    $max = $MaxValue
+                                                }
+                                            } else {
+                                                $max = $columnMaskInfo.MaxValue
+                                            }
+
+                                            if (-not $columnMaskInfo.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                                $max = 10
+                                            }
+
+                                            if ((-not $columnMaskInfo.MinValue -or -not $columnMaskInfo.MaxValue) -and ($columnMaskInfo.ColumnType -match 'date')) {
+                                                if (-not $columnMaskInfo.MinValue) {
+                                                    $min = (Get-Date).AddDays(-365)
+                                                }
+                                                if (-not $columnMaskInfo.MaxValue) {
+                                                    $max = (Get-Date).AddDays(365)
+                                                }
+                                            }
+
+                                            if ($columnobject.CharacterString) {
+                                                $charstring = $columnMaskInfo.CharacterString
+                                            } else {
+                                                $charstring = $CharacterString
+                                            }
+
                                             # Generate a new value
                                             try {
                                                 if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                    $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                    $newValueParams = @{
+                                                        DataType = $columnMaskInfo.SubType
+                                                        Min      = $columnMaskInfo.MinValue
+                                                        Max      = $columnMaskInfo.MaxValue
+                                                        Locale   = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
                                                 } else {
-                                                    $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                    $newValueParams = @{
+                                                        RandomizerType    = $columnMaskInfo.MaskingType
+                                                        RandomizerSubtype = $columnMaskInfo.SubType
+                                                        Min               = $min
+                                                        Max               = $max
+                                                        CharacterString   = $charstring
+                                                        Format            = $columnMaskInfo.Format
+                                                        Separator         = $columnMaskInfo.Separator
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
                                                 }
 
                                             } catch {
@@ -42955,10 +43146,27 @@ function Invoke-DbaDbDataMasking {
                                                 if ($columnMaskInfo) {
                                                     # Generate a new value
                                                     try {
-                                                        if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                        if (-not $columnMaskInfo.SubType -and $columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                            $newValueParams = @{
+                                                                DataType = $columnMaskInfo.SubType
+                                                                Min      = $columnMaskInfo.MinValue
+                                                                Max      = $columnMaskInfo.MaxValue
+                                                                Locale   = $Locale
+                                                            }
+
+                                                            $newValue = Get-DbaRandomizedValue @newValueParams
                                                         } else {
-                                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue -Locale $Locale
+                                                            $newValueParams = @{
+                                                                RandomizerType    = $columnMaskInfo.MaskingType
+                                                                RandomizerSubtype = $columnMaskInfo.SubType
+                                                                Min               = $min
+                                                                Max               = $max
+                                                                CharacterString   = $charstring
+                                                                Format            = $columnMaskInfo.Format
+                                                                Separator         = $columnMaskInfo.Separator
+                                                                Locale            = $Locale
+                                                            }
+                                                            $newValue = Get-DbaRandomizedValue @newValueParams
                                                         }
 
                                                     } catch {
@@ -43163,12 +43371,6 @@ function Invoke-DbaDbDataMasking {
                                             $max = 10
                                         }
 
-                                        if ($columnobject.CharacterString) {
-                                            $charstring = $columnobject.CharacterString
-                                        } else {
-                                            $charstring = $CharacterString
-                                        }
-
                                         if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
                                             if (-not $columnobject.MinValue) {
                                                 $min = (Get-Date).AddDays(-365)
@@ -43178,12 +43380,26 @@ function Invoke-DbaDbDataMasking {
                                             }
                                         }
 
+                                        if ($columnobject.CharacterString) {
+                                            $charstring = $columnobject.CharacterString
+                                        } else {
+                                            $charstring = $CharacterString
+                                        }
+
                                         try {
                                             $newValue = $null
 
                                             if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
                                                 if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
-                                                    $newValue = Get-DbaRandomizedValue -RandomizerType "Random" -RandomizerSubtype "Shuffle" -Value ($row.$($columnobject.Name)) -Locale $Locale
+
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = ($row.$($columnobject.Name))
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
 
                                                     $newValue = ($newValue -join '')
                                                 } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
@@ -43192,7 +43408,14 @@ function Invoke-DbaDbDataMasking {
                                                     $commaIndex = $valueString.IndexOf(",")
                                                     $dotIndex = $valueString.IndexOf(".")
 
-                                                    $newValue = (Get-DbaRandomizedValue -RandomizerType Random -RandomizerSubType Shuffle -Value (($valueString -replace ',', '') -replace '\.', '')) -join ''
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = (($valueString -replace ',', '') -replace '\.', '') -join ''
+                                                        Locale            = $Locale
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
 
                                                     if ($commaIndex -ne -1) {
                                                         $newValue = $newValue.Insert($commaIndex, ',')
@@ -43203,9 +43426,29 @@ function Invoke-DbaDbDataMasking {
                                                     }
                                                 }
                                             } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                                $newValueParams = @{
+                                                    DataType        = $columnobject.ColumnType
+                                                    Min             = $min
+                                                    Max             = $max
+                                                    CharacterString = $charstring
+                                                    Format          = $columnobject.Format
+                                                    Locale          = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -Min $min -Max $max -CharacterString $charstring -Format $columnobject.Format -Locale $Locale
+                                                $newValueParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    Min               = $min
+                                                    Max               = $max
+                                                    CharacterString   = $charstring
+                                                    Format            = $columnobject.Format
+                                                    Separator         = $columnobject.Separator
+                                                    Locale            = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             }
                                         } catch {
 
@@ -43330,9 +43573,28 @@ function Invoke-DbaDbDataMasking {
                                             $newValue = $null
 
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValueParams = @{
+                                                    DataType        = $columnobject.SubType
+                                                    CharacterString = $charstring
+                                                    Min             = $columnComposite.Min
+                                                    Max             = $columnComposite.Max
+                                                    Locale          = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnComposite.Type -RandomizerSubType $columnComposite.Subtype  -CharacterString $charstring -Min $columnComposite.Min -Max $columnComposite.Max -Locale $Locale
+                                                $newValueParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    Min               = $min
+                                                    Max               = $max
+                                                    CharacterString   = $charstring
+                                                    Format            = $columnobject.Format
+                                                    Separator         = $columnobject.Separator
+                                                    Locale            = $Locale
+                                                }
+
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
                                             }
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
@@ -49267,7 +49529,6 @@ function New-DbaAgentJobStep {
                                 if ($tStep.OnFailureStepID -ge $StepId -and $tStep.OnFailureStepId -ne 0) {
                                     $tStep.OnFailureStepID = ($tStep.OnFailureStepID) + 1
                                 }
-                                $tStep.Alter()
                             }
                             $jobStep.ID = $StepId
                         } elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
@@ -49950,8 +50211,7 @@ function New-DbaAgentSchedule {
 
                             }
 
-                            # Output the job schedule
-                            return $JobSchedule
+                            $JobSchedule
                         }
                     }
                 } # foreach object job
@@ -50137,7 +50397,48 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking perquisites"
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
+        $requirementsFailed = $false
+
+        if (-not $server.IsHadrEnabled) {
+            $requirementsFailed = $true
+            Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance."
+        }
+
+        if ($Secondary) {
+            $secondaries = @()
+            if ($SeedingMode -eq "Automatic") {
+                $primarypath = Get-DbaDefaultPath -SqlInstance $server
+            }
+            foreach ($instance in $Secondary) {
+                try {
+                    $second = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
+                    $secondaries += $second
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
+                }
+
+                if (-not $second.IsHadrEnabled) {
+                    $requirementsFailed = $true
+                    Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $instance. Use Enable-DbaAgHadr to configure the instance."
+                }
+
+                if ($SeedingMode -eq "Automatic") {
+                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
+                    if ($primarypath.Data -ne $secondarypath.Data) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default data paths do not match. Trying anyway."
+                    }
+                    if ($primarypath.Log -ne $secondarypath.Log) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default log paths do not match. Trying anyway."
+                    }
+                }
+            }
+        }
+
+        if ($requirementsFailed) {
+            Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
+            return
+        }
 
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
@@ -50183,31 +50484,6 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        if ($Secondary) {
-            $secondaries = @()
-            foreach ($computer in $Secondary) {
-                try {
-                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Primary
-                    return
-                }
-            }
-
-            if ($SeedingMode -eq "Automatic") {
-                $primarypath = Get-DbaDefaultPath -SqlInstance $server
-                foreach ($second in $secondaries) {
-                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
-                    if ($primarypath.Data -ne $secondarypath.Data) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($second) default data paths do not match. Trying anyway."
-                    }
-                    if ($primarypath.Log -ne $secondarypath.Log) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($second) default log paths do not match. Trying anyway."
-                    }
-                }
-            }
-        }
-
         # database checks
         if ($Database) {
             $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
@@ -50215,18 +50491,18 @@ function New-DbaAvailabilityGroup {
 
         foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 return
             }
 
             if ($primarydb.Status -ne "Normal") {
-                Stop-Function -Message "Cannot setup mirroring on database ($dbName) due to its current state: $($primarydb.Status)"
+                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current state: $($primarydb.Status)"
                 return
             }
 
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackup)) {
-                    Stop-Function -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
+                    Stop-Function -Message "$($primarydb.Name) not set to full recovery. UseLastBackup cannot be used."
                     return
                 } else {
                     Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
@@ -50461,7 +50737,7 @@ function New-DbaAvailabilityGroup {
                 }
             }
 
-            if (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database) {
+            if (-not $Database -or (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database)) {
                 $dbdone = $true
             } else {
                 $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
@@ -53005,6 +53281,7 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $result.MaskingType
                             SubType         = $result.MaskingSubType
                             Format          = $null
+                            Separator       = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
@@ -53070,6 +53347,7 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $type
                             SubType         = $subType
                             Format          = $null
+                            Separator       = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
@@ -54498,10 +54776,9 @@ function New-DbaLogin {
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
 
-                            # leaving it here to test
+                            # DENY CONNECT SQL
                             if ($currentDenyWindowsLogin) {
                                 Write-Message -Level VeryVerbose -Message "Setting $loginName DenyWindowsLogin to $currentDenyWindowsLogin"
-                                $withParams += ", DENY_LOGIN" # gotta check this one
                                 $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
                             }
 
@@ -54580,17 +54857,17 @@ function New-DbaLogin {
                             }
                         }
                         #Process the DenyWindowsLogin property
-                        if ($currentDenyWindowsLogin) {
+                        if ($currentDenyWindowsLogin -ne $newLogin.DenyWindowsLogin) {
                             try {
-                                $newLogin.DenyWindowsLogin = $true
-                                $newLogin.Apply()
-                                Write-Message -Level Verbose -Message "Login $loginName has been denied on $instance."
+                                $newLogin.DenyWindowsLogin = $currentDenyWindowsLogin
+                                $newLogin.Alter()
+                                Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                             } catch {
-                                Write-Message -Level Verbose -Message "Failed to set deny windows login priviledge $loginName on $instance using SMO, trying T-SQL."
+                                Write-Message -Level Verbose -Message "Failed to deny from logging in $loginName on $instance using SMO, trying T-SQL."
                                 try {
-                                    $sql = "ALTER LOGIN [$loginName] DENY_WINDOWS" #check this one
+                                    $sql = "DENY CONNECT SQL TO [{0}]" -f $newLogin.Name
                                     $null = $server.Query($sql)
-                                    Write-Message -Level Verbose -Message "Login $loginName is now denied of Windows login privileges on $instance."
+                                    Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
                                 } catch {
                                     Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
@@ -54606,6 +54883,7 @@ function New-DbaLogin {
         }
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function New-DbaScriptingOption {
@@ -58121,13 +58399,12 @@ function Remove-DbaDbOrphanUser {
                             if ($User.Count -eq 0) {
                                 #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
                                 $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
-                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                             } else {
-
                                 Write-Message -Level Verbose -Message "Validating users on database $db."
                                 #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
                                 $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
-                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                             }
                         }
 
@@ -60570,7 +60847,7 @@ function Reset-DbaAdmin {
     param (
         [Parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
-        [pscredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$Login = "sa",
         [SecureString]$SecurePassword,
         [switch]$Force,
@@ -60586,7 +60863,6 @@ function Reset-DbaAdmin {
                 [Parameter(Mandatory)]
                 [Security.SecureString]$Password
             )
-
             $marshal = [Runtime.InteropServices.Marshal]
             $plaintext = $marshal::PtrToStringAuto($marshal::SecureStringToBSTR($Password))
             return $plaintext
@@ -60626,14 +60902,13 @@ function Reset-DbaAdmin {
             $SecurePassword = $SqlCredential.Password
         }
     }
-
     process {
         foreach ($instance in $SqlInstance) {
             $stepcounter = 0
             $baseaddress = $instance.ComputerName
             # Get hostname
 
-            if ($baseaddress.IsLocalHost) {
+            if ($instance.IsLocalHost) {
                 $ipaddr = "."
                 $hostName = $env:COMPUTERNAME
                 $baseaddress = $env:COMPUTERNAME
@@ -60656,7 +60931,7 @@ function Reset-DbaAdmin {
                     Write-Message -Level Verbose -Message "First attempt using ICMP failed. Trying to connect using sockets. This may take up to 20 seconds."
                     $tcp = New-Object System.Net.Sockets.TcpClient
                     try {
-                        $tcp.Connect($hostName, 135)
+                        $tcp.Connect($baseaddress, 135)
                         $tcp.Close()
                         $tcp.Dispose()
                     } catch {
@@ -60666,327 +60941,279 @@ function Reset-DbaAdmin {
                 Write-Message -Level Verbose -Message "Resolving IP address."
                 try {
                     $hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
-                    $ipaddr = ($hostentry.AddressList | Where-Object {
-                            $_ -notlike '169.*'
-                        } | Select-Object -First 1).IPAddressToString
+                    $ipaddr = ($hostentry | Where-Object  -NotLike '169.*' | Select-Object -First 1).IPAddressToString
+                } catch {
+                    Stop-Function -Continue -ErrorRecord $_ -Message "Could not resolve SqlServer IP or NetBIOS name"
+                }
+
+                Write-Message -Level Verbose -Message "Resolving NetBIOS name."
+                try {
+                    # this is required otherwise, the ip is returned
+                    $hostName = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
+                    if ($null -eq $hostName) {
+                        $hostName = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim()
+                    }
+                } catch {
+                    Stop-Function -Continue -ErrorRecord $_ -Message "Could not access remote WMI object. Check permissions and firewall."
+                }
+            }
+
+            # Setup remote session if server is not local
+            if (-not $instance.IsLocalHost) {
+                try {
+                    $connectionParams = @{
+                        ComputerName = $hostName
+                        ErrorAction  = "Stop"
+                        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+                    }
+                    $session = New-PSSession @connectionParams
+                } catch {
+                    Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostName using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
+                }
+            }
+
+            Write-Message -Level Verbose -Message "Detecting login type."
+            # Is login a Windows login? If so, does it exist?
+            if ($Login -match "\\") {
+                Write-Message -Level Verbose -Message "Windows login detected. Checking to ensure account is valid."
+                $windowslogin = $true
+                try {
+                    if ($hostName -eq $env:COMPUTERNAME) {
+                        $account = New-Object System.Security.Principal.NTAccount($Login)
+                        #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                        $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                    } else {
+                        Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $Login -ScriptBlock {
+                            $account = New-Object System.Security.Principal.NTAccount($args)
+                            #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
+                            $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
+                        }
+                    }
+                } catch {
+                    Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $Login. Trying anyway."
+                }
+            }
+
+            # If it's not a Windows login, it's a SQL login, so it needs a password.
+            if (-not $windowslogin -and -not $SecurePassword) {
+                Write-Message -Level Verbose -Message "SQL login detected"
+                do {
+                    $password = Read-Host -AsSecureString "Please enter a new password for $Login"
+                } while ($password.Length -eq 0)
+            }
+
+            If ($SecurePassword) {
+                $password = $SecurePassword
+            }
+
+            # Get instance and service display name, then get services
+            $instanceName = $instance.InstanceName
+            if (-not $instanceName) {
+                $instanceName = "MSSQLSERVER"
+            }
+            $displayName = "SQL Server ($instanceName)"
+
+            try {
+                if ($hostName -eq $env:COMPUTERNAME) {
+                    $instanceServices = Get-Service -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running" }
+                    $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
+                } else {
+                    $instanceServices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running" }
+                    $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
+                }
             } catch {
-                Stop-Function -Continue -ErrorRecord $_ -Message "Could not resolve SqlServer IP or NetBIOS name"
+                Stop-Function -Message "Cannot connect to WMI on $hostName or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
+                return
             }
 
-            Write-Message -Level Verbose -Message "Resolving NetBIOS name."
+            if (-not $instanceServices) {
+                Stop-Function -Message "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again." -Target $instance
+                return
+            }
+
+            Write-Message -Level Verbose -Message "Attempting to stop SQL Services."
+
+            # Check to see if service is clustered. Clusters don't support -m (since the cluster service
+            # itself connects immediately) or -f, so they are handled differently.
             try {
-                # this is required otherwise, the ip is returned
-                $hostName = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
-                if ($null -eq $hostName) {
-                    $hostName = (nbtstat -A $ipaddr | Where-Object {
-                            $_ -match '\<00\>  UNIQUE'
-                        } | ForEach-Object {
-                            $_.SubString(4, 14)
-                        }).Trim()
+                $checkcluster = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object { $_.Name -eq "ClusSvc" -and $_.Status -eq "Running" }
+            } catch {
+                Stop-Function -Message "Can't check services." -Target $instance -ErrorRecord $_
+                return
             }
-        } catch {
-            Stop-Function -Continue -ErrorRecord $_ -Message "Could not access remote WMI object. Check permissions and firewall."
-        }
-    }
 
-    # Setup remote session if server is not local
-    if (-not $instance.IsLocalHost) {
-        try {
-            $connectionParams = @{
-                ComputerName = $hostName
-                ErrorAction  = "Stop"
-                UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+            if ($null -ne $checkcluster) {
+                $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName | Where-Object { $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)" }
             }
-            $session = New-PSSession @connectionParams
-        } catch {
-            Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostName using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."
-        }
-    }
 
-    Write-Message -Level Verbose -Message "Detecting login type."
-    # Is login a Windows login? If so, does it exist?
-    if ($login -match "\\") {
-        Write-Message -Level Verbose -Message "Windows login detected. Checking to ensure account is valid."
-        $windowslogin = $true
-        try {
-            if ($hostName -eq $env:COMPUTERNAME) {
-                $account = New-Object System.Security.Principal.NTAccount($args)
-                #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
-                $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
-            } else {
-                Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $login -ScriptBlock {
-                    $account = New-Object System.Security.Principal.NTAccount($args)
-                    #Variable $sid marked as unused by PSScriptAnalyzer replace with $null to catch output
-                    $null = $account.Translate([System.Security.Principal.SecurityIdentifier])
+            if ($pscmdlet.ShouldProcess($baseaddress, "Stop $instance to restart in single-user mode")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
+                # Take SQL Server offline so that it can be started in single-user mode
+                if ($clusterResource.count -gt 0) {
+                    $isClustered = $true
+                    try {
+                        $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
+                    } catch {
+                        $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                        $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $instance
+                        return
+                    }
+                } else {
+                    try {
+                        Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
+                        Write-Message -Level Verbose -Message "Successfully stopped SQL service."
+                    } catch {
+                        Start-Service -InputObject $instanceServices -ErrorAction Stop
+                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
+                        return
+                    }
                 }
             }
-        } catch {
-            Write-Message -Level Warning -Message "Cannot resolve Windows User or Group $login. Trying anyway."
-        }
-    }
 
-    # If it's not a Windows login, it's a SQL login, so it needs a password.
-    if (-not $windowslogin -and -not $SecurePassword) {
-        Write-Message -Level Verbose -Message "SQL login detected"
-        do {
-            $Password = Read-Host -AsSecureString "Please enter a new password for $login"
-        } while ($Password.Length -eq 0)
-    }
+            # /mReset-DbaAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
+            if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mode")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
+                try {
+                    if ($instance.IsLocalHost) {
+                        $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
+                        if ("$netstart" -notmatch "success") {
+                            Stop-Function -Message "Restart failure" -Continue
+                        }
+                    } else {
+                        $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
+                        foreach ($line in $netstart) {
+                            if ($line.length -gt 0) {
+                                Write-Message -Level Verbose -Message $line
+                            }
+                        }
+                    }
+                } catch {
+                    Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
-    If ($SecurePassword) {
-        $Password = $SecurePassword
-    }
-
-    # Get instance and service display name, then get services
-    $instanceName = $null
-    $instanceName = $instance.InstanceName
-    if (-not $instanceName) {
-        $instanceName = "MSSQLSERVER"
-    }
-    $displayName = "SQL Server ($instanceName)"
-
-    try {
-        if ($hostName -eq $env:COMPUTERNAME) {
-            $instanceServices = Get-Service -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
-            }
-            $sqlservice = Get-Service -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
-        } else {
-            $instanceServices = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
-                $_.DisplayName -like "*($instanceName)*" -and $_.Status -eq "Running"
-            }
-            $sqlservice = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
-        }
-    } catch {
-        Stop-Function -Message "Cannot connect to WMI on $hostName or SQL Service does not exist. Check permissions, firewall and SQL Server running status." -ErrorRecord $_ -Target $instance
-        return
-    }
-
-    if (-not $instanceServices) {
-        Stop-Function -Message "Couldn't find SQL Server instance. Check the spelling, ensure the service is running and try again." -Target $instance
-        return
-    }
-
-    Write-Message -Level Verbose -Message "Attempting to stop SQL Services."
-
-    # Check to see if service is clustered. Clusters don't support -m (since the cluster service
-    # itself connects immediately) or -f, so they are handled differently.
-    try {
-        $checkcluster = Get-Service -ComputerName $ipaddr -ErrorAction Stop | Where-Object {
-            $_.Name -eq "ClusSvc" -and $_.Status -eq "Running"
-        }
-    } catch {
-        Stop-Function -Message "Can't check services." -Target $instance -ErrorRecord $_
-        return
-    }
-
-    if ($null -ne $checkcluster) {
-        $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName |
-            Where-Object {
-                $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)"
-            }
-    }
-
-
-    if ($pscmdlet.ShouldProcess($baseaddress, "Stop $instance to restart in single-user mode")) {
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
-        # Take SQL Server offline so that it can be started in single-user mode
-        if ($clusterResource.count -gt 0) {
-            $isClustered = $true
-            try {
-                $clusterResource | Where-Object {
-                    $_.Name -eq "SQL Server"
-                } | ForEach-Object {
-                    $_.TakeOffline(60)
-                }
-        } catch {
-            $clusterResource | Where-Object {
-                $_.Name -eq "SQL Server"
-            } | ForEach-Object {
-                $_.BringOnline(60)
-            }
-        $clusterResource | Where-Object {
-            $_.Name -ne "SQL Server"
-        } | ForEach-Object {
-            $_.BringOnline(60)
-        }
-    Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $instance
-    return
-}
-} else {
-    try {
-        Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-        Write-Message -Level Verbose -Message "Successfully stopped SQL service."
-    } catch {
-        Start-Service -InputObject $instanceServices -ErrorAction Stop
-        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
-        return
-    }
-}
-}
-
-# /mReset-DbaAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
-if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mode")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
-    try {
-        if ($instance.IsLocalHost) {
-            $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
-            if ("$netstart" -notmatch "success") {
-                Stop-Function -Message "Restart failure" -Continue
-            }
-        } else {
-            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock {
-                net start ""$args"" /mReset-DbaAdmin
-            } 2>&1
-            foreach ($line in $netstart) {
-                if ($line.length -gt 0) {
-                    Write-Message -Level Verbose -Message $line
+                    if ($isClustered) {
+                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                    } else {
+                        Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
+                    }
+                    Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
+                    return
                 }
             }
-        }
-    } catch {
-        Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
 
-        if ($isClustered) {
-            $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
-                $_.BringOnline(60)
-            }
-            $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object {
-                $_.BringOnline(60)
-            }
-        } else {
-            Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
-        }
-        Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
-        return
-    }
-}
-
-if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back up")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing $instance to ensure it's back up"
-    try {
-        $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
-    } catch {
-        try {
-            Start-Sleep 3
-            $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
-        } catch {
-            Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
-            if ($isClustered) {
-                $clusterResource | Where-Object {
-                    $_.Name -eq "SQL Server"
-                } | ForEach-Object {
-                    $_.BringOnline(60)
+            if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back up")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing $instance to ensure it's back up"
+                try {
+                    $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
+                } catch {
+                    try {
+                        Start-Sleep 3
+                        $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
+                    } catch {
+                        Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
+                        if ($isClustered) {
+                            $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                            $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                        } else {
+                            Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
+                        }
+                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
+                    }
                 }
-            $clusterResource | Where-Object {
-                $_.Name -ne "SQL Server"
-            } | ForEach-Object {
-                $_.BringOnline(60)
             }
-    } else {
-        Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
-    }
-    Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
-}
-}
-}
 
-# Get login. If it doesn't exist, create it.
-if ($pscmdlet.ShouldProcess($instance, "Adding login $login if it doesn't exist")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $login if it doesn't exist"
-    if ($windowslogin) {
-        $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-                    BEGIN CREATE LOGIN [$login] FROM WINDOWS END"
-        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-            Write-Message -Level Warning -Message "Couldn't create Windows login."
-        }
+            # Get login. If it doesn't exist, create it.
+            if ($pscmdlet.ShouldProcess($instance, "Adding login $Login if it doesn't exist")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $Login if it doesn't exist"
+                if ($windowslogin) {
+                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] FROM WINDOWS END"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't create Windows login."
+                    }
 
-    } elseif ($login -ne "sa") {
-        # Create new sql user
-        $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$login')
-                    BEGIN CREATE LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
-        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-            Write-Message -Level Warning -Message "Couldn't create SQL login."
-        }
-    }
-}
-
-
-# If $login is a SQL Login, Mixed mode authentication is required.
-if ($windowslogin -ne $true) {
-    if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $login and ensuring account is unlocked")) {
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $login and ensuring account is unlocked"
-        $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
-        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-            Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
-        }
-
-        $sql = "ALTER LOGIN [$login] WITH CHECK_POLICY = OFF
-                    ALTER LOGIN [$login] WITH PASSWORD = '$(ConvertTo-PlainText $Password)' UNLOCK"
-        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-            Write-Message -Level Warning -Message "Couldn't unlock account."
-        }
-    }
-}
-
-if ($pscmdlet.ShouldProcess($instance, "Enabling $login")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring login is enabled"
-    $sql = "ALTER LOGIN [$login] ENABLE"
-    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-        Write-Message -Level Warning -Message "Couldn't enable login."
-    }
-}
-
-if ($login -ne "sa") {
-    if ($pscmdlet.ShouldProcess($instance, "Ensuring $login exists within sysadmin role")) {
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $login exists within sysadmin role"
-        $sql = "EXEC sp_addsrvrolemember '$login', 'sysadmin'"
-        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-            Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
-        }
-    }
-}
-
-if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
-    try {
-        Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-        if ($isClustered -eq $true) {
-            $clusterResource | Where-Object Name -eq "SQL Server" | ForEach-Object {
-                $_.BringOnline(60)
+                } elseif ($Login -ne "sa") {
+                    # Create new sql user
+                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't create SQL login."
+                    }
+                }
             }
-            $clusterResource | Where-Object Name -ne "SQL Server" | ForEach-Object {
-                $_.BringOnline(60)
+
+            # If $Login is a SQL Login, Mixed mode authentication is required.
+            if ($windowslogin -ne $true) {
+                if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $Login and ensuring account is unlocked")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $Login and ensuring account is unlocked"
+                    $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
+                    }
+
+                    $sql = "ALTER LOGIN [$Login] WITH CHECK_POLICY = OFF
+                    ALTER LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)' UNLOCK"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't unlock account."
+                    }
+                }
             }
-        } else {
-            Start-Service -InputObject $instanceServices -ErrorAction Stop
-        }
-    } catch {
-        Stop-Function -Message "Failure" -ErrorRecord $_
-    }
-}
 
-if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
-    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
-    if ($securePassword) {
-        $cred = New-Object System.Management.Automation.PSCredential ($Login, $securePassword)
-        Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
-    } elseif ($SqlCredential) {
-        Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
-    } else {
-        try {
-            Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login -EnableException
-        } catch {
-            Stop-Function -Message "Password not supplied, tried logging in with Integrated authentication and it failed. Either way, $Login should work now on $instance." -Continue
+            if ($pscmdlet.ShouldProcess($instance, "Enabling $Login")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring login is enabled"
+                $sql = "ALTER LOGIN [$Login] ENABLE"
+                if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                    Write-Message -Level Warning -Message "Couldn't enable login."
+                }
+            }
+
+            if ($Login -ne "sa") {
+                if ($pscmdlet.ShouldProcess($instance, "Ensuring $Login exists within sysadmin role")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $Login exists within sysadmin role"
+                    $sql = "EXEC sp_addsrvrolemember '$Login', 'sysadmin'"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
+                    }
+                }
+            }
+
+            if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
+                try {
+                    Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
+                    if ($isClustered -eq $true) {
+                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                    } else {
+                        Start-Service -InputObject $instanceServices -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+            }
+
+            if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
+                if ($SecurePassword) {
+                    $cred = New-Object System.Management.Automation.PSCredential ($Login, $SecurePassword)
+                    Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
+                } elseif ($SqlCredential) {
+                    Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+                } else {
+                    try {
+                        Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login -EnableException
+                    } catch {
+                        Stop-Function -Message "Password not supplied, tried logging in with Integrated authentication and it failed. Either way, $Login should work now on $instance." -Continue
+                    }
+                }
+            }
+
         }
     }
-}
-
-}
-}
-end {
-    Write-Message -Level Verbose -Message "Script complete."
-}
+    end {
+        Write-Message -Level Verbose -Message "Script complete."
+    }
 }
 
 #.ExternalHelp dbatools-Help.xml
@@ -61466,6 +61693,7 @@ function Restore-DbaDatabase {
             }
             if ($Continue) {
                 Write-Message -Message "Called with continue, so assume we have an existing db in norecovery"
+                $WithReplace = $True
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
                 $LastRestoreType = Get-DbaDbRestoreHistory -SqlInstance $RestoreInstance -Last
             }
@@ -66391,9 +66619,21 @@ function Set-DbaPowerPlan {
 
                             $cimInstance = Get-CimInstance -Namespace root\cimv2\power -ClassName win32_PowerPlan -Filter "ElementName = '$powerPlanRequested'" -CimSession $CIMSession
                             if ($cimInstance) {
-                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession
-                                if (!$cimResult) {
-                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
+                                # Because the activate method for powerplans is broken on windows server 2019, we use the powrprof.dll instead
+                                [System.Guid]$powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
+                                $scriptBlock = {
+                                    Param ($Guid)
+                                    $powerSetActiveSchemeDefinition = '[DllImport("powrprof.dll", CharSet = CharSet.Auto)] public static extern uint PowerSetActiveScheme(IntPtr RootPowerKey, Guid SchemeGuid);'
+                                    $powrprof = Add-Type -MemberDefinition $powerSetActiveSchemeDefinition -Name 'Win32PowerSetActiveScheme' -Namespace 'Win32Functions' -PassThru
+                                    $powrprof::PowerSetActiveScheme([System.IntPtr]::Zero, $Guid)
+                                }
+                                if ($IncludeCred) {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw -Credential $Credential
+                                } else {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw
+                                }
+                                if ($returnCode -ne 0) {
+                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer (ReturnCode: $returnCode)." -Category ConnectionError -Target $computer
                                     return
                                 }
                             } else {
@@ -67637,16 +67877,43 @@ function Start-DbaAgentJob {
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$AllJobs,
         [switch]$Wait,
+        [switch]$Parallel,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
         [switch]$EnableException
     )
+    begin {
+        [ScriptBlock]$waitBlock = {
+            param(
+                [Microsoft.SqlServer.Management.Smo.Agent.Job]$currentjob,
+                [switch]$Wait,
+                [int]$WaitPeriod
+            )
+            [string]$server = $currentjob.Parent.Parent.Name
+            [string]$currentStep = $currentjob.CurrentRunStep
+            [int]$currentStepId = $currentstep.Split('()')[0].Trim()
+            [string]$currentStepName = $currentstep.Split('()')[1]
+            [string]$currentRunStatus = $currentjob.CurrentRunStatus
+            [int]$jobStepsCount = $currentjob.JobSteps.Count
+            [int]$currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
+            [int]$currentStepRetries = $currentjob.JobSteps[$currentStepName].RetryAttempts
+            Write-Message -Level Verbose -Message "Server: $server - $currentjob is $currentRunStatus, currently on Job Step '$currentStepName' ($currentStepId of $jobStepsCount), and has tried $currentStepRetryAttempts of $currentStepRetries retry attempts"
+            if (($Wait) -and ($WaitPeriod) ) { Start-Sleep -Seconds $WaitPeriod }
+            $currentjob.Refresh()
+        }
+    }
     process {
         if ((Test-Bound -not -ParameterName AllJobs) -and (Test-Bound -not -ParameterName Job) -and (Test-Bound -not -ParameterName InputObject)) {
-            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs." -Target $instance
+            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs."
             return
         }
-        # Loop through each of the instances
+
+        if ((-not $Wait) -and ($Parallel)) {
+            Stop-Function -Message "Please use the -Wait(:`$true) switch when using -Parallel(:`$true)."
+            return
+        }
+
+        # Loop through each of the instances and store agent jobs
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -67661,16 +67928,16 @@ function Start-DbaAgentJob {
 
             # If a specific job needs to be added
             if (-not $AllJobs -and $Job) {
-                $InputObject = $server.JobServer.Jobs | Where-Object Name -In $Job
+                $InputObject += $server.JobServer.Jobs | Where-Object Name -In $Job
             }
 
             # If a job needs to be excluded
             if ($ExcludeJob) {
-                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
+                $InputObject += $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
 
-        # Loop through each of the jobs
+        # Loop through each of the jobs and start them.  Optionally wait for each job to finish before continuing to the next.
         foreach ($currentjob in $InputObject) {
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
@@ -67705,25 +67972,27 @@ function Start-DbaAgentJob {
                     }
                 }
 
-                # Wait for the job
-                if (Test-Bound -ParameterName Wait) {
+                if (($Wait) -and (-not $Parallel)) {
+                    # Wait for each job in a serialized fashion.
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        $currentRunStatus = $currentjob.CurrentRunStatus
-                        $currentStep = $currentjob.CurrentRunStep
-                        $jobStepsCount = $currentjob.JobSteps.Count
-                        $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
-                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
-                        $currentStepRetries = $currentjob.RetryAttempts
-                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
-                        Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
-                        Start-Sleep -Seconds $WaitPeriod
-                        $currentjob.Refresh()
+                        Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob, $true, $WaitPeriod)
                     }
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
-                } else {
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
+                    Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
+                } elseif (-not $Parallel) {
+                    Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
                 }
             }
+        }
+
+        # Wait for each job to be done in parallel
+        if ($Parallel) {
+            while ($InputObject.CurrentRunStatus -contains 'Executing') {
+                foreach ($currentjob in $InputObject) {
+                    Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob)
+                }
+                Start-Sleep -Seconds $WaitPeriod
+            }
+            Get-DbaAgentJob -SqlInstance $($InputObject.Parent.Parent | Select-Object -Unique) -Job $($InputObject.Name | Select-Object -Unique);
         }
     }
 }
@@ -67788,6 +68057,8 @@ function Start-DbaMigration {
         [switch]$DisableJobsOnSource,
         [switch]$ExcludeSaRename,
         [switch]$UseLastBackup,
+        [switch]$KeepCDC,
+        [switch]$KeepReplication,
         [switch]$Continue,
         [switch]$Force,
         [string]$AzureCredential,
@@ -67910,12 +68181,12 @@ function Start-DbaMigration {
             Write-Message -Level Verbose -Message "Migrating databases"
             if ($BackupRestore) {
                 if ($UseLastBackup) {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                 } else {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -AzureCredential $AzureCredential
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                 }
             } else {
-                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
+                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
             }
         }
 
@@ -70818,6 +71089,7 @@ function Test-DbaDbDataMaskingConfig {
         $randomizerTypes = Get-DbaRandomizedType
 
         $requiredColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'SubType')
+        $allowedColumnProperties = @('Action', 'CharacterString', 'ColumnType', 'Composite', 'Deterministic', 'Format', 'MaskingType', 'MaxValue', 'MinValue', 'Name', 'Nullable', 'KeepNull', 'Separator', 'SubType')
 
         $allowedActionCategories = @('datetime', 'number', 'column')
         $allowedActionSubCategories = @('year', 'quarter', 'month', 'dayofyear', 'day', 'week', 'weekday', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond')
@@ -70839,24 +71111,27 @@ function Test-DbaDbDataMaskingConfig {
 
                 # Test the column properties
                 $columnProperties = $column | Get-Member | Where-Object MemberType -eq NoteProperty | Select-Object Name -ExpandProperty Name
-                $compareResult = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
+                $compareResultRequired = Compare-Object -ReferenceObject $requiredColumnProperties -DifferenceObject $columnProperties
+                $compareResultAllowed = Compare-Object -ReferenceObject $allowedColumnProperties -DifferenceObject $columnProperties
 
-                if ($null -ne $compareResult) {
-                    if ($compareResult.SideIndicator -contains "<=") {
+                if ($null -ne $compareResultRequired) {
+                    if ($compareResultRequired.SideIndicator -contains "<=") {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
-                            Value  = ($compareResult | Where-Object SideIndicator -eq "<=").InputObject -join ","
+                            Value  = ($compareResultRequired | Where-Object SideIndicator -eq "<=").InputObject -join ","
                             Error  = "The column does not contain all the required properties. Please check the column "
                         }
                     }
+                }
 
-                    if ($compareResult.SideIndicator -contains "=>") {
+                if ($null -ne $compareResultAllowed) {
+                    if ($compareResultAllowed.SideIndicator -contains "=>") {
                         [PSCustomObject]@{
                             Table  = $table.Name
                             Column = $column.Name
-                            Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
-                            Error  = "The column contains a property that is not in the required properties. Please check the column"
+                            Value  = ($compareResultAllowed | Where-Object SideIndicator -eq "=>").InputObject -join ","
+                            Error  = "The column contains a property that is not in the allowed properties. Please check the column"
                         }
                     }
                 }
@@ -72272,6 +72547,8 @@ function Test-DbaLastBackup {
         [string]$AzureCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [int]$MaxTransferSize,
+        [int]$BufferCount,
         [switch]$EnableException
     )
     process {
@@ -72470,7 +72747,7 @@ function Test-DbaLastBackup {
                 $ogdbname = $dbName
                 $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
 
-                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -sum ).Sum
+                $totalsize = ($restorelist.BackupSize.Megabyte | Measure-Object -Sum ).Sum
 
                 if ($MaxSize -and $MaxSize -lt $totalsize) {
                     $success = "The backup size for $dbName ($totalsize MB) exceeds the specified maximum size ($MaxSize MB)."
@@ -72489,10 +72766,29 @@ function Test-DbaLastBackup {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
                         try {
+                            $restoreSplat = @{
+                                SqlInstance                = $destserver
+                                RestoredDatabaseNamePrefix = $prefix
+                                DestinationFilePrefix      = $Prefix
+                                DestinationDataDirectory   = $datadirectory
+                                DestinationLogDirectory    = $logdirectory
+                                IgnoreLogBackup            = $IgnoreLogBackup
+                                AzureCredential            = $AzureCredential
+                                TrustDbBackupHistory       = $true
+                                EnableException            = $true
+                            }
+
+                            if (Test-Bound "MaxTransferSize") {
+                                $restoreSplat.Add('MaxTransferSize', $MaxTransferSize)
+                            }
+                            if (Test-Bound "BufferCount") {
+                                $restoreSplat.Add('BufferCount', $BufferCount)
+                            }
+
                             if ($verifyonly) {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly:$VerifyOnly
                             } else {
-                                $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory -EnableException
+                                $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
                                 Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
                             }
                         } catch {
@@ -72603,7 +72899,6 @@ function Test-DbaLastBackup {
         }
     }
 }
-
 
 #.ExternalHelp dbatools-Help.xml
 function Test-DbaLinkedServerConnection {
@@ -74606,6 +74901,7 @@ function Update-DbaInstance {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -74845,6 +75141,7 @@ function Update-DbaInstance {
                 EnableException = $EnableException
                 ExtractPath     = $ExtractPath
                 Authentication  = $Authentication
+                ArgumentList    = $ArgumentList
             }
             Invoke-DbaAdvancedUpdate @updateSplat
         }
@@ -78765,13 +79062,18 @@ function Get-SQLInstanceComponent {
                 Write-Message -Level Debug -Message $logEntry
             }
             foreach ($result in $results) {
-                #Replace first decimal of the minor build with a 0, since we're using build numbers here
-                #Refer to https://sqlserverbuilds.blogspot.com/
+                # If version is unknown that component should be excluded, otherwise it would fail on conversion. We have no use for versionless components anyways.
+                if (-Not $result.Version) {
+                    Write-Message -Level Warning -Message "Component $($result.InstanceName) on $($result.ComputerName) has an unknown version and was ommitted from the instance list"
+                    continue
+                }
+                # Replace first decimal of the minor build with a 0, since we're using build numbers here
+                # Refer to https://sqlserverbuilds.blogspot.com/
                 Write-Message -Level Debug -Message "Converting version $($result.Version) to [version]"
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ([string]$result.Version)
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
                 Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
-                #Find a proper build reference and replace Version property
+                # Find a proper build reference and replace Version property
                 $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
             }
@@ -80786,7 +81088,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
-            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
+            if ($MonitorServer -and ($ServerSecondary.Version.Major -lt 12)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
                 $lsDetails = $ServerSecondary.Query($query)
