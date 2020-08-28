@@ -34,10 +34,9 @@ function Copy-DbaDbViewData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER View
-        Define a specific view you would like to use as source. You can specify a three-part name like db.sch.vw.
+        Specify a view to use as a source. You can specify a two-part name or a three-part name such as db.sch.vw.
         If the object has special characters please wrap them in square brackets [ ].
-        This dbo.First.View will try to find view named 'View' on schema 'First' and database 'dbo'.
-        The correct way to find view named 'First.View' on schema 'dbo' is passing dbo.[First.View]
+        Example: [SampleDB].[First].[View] will try to find the view named 'View' in the schema 'First' and the database 'SampleDB'.
 
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of View
@@ -198,7 +197,7 @@ function Copy-DbaDbViewData {
         [switch]$EnableException
     )
 
-    process {        
+    process {
         Copy-DbaDbTableData @PSBoundParameters
     }
 }

@@ -38,17 +38,22 @@ function Copy-DbaDbTableData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER Table
-        Define a specific table you would like to use as source. You can specify a three-part name like db.sch.tbl.
+        Specify a table to use as a source. You can specify a two-part name or a three-part name such as db.sch.tbl.
         If the object has special characters please wrap them in square brackets [ ].
-        This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
+        Example: [SampleDB].[First].[Table] will try to find the table named 'Table' in the schema 'First' and the database 'SampleDB'.
+
+    .PARAMETER View
+        Specify a view to use as a source. You can specify a two-part name or a three-part name such as db.sch.vw.
+        Note: Only one of -View or -Table may be specified during command invocation.
+        If the object has special characters please wrap them in square brackets [ ].
+        Example: [SampleDB].[First].[View] will try to find the view named 'View' in the schema 'First' and the database 'SampleDB'.
 
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
 
     .PARAMETER Query
         Define a query to use as a source. Note: 3 or 4 part object names may be used as described in https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transact-sql-syntax-conventions-transact-sql
-        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.        
+        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
@@ -185,7 +190,7 @@ function Copy-DbaDbTableData {
         [string]$Database,
         [string]$DestinationDatabase,
         [string[]]$Table,
-        [string[]]$View, # Copy-DbaDbTableData and Copy-DbaDbViewData are consolidated to reduce maintenance cost, so this param is specific to calls of Copy-DbaDbViewData 
+        [string[]]$View, # Copy-DbaDbTableData and Copy-DbaDbViewData are consolidated to reduce maintenance cost, so this param is specific to calls of Copy-DbaDbViewData
         [string]$Query,
         [switch]$AutoCreateTable,
         [int]$BatchSize = 50000,
@@ -323,8 +328,8 @@ function Copy-DbaDbTableData {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $createquery -EnableException
                             #refreshing table list to make sure get-dbadbtable will find the new table
                             $server.Databases['tempdb'].Tables.Refresh($true)
-                            $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName                            
-                            # need these for generating the script of the table and then replacing the schema and name                            
+                            $tempTable = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tempTableName
+                            # need these for generating the script of the table and then replacing the schema and name
                             $schemaNameToReplace = $tempTable.Schema
                             $tableNameToReplace = $tempTable.Name
                             $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
@@ -335,7 +340,7 @@ function Copy-DbaDbTableData {
                             $tablescript = $sqlObject | Export-DbaScript -Passthru | Out-String
                             $schemaNameToReplace = $sqlObject.Schema
                             $tableNameToReplace = $sqlObject.Name
-                        }            
+                        }
 
                         #replacing table name
                         if ($newTableParts.Name) {
