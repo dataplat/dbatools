@@ -68,13 +68,14 @@ function Get-DbaDbQueryStoreOption {
         [switch]$EnableException
     )
     begin {
-        $ExcludeDatabase += 'master', 'tempdb'
+        $ExcludeDatabase += 'master', 'tempdb', "model"
     }
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-            } catch {
+            }
+            catch {
                 Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
                 continue
             }
@@ -88,7 +89,8 @@ function Get-DbaDbQueryStoreOption {
 
                 if ($server.VersionMajor -eq 14) {
                     $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $db.Name)
-                } elseif ($server.VersionMajor -ge 15) {
+                }
+                elseif ($server.VersionMajor -ge 15) {
                     $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $db.Name)
                 }
 
@@ -99,11 +101,13 @@ function Get-DbaDbQueryStoreOption {
 
                 if ($server.VersionMajor -eq 13) {
                     Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
-                } elseif ($server.VersionMajor -eq 14) {
+                }
+                elseif ($server.VersionMajor -eq 14) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name MaxPlansPerQuery -value $QueryStoreOptions.MaxPlansPerQuery
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name WaitStatsCaptureMode -value $QueryStoreOptions.WaitStatsCaptureMode
                     Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
-                } elseif ($server.VersionMajor -ge 15) {
+                }
+                elseif ($server.VersionMajor -ge 15) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -value $QueryStoreOptions.CustomCapturePolicyExecutionCount
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
