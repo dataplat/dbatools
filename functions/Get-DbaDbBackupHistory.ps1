@@ -229,7 +229,7 @@ function Get-DbaDbBackupHistory {
             }
             $AgResults = @()
             $ProcessedAgDatabases = @()
-            if (($server.AvailabilityGroups.count -gt 0) -and (-not $SuppressAgCheck)) {
+            if (($server.AvailabilityGroups.count -gt 0) -and ($SuppressAgCheck -ne $True)) {
                 $agShortInstance = $instance.FullName.split('.')[0]
                 if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
                     # We have a listener passed in, just query the dbs specified or all in the AG
@@ -309,7 +309,7 @@ function Get-DbaDbBackupHistory {
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            if (($server.AvailabilityGroups.count -gt 0) -and (-not $SuppressAgCheck)) {
+            if (($server.AvailabilityGroups.count -gt 0) -and ($SuppressAgCheck -ne $True)) {
                 $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
                 $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
                 ForEach ($adb in $adbs) {
