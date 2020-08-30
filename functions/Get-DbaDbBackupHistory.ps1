@@ -8,9 +8,9 @@ function Get-DbaDbBackupHistory {
 
         You can even get detailed information (including file path) for latest full, differential and log files.
 
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group
+        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group.
 
-        If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history
+        If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history.
 
         If a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well, if the Availability Group has a listener.
 
@@ -29,7 +29,7 @@ function Get-DbaDbBackupHistory {
         Specifies one or more database(s) to exclude from processing.
 
     .PARAMETER IncludeCopyOnly
-        By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
+        By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them.
 
     .PARAMETER Force
         If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
@@ -38,7 +38,7 @@ function Get-DbaDbBackupHistory {
         Specifies a DateTime object to use as the starting point for the search for backups.
 
     .PARAMETER RecoveryFork
-        Specifies the Recovery Fork you want backup history for
+        Specifies the Recovery Fork you want backup history for.
 
     .PARAMETER Last
         If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
@@ -65,15 +65,15 @@ function Get-DbaDbBackupHistory {
         Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
 
     .PARAMETER IncludeMirror
-        By default mirrors of backups are not returned, this switch will cause them to be returned
+        By default mirrors of backups are not returned, this switch will cause them to be returned.
+
+    .PARAMETER SuppressAgCheck
+        By default, when SqlInstance is part of an availability group, the history is also fetched from all replicas. If set, the history will be only fetched from SqlInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-    .PARAMETER SuppressAgCheck
-        By default, when SqlInstance is part of an availability group, the history is also fetched from all replicas. If set, the history will be only fetched from SqlInstance.
 
     .NOTES
         Tags: DisasterRecovery, Backup
@@ -173,10 +173,10 @@ function Get-DbaDbBackupHistory {
         [switch]$LastLog,
         [string[]]$DeviceType,
         [switch]$Raw,
-        [bigint]$LastLsn,
-        [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
+        [bigint]$LastLsn,
+        [switch]$IncludeMirror,
         [Alias("AgCheck")]
         [switch]$SuppressAgCheck,
         [switch]$EnableException
