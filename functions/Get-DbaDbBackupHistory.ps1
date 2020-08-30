@@ -152,6 +152,12 @@ function Get-DbaDbBackupHistory {
 
         Will query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time
 
+    .EXAMPLE
+        PS C:\> $allAgReplicas = 'srv1\demoapp,14333', 'srv2\demoapp,14333', 'srv3\demoapp,14333'
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance $allAgReplicas -Database DemoDatabase -SuppressAgCheck
+
+        Will query all replicas in the Availability Group but without internal determination of the replicas, so that it works for replicas with custom ports.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
