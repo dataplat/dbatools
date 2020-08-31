@@ -70,14 +70,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-TempObjects $db, $db2
     }
 
-    It "copies the table data" {
+    It "copies the view data" {
         $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
     }
 
-    It "copies the table data to another instance" {
+    It "copies the view data to another instance" {
         $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
@@ -91,9 +91,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $table1count.Count | Should -Be $table2count.Count
     }
 
-    It "supports piping more than one table" {
+    It "supports piping more than one view" {
         $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
+        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
@@ -119,7 +120,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Should warn if the destination table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning
         $result | Should -Be $null
         $tablewarning | Should -match Auto
     }

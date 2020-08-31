@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "copies the table data to another instance" {
-        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example3
+        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_example3")
         $table1count.Count | Should -Be $table2count.Count
@@ -74,6 +74,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "supports piping more than one table" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
+        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
