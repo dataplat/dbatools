@@ -44,6 +44,7 @@ function Copy-DbaDbViewData {
     .PARAMETER Query
         Define a query to use as a source. Note: 3 or 4 part object names may be used as described in https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transact-sql-syntax-conventions-transact-sql
         Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
+        Note: Even when the -Query param is used a valid -Table or -View must be specified. This is due to the workflow used in the command.
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
@@ -160,15 +161,15 @@ function Copy-DbaDbViewData {
         >> Destination = 'server1'
         >> Database = 'AdventureWorks2017'
         >> DestinationDatabase = 'AdventureWorks2017'
-        >> View = '[Person].[EmailPromotion]'
+        >> View = '[AdventureWorks2017].[Person].[EmailPromotion]'
         >> BatchSize = 10000
-        >> Query = "SELECT * FROM [Person].[Person] where EmailPromotion = 1"
+        >> Query = "SELECT * FROM [OtherDb].[Person].[Person] where EmailPromotion = 1"
         >> }
         >>
         PS C:\> Copy-DbaDbViewData @params
 
         Copies data returned from the query on server1 into the AdventureWorks2017 on server1.
-        Copy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.
+        Copy is processed in BatchSize of 10000 rows. See the -Query param documentation for more details.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
