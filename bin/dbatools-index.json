@@ -77,7 +77,7 @@
                            "",
                            false,
                            "false",
-                           ""
+                           "Manual"
                        ],
                        [
                            "SharedPath",
@@ -89,7 +89,7 @@
                        ],
                        [
                            "UseLastBackup",
-                           "Use the last full backup of database.",
+                           "Use the last full and log backup of database. A log backup must be the last backup.",
                            "",
                            false,
                            "false",
@@ -3644,6 +3644,22 @@
                            "False"
                        ],
                        [
+                           "KeepCDC",
+                           "Indicates whether CDC information should be copied as part of the database",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "KeepReplication",
+                           "Indicates whether replication configuration should be copied as part of the database copy operation",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "SetSourceOffline",
                            "If this switch is enabled, the Source database will be set to Offline after being copied.",
                            "",
@@ -3700,7 +3716,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-SharedPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackup] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-AzureCredential \u003cString\u003e] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] -BackupRestore [-SharedPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-WithReplace] [-NoRecovery] [-NoBackupCleanup] [-NumberFiles \u003cInt32\u003e] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-UseLastBackup] [-Continue] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-KeepCDC] [-KeepReplication] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \r\n\u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nCopy-DbaDatabase [-Source \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \u003cPSCredential\u003e] -Destination \u003cDbaInstanceParameter[]\u003e [-DestinationSqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-AzureCredential \u003cString\u003e] -DetachAttach [-Reattach] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [-InputObject \u003cDatabase[]\u003e] [-NoCopyOnly] [-SetSourceOffline] [-NewName \u003cString\u003e] [-Prefix \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaDataCollector",
@@ -8056,6 +8072,14 @@
                            "False"
                        ],
                        [
+                           "ObjectLevel",
+                           "Include object-level permissions for each user associated with copied login.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -8080,7 +8104,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabase] [-ExcludePassword] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Login] \u003cObject[]\u003e] [[-ExcludeLogin] \u003cObject[]\u003e] [[-Database] \u003cObject[]\u003e] [-ExcludeJobs] [-ExcludeDatabase] [-ExcludePassword] [[-DefaultDatabase] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [[-BatchSeparator] \u003cString\u003e] [[-DestinationVersion] \u003cString\u003e] [-NoPrefix] [-Passthru] [-ObjectLevel] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
@@ -9732,7 +9756,7 @@
         "CommandName":  "Find-DbaDbUnusedIndex",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaDbUnusedIndex",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused indexes on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused indexes on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused indexes on all databases on sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -Database db1, db2\nFinds unused indexes on db1 and db2 on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaDbUnusedIndex -SqlInstance sql2016 -SqlCredential $cred\nFinds unused indexes on db1 and db2 on sql2016 using SQL Authentication to connect to the server\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Find-DbaDbUnusedIndex\nFinds unused indexes on all databases on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2019 | Find-DbaDbUnusedIndex -Seeks 10 -Scans 100 -Lookups 1000\nFinds \u0027unused\u0027 indexes with user_seeks \u003c 10, user_scans \u003c 100, and user_lookups \u003c 1000 on all databases on sql2019.\r\nNote that these additional parameters provide flexibility to define what is considered an \u0027unused\u0027 index.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -9768,11 +9792,35 @@
                        ],
                        [
                            "IgnoreUptime",
-                           "Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been \r\nrunning for less that 7 days.",
+                           "Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been \r\nrunning for less than 7 days.",
                            "",
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "Seeks",
+                           "Specify a custom threshold for user seeks. The default for this parameter is 1.\r\nThe valid values are between 1 and 1000000 to provide flexibility on the definition of \u0027unused\u0027 indexes.\r\nNote: The resulting WHERE clause uses the AND operator:\r\nuser_seeks \u003c $Seeks\r\nAND user_scans \u003c $Scans\r\nAND user_lookups \u003c $Lookups",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Scans",
+                           "Specify a custom threshold for user scans. The default for this parameter is 1.\r\nThe valid values are between 1 and 1000000 to provide flexibility on the definition of \u0027unused\u0027 indexes.\r\nNote: The resulting WHERE clause uses the AND operator:\r\nuser_seeks \u003c $Seeks\r\nAND user_scans \u003c $Scans\r\nAND user_lookups \u003c $Lookups",
+                           "",
+                           false,
+                           "false",
+                           "1"
+                       ],
+                       [
+                           "Lookups",
+                           "Specify a custom threshold for user lookups. The default for this parameter is 1.\r\nThe valid values are between 1 and 1000000 to provide flexibility on the definition of \u0027unused\u0027 indexes.\r\nNote: The resulting WHERE clause uses the AND operator:\r\nuser_seeks \u003c $Seeks\r\nAND user_scans \u003c $Scans\r\nAND user_lookups \u003c $Lookups",
+                           "",
+                           false,
+                           "false",
+                           "1"
                        ],
                        [
                            "InputObject",
@@ -9791,7 +9839,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Find-DbaDbUnusedIndex [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IgnoreUptime] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Find-DbaDbUnusedIndex [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IgnoreUptime] [[-Seeks] \u003cInt32\u003e] [[-Scans] \u003cInt32\u003e] [[-Lookups] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Find-DbaInstance",
@@ -10728,7 +10776,7 @@
         "CommandName":  "Get-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\nReturns all SQL Agent Jobs on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\nReturns all SQl Agent Jobs for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff\nReturns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff\nReturns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs\nReturns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf\nFind all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Export-DbaScript -Path \"C:\\temp\\sqlserver2014a_SSRSJobs.sql\"\nExports all SSRS jobs from SQL instance sqlserver2014a to a file.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost\nReturns all SQL Agent Jobs on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost, sql2016\nReturns all SQl Agent Jobs for the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff\nReturns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff\nReturns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance localhost -ExcludeDisabledJobs\nReturns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf\nFind all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq \"Report Server\" | Export-DbaScript -Path \"C:\\temp\\sqlserver2014a_SSRSJobs.sql\"\nExports all SSRS jobs from SQL instance sqlserver2014a to a file.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sqlserver2014a -Database msdb\nFinds all jobs on sqlserver2014a that T-SQL job steps associated with msdb database",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10885,7 +10933,7 @@
         "CommandName":  "Get-DbaAgentJobHistory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentJobHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance localhost\nReturns all SQL Agent Job execution results on the local default SQL Server instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance localhost, sql2016\nReturns all SQL Agent Job execution results for the local and sql2016 SQL Server instances.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\\Inst2K17\u0027 | Get-DbaAgentJobHistory\nReturns all SQL Agent Job execution results for sql1 and sql2\\Inst2K17.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 | Select-Object *\nReturns all properties for all SQl Agent Job execution results on sql2\\Inst2K17.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -Job \u0027Output File Cleanup\u0027\nReturns all properties for all SQl Agent Job execution results of the \u0027Output File Cleanup\u0027 job on sql2\\Inst2K17.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -Job \u0027Output File Cleanup\u0027 -WithOutputFile\nReturns all properties for all SQl Agent Job execution results of the \u0027Output File Cleanup\u0027 job on sql2\\Inst2K17,\r\nwith additional properties that show the output filename path\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -ExcludeJobSteps\nReturns the SQL Agent Job execution results for the whole jobs on sql2\\Inst2K17, leaving out job step execution results.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -StartDate \u00272017-05-22\u0027 -EndDate \u00272017-05-23 12:30:00\u0027\nReturns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\\Inst2K17.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Where-Object Name -Match backup | Get-DbaAgentJobHistory\nGets all jobs with the name that match the regex pattern \"backup\" and then gets the job history from those. You can also use -Like *backup* in this example.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance localhost\nReturns all SQL Agent Job execution results on the local default SQL Server instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance localhost, sql2016\nReturns all SQL Agent Job execution results for the local and sql2016 SQL Server instances.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\\Inst2K17\u0027 | Get-DbaAgentJobHistory\nReturns all SQL Agent Job execution results for sql1 and sql2\\Inst2K17.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 | Select-Object *\nReturns all properties for all SQl Agent Job execution results on sql2\\Inst2K17.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -Job \u0027Output File Cleanup\u0027\nReturns all properties for all SQl Agent Job execution results of the \u0027Output File Cleanup\u0027 job on sql2\\Inst2K17.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -Job \u0027Output File Cleanup\u0027 -WithOutputFile\nReturns all properties for all SQl Agent Job execution results of the \u0027Output File Cleanup\u0027 job on sql2\\Inst2K17,\r\nwith additional properties that show the output filename path\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -ExcludeJobSteps\nReturns the SQL Agent Job execution results for the whole jobs on sql2\\Inst2K17, leaving out job step execution results.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2\\Inst2K17 -StartDate \u00272017-05-22\u0027 -EndDate \u00272017-05-23 12:30:00\u0027\nReturns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\\Inst2K17.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Where-Object Name -Match backup | Get-DbaAgentJobHistory\nGets all jobs with the name that match the regex pattern \"backup\" and then gets the job history from those. You can also use -Like *backup* in this example.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql2016 -OutcomeType Failed\nReturns only the failed SQL Agent Job execution results for the sql2016 SQL Server instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10936,6 +10984,14 @@
                            "$(Get-Date)"
                        ],
                        [
+                           "OutcomeType",
+                           "The CompletionResult to filter the history for. Valid values are: Failed, Succeeded, Retry, Cancelled, InProgress, Unknown",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ExcludeJobSteps",
                            "Use this switch to discard all job steps, and return only the job totals",
                            "",
@@ -10968,7 +11024,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentJobHistory [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-ExcludeJobSteps] [-WithOutputFile] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaAgentJobHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-ExcludeJobSteps] [-WithOutputFile] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaAgentJobHistory [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-ExcludeJobSteps] [-WithOutputFile] -JobCollection \u003cJob\u003e [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentJobHistory [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-OutcomeType {Failed | Succeeded | Retry | Cancelled | InProgress | Unknown}] [-ExcludeJobSteps] [-WithOutputFile] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaAgentJobHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-OutcomeType {Failed | Succeeded | Retry | Cancelled | InProgress | Unknown}] [-ExcludeJobSteps] [-WithOutputFile] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaAgentJobHistory [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cObject[]\u003e] [-ExcludeJob \u003cObject[]\u003e] [-StartDate \u003cDateTime\u003e] [-EndDate \u003cDateTime\u003e] [-OutcomeType {Failed | Succeeded | Retry | Cancelled | InProgress | Unknown}] [-ExcludeJobSteps] [-WithOutputFile] -JobCollection \u003cJob\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentJobOutputFile",
@@ -20257,6 +20313,14 @@
                            ""
                        ],
                        [
+                           "Separator",
+                           "Some masking types support separators",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Value",
                            "This is the value that needs to be used for several possible transformations.\r\nOne example is the subtype \"Shuffling\" where the value will be shuffled.",
                            "",
@@ -20281,7 +20345,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cObject\u003e] [[-Max] \u003cObject\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Value] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaRandomizedValue [[-DataType] \u003cString\u003e] [[-RandomizerType] \u003cString\u003e] [[-RandomizerSubType] \u003cString\u003e] [[-Min] \u003cObject\u003e] [[-Max] \u003cObject\u003e] [[-Precision] \u003cInt32\u003e] [[-CharacterString] \u003cString\u003e] [[-Format] \u003cString\u003e] [[-Symbol] \u003cString\u003e] [[-Separator] \u003cString\u003e] [[-Value] \u003cString\u003e] [[-Locale] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaRegistryRoot",
@@ -23675,7 +23739,7 @@
                        ],
                        [
                            "Quote",
-                           "Defines the default quote character wrapping every field.",
+                           "Defines the default quote character wrapping every field.\r\nDefault: double-quotes",
                            "",
                            false,
                            "false",
@@ -23683,7 +23747,7 @@
                        ],
                        [
                            "Escape",
-                           "Defines the default escape character letting insert quotation characters inside a quoted field.\nThe escape character can be the same as the quote character.",
+                           "Defines the default escape character letting insert quotation characters inside a quoted field.\nThe escape character can be the same as the quote character.\r\nDefault: double-quotes",
                            "",
                            false,
                            "false",
@@ -23691,7 +23755,7 @@
                        ],
                        [
                            "Comment",
-                           "Defines the default comment character indicating that a line is commented out. Default is #.",
+                           "Defines the default comment character indicating that a line is commented out.\r\nDefault: hashtag",
                            "",
                            false,
                            "false",
@@ -25313,7 +25377,7 @@
                        ],
                        [
                            "Continue",
-                           "Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states",
+                           "Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states\r\nWhen specified, WithReplace will be set to true",
                            "",
                            false,
                            "false",
@@ -25473,6 +25537,14 @@
                            ""
                        ],
                        [
+                           "ArgumentList",
+                           "A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.\r\nExample: ... -ArgumentList \"/SkipRules=RebootRequiredCheck\", \"/Q\"",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -25497,7 +25569,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAgFailover",
@@ -38807,13 +38879,13 @@
     },
     {
         "Name":  "Remove-DbaServerRole",
-        "Description":  "Deletes specified database certificate",
+        "Description":  "Deletes specified server-level role.",
         "Tags":  [
                      "ServerRole",
                      "Instance",
                      "Security"
                  ],
-        "Synopsis":  "Deletes specified database certificate",
+        "Synopsis":  "Deletes specified server-level role.",
         "Alias":  "",
         "Author":  "Claudio Silva (@ClaudioESSilva), https://claudioessilva.com",
         "CommandName":  "Remove-DbaServerRole",
@@ -38823,7 +38895,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The SQL Server to create the certificates on.",
+                           "The target SQL Server instance or instances.",
                            "",
                            false,
                            "false",
@@ -38839,7 +38911,7 @@
                        ],
                        [
                            "ServerRole",
-                           "The server-role that will be removed",
+                           "The server-role that will be removed.",
                            "",
                            false,
                            "false",
@@ -38847,7 +38919,7 @@
                        ],
                        [
                            "InputObject",
-                           "Piped server-role objects",
+                           "Piped server-role objects.",
                            "",
                            false,
                            "true (ByValue)",
@@ -40219,7 +40291,7 @@
                        ],
                        [
                            "Continue",
-                           "If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states",
+                           "If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states\r\nWhen specified, WithReplace will be set to true",
                            "",
                            false,
                            "false",
@@ -45533,7 +45605,7 @@
         "CommandName":  "Start-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Start-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait\nThis is a serialized approach to submitting jobs and waiting for each job to continue the next.\r\nStarts Job1, waits for completion of Job1\r\nStarts Job2, waits for completion of Job2\r\nStarts Job3, Waits for completion of Job3\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait -Parallel\nThis is a parallel approach to submitting all jobs and waiting for them all to complete.\r\nStarts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -45592,6 +45664,14 @@
                            "False"
                        ],
                        [
+                           "Parallel",
+                           "Works in conjunction with the Wait switch.  Be default, when passing the Wait switch, each job is started one at a time and waits for completion\r\nbefore starting the next job.  The Parallel switch will change the behavior to start all jobs at once, and wait for all jobs to complete .",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "WaitPeriod",
                            "Wait period in seconds to use when -Wait is used",
                            "",
@@ -45632,7 +45712,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaEndpoint",
@@ -45870,6 +45950,22 @@
                            "False"
                        ],
                        [
+                           "KeepCDC",
+                           "Indicates whether CDC information should be copied as part of the database",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "KeepReplication",
+                           "Indicates whether replication configuration should be copied as part of the database copy operation",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "Continue",
                            "If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackup",
                            "",
@@ -45918,7 +46014,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-Continue] [-Force] [[-AzureCredential] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaMigration [[-Source] \u003cDbaInstanceParameter\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [-DetachAttach] [-Reattach] [-BackupRestore] [[-SharedPath] \u003cString\u003e] [-WithReplace] [-NoRecovery] [-SetSourceReadOnly] [-ReuseSourceFolderStructure] [-IncludeSupportDbs] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Exclude] \u003cString[]\u003e] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-ExcludeSaRename] [-UseLastBackup] [-KeepCDC] [-KeepReplication] [-Continue] [-Force] [[-AzureCredential] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaPfDataCollectorSet",
@@ -48692,7 +48788,7 @@
         "CommandName":  "Test-DbaLastBackup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Test-DbaLastBackup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database SharePoint_Config\nDetermines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 | Test-DbaLastBackup\nTests every database backup on sql2016 and sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config | Test-DbaLastBackup\nTests the database backup for the SharePoint_Config database on sql2016 and sql2017\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxSize 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB. Once the test is complete, the test \r\nrestore will be dropped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database SharePoint_Config\nDetermines the last full backup for SharePoint_Config, attempts to restore it, then performs a DBCC CHECKDB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 | Test-DbaLastBackup\nTests every database backup on sql2016 and sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016, sql2017 -Database SharePoint_Config | Test-DbaLastBackup\nTests the database backup for the SharePoint_Config database on sql2016 and sql2017\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly\nSkips performing an action restore of the database and simply verifies the backup using VERIFYONLY option of the restore.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop\nSkips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. The test restores will remain on the server.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\\bigdrive -LogDirectory L:\\bigdrive -MaxSize 10240\nRestores data and log files to alternative locations and only restores databases that are smaller than 10 GB.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath \"\\\\BackupShare\\TestRestore\\\"\nCopies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eTest-DbaLastBackup -SqlInstance sql2016 -NoCheck -MaxTransferSize 4194302 -BufferCount 24\nDetermines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure).\r\nThe Restore will use more memory for reading the backup files. Do not set these values to high or you can get an Out of Memory error!!!\r\nWhen running the restore with these additional parameters and there is other server activity it could affect server OLTP performance. Please use with causion.\r\nPrior to running, you should check memory and server resources before configure it to run automatically.\r\nMore information:\r\nhttps://www.mssqltips.com/sqlservertip/4935/optimize-sql-server-database-restore-performance/",
         "Params":  [
                        [
                            "SqlInstance",
@@ -48855,6 +48951,22 @@
                            ""
                        ],
                        [
+                           "MaxTransferSize",
+                           "Parameter to set the unit of transfer. Values must be a multiple of 64kb and a max of 4GB\r\nParameter is used as passtrough for Restore-DbaDatabase.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
+                           "BufferCount",
+                           "Number of I/O buffers to use to perform the operation.\r\nRefererence: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options\r\nParameter is used as passtrough for Restore-DbaDatabase.",
+                           "",
+                           false,
+                           "false",
+                           "0"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -48879,7 +48991,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-MaxTransferSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",
@@ -49791,7 +49903,7 @@
         "CommandName":  "Update-DbaInstance",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Update-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -Restart -Confirm:$false -ExtractPath \"C:\\temp\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\r\nExtracts the files in local driver on Server1 C:\\temp.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -Restart -Confirm:$false -ExtractPath \"C:\\temp\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\r\nExtracts the files in local driver on Server1 C:\\temp.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -ArgumentList \"/SkipRules=RebootRequiredCheck\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch.\r\nAdditional command line parameters would be passed to the executable.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
         "Params":  [
                        [
                            "ComputerName",
@@ -49890,6 +50002,14 @@
                            ""
                        ],
                        [
+                           "ArgumentList",
+                           "A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.\r\nExample: ... -ArgumentList \"/SkipRules=RebootRequiredCheck\", \"/Q\"",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -49914,7 +50034,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaServiceAccount",
