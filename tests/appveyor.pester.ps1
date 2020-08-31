@@ -110,7 +110,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 
 function Get-CodecovReport($Results, $ModuleBase) {
     #handle coverage https://docs.codecov.io/reference#upload
-    $report = @{'coverage' = @{}}
+    $report = @{'coverage' = @{ } }
     #needs correct casing to do the replace
     $ModuleBase = (Resolve-Path $ModuleBase).Path
     # things we wanna a report for (and later backfill if not tested)
@@ -118,11 +118,11 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
     $missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
     $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
-    $LineCount = @{}
+    $LineCount = @{ }
     $hits | ForEach-Object {
         $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{}
+            $report['coverage'][$filename] = @{ }
             $LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
         }
         $report['coverage'][$filename][$_.Line] = 1
@@ -131,7 +131,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
     $missed | ForEach-Object {
         $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{}
+            $report['coverage'][$filename] = @{ }
             $LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
         }
         if ($_.Line -notin $report['coverage'][$filename].Keys) {
@@ -140,9 +140,9 @@ function Get-CodecovReport($Results, $ModuleBase) {
         }
     }
 
-    $newreport = @{'coverage' = [ordered]@{}}
+    $newreport = @{'coverage' = [ordered]@{ } }
     foreach ($fname in $report['coverage'].Keys) {
-        $Linecoverage = [ordered]@{}
+        $Linecoverage = [ordered]@{ }
         for ($i = 1; $i -le $LineCount[$fname]; $i++) {
             if ($i -in $report['coverage'][$fname].Keys) {
                 $Linecoverage["$i"] = $report['coverage'][$fname][$i]
@@ -155,14 +155,14 @@ function Get-CodecovReport($Results, $ModuleBase) {
     foreach ($target in $allfiles) {
         $target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($target_relative -notin $newreport['coverage'].Keys) {
-            $newreport['coverage'][$target_relative] = @{"1" = $null}
+            $newreport['coverage'][$target_relative] = @{"1" = $null }
         }
     }
     $newreport
 }
 
 function Send-CodecovReport($CodecovReport) {
-    $params = @{}
+    $params = @{ }
     $params['branch'] = $env:APPVEYOR_REPO_BRANCH
     $params['service'] = "appveyor"
     $params['job'] = $env:APPVEYOR_ACCOUNT_NAME
@@ -217,7 +217,11 @@ if (-not $Finalize) {
         Add-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Running
         $PesterRun = Invoke-Pester @PesterSplat
         $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
-        Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Passed -Duration $PesterRun.Time.TotalMilliseconds
+        $outcome = "Passed"
+        if ($PesterRun.FailedCount -gt 0) {
+            $outcome = "Failed"
+        }
+        Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome $outcome -Duration $PesterRun.Time.TotalMilliseconds
     }
     # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
