@@ -48,9 +48,11 @@ function Copy-DbaDbTableData {
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
 
     .PARAMETER Query
-        Define a query to use as a source. Note: 3 or 4 part object names may be used as described in https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transact-sql-syntax-conventions-transact-sql
-        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
-        Note: Even when the -Query param is used a valid -Table or -View must be specified. This is due to the workflow used in the command.
+        Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)
+        Ensure to select all required columns.
+        Calculated Columns or columns with default values may be excluded.
+
+        Note: The workflow in the command requires that a valid -Table or -View parameter value be specified.
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
