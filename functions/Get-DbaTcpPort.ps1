@@ -18,6 +18,9 @@ function Get-DbaTcpPort {
 
         $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
+    .PARAMETER Credential
+        Credential object used to connect to the Computer as a different user
+
     .PARAMETER All
         If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
@@ -68,6 +71,7 @@ function Get-DbaTcpPort {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
@@ -77,7 +81,7 @@ function Get-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
             if ($All) {
                 try {
-                    $scriptblock = {
+                    $scriptBlock = {
                         $instance = $args[0]
 
                         Add-Type -AssemblyName Microsoft.VisualBasic
@@ -94,8 +98,8 @@ function Get-DbaTcpPort {
                             $vsname = $vsname.Replace("\MSSQLSERVER", "")
 
                             try {
-                                $regroot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
-                                $dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
+                                $regRoot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
+                                $dacport = (Get-ItemProperty "HKLM:\$regRoot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
 
                                 [PsCustomObject]@{
                                     ComputerName = $instance
@@ -150,10 +154,10 @@ function Get-DbaTcpPort {
 
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptBlock
                     } catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptBlock
                     }
                 } catch {
                     Stop-Function -Message "Could not get all information." -Target $instance -ErrorRecord $_

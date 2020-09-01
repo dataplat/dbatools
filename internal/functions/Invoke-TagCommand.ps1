@@ -38,9 +38,9 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
             Write-Message -Level Warning -Message "$f needs a tag tag"
             $cmdname = $f.name.replace('.ps1', '')
 
-            $fullhelp = get-help $cmdname -full
+            $fullhelp = Get-Help $cmdname -full
 
-            $as = $fullhelp.alertset | out-string
+            $as = $fullhelp.alertset | Out-String
 
             $tags = $tagsrex.Match($as).Groups[1].Value
 

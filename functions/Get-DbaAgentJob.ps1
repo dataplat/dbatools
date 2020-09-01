@@ -10,7 +10,11 @@ function Get-DbaAgentJob {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
@@ -26,6 +30,9 @@ function Get-DbaAgentJob {
 
     .PARAMETER Category
         Return jobs associated with specific category
+
+    .PARAMETER ExcludeCategory
+        Categories to exclude - jobs associated with these categories will not be returned.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -72,10 +79,16 @@ function Get-DbaAgentJob {
         PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
         Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
+
     .EXAMPLE
-       PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Export-DbaScript -Path "C:\temp\sqlserver2014a_SSRSJobs.sql"
 
         Exports all SSRS jobs from SQL instance sqlserver2014a to a file.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a -Database msdb
+
+        Finds all jobs on sqlserver2014a that T-SQL job steps associated with msdb database
     #>
     [CmdletBinding()]
     param (
@@ -86,6 +99,7 @@ function Get-DbaAgentJob {
         [string[]]$ExcludeJob,
         [string[]]$Database,
         [string[]]$Category,
+        [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
         [switch]$EnableException
     )
@@ -111,12 +125,13 @@ function Get-DbaAgentJob {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             if ($Database) {
-                $jobs = $jobs | Where-Object {
-                    $_.JobSteps.DatabaseName -in $Database
-                }
+                $jobs = $jobs | Where-Object { $_.JobSteps | Where-Object DatabaseName -in $Database }
             }
             if ($Category) {
                 $jobs = $jobs | Where-Object Category -in $Category
+            }
+            if ($ExcludeCategory) {
+                $jobs = $jobs | Where-Object Category -notin $ExcludeCategory
             }
 
             foreach ($agentJob in $jobs) {

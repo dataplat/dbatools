@@ -46,6 +46,9 @@ function Add-DbaComputerCertificate {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Add-DbaComputerCertificate
+
     .EXAMPLE
         PS C:\> Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
 
@@ -136,7 +139,7 @@ function Add-DbaComputerCertificate {
 
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

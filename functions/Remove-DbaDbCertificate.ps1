@@ -10,7 +10,11 @@ function Remove-DbaDbCertificate {
         The SQL Server to create the certificates on.
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database where the certificate will be removed.
@@ -39,6 +43,9 @@ function Remove-DbaDbCertificate {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> Remove-DbaDbCertificate -SqlInstance Server1

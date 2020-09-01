@@ -8,11 +8,15 @@ function Set-DbaAgReplica {
 
         Automatically creates a database mirroring endpoint if required.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Replica
         The replicas to modify.
@@ -32,7 +36,7 @@ function Set-DbaAgReplica {
     .PARAMETER EndpointUrl
         The endpoint URL.
 
-     .PARAMETER InputObject
+    .PARAMETER InputObject
         Enables piping from Get-DbaAgReplica.
 
     .PARAMETER ConnectionModeInPrimaryRole
@@ -66,7 +70,7 @@ function Set-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -111,6 +115,11 @@ function Set-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if (-not $InputObject) {
             if (-not $AvailabilityGroup -or -not $Replica) {
                 Stop-Function -Message "You must specify an AvailabilityGroup and replica or pipe in an availabilty group to continue."

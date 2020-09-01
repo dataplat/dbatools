@@ -13,7 +13,11 @@ function Get-DbaDbQueryStoreOption {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object used to connect to the SQL Server as a different user.
+        SqlLogin to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -28,14 +32,14 @@ function Get-DbaDbQueryStoreOption {
 
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar (@evdlaar) | Klaas Vandenberghe (@PowerDBAKlaas)
+        Author: Enrico van de Laar (@evdlaar) | Klaas Vandenberghe (@PowerDBAKlaas) | Tracy Boggiano (@TracyBoggiano)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaQueryStoreOptions
+        https://dbatools.io/Get-DbaDbQueryStoreOption
 
     .EXAMPLE
         PS C:\> Get-DbaDbQueryStoreOption -SqlInstance ServerA\sql
@@ -80,13 +84,32 @@ function Get-DbaDbQueryStoreOption {
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
-                $QSO = $db.QueryStoreOptions
+                $qso = $db.QueryStoreOptions
 
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty Database -value $db.Name
-                Select-DefaultView -InputObject $QSO -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
+                if ($server.VersionMajor -eq 14) {
+                    $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $db.Name)
+                } elseif ($server.VersionMajor -ge 15) {
+                    $QueryStoreOptions = $db.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $db.Name)
+                }
+
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -value $db.Name
+
+                if ($server.VersionMajor -eq 13) {
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
+                } elseif ($server.VersionMajor -eq 14) {
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name MaxPlansPerQuery -value $QueryStoreOptions.MaxPlansPerQuery
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name WaitStatsCaptureMode -value $QueryStoreOptions.WaitStatsCaptureMode
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
+                } elseif ($server.VersionMajor -ge 15) {
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -value $QueryStoreOptions.CustomCapturePolicyExecutionCount
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
+                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
+                }
             }
         }
     }

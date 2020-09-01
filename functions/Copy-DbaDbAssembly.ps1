@@ -14,13 +14,21 @@ function Copy-DbaDbAssembly {
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Assembly
         The assembly(ies) to process. This list is auto-populated from the server. If unspecified, all assemblies will be processed.
@@ -53,7 +61,7 @@ function Copy-DbaDbAssembly {
         Requires: sysadmin access on SQL Servers
 
     .LINK
-        http://dbatools.io/Get-SqlDatabaseAssembly
+        https://dbatools.io/Copy-DbaDbAssembly
 
     .EXAMPLE
         PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
@@ -90,7 +98,7 @@ function Copy-DbaDbAssembly {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceAssemblies = @()
@@ -109,7 +117,7 @@ function Copy-DbaDbAssembly {
             }
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -117,7 +125,7 @@ function Copy-DbaDbAssembly {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             $destAssemblies = @()
@@ -138,7 +146,7 @@ function Copy-DbaDbAssembly {
                 $assemblyName = $currentAssembly.Name
                 $dbName = $currentAssembly.Parent.Name
                 $destDb = $destServer.Databases[$dbName]
-                Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
+                Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbName"
                 $copyDbAssemblyStatus = [pscustomobject]@{
                     SourceServer        = $sourceServer.Name
                     SourceDatabase      = $dbName

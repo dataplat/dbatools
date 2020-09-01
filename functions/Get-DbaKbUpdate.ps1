@@ -48,7 +48,7 @@ function Get-DbaKbUpdate {
         PS C:\> Get-DbaKbUpdate -Name KB4057119, 4057114 -Simple
 
         A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
-#>
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -149,7 +149,7 @@ function Get-DbaKbUpdate {
                     $arch = Get-Info -Text $downloaddialog -Pattern 'architectures ='
                     $longlang = Get-Info -Text $downloaddialog -Pattern 'longLanguages ='
                     $updateid = Get-Info -Text $downloaddialog -Pattern 'updateID ='
-                    $ishotfix = Get-Info -Text $downloaddialog -Pattern 'isHotFix ='
+                    $isHotfix = Get-Info -Text $downloaddialog -Pattern 'isHotFix ='
 
                     if ($arch -eq "AMD64") {
                         $arch = "x64"
@@ -213,7 +213,7 @@ function Get-DbaKbUpdate {
                             SupportedUntil    = $build.SupportedUntil
                             Architecture      = $arch
                             Language          = $longlang
-                            Hotfix            = $ishotfix
+                            Hotfix            = $isHotfix
                             Description       = $description
                             LastModified      = $lastmodified
                             Size              = $size

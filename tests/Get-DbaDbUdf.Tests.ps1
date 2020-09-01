@@ -44,7 +44,7 @@ END;
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUDFunction -Database master
     }
 
-    Context "Partition Functions are correctly located" {
+    Context "User Functions are correctly located" {
         $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master | Where-object {$_.name -eq 'dbatoolssci_ISOweek'} | Select-Object *
         $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
 

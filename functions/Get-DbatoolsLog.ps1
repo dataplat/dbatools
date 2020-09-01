@@ -55,7 +55,7 @@ function Get-DbatoolsLog {
         Instead of log entries, the error entries will be retrieved
 
     .NOTES
-        Tags: Debug
+        Tags: Module, Support
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
@@ -84,7 +84,6 @@ function Get-DbatoolsLog {
         PS C:\> Get-DbatoolsLog -Tag "fail" -Last 5
 
         Returns all log entries within the last 5 executions that contained the tag "fail"
-
     #>
     [CmdletBinding()]
     param (
@@ -113,9 +112,7 @@ function Get-DbatoolsLog {
         }
 
         if (Test-Bound -ParameterName LastError) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
-                ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
-            } | Select-Object -Last 1
+            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
         }
 
         if (Test-Bound -ParameterName Target) {

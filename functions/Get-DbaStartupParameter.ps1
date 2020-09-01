@@ -94,7 +94,7 @@ function Get-DbaStartupParameter {
                     if ($traceflags.length -eq 0) {
                         $traceflags = "None"
                     } else {
-                        $traceflags = $traceflags.substring(2)
+                        [int[]]$traceflags = $traceflags.substring(2)
                     }
 
                     if ($Simple -eq $true) {
@@ -105,7 +105,7 @@ function Get-DbaStartupParameter {
                             MasterData      = $masterdata.TrimStart('-d')
                             MasterLog       = $masterlog.TrimStart('-l')
                             ErrorLog        = $errorlog.TrimStart('-e')
-                            TraceFlags      = $traceflags -join ','
+                            TraceFlags      = $traceflags
                             ParameterString = $wmisvc.StartupParameters
                         }
                     } else {
@@ -158,7 +158,7 @@ function Get-DbaStartupParameter {
                             MasterData           = $masterdata -replace '^-[dD]', ''
                             MasterLog            = $masterlog -replace '^-[lL]', ''
                             ErrorLog             = $errorlog -replace '^-[eE]', ''
-                            TraceFlags           = $traceflags -join ','
+                            TraceFlags           = $traceflags
                             CommandPromptStart   = $commandprompt
                             MinimalStart         = $minimalstart
                             MemoryToReserve      = $memorytoreserve

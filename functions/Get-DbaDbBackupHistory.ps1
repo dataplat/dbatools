@@ -8,7 +8,11 @@ function Get-DbaDbBackupHistory {
 
         You can even get detailed information (including file path) for latest full, differential and log files.
 
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
+        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group
+
+        If an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history
+
+        If a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well, if the Availability Group has a listener.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
@@ -16,7 +20,7 @@ function Get-DbaDbBackupHistory {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+        Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -49,7 +53,7 @@ function Get-DbaDbBackupHistory {
         If this switch is enabled, the most recent log backup is returned.
 
     .PARAMETER DeviceType
-        Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
+        Specifies a filter for backup sets based on DeviceType. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device','URL', in addition to custom integers for your own DeviceType.
 
     .PARAMETER Raw
         If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
@@ -68,6 +72,9 @@ function Get-DbaDbBackupHistory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER AgCheck
+        Internal parameter used for getting history from AvailabilityGroups. If set, this will disable Availability Group support
+
     .NOTES
         Tags: DisasterRecovery, Backup
         Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)
@@ -77,7 +84,7 @@ function Get-DbaDbBackupHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/ Get-DbaDbBackupHistory
+        https://dbatools.io/Get-DbaDbBackupHistory
 
     .EXAMPLE
         PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a
@@ -140,6 +147,11 @@ function Get-DbaDbBackupHistory {
 
         If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance AgListener -Last
+
+        Will query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -153,15 +165,11 @@ function Get-DbaDbBackupHistory {
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
         [DateTime]$Since = (Get-Date '01/01/1970'),
-        [ValidateScript( {($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_)})]
+        [ValidateScript( { ($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_) })]
         [string]$RecoveryFork,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$Last,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastFull,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastDiff,
-        [Parameter(ParameterSetName = "Last")]
         [switch]$LastLog,
         [string[]]$DeviceType,
         [switch]$Raw,
@@ -169,6 +177,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
+        [switch]$AgCheck,
         [switch]$EnableException
     )
 
@@ -212,36 +221,118 @@ function Get-DbaDbBackupHistory {
 
     process {
         foreach ($instance in $SqlInstance) {
-
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            $AgResults = @()
+            $ProcessedAgDatabases = @()
+            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+                $agShortInstance = $instance.FullName.split('.')[0]
+                if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
+                    # We have a listener passed in, just query the dbs specified or all in the AG
+                    $null = $PSBoundParameters.Remove('SqlInstance')
+                    $null = $PSBoundParameters.Remove('IncludeCopyOnly')
+                    $null = $PsBoundParameters.Remove('AgCheck')
+                    Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
+                    $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
+                    $AvailabilityGroupName = $AvailabilityGroupBase.name
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
+                    if ($Last) {
+                        Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
+                        $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
+                    } elseif ($LastFull) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } elseif ($LastDiff) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } elseif ($LastLog) {
+                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                        }
+                    } else {
+                        $AgResults += $AgLoopResults
+                    }
+                    # Results are already in the correct format so drop to output
+                    $agresults
+                    # We're done at this point so exit function
+                    return
+                }
+            }
 
-            if ($server.VersionMajor -ge 10) {
+            if ($server.VersionMajor -ge 12) {
+                $compressedFlag = $true
+                # 2014 introduced encryption
+                $backupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize,
+                encryptor_thumbprint as EncryptorThumbprint,
+                encryptor_type as EncryptorType,
+                key_algorithm AS KeyAlgorithm"
+
+            } elseif ($server.VersionMajor -ge 10 -and $server.VersionMajor -lt 12) {
                 $compressedFlag = $true
                 # 2008 introduced compressed_backup_size
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                backupset.compressed_backup_size as CompressedBackupSize"
+                backupset.compressed_backup_size as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             } else {
                 $compressedFlag = $false
                 $backupCols = "
                 backupset.backup_size AS TotalSize,
-                NULL as CompressedBackupSize"
+                NULL as CompressedBackupSize,
+                NULL as EncryptorThumbprint,
+                NULL as EncryptorType,
+                NULL AS KeyAlgorithm"
             }
 
             $databases = @()
             if ($null -ne $Database) {
                 foreach ($db in $Database) {
-                    $databases += [PSCustomObject]@{name = $db}
+                    $databases += [PSCustomObject]@{ name = $db }
                 }
             } else {
                 $databases = $server.Databases
             }
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            }
+            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+                $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
+                $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
+                ForEach ($adb in $adbs) {
+                    Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
+                    if ($adb.GetType().name -ne 'Database') {
+                        $adb = Get-DbaDatabase -SqlInstance $server -Database $adb.name
+                    }
+                    $AvailabilityGroupBase = $adb.parent.AvailabilityGroups[$adb.AvailabilityGroupName]
+                    $AvailabilityGroupListener = $AvailabilityGroupBase.AvailabilityGroupListeners.Name
+                    if ($null -eq $AvailabilityGroupListener) {
+                        Write-Message -Level Verbose -Message "AvailabilityGroup $($AvailabilityGroupBase.Name) has no listener, so skipping fetching history from replicas for db $($adb.name)"
+                        continue
+                    }
+                    $null = $PSBoundParameters.Remove('SqlInstance')
+                    $null = $PSBoundParameters.Remove('Database')
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupListener -database $adb.Name @PSBoundParameters
+                    $AvailabilityGroupName = $AvailabilityGroupBase.name
+                    Foreach ($agr in $AgLoopResults) {
+                        $agr.AvailabilityGroupName = $AvailabilityGroupName
+                    }
+                    # Results already in the right format, drop straight to output
+                    $AgLoopResults
+                    # Remove database from collection as it is now done with
+                    $databases = $databases | Where-Object Name -ne $adb.name
+                }
             }
             foreach ($d in $deviceTypeFilter) {
                 $deviceTypeFilterRight = "IN ('" + ($deviceTypeFilter -Join "','") + "')"
@@ -259,7 +350,7 @@ function Get-DbaDbBackupHistory {
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
                     }
-                    if ($null -eq (Get-PsCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PsCallStack)[1].Command) {
+                    if ($null -eq (Get-PSCallStack)[1].Command -or '{ScriptBlock}' -eq (Get-PSCallStack)[1].Command) {
                         $forkCheckSql = "
                                 SELECT
                                     database_name,
@@ -282,7 +373,7 @@ function Get-DbaDbBackupHistory {
                             if (-not $LastFull) {
                                 Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
                                 foreach ($result in $results) {
-                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
                                 }
                             }
                             if ($null -eq $RecoveryFork) {
@@ -293,8 +384,8 @@ function Get-DbaDbBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
-                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck
+                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$AgCheck
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
@@ -307,11 +398,14 @@ function Get-DbaDbBackupHistory {
                             continue
                         }
                     }
-                    $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object {
-                        $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid
+                    if ($IncludeCopyOnly -eq $true) {
+                        Write-Message -Level Verbose -Message 'Copy Only check'
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                    } else {
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork -AgCheck:$Agcheck | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     }
                     #This line does the output for -Last!!!
-                    $allBackups |  Sort-Object -Property LastLsn, Type
+                    $allBackups | Sort-Object -Property LastLsn, Type
                 }
                 continue
             }
@@ -336,7 +430,7 @@ function Get-DbaDbBackupHistory {
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
                     }
-                    if ((Get-PsCallStack)[1].Command -notlike ' Get-DbaDbBackupHistory*') {
+                    if ((Get-PSCallStack)[1].Command -notlike ' Get-DbaDbBackupHistory*') {
                         $forkCheckSql = "
                             SELECT
                                 database_name,
@@ -358,7 +452,7 @@ function Get-DbaDbBackupHistory {
                             if (-not $LastFull) {
                                 Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
                                 foreach ($result in $results) {
-                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
                                 }
                             }
                         }
@@ -387,110 +481,105 @@ function Get-DbaDbBackupHistory {
                     #     and given the lsn are composed in the first part by the VLF SeqID, it happens seldomly that for the same database_name backupset holds
                     #     last_lsn out of order. To avoid this behaviour, we filter by database_guid choosing the guid that has MAX(backup_finish_date), as we know
                     #     last_lsn cannot be out-of-order for the same database, and the same database cannot have different database_guid
-                    $sql += "
-                                SELECT
-                                    a.BackupSetRank,
-                                    a.Server,
-                                    a.[Database],
-                                    a.Username,
-                                    a.Start,
-                                    a.[End],
-                                    a.Duration,
-                                    a.[Path],
-                                    a.Type,
-                                    a.TotalSize,
-                                    a.CompressedBackupSize,
-                                    a.MediaSetId,
-                                    a.BackupSetID,
-                                    a.Software,
-                                    a.position,
-                                    a.first_lsn,
-                                    a.database_backup_lsn,
-                                    a.checkpoint_lsn,
-                                    a.last_lsn,
-                                    a.first_lsn as 'FirstLSN',
-                                    a.database_backup_lsn as 'DatabaseBackupLsn',
-                                    a.checkpoint_lsn as 'CheckpointLsn',
-                                    a.last_lsn as 'LastLsn',
-                                    a.software_major_version,
-                                    a.DeviceType,
-                                    a.is_copy_only,
-                                    a.last_recovery_fork_guid,
-                                    a.recovery_model
-                                FROM (SELECT
-                                  RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
-                                  backupset.database_name AS [Database],
-                                  backupset.user_name AS Username,
-                                  backupset.backup_start_date AS Start,
-                                  backupset.server_name as [Server],
-                                  backupset.backup_finish_date AS [End],
-                                  DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
-                                  mediafamily.physical_device_name AS Path,
-                                  $backupCols,
-                                  CASE backupset.type
-                                    WHEN 'L' THEN 'Log'
-                                    WHEN 'D' THEN 'Full'
-                                    WHEN 'F' THEN 'File'
-                                    WHEN 'I' THEN 'Differential'
-                                    WHEN 'G' THEN 'Differential File'
-                                    WHEN 'P' THEN 'Partial Full'
-                                    WHEN 'Q' THEN 'Partial Differential'
-                                    ELSE NULL
-                                  END AS Type,
-                                  backupset.media_set_id AS MediaSetId,
-                                  mediafamily.media_family_id as mediafamilyid,
-                                  backupset.backup_set_id as BackupSetID,
-                                  CASE mediafamily.device_type
-                                    WHEN 2 THEN 'Disk'
-                                    WHEN 102 THEN 'Permanent Disk Device'
-                                    WHEN 5 THEN 'Tape'
-                                    WHEN 105 THEN 'Permanent Tape Device'
-                                    WHEN 6 THEN 'Pipe'
-                                    WHEN 106 THEN 'Permanent Pipe Device'
-                                    WHEN 7 THEN 'Virtual Device'
-                                    WHEN 9 THEN 'URL'
-                                    ELSE 'Unknown'
-                                    END AS DeviceType,
-                                  backupset.position,
-                                  backupset.first_lsn,
-                                  backupset.database_backup_lsn,
-                                  backupset.checkpoint_lsn,
-                                  backupset.last_lsn,
-                                  backupset.software_major_version,
-                                  mediaset.software_name AS Software,
-                                  backupset.is_copy_only,
-                                  backupset.last_recovery_fork_guid,
-                                  backupset.recovery_model
-                                FROM msdb..backupmediafamily AS mediafamily
-                                JOIN msdb..backupmediaset AS mediaset
-                                  ON mediafamily.media_set_id = mediaset.media_set_id
-                                JOIN msdb..backupset AS backupset
-                                  ON backupset.media_set_id = mediaset.media_set_id
-                                JOIN (
-                                    SELECT DISTINCT database_guid, database_name, backup_finish_date
-                                    FROM msdb..backupset
-                                    WHERE backupset.database_name = '$($db.Name)'
-                                ) dbguid
-                                  ON dbguid.database_name = backupset.database_name
-                                  AND dbguid.database_guid = backupset.database_guid
-                                JOIN (
-                                    SELECT database_name, MAX(backup_finish_date) max_finish_date
-                                    FROM msdb..backupset
-                                    WHERE backupset.database_name = '$($db.Name)'
-                                    GROUP BY database_name
-                                ) dbguid_support
-                                  ON dbguid_support.database_name = backupset.database_name
-                                  AND dbguid.backup_finish_date = dbguid_support.max_finish_date
-                                WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
-                                AND (type = '$first' OR type = '$second')
-                                $devTypeFilterWhere
-                                $sinceSqlFilter
-                                $recoveryForkSqlFilter
-                                $whereMirror
-                                ) AS a
-                                WHERE a.BackupSetRank = 1
-                                ORDER BY a.Type;
-                                "
+                    #   - because someone could restore a very old backup with low lsn values and continue to use this database we filter
+                    #     not only by database_guid but also by the recovery fork of the last backup (see issue #6730 for more details)
+                    $sql += "SELECT
+                        a.BackupSetRank,
+                        a.Server,
+                        '' as AvailabilityGroupName,
+                        a.[Database],
+                        a.Username,
+                        a.Start,
+                        a.[End],
+                        a.Duration,
+                        a.[Path],
+                        a.Type,
+                        a.TotalSize,
+                        a.CompressedBackupSize,
+                        a.MediaSetId,
+                        a.BackupSetID,
+                        a.Software,
+                        a.position,
+                        a.first_lsn,
+                        a.database_backup_lsn,
+                        a.checkpoint_lsn,
+                        a.last_lsn,
+                        a.first_lsn as 'FirstLSN',
+                        a.database_backup_lsn as 'DatabaseBackupLsn',
+                        a.checkpoint_lsn as 'CheckpointLsn',
+                        a.last_lsn as 'LastLsn',
+                        a.software_major_version,
+                        a.DeviceType,
+                        a.is_copy_only,
+                        a.last_recovery_fork_guid,
+                        a.recovery_model,
+                        a.EncryptorThumbprint,
+                        a.EncryptorType,
+                        a.KeyAlgorithm
+                    FROM (
+                        SELECT
+                        RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
+                        backupset.database_name AS [Database],
+                        backupset.user_name AS Username,
+                        backupset.backup_start_date AS Start,
+                        backupset.server_name as [Server],
+                        backupset.backup_finish_date AS [End],
+                        DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
+                        mediafamily.physical_device_name AS Path,
+                        $backupCols,
+                        CASE backupset.type
+                        WHEN 'L' THEN 'Log'
+                        WHEN 'D' THEN 'Full'
+                        WHEN 'F' THEN 'File'
+                        WHEN 'I' THEN 'Differential'
+                        WHEN 'G' THEN 'Differential File'
+                        WHEN 'P' THEN 'Partial Full'
+                        WHEN 'Q' THEN 'Partial Differential'
+                        ELSE NULL
+                        END AS Type,
+                        backupset.media_set_id AS MediaSetId,
+                        mediafamily.media_family_id as mediafamilyid,
+                        backupset.backup_set_id as BackupSetID,
+                        CASE mediafamily.device_type
+                        WHEN 2 THEN 'Disk'
+                        WHEN 102 THEN 'Permanent Disk Device'
+                        WHEN 5 THEN 'Tape'
+                        WHEN 105 THEN 'Permanent Tape Device'
+                        WHEN 6 THEN 'Pipe'
+                        WHEN 106 THEN 'Permanent Pipe Device'
+                        WHEN 7 THEN 'Virtual Device'
+                        WHEN 9 THEN 'URL'
+                        ELSE 'Unknown'
+                        END AS DeviceType,
+                        backupset.position,
+                        backupset.first_lsn,
+                        backupset.database_backup_lsn,
+                        backupset.checkpoint_lsn,
+                        backupset.last_lsn,
+                        backupset.software_major_version,
+                        mediaset.software_name AS Software,
+                        backupset.is_copy_only,
+                        backupset.last_recovery_fork_guid,
+                        backupset.recovery_model
+                        FROM msdb..backupmediafamily AS mediafamily
+                        JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
+                        JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
+                        JOIN (
+                            SELECT TOP 1 database_guid, last_recovery_fork_guid
+                            FROM msdb..backupset
+                            WHERE database_name = '$($db.Name)'
+                            ORDER BY backup_finish_date DESC
+                            ) AS last_guids ON last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
+                    WHERE (type = '$first' OR type = '$second')
+                    $whereCopyOnly
+                    $devTypeFilterWhere
+                    $sinceSqlFilter
+                    $recoveryForkSqlFilter
+                    $whereMirror
+                    ) AS a
+                    WHERE a.BackupSetRank = 1
+                    ORDER BY a.Type;
+                    "
                 }
                 $sql = $sql -join "; "
             } else {
@@ -498,58 +587,58 @@ function Get-DbaDbBackupHistory {
                     $select = "SELECT * "
                 } else {
                     $select = "
-                            SELECT
-                              backupset.database_name AS [Database],
-                              backupset.user_name AS Username,
-                              backupset.server_name as [server],
-                              backupset.backup_start_date AS [Start],
-                              backupset.backup_finish_date AS [End],
-                              DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
-                              mediafamily.physical_device_name AS Path,
-                              $backupCols,
-                              CASE backupset.type
-                                WHEN 'L' THEN 'Log'
-                                WHEN 'D' THEN 'Full'
-                                WHEN 'F' THEN 'File'
-                                WHEN 'I' THEN 'Differential'
-                                WHEN 'G' THEN 'Differential File'
-                                WHEN 'P' THEN 'Partial Full'
-                                WHEN 'Q' THEN 'Partial Differential'
-                                ELSE NULL
-                              END AS Type,
-                              backupset.media_set_id AS MediaSetId,
-                              mediafamily.media_family_id as MediaFamilyId,
-                              backupset.backup_set_id as BackupSetId,
-                              CASE mediafamily.device_type
-                                WHEN 2 THEN 'Disk'
-                                WHEN 102 THEN 'Permanent Disk Device'
-                                WHEN 5 THEN 'Tape'
-                                WHEN 105 THEN 'Permanent Tape Device'
-                                WHEN 6 THEN 'Pipe'
-                                WHEN 106 THEN 'Permanent Pipe Device'
-                                WHEN 7 THEN 'Virtual Device'
-                                WHEN 9 THEN 'URL'
-                                ELSE 'Unknown'
-                              END AS DeviceType,
-                              backupset.position,
-                              backupset.first_lsn,
-                              backupset.database_backup_lsn,
-                              backupset.checkpoint_lsn,
-                              backupset.last_lsn,
-                              backupset.first_lsn as 'FirstLSN',
-                              backupset.database_backup_lsn as 'DatabaseBackupLsn',
-                              backupset.checkpoint_lsn as 'CheckpointLsn',
-                              backupset.last_lsn as 'LastLsn',
-                              backupset.software_major_version,
-                              mediaset.software_name AS Software,
-                              backupset.is_copy_only,
-                              backupset.last_recovery_fork_guid,
-                              backupset.recovery_model"
+                    SELECT
+                        backupset.database_name AS [Database],
+                        backupset.user_name AS Username,
+                        backupset.server_name as [server],
+                        backupset.backup_start_date AS [Start],
+                        backupset.backup_finish_date AS [End],
+                        DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
+                        mediafamily.physical_device_name AS Path,
+                        $backupCols,
+                        CASE backupset.type
+                            WHEN 'L' THEN 'Log'
+                            WHEN 'D' THEN 'Full'
+                            WHEN 'F' THEN 'File'
+                            WHEN 'I' THEN 'Differential'
+                            WHEN 'G' THEN 'Differential File'
+                            WHEN 'P' THEN 'Partial Full'
+                            WHEN 'Q' THEN 'Partial Differential'
+                            ELSE NULL
+                        END AS Type,
+                        backupset.media_set_id AS MediaSetId,
+                        mediafamily.media_family_id as MediaFamilyId,
+                        backupset.backup_set_id as BackupSetId,
+                        CASE mediafamily.device_type
+                            WHEN 2 THEN 'Disk'
+                            WHEN 102 THEN 'Permanent Disk Device'
+                            WHEN 5 THEN 'Tape'
+                            WHEN 105 THEN 'Permanent Tape Device'
+                            WHEN 6 THEN 'Pipe'
+                            WHEN 106 THEN 'Permanent Pipe Device'
+                            WHEN 7 THEN 'Virtual Device'
+                            WHEN 9 THEN 'URL'
+                            ELSE 'Unknown'
+                        END AS DeviceType,
+                        backupset.position,
+                        backupset.first_lsn,
+                        backupset.database_backup_lsn,
+                        backupset.checkpoint_lsn,
+                        backupset.last_lsn,
+                        backupset.first_lsn as 'FirstLSN',
+                        backupset.database_backup_lsn as 'DatabaseBackupLsn',
+                        backupset.checkpoint_lsn as 'CheckpointLsn',
+                        backupset.last_lsn as 'LastLsn',
+                        backupset.software_major_version,
+                        mediaset.software_name AS Software,
+                        backupset.is_copy_only,
+                        backupset.last_recovery_fork_guid,
+                        backupset.recovery_model"
                 }
 
                 $from = " FROM msdb..backupmediafamily mediafamily
-                             INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
-                             INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
+                INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
+                INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
                 if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
@@ -593,7 +682,7 @@ function Get-DbaDbBackupHistory {
             }
 
             Write-Message -Level Debug -Message "SQL Statement: `n$sql"
-            Write-Message -Level SomewhatVerbose -Message "Executing sql query."
+            Write-Message -Level SomewhatVerbose -Message "Executing sql query on $server."
             $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, RowState, Table, ItemArray, HasErrors
 
             if ($raw) {
@@ -610,13 +699,14 @@ function Get-DbaDbBackupHistory {
                 if ($groupedResults.Count -gt 0) {
                     $backupSetIdsWhere = "backup_set_id IN ($backupSetIdsList)"
                     $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                                   FROM msdb..backupfile WHERE $backupSetIdsWhere"
+                    FROM msdb..backupfile WHERE $backupSetIdsWhere
+                    AND [state] <> 8;" #Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {
                     $fileListResults = @()
                 }
-                $fileListHash = @{}
+                $fileListHash = @{ }
                 foreach ($fl in $fileListResults) {
                     if (-not($fileListHash.ContainsKey($fl.backup_set_id))) {
                         $fileListHash[$fl.backup_set_id] = @()
@@ -670,6 +760,9 @@ function Get-DbaDbBackupHistory {
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
                     $historyObject.RecoveryModel = $commonFields.recovery_model
+                    $historyObject.EncryptorType = $commonFields.EncryptorType
+                    $historyObject.EncryptorThumbprint = $commonFields.EncryptorThumbprint
+                    $historyObject.KeyAlgorithm = $commonFields.KeyAlgorithm
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type

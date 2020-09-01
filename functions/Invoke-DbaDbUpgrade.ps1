@@ -10,7 +10,11 @@ function Invoke-DbaDbUpgrade {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object used to connect to the SQL Server as a different user.
+        SqlLogin to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
         The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -109,7 +113,7 @@ function Invoke-DbaDbUpgrade {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
@@ -148,7 +152,7 @@ function Invoke-DbaDbUpgrade {
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
 
             $ogcompat = $db.CompatibilityLevel
-            $dbname = $db.Name
+            $dbName = $db.Name
             $dbversion = switch ($db.CompatibilityLevel) {
                 "Version100" { 10 } # SQL Server 2008
                 "Version110" { 11 } # SQL Server 2012
@@ -184,7 +188,7 @@ function Invoke-DbaDbUpgrade {
             if (!($NoCheckDb)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
-                    $tsqlCheckDB = "DBCC CHECKDB ('$dbname') WITH DATA_PURITY, NO_INFOMSGS"
+                    $tsqlCheckDB = "DBCC CHECKDB ('$dbName') WITH DATA_PURITY, NO_INFOMSGS"
                     try {
                         $db.ExecuteNonQuery($tsqlCheckDB)
                         $DataPurityResult = "Success"

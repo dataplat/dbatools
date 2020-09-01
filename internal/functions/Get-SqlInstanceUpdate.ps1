@@ -128,7 +128,7 @@ function Get-SqlInstanceUpdate {
                         Write-Message -Level Debug -Message "Found a latest Service Pack $targetLevel (KB$($targetKB.KBLevel))"
                     }
                 } else {
-                    Write-Message -Message "$($currentVersion.Build) on computer [$($computer)] is already the latest available." -Level Verbose
+                    Write-Message -Message "$($currentVersion.Build) on computer [$($computer)] is already the latest available." -Level Warning
                     continue
                 }
             }

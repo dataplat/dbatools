@@ -18,12 +18,15 @@ function Get-DbaRegistryRoot {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Configuration, Registry
+        Tags: Server, Management, Registry
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+         https://dbatools.io/Get-DbaRegistryRoot
 
     .EXAMPLE
         PS C:\> Get-DbaRegistryRoot
@@ -34,7 +37,6 @@ function Get-DbaRegistryRoot {
         PS C:\> Get-DbaRegistryRoot -ComputerName server1
 
         Gets the registry root for all instances on server1
-
     #>
     [CmdletBinding()]
     param (
@@ -54,16 +56,16 @@ function Get-DbaRegistryRoot {
 
             foreach ($sqlwmi in $sqlwmis) {
 
-                $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-                $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+                $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 
-                if ([System.String]::IsNullOrEmpty($regroot)) {
-                    $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                if ([System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                     $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
 
-                    if (![System.String]::IsNullOrEmpty($regroot)) {
-                        $regroot = ($regroot -Split 'Value\=')[1]
+                    if (![System.String]::IsNullOrEmpty($regRoot)) {
+                        $regRoot = ($regRoot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
                     } else {
                         Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
@@ -74,22 +76,22 @@ function Get-DbaRegistryRoot {
                 # vsname takes care of clusters
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
-                    if ($instancename -ne "MSSQLSERVER") {
-                        $vsname = "$($computer.ComputerName)\$instancename"
+                    if ($instanceName -ne "MSSQLSERVER") {
+                        $vsname = "$($computer.ComputerName)\$instanceName"
                     }
                 }
 
-                Write-Message -Level Verbose -Message "Regroot: $regroot"
-                Write-Message -Level Verbose -Message "InstanceName: $instancename"
+                Write-Message -Level Verbose -Message "Regroot: $regRoot"
+                Write-Message -Level Verbose -Message "InstanceName: $instanceName"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
 
                 [PSCustomObject]@{
                     ComputerName = $computer.ComputerName
-                    InstanceName = $instancename
+                    InstanceName = $instanceName
                     SqlInstance  = $vsname
                     Hive         = "HKLM"
-                    Path         = $regroot
-                    RegistryRoot = "HKLM:\$regroot"
+                    Path         = $regRoot
+                    RegistryRoot = "HKLM:\$regRoot"
                 }
             }
         }

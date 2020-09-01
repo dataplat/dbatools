@@ -18,7 +18,11 @@ function Measure-DbaDbVirtualLogFile {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -112,8 +116,8 @@ function Measure-DbaDbVirtualLogFile {
                         Database          = $db.name
                         Total             = $data.Count
                         TotalCount        = $data.Count
-                        Inactive          = if ($inactive -and $null -eq $inactive.Count) {1} else {$inactive.Count}
-                        Active            = if ($active -and $null -eq $active.Count) {1} else {$active.Count}
+                        Inactive          = if ($inactive -and $null -eq $inactive.Count) { 1 } else { $inactive.Count }
+                        Active            = if ($active -and $null -eq $active.Count) { 1 } else { $active.Count }
                         LogFileName       = $logFile.LogicalName -join ","
                         LogFileGrowth     = $logFile.Growth -join ","
                         LogFileGrowthType = $logFile.GrowthType -join ","

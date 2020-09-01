@@ -23,7 +23,11 @@ function Test-DbaDbCompression {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -364,6 +368,15 @@ WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
 ORDER BY [TableName] ASC;
 
 $sqlRestrict
+
+BEGIN
+    -- remove any tables with sparse columns
+    DELETE tdc
+    FROM ##TestDbaCompression tdc
+    INNER JOIN sys.columns c
+        on tdc.ObjectId = c.object_id
+    WHERE c. is_sparse = 1
+END
 
 $sqlVersionRestrictions
 

@@ -12,7 +12,11 @@ function Get-DbaXESessionTargetFile {
         The target SQL Server
 
     .PARAMETER SqlCredential
-        Login to SQL instnace with alternative credentials
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
         Only return files from a specific session. Options for this parameter are auto-populated from the server.

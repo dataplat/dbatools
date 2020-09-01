@@ -86,6 +86,24 @@ foreach ($command in $commands) {
             }
             $testhelperrors += 1
         }
+        # :-(
+        $testhelpall += 1
+        if ([string]::IsNullOrEmpty($help.relatedLinks.NavigationLink)) {
+            # Should have a navigation link
+            It "There should be a navigation link for $commandName" {
+                $help.relatedLinks.NavigationLink | Should -Not -BeNullOrEmpty -Because "We need a .LINK for Get-Help -Online to work"
+            }
+            $testhelperrors += 1
+        }
+        # :-(
+        $testhelpall += 1
+        if (-not ([string]::Equals($help.relatedLinks.NavigationLink.uri, "https://dbatools.io/$commandName"))) {
+            # the link should point to the correct page
+            It "The link for $commandName should be https://dbatools.io/$commandName" {
+                $help.relatedLinks[0].NavigationLink.uri | Should -MatchExactly "https://dbatools.io/$commandName"  -Because "The web-page should be the one for the command!"
+            }
+            $testhelperrors += 1
+        }
 
         if ($testhelperrors -eq 0) {
             It "Ran silently $testhelpall tests" {

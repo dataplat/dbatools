@@ -19,7 +19,11 @@ function Test-DbaTempDbConfig {
         The target SQL Server instance or instances. SQL Server 2005 and higher are supported.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -27,7 +31,7 @@ function Test-DbaTempDbConfig {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: tempdb, configuration
+        Tags: Tempdb, Configuration
         Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
         Website: https://dbatools.io
@@ -37,7 +41,7 @@ function Test-DbaTempDbConfig {
         Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
     .LINK
-        https://dbatools.io/Test-DbaTempddbConfig
+        https://dbatools.io/Test-DbaTempDbConfig
 
     .EXAMPLE
         PS C:\> Test-DbaTempDbConfig -SqlInstance localhost

@@ -40,7 +40,7 @@ function Split-ArrayInParts($array, [int]$parts) {
 Describe "$ModuleName style" -Tag 'Compliance' {
     <#
     Ensures common formatting standards are applied:
-    - OTSB style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
+    - OTBS style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
     #>
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
@@ -64,7 +64,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         $results = $jobs | Receive-Job
 
         foreach ($f in $results) {
-            It "$f is adopting OTSB formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
+            It "$f is not compliant with the OTBS formatting style. Please run Invoke-DbatoolsFormatter against the failing file and commit the changes." {
                 1 | Should -Be 0
             }
         }

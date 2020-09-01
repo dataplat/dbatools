@@ -10,7 +10,11 @@ function Grant-DbaAgPermission {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
         The login or logins to modify.
@@ -60,8 +64,9 @@ function Grant-DbaAgPermission {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -100,6 +105,11 @@ function Grant-DbaAgPermission {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"\
+            return
+        }
+
         if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
             Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
             return
@@ -111,13 +121,12 @@ function Grant-DbaAgPermission {
         }
 
         foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
             if ($perm -contains "CreateAnyDatabase") {
-                try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
                 foreach ($ag in $AvailabilityGroup) {
                     try {
                         $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
@@ -126,8 +135,9 @@ function Grant-DbaAgPermission {
                         return
                     }
                 }
-            } elseif ($Login) {
-                $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+            }
+            if ($Login) {
+                $InputObject += Get-DbaLogin -SqlInstance $server -SqlCredential $SqlCredential -Login $Login
                 foreach ($account in $Login) {
                     if ($account -notin $InputObject.Name) {
                         try {
@@ -176,7 +186,7 @@ function Grant-DbaAgPermission {
             }
 
             if ($Type -contains "AvailabilityGroup") {
-                $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
+                $ags = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
                         if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {

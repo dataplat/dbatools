@@ -10,7 +10,11 @@ function Set-DbaAgentSchedule {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job that has the schedule.
@@ -34,7 +38,7 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencyInterval
         The days that a job is executed
         Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwrites any other value that has been passed before.
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
@@ -43,11 +47,8 @@ function Set-DbaAgentSchedule {
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
 
-    .PARAMETER FrequencySubdayInterval
-        The number of subday type periods to occur between each execution of a job.
-
     .PARAMETER FrequencyRelativeInterval
-        A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
+        A job's occurrence of FrequencyInterval in each month, if FrequencyType is 32 (MonthlyRelative).
 
     .PARAMETER FrequencyRecurrenceFactor
         The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
@@ -115,7 +116,7 @@ function Set-DbaAgentSchedule {
         Changes the schedule for Job1 with the name daily to enabled on multiple servers
 
     .EXAMPLE
-        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName daily -Enabled
 
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
 
@@ -136,7 +137,8 @@ function Set-DbaAgentSchedule {
         [switch]$Disabled,
         [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
         [object]$FrequencyType,
-        [int]$FrequencyInterval,
+        [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 62, 64, 65, 127)]
+        [object[]]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
@@ -152,16 +154,32 @@ function Set-DbaAgentSchedule {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the FrequencyType value is of type string and set the integer value
         if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
-            [int]$FrequencyType = switch ($FrequencyType) { "Once" { 1 } "Daily" { 4 } "Weekly" { 8 } "Monthly" { 16 } "MonthlyRelative" { 32 } "AgentStart" { 64 } "IdleComputer" { 128 } }
+            [int]$FrequencyType =
+            switch ($FrequencyType) {
+                "Once" { 1 }
+                "Daily" { 4 }
+                "Weekly" { 8 }
+                "Monthly" { 16 }
+                "MonthlyRelative" { 32 }
+                "AgentStart" { 64 }
+                "IdleComputer" { 128 }
+            }
         }
 
         # Check of the FrequencySubdayType value is of type string and set the integer value
         if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-            [int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default { 0 } }
+            [int]$FrequencySubdayType =
+            switch ($FrequencySubdayType) {
+                "Time" { 1 }
+                "Seconds" { 2 }
+                "Minutes" { 4 }
+                "Hours" { 8 }
+                default { 0 }
+            }
         }
 
         # Check if the interval is valid
@@ -171,7 +189,7 @@ function Set-DbaAgentSchedule {
         }
 
         # Check if the recurrence factor is set for weekly or monthly interval
-        if (($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
+        if ($FrequencyRecurrenceFactor -and ($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
             if ($Force) {
                 $FrequencyRecurrenceFactor = 1
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
@@ -190,13 +208,26 @@ function Set-DbaAgentSchedule {
             return
         }
 
+
         # Check of the FrequencyInterval value is of type string and set the integer value
         if (($null -ne $FrequencyType)) {
             # Create the interval to hold the value(s)
             [int]$Interval = 0
 
+            # If the FrequencyInterval is set for the daily FrequencyType
+            if ($FrequencyType -in 4, 'Daily') {
+                # Create the interval to hold the value(s)
+                [int]$Interval = 0
+
+                # Create the interval to hold the value(s)
+                switch ($FrequencyInterval) {
+                    "EveryDay" { $Interval = 1 }
+                    default { $Interval = 1 }
+                }
+            }
+
             # If the FrequencyInterval is set for the weekly FrequencyType
-            if ($FrequencyType -eq 8) {
+            if ($FrequencyType -in 8, 'Weekly') {
                 # Loop through the array
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
@@ -215,7 +246,7 @@ function Set-DbaAgentSchedule {
                         4 { $Interval += 4 }
                         8 { $Interval += 8 }
                         16 { $Interval += 16 }
-                        31 { $Interval += 32 }
+                        32 { $Interval += 32 }
                         64 { $Interval += 64 }
                         62 { $Interval = 62 }
                         65 { $Interval = 65 }
@@ -225,7 +256,7 @@ function Set-DbaAgentSchedule {
             }
 
             # If the FrequencyInterval is set for the relative monthly FrequencyInterval
-            if ($FrequencyType -eq 32) {
+            if ($FrequencyType -in 32, 'MonthlyRelative') {
                 # Loop through the array
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
@@ -255,11 +286,18 @@ function Set-DbaAgentSchedule {
         }
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
-        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $null -ne $FrequencyRelativeInterval) {
-            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 } }
+        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and ($null -ne $FrequencyRelativeInterval)) {
+            [int]$FrequencyRelativeInterval =
+            switch ($FrequencyRelativeInterval) {
+                "First" { 1 }
+                "Second" { 2 }
+                "Third" { 4 }
+                "Fourth" { 8 }
+                "Last" { 16 }
+                "Unused" { 0 }
+                default { 0 }
+            }
         }
-
-
 
         # Setup the regex
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'

@@ -10,7 +10,11 @@ function Get-DbaDbForeignKey {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         To get Foreign Keys from specific database(s)
@@ -33,6 +37,9 @@ function Get-DbaDbForeignKey {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaDbForeignKey
 
     .EXAMPLE
         PS C:\> Get-DbaDbForeignKey -SqlInstance sql2016
@@ -109,6 +116,7 @@ function Get-DbaDbForeignKey {
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name Database -value $db.Name
+                        Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name Table -Value $tbl.Name
 
                         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'ID', 'CreateDate',
                         'DateLastModified', 'Name', 'IsEnabled', 'IsChecked', 'NotForReplication', 'ReferencedKey', 'ReferencedTable', 'ReferencedTableSchema'

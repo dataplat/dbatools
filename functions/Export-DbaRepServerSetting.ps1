@@ -10,7 +10,11 @@ function Export-DbaRepServerSetting {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
@@ -59,6 +63,9 @@ function Export-DbaRepServerSetting {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Export-DbaRepServerSetting
+
     .EXAMPLE
         PS C:\> Export-DbaRepServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
 
@@ -79,7 +86,7 @@ function Export-DbaRepServerSetting {
         [string]$FilePath,
         [object[]]$ScriptOption,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
+        [object[]]$InputObject,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
         [switch]$Passthru,

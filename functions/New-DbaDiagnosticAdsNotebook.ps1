@@ -11,13 +11,11 @@ function New-DbaDiagnosticAdsNotebook {
         The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-        To connect to SQL Server as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TargetVersion
         If you are not creating the notebook for a specific instance of SQL Server, you can specify the version that you want to create the notebook for.
@@ -41,7 +39,7 @@ function New-DbaDiagnosticAdsNotebook {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Notebooks, AzureDataStudio
+        Tags: Community, GlennBerry, Notebooks, AzureDataStudio
         Author: Gianluca Sartori (@spaghettidba)
 
         Website: https://dbatools.io
@@ -81,19 +79,19 @@ function New-DbaDiagnosticAdsNotebook {
         # validate input parameters: you cannot provide $TargetVersion and $SqlInstance
         # together. If you specify a SqlInstance, version will be determined from metadata
         if (-not $TargetVersion -and -not $SqlInstance) {
-            Stop-Function -Message "At least one of `$SqlInstance and `$TargetVersion must be provided"
+            Stop-Function -Message "At least one of $SqlInstance and $TargetVersion must be provided"
             return
         } elseif ((-not (-not $TargetVersion)) -and -not (-not $SqlInstance)) {
-            Stop-Function -Message "Cannot provide both `$SqlInstance and `$TargetVersion"
+            Stop-Function -Message "Cannot provide both $SqlInstance and $TargetVersion"
             return
         }
 
         if (-not $TargetVersion) {
             $versionQuery = "
                 SELECT SERVERPROPERTY('ProductMajorVersion') AS ProductMajorVersion,
-                       SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
-                       SERVERPROPERTY('ProductLevel') AS ProductLevel,
-                       SERVERPROPERTY('Edition') AS Edition"
+                SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
+                SERVERPROPERTY('ProductLevel') AS ProductLevel,
+                SERVERPROPERTY('Edition') AS Edition"
 
             $versions = @{
                 "9.0"   = "2005"
@@ -124,8 +122,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" |
-            Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
@@ -134,9 +131,7 @@ function New-DbaDiagnosticAdsNotebook {
 
         $cells = @()
 
-        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName |
-            Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } |
-            ForEach-Object {
+        Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName | Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } | ForEach-Object {
             $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
             $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
         }

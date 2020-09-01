@@ -21,7 +21,12 @@ namespace Sqlcollaborative.Dbatools.Discovery
         /// <summary>
         /// The name of the instance
         /// </summary>
-        public string InstanceName { get; set; }
+        public string InstanceName
+        {
+            get { return _InstanceName; }
+            set { _InstanceName = value; }
+        }
+        private string _InstanceName = "";
 
         /// <summary>
         /// The full server instance name
@@ -30,9 +35,9 @@ namespace Sqlcollaborative.Dbatools.Discovery
         {
             get
             {
-                if (!String.IsNullOrEmpty(InstanceName) && !Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER"))
+                if (!String.IsNullOrEmpty(InstanceName) && !InstanceName.Equals("MSSQLSERVER", StringComparison.InvariantCultureIgnoreCase))
                     return String.Format(@"{0}\{1}", ComputerName, InstanceName);
-                else if ((Port == 1433) || (Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER")))
+                else if ((Port == 1433) || InstanceName.Equals("MSSQLSERVER", StringComparison.InvariantCultureIgnoreCase))
                     return ComputerName;
                 else
                     return String.Format(@"{0}:{1}", ComputerName, Port);
@@ -47,9 +52,9 @@ namespace Sqlcollaborative.Dbatools.Discovery
         {
             get
             {
-                if (!String.IsNullOrEmpty(InstanceName) && !Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER"))
+                if (!String.IsNullOrEmpty(InstanceName) && !InstanceName.Equals("MSSQLSERVER", StringComparison.InvariantCultureIgnoreCase))
                     return String.Format(@"{0}\{1}", ComputerName, InstanceName);
-                else if ((Port == 1433) || (Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER")))
+                else if ((Port == 1433) || InstanceName.Equals("MSSQLSERVER", StringComparison.InvariantCultureIgnoreCase))
                     return ComputerName;
                 else
                     return String.Format(@"{0},{1}", ComputerName, Port);

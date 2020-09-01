@@ -10,7 +10,11 @@ function Backup-DbaDbMasterKey {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Backup master key from specific database(s).
@@ -48,6 +52,9 @@ function Backup-DbaDbMasterKey {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Backup-DbaDbMasterKey
 
     .EXAMPLE
         PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
@@ -130,10 +137,10 @@ function Backup-DbaDbMasterKey {
             }
 
             $time = (Get-Date -Format yyyMMddHHmmss)
-            $dbname = $db.name
+            $dbName = $db.name
             $Path = $Path.TrimEnd("\")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = "$Path\$fileinstance-$dbname-$time.key"
+            $filename = "$Path\$fileinstance-$dbName-$time.key"
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
@@ -147,7 +154,7 @@ function Backup-DbaDbMasterKey {
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 

@@ -103,7 +103,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException', 'ExtractPath'
+        [object[]]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException', 'ExtractPath', 'ArgumentList'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -111,9 +111,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
     Context "Validate upgrades to a latest version" {
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
-            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo")
             Assert-MockCalled -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                if ($ArgumentList[0] -like '/x:*' -and $ArgumentList[1] -eq "/quiet") { return $true }
+            }
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                write-host $ArgumentList
+                if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/quiet") { return $true }
+            }
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2017

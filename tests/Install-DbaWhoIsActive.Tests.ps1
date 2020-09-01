@@ -5307,9 +5307,9 @@ GO
         #Offline webresponse for Internalcmdlet
         Mock -CommandName Invoke-TlsWebRequest -MockWith {
             [PSCustomObject]@{
-                outerHTML = "<a href='who_is_active_v11_32.zip' onclick='ga('send', 'event', 'download', 'sp_whoisactive', '11.32');'>Version 11...."
+                outerHTML = "<a href='/amachanic/sp_whoisactive/archive/v11.33.zip' rel='nofollow' class='d-flex flex-items-center'>..."
             }
-        } -ParameterFilter { [string]$args -eq '-UseBasicParsing -uri http://whoisactive.com/downloads' }
+        } -ParameterFilter { [string]$args -eq '-UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest' }
 
         Mock -CommandName Invoke-WebRequest { }
     }

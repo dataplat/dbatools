@@ -22,19 +22,31 @@ function Invoke-DbaDbMirroring {
         SQL Server name or SMO object representing the primary SQL Server.
 
     .PARAMETER PrimarySqlCredential
-        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Mirror
         SQL Server name or SMO object representing the mirror SQL Server.
 
     .PARAMETER MirrorSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Witness
         SQL Server name or SMO object representing the witness SQL Server.
 
     .PARAMETER WitnessSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database or databases to mirror.
@@ -67,7 +79,7 @@ function Invoke-DbaDbMirroring {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Mirror, HA
+        Tags: Mirroring, Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -117,21 +129,20 @@ function Invoke-DbaDbMirroring {
         Drops existing pubs database on Mirror and Witness and restores them with
         a fresh backup.
 
-        Does all the things in the decription, does not prompt for confirmation.
+        Does all the things in the description, does not prompt for confirmation.
 
     .EXAMPLE
         PS C:\> $map = @{ 'database_data' = 'M:\Data\database_data.mdf' 'database_log' = 'L:\Log\database_log.ldf' }
         PS C:\> Get-ChildItem \\nas\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false
 
-        Restores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.
+        Restores backups from sql2017a to a specific file structure on sql2017b then creates mirror with no prompts for confirmation.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs |
         >> Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackup -Confirm:$false
 
         Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed. Doesn't prompt for confirmation.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -151,7 +162,7 @@ function Invoke-DbaDbMirroring {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackup')
@@ -205,11 +216,11 @@ function Invoke-DbaDbMirroring {
                 }
 
                 if ($validation.MirroringStatus -ne "None") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 }
 
                 if ($primarydb.Status -ne "Normal") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
+                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current state: $($primarydb.Status)"
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
@@ -303,9 +314,9 @@ function Invoke-DbaDbMirroring {
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
 
-                $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
+                $serviceAccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
 
-                foreach ($account in $serviceaccounts) {
+                foreach ($account in $serviceAccounts) {
                     if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                         $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                         $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue

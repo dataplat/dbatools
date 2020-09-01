@@ -13,7 +13,11 @@ function Get-DbaFilestream {
         The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Login to the target Windows server using alternative credentials.
@@ -83,58 +87,58 @@ function Get-DbaFilestream {
                 $namespace = $ognamespace | Where-Object {
                     (Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName FilestreamSettings).Count -gt 0
                 } |
-                    Sort-Object Name -Descending | Select-Object -First 1
+                Sort-Object Name -Descending | Select-Object -First 1
 
-                if (-not $namespace) {
-                    $namespace = $ognamespace
-                }
-
-                if ($namespace.Name) {
-                    $serviceFS = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
-                } else {
-                    Write-Message -Level Warning -Message "No ComputerManagement was found on $computer. Service level information may not be collected." -Target $computer
-                }
-            } catch {
-                Stop-Function -Message "Issue collecting service-level information on $computer for $instanceName" -Target $computer -ErrorRecord $_ -Continue
+            if (-not $namespace) {
+                $namespace = $ognamespace
             }
 
-            <# Get Instance-Level information #>
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            if ($namespace.Name) {
+                $serviceFS = Get-DbaCmObject -EnableException -ComputerName $computerName -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName FilestreamSettings | Where-Object InstanceName -eq $instanceName | Select-Object -First 1
+            } else {
+                Write-Message -Level Warning -Message "No ComputerManagement was found on $computer. Service level information may not be collected." -Target $computer
             }
-
-            try {
-                $instanceFS = Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object ConfiguredValue, RunningValue
-            } catch {
-                Stop-Function -Message "Issue collection instance-level configuration on $instanceName" -Target $server -ErrorRecord $_ -Exception $_.Exception -Continue
-            }
-
-            $pendingRestart = $instanceFS.ConfiguredValue -ne $instanceFS.RunningValue
-
-            if (($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0)) {
-                if (($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and $pendingRestart) {
-                    Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
-                }
-            }
-
-            $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
-            $servicelevel = [int]$serviceFS.AccessLevel
-
-            [PsCustomObject]@{
-                ComputerName        = $server.ComputerName
-                InstanceName        = $server.ServiceName
-                SqlInstance         = $server.DomainInstanceName
-                InstanceAccess      = $idInstanceFS[$runvalue]
-                ServiceAccess       = $idServiceFS[$servicelevel]
-                ServiceShareName    = $serviceFS.ShareName
-                InstanceAccessLevel = $instanceFS.RunningValue
-                ServiceAccessLevel  = $serviceFS.AccessLevel
-                Credential          = $Credential
-                SqlCredential       = $SqlCredential
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName
+        } catch {
+            Stop-Function -Message "Issue collecting service-level information on $computer for $instanceName" -Target $computer -ErrorRecord $_ -Continue
         }
+
+        <# Get Instance-Level information #>
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        }
+
+        try {
+            $instanceFS = Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object ConfiguredValue, RunningValue
+        } catch {
+            Stop-Function -Message "Issue collection instance-level configuration on $instanceName" -Target $server -ErrorRecord $_ -Exception $_.Exception -Continue
+        }
+
+        $pendingRestart = $instanceFS.ConfiguredValue -ne $instanceFS.RunningValue
+
+        if (($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0)) {
+            if (($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and $pendingRestart) {
+                Write-Message -Level Verbose -Message "A restart of the instance is pending before Filestream is configured."
+            }
+        }
+
+        $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
+        $servicelevel = [int]$serviceFS.AccessLevel
+
+        [PsCustomObject]@{
+            ComputerName        = $server.ComputerName
+            InstanceName        = $server.ServiceName
+            SqlInstance         = $server.DomainInstanceName
+            InstanceAccess      = $idInstanceFS[$runvalue]
+            ServiceAccess       = $idServiceFS[$servicelevel]
+            ServiceShareName    = $serviceFS.ShareName
+            InstanceAccessLevel = $instanceFS.RunningValue
+            ServiceAccessLevel  = $serviceFS.AccessLevel
+            Credential          = $Credential
+            SqlCredential       = $SqlCredential
+        } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceAccess, ServiceAccess, ServiceShareName
     }
+}
 }

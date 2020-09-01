@@ -21,7 +21,7 @@ function Get-DbaComputerSystem {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ServerInfo
+        Tags: Server, Management
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io
@@ -45,7 +45,6 @@ function Get-DbaComputerSystem {
         PS C:\> Get-DbaComputerSystem -ComputerName sql2016 -IncludeAws
 
         Returns information about the sql2016's computer system and includes additional properties around the EC2 instance.
-
     #>
     [CmdletBinding()]
     param (
@@ -105,7 +104,7 @@ function Get-DbaComputerSystem {
                         $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ArgumentList $ProxiedFunc -ScriptBlock {
                             Param( $ProxiedFunc )
                             . ([ScriptBlock]::Create($ProxiedFunc))
-                            ((Invoke-TlsRestMethod2 -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200
+                            ((Invoke-TlsRestMethod -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200
                         } -Raw
                     } catch [System.Net.WebException] {
                         $isAws = $false

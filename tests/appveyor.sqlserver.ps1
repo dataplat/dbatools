@@ -5,7 +5,9 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 New-Item -Path C:\github\dbatools\.git -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
 if ($env:SCENARIO) {
+
     Write-Host -Object "Scenario $($env:scenario)" -ForegroundColor DarkGreen
+
     #Write-Host -Object "Main instance $($env:MAIN_INSTANCE)" -ForegroundColor DarkGreen
     #Write-Host -Object "Setup scripts $($env:SETUP_SCRIPTS)" -ForegroundColor DarkGreen
     $Setup_Scripts = $env:SETUP_SCRIPTS.split(',').Trim()

@@ -10,7 +10,11 @@ function Get-DbaDbView {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         To get views from specific database(s) - this list is auto populated from the server.
@@ -20,6 +24,12 @@ function Get-DbaDbView {
 
     .PARAMETER ExcludeSystemView
         This switch removes all system objects from the view collection.
+
+    .PARAMETER View
+        The view(s) to include - all views are selected if not populated
+
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -33,6 +43,9 @@ function Get-DbaDbView {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaDbView
 
     .EXAMPLE
         PS C:\> Get-DbaDbView -SqlInstance sql2016
@@ -59,55 +72,107 @@ function Get-DbaDbView {
 
         Gets the views for the databases on Sql1 and Sql2/sqlexpress
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance Server1 -ExcludeSystem | Get-DbaDbView
+
+        Pipe the databases from Get-DbaDatabase into Get-DbaDbView
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbView -SqlInstance Server1 -Database db1 -View vw1
+
+        Gets the view vw1 for the db1 database
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
+        [string[]]$View,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
+    begin {
+        if ($View) {
+            $fqtns = @()
+            foreach ($v in $View) {
+                $fqtn = Get-ObjectNameParts -ObjectName $v
+
+                if (-not $fqtn.Parsed) {
+                    Write-Message -Level Warning -Message "Please check you are using proper three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
+                    Continue
+                }
+
+                $fqtns += [PSCustomObject] @{
+                    Database   = $fqtn.Database
+                    Schema     = $fqtn.Schema
+                    View       = $fqtn.Name
+                    InputValue = $fqtn.InputValue
+                }
+            }
+            if (-not $fqtns) {
+                Stop-Function -Message "No Valid View specified"  -ErrorRecord $_ -Target $instance -Continue
+            }
+        }
+    }
+
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (Test-Bound SqlInstance) {
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+
+            $db.Views.Refresh($true) # This will ensure the list of views is up-to-date
+            if ($fqtns) {
+                $views = @()
+                foreach ($fqtn in $fqtns) {
+                    # If the user specified a database in a three-part name, and it's not the
+                    # database currently being processed, skip this view.
+                    if ($fqtn.Database) {
+                        if ($fqtn.Database -ne $db.Name) {
+                            continue
+                        }
+                    }
+
+                    $vw = $db.Views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+
+                    if (-not $vw) {
+                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.Name) in $db on $server"
+                    }
+                    $views += $vw
+                }
+            } else {
+                $views = $db.Views
             }
 
-            $databases = $server.Databases | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            if (-not $db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
+                continue
             }
 
-            foreach ($db in $databases) {
-                $views = $db.views
+            if (-not $views) {
+                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                continue
+            }
+            if (Test-Bound -ParameterName ExcludeSystemView) {
+                $views = $views | Where-Object { -not $_.IsSystemObject }
+            }
 
-                if (!$views) {
-                    Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
-                if (Test-Bound -ParameterName ExcludeSystemView) {
-                    $views = $views | Where-Object { $_.IsSystemObject -eq $false }
-                }
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
+            foreach ($sqlview in $views) {
 
-                $views | Foreach-Object {
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $sqlview.Parent.ComputerName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $sqlview.Parent.InstanceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $sqlview.Parent.SqlInstance
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
-
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name
-                }
+                Select-DefaultView -InputObject $sqlview -Property $defaults
             }
         }
     }

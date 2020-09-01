@@ -11,7 +11,11 @@ function Get-DbaDbPageInfo {
         The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Filter to only get specific databases
@@ -42,7 +46,7 @@ function Get-DbaDbPageInfo {
         https://dbatools.io/Get-DbaDbPageInfo
 
     .EXAMPLE
-        PS C:\> et-DbaDbPageInfo -SqlInstance sql2017
+        PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017
 
         Returns page information for all databases on sql2017
 

@@ -1,39 +1,37 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
 
         $systemRoles = @(
-            @{role = 'bulkadmin'},
-            @{role = 'dbcreator'},
-            @{role = 'diskadmin'},
-            @{role = 'processadmin'},
-            @{role = 'public'},
-            @{role = 'securityadmin'},
-            @{role = 'serveradmin'},
-            @{role = 'setupadmin'},
-            @{role = 'sysadmin'}
+            @{role = 'bulkadmin' },
+            @{role = 'dbcreator' },
+            @{role = 'diskadmin' },
+            @{role = 'processadmin' },
+            @{role = 'public' },
+            @{role = 'securityadmin' },
+            @{role = 'serveradmin' },
+            @{role = 'setupadmin' },
+            @{role = 'sysadmin' }
         )
 
         $command = Get-Command $CommandName
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
             param ($role)
-
             $command.Parameters['AddRole'].Attributes.ValidValues | Should -Contain $role
         }
 
         It "Validates -RemoveRole contains <role>" -TestCases $systemRoles {
             param ($role)
-
             $command.Parameters['RemoveRole'].Attributes.ValidValues | Should -Contain $role
         }
 
@@ -169,7 +167,32 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         AfterAll {
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Confirm:$false -Force
+            Remove-DbaLogin -SqlInstance $script:instance2 -Login testlogin,testlogin1,testlogin2 -Confirm:$false -Force
+        }
+    }
+    Context "Can handle multiple Logins" {
+        BeforeAll {
+            # Create the new password
+            $password = ConvertTo-SecureString -String "password1" -AsPlainText -Force
+
+            # Create two logins
+            New-DbaLogin -SqlInstance $script:instance2 -Login testlogin1, testlogin2 -Password $password
+        }
+        $results = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin1, testlogin2 -DenyLogin
+
+        It "Results include multiple objects" {
+            $results.Count | Should -Be 2
+        }
+        if ($results.Count -eq 2) {
+            It "Applies change to multiple logins" {
+                foreach ($r in $results) {
+                    $r.DenyLogin | Should -Be $true
+                }
+            }
+        }
+
+        AfterAll {
+            Remove-DbaLogin -SqlInstance $script:instance2 -Login testlogin1,testlogin2 -Confirm:$false -Force
         }
     }
 }

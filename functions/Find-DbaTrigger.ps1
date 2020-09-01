@@ -11,7 +11,11 @@ function Find-DbaTrigger {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -215,10 +219,10 @@ function Find-DbaTrigger {
                                 Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern in object $triggerParentSchema.$triggerParent at database $db"
                                 if ($row.TextBody -match $Pattern) {
 
-                                    $tr = ($db.Tables | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                    $tr = ($db.Tables | Where-Object { $_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema }).Triggers | Where-Object name -eq $row.name
                                     if ($null -eq $tr) {
                                         Write-Message -Level Verbose -Message "Could not find table named $($row.Name). Will try to find on Views."
-                                        $tr = ($db.Views | Where-Object {$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
+                                        $tr = ($db.Views | Where-Object { $_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema }).Triggers | Where-Object name -eq $row.name
                                     }
 
                                     $triggerText = $tr.TextBody.split("`n`r")
@@ -278,8 +282,8 @@ function Find-DbaTrigger {
 
                         if ($TriggerLevel -in @('All', 'Object')) {
                             #Get Object Level triggers (DML)
-                            $triggers = $db.Tables | ForEach-Object {$_.Triggers}
-                            $triggers += $db.Views | ForEach-Object {$_.Triggers}
+                            $triggers = $db.Tables | ForEach-Object { $_.Triggers }
+                            $triggers += $db.Views | ForEach-Object { $_.Triggers }
 
                             $triggercount = 0
 
