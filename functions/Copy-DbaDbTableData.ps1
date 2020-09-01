@@ -37,12 +37,14 @@ function Copy-DbaDbTableData {
     .PARAMETER Table
         Specify a table to use as a source. You can specify a 2 or 3 part name.
         If the object has special characters please wrap them in square brackets.
+        
+        Note: Cannot specify a view if a table value is provided
 
     .PARAMETER View
-        Specify a view to use as a source. You can specify a two-part name or a three-part name such as db.sch.vw.
-        Note: Only one of -View or -Table may be specified during command invocation.
-        If the object has special characters please wrap them in square brackets [ ].
-        Example: [SampleDB].[First].[View] will try to find the view named 'View' in the schema 'First' and the database 'SampleDB'.
+        Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
+        If the object has special characters please wrap them in square brackets.
+        
+        Note: Cannot specify a table if a view value is provided
 
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
@@ -181,7 +183,7 @@ function Copy-DbaDbTableData {
     .EXAMPLE
        Copy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable
        
-       Copies all data from [tempdb].[dbo].[vw1] (3-part name) on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
+       Copies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
