@@ -10,7 +10,7 @@ Internal function. Returns dictionary object that contains file structures for S
         [ValidateNotNullOrEmpty()]
         [object]$SqlInstance,
         [Parameter(Mandatory, Position = 1)]
-        [string]$dbname,
+        [string]$DbName,
         [Parameter(Mandatory, Position = 2)]
         [object]$filelist,
         [Parameter(Position = 3)]

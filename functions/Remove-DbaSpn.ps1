@@ -114,7 +114,7 @@ function Remove-DbaSpn {
                 if ($spnadobject -contains $spn) {
                     $null = $spnadobject.Remove($spn)
                     $adentry.CommitChanges()
-                    Write-Message -Message "Remove SPN $spn for $serviceaccount" -Level Verbose
+                    Write-Message -Message "Remove SPN $spn for $ServiceAccount" -Level Verbose
                     $set = $false
                     $status = "Successfully removed SPN"
                 }

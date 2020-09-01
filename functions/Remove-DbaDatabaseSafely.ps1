@@ -12,13 +12,21 @@ function Remove-DbaDatabaseSafely {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
         If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
 
     .PARAMETER DestinationCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies one or more databases to remove.
@@ -132,7 +140,7 @@ function Remove-DbaDatabaseSafely {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         if (!$AllDatabases -and !$Database) {
             Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -ErrorRecord $_
@@ -173,13 +181,13 @@ function Remove-DbaDatabaseSafely {
         }
 
         if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
-            $serviceaccount = $destserver.ServiceAccount
-            Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
+            $serviceAccount = $destserver.ServiceAccount
+            Stop-Function -Message "Can't access $backupFolder Please check if $serviceAccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }
 
         #TODO: Test
-        $jobname = "Rationalised Final Database Restore for $dbname"
-        $jobStepName = "Restore the $dbname database from Final Backup"
+        $jobname = "Rationalised Final Database Restore for $dbName"
+        $jobStepName = "Restore the $dbName database from Final Backup"
 
         if (!($destserver.Logins | Where-Object { $_.Name -eq $jobowner })) {
             Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting." -ErrorRecord $_ -Target $jobowner
@@ -217,16 +225,16 @@ function Remove-DbaDatabaseSafely {
 
         Write-Message -Level Verbose -Message "Starting Rationalisation Script at $start."
 
-        foreach ($dbname in $Database) {
+        foreach ($dbName in $Database) {
 
-            $db = $sourceserver.databases[$dbname]
+            $db = $sourceserver.databases[$dbName]
 
             # The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
             if (!$db) {
-                Stop-Function -Message "$dbname does not exist on $source. Aborting routine for this database." -Continue
+                Stop-Function -Message "$dbName does not exist on $source. Aborting routine for this database." -Continue
             }
 
-            $lastFullBckDuration = ( Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbname -LastFull).Duration
+            $lastFullBckDuration = ( Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -LastFull).Duration
 
             if (-NOT ([string]::IsNullOrEmpty($lastFullBckDuration))) {
                 $lastFullBckDurationSec = $lastFullBckDuration.TotalSeconds
@@ -245,23 +253,23 @@ function Remove-DbaDatabaseSafely {
                     $choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
                     # Check the given option
                     if ($choice -eq 1) {
-                        Stop-Function -Message "You have chosen skipping the database $dbname because of last known backup time ($lastFullBckDurationMin minutes)." -ErrorRecord $_ -Target $dbname -Continue
+                        Stop-Function -Message "You have chosen skipping the database $dbName because of last known backup time ($lastFullBckDurationMin minutes)." -ErrorRecord $_ -Target $dbName -Continue
                         Continue
                     }
                 }
             } else {
-                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbname using Get-DbaDbBackupHistory."
+                Write-Message -Level Verbose -Message "Couldn't find last full backup time for database $dbName using Get-DbaDbBackupHistory."
             }
 
-            $jobname = "Rationalised Database Restore Script for $dbname"
-            $jobStepName = "Restore the $dbname database from Final Backup"
+            $jobname = "Rationalised Database Restore Script for $dbName"
+            $jobStepName = "Restore the $dbName database from Final Backup"
             $checkJob = Get-DbaAgentJob -SqlInstance $destserver -Job $jobname
 
             if ($checkJob.count -gt 0) {
                 if ($Force -eq $false) {
                     Stop-Function -Message "FAILED: The Job $jobname already exists. Have you done this before? Rename the existing job and try again or use -Force to drop and recreate." -Continue
                 } else {
-                    if ($Pscmdlet.ShouldProcess($dbname, "Dropping $jobname on $destination")) {
+                    if ($Pscmdlet.ShouldProcess($dbName, "Dropping $jobname on $destination")) {
                         Write-Message -Level Verbose -Message "Dropping $jobname on $destination."
                         $checkJob.Drop()
                     }
@@ -269,16 +277,16 @@ function Remove-DbaDatabaseSafely {
             }
 
 
-            Write-Message -Level Verbose -Message "Starting Rationalisation of $dbname."
+            Write-Message -Level Verbose -Message "Starting Rationalisation of $dbName."
             ## if we want to Dbcc before to abort if we have a corrupt database to start with
             if ($NoDbccCheckDb -eq $false) {
-                if ($Pscmdlet.ShouldProcess($dbname, "Running dbcc check on $dbname on $source")) {
-                    Write-Message -Level Verbose -Message "Starting DBCC CHECKDB for $dbname on $source."
-                    $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbname -table
+                if ($Pscmdlet.ShouldProcess($dbName, "Running dbcc check on $dbName on $source")) {
+                    Write-Message -Level Verbose -Message "Starting DBCC CHECKDB for $dbName on $source."
+                    $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbName -table
 
                     if ($dbccgood -ne "Success") {
                         if ($Force -eq $false) {
-                            Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that). Aborting routine for this database."
+                            Write-Message -Level Verbose -Message "DBCC failed for $dbName (you should check that). Aborting routine for this database."
                             continue
                         } else {
                             Write-Message -Level Verbose -Message "DBCC failed, but Force specified. Continuing."
@@ -287,24 +295,24 @@ function Remove-DbaDatabaseSafely {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($source, "Backing up $dbname")) {
+            if ($Pscmdlet.ShouldProcess($source, "Backing up $dbName")) {
 
-                Write-Message -Level Verbose -Message "Starting Backup for $dbname on $source."
+                Write-Message -Level Verbose -Message "Starting Backup for $dbName on $source."
                 ## Take a Backup
                 try {
                     $timenow = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
 
                     if ($Force -and $dbccgood -ne "Success") {
-                        $filename = "$backupFolder\$($dbname)_DBCCERROR_$timenow.bak"
+                        $filename = "$backupFolder\$($dbName)_DBCCERROR_$timenow.bak"
                     } else {
-                        $filename = "$backupFolder\$($dbname)_Final_Before_Drop_$timenow.bak"
+                        $filename = "$backupFolder\$($dbName)_Final_Before_Drop_$timenow.bak"
                     }
 
                     $DefaultCompression = $sourceserver.Configuration.DefaultBackupCompression.ConfigValue
                     $backupWithCompressionParams = @{
                         SqlInstance    = $SqlInstance
                         SqlCredential  = $SqlCredential
-                        Database       = $dbname
+                        Database       = $dbName
                         BackupFileName = $filename
                         CompressBackup = $true
                         Checksum       = $true
@@ -313,7 +321,7 @@ function Remove-DbaDatabaseSafely {
                     $backupWithoutCompressionParams = @{
                         SqlInstance    = $SqlInstance
                         SqlCredential  = $SqlCredential
-                        Database       = $dbname
+                        Database       = $dbName
                         BackupFileName = $filename
                         Checksum       = $true
                     }
@@ -334,8 +342,8 @@ function Remove-DbaDatabaseSafely {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbname on $destination")) {
-                Write-Message -Level Verbose -Message "Creating Automated Restore Job from Golden Backup for $dbname on $destination."
+            if ($Pscmdlet.ShouldProcess($destination, "Creating Automated Restore Job from Golden Backup for $dbName on $destination")) {
+                Write-Message -Level Verbose -Message "Creating Automated Restore Job from Golden Backup for $dbName on $destination."
                 try {
                     if ($Force -eq $true -and $dbccgood -ne "Success") {
                         $jobName = $jobname -replace "Rationalised", "DBCC ERROR"
@@ -353,7 +361,7 @@ function Remove-DbaDatabaseSafely {
                                 SqlCredential = $DestinationCredential
                                 Job           = $jobname
                                 Category      = $categoryname
-                                Description   = "This job will restore the $dbname database using the final backup located at $filename."
+                                Description   = "This job will restore the $dbName database using the final backup located at $filename."
                                 Owner         = $jobowner
                             }
                             $job = New-DbaAgentJob @jobParams
@@ -396,21 +404,21 @@ function Remove-DbaDatabaseSafely {
                         $job.Alter()
                     }
                 } catch {
-                    Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbname. Exception: $_" -Target $jobname -ErrorRecord $_ -Continue
+                    Stop-Function -Message "FAILED : To Create Agent Job $jobname on $destination - aborting routine for $dbName. Exception: $_" -Target $jobname -ErrorRecord $_ -Continue
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbname on $sourceserver")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbName on $sourceserver")) {
                 ## Drop the database
                 try {
-                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
-                    Write-Message -Level Verbose -Message "Dropped $dbname Database on $source prior to running the Agent Job"
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbName -Confirm:$false
+                    Write-Message -Level Verbose -Message "Dropped $dbName Database on $source prior to running the Agent Job"
                 } catch {
-                    Stop-Function -Message "FAILED : To Drop database $dbname on $server - aborting routine for $dbname. Exception: $_" -Continue
+                    Stop-Function -Message "FAILED : To Drop database $dbName on $server - aborting routine for $dbName. Exception: $_" -Continue
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($destination, "Running Agent Job on $destination to restore $dbname")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Running Agent Job on $destination to restore $dbName")) {
                 ## Run the restore job to restore it
                 Write-Message -Level Verbose -Message "Starting $jobname on $destination."
                 try {
@@ -419,7 +427,7 @@ function Remove-DbaDatabaseSafely {
                     $status = $job.CurrentRunStatus
 
                     while ($status -ne 'Idle') {
-                        Write-Message -Level Verbose -Message "Restore Job for $dbname on $destination is $status."
+                        Write-Message -Level Verbose -Message "Restore Job for $dbName on $destination is $status."
                         Start-Sleep -Seconds 15
                         $job.Refresh()
                         $status = $job.CurrentRunStatus
@@ -429,12 +437,12 @@ function Remove-DbaDatabaseSafely {
                     Write-Message -Level Verbose -Message "Sleeping for a few seconds to ensure the next step (DBCC) succeeds."
                     Start-Sleep -Seconds 10 ## This is required to ensure the next DBCC Check succeeds
                 } catch {
-                    Stop-Function -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname. Exception: $_" -Continue
+                    Stop-Function -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbName. Exception: $_" -Continue
                 }
 
                 if ($job.LastRunOutcome -ne 'Succeeded') {
                     # LOL, love the plug.
-                    Write-Message -Level Warning -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbname."
+                    Write-Message -Level Warning -Message "FAILED : Restore Job $jobname failed on $destination - aborting routine for $dbName."
                     Write-Message -Level Warning -Message "Check the Agent Job History on $destination - if you have SSMS2016 July release or later."
                     Write-Message -Level Warning -Message "Get-DbaAgentJobHistory -SqlInstance $destination -Job '$jobname'."
 
@@ -444,9 +452,9 @@ function Remove-DbaDatabaseSafely {
                 $refreshRetries = 1
 
                 $destserver.Databases.Refresh()
-                $restoredDatabase = Get-DbaDatabase -SqlInstance $destserver -Database $dbname
+                $restoredDatabase = Get-DbaDatabase -SqlInstance $destserver -Database $dbName
                 while ($null -eq $restoredDatabase -and $refreshRetries -lt 6) {
-                    Write-Message -Level verbose -Message "Database $dbname not found! Refreshing collection."
+                    Write-Message -Level verbose -Message "Database $dbName not found! Refreshing collection."
 
                     #refresh database list, otherwise the next step (DBCC) can fail
                     $restoredDatabase.Parent.Databases.Refresh()
@@ -458,31 +466,31 @@ function Remove-DbaDatabaseSafely {
             }
 
             ## Run a Dbcc No choice here
-            if ($Pscmdlet.ShouldProcess($dbname, "Running Dbcc CHECKDB on $dbname on $destination")) {
-                Write-Message -Level Verbose -Message "Starting Dbcc CHECKDB for $dbname on $destination."
-                $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbname -table
+            if ($Pscmdlet.ShouldProcess($dbName, "Running Dbcc CHECKDB on $dbName on $destination")) {
+                Write-Message -Level Verbose -Message "Starting Dbcc CHECKDB for $dbName on $destination."
+                $dbccgood = Start-DbccCheck -server $sourceserver -dbname $dbName -table
 
                 if ($dbccgood -ne "Success") {
-                    Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbname on $servername."
+                    Write-Message -Level Verbose -Message "DBCC CHECKDB finished successfully for $dbName on $servername."
                 } else {
-                    Write-Message -Level Verbose -Message "DBCC failed for $dbname (you should check that). Continuing."
+                    Write-Message -Level Verbose -Message "DBCC failed for $dbName (you should check that). Continuing."
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
+            if ($Pscmdlet.ShouldProcess($dbName, "Dropping Database $dbName on $destination")) {
                 ## Drop the database
                 try {
-                    $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
-                    Write-Message -Level Verbose -Message "Dropped $dbname database on $destination."
+                    $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbName -Confirm:$false
+                    Write-Message -Level Verbose -Message "Dropped $dbName database on $destination."
                 } catch {
-                    Stop-Function -Message "FAILED : To Drop database $dbname on $destination - Aborting. Exception: $_" -Target $dbname -ErrorRecord $_ -Continue
+                    Stop-Function -Message "FAILED : To Drop database $dbName on $destination - Aborting. Exception: $_" -Target $dbName -ErrorRecord $_ -Continue
                 }
             }
-            Write-Message -Level Verbose -Message "Rationalisation Finished for $dbname."
+            Write-Message -Level Verbose -Message "Rationalisation Finished for $dbName."
 
             [PSCustomObject]@{
                 SqlInstance     = $source
-                DatabaseName    = $dbname
+                DatabaseName    = $dbName
                 JobName         = $jobname
                 TestingInstance = $destination
                 BackupFolder    = $backupFolder

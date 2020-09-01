@@ -10,7 +10,11 @@ function Start-DbaXESession {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Session
         Only start specific Extended Events sessions.
@@ -126,10 +130,11 @@ function Start-DbaXESession {
                 $name = "XE Session Stop - $session"
                 if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
                     # Setup the schedule time
-                    #$time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StopAt
+                    $StartDateDatePart = Get-Date -Date $StopAt -format 'yyyyMMdd'
+                    $StartDateTimePart = Get-Date -Date $StopAt -format 'HHmmss'
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StartDateDatePart -StartTime $StartDateTimePart -Force
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
@@ -161,7 +166,7 @@ function Start-DbaXESession {
                     Start-XESessions $xeSessions
 
                     if ($StopAt) {
-                        New-StopJob -xeSessions $xeSessions -StopAt $stopat
+                        New-StopJob -xeSessions $xeSessions -StopAt $StopAt
                     }
                 }
             }

@@ -11,7 +11,11 @@ function Get-DbaDatabase {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -253,10 +257,24 @@ function Get-DbaDatabase {
             }
             function Invoke-QueryRawDatabases {
                 try {
-                    if ($server.VersionMajor -eq 8) {
-                        $server.Query("SELECT *, SUSER_NAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+                    if ($server.isAzure) {
+                        $server.Query("SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db INNER JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid")
+                    } elseif ($server.VersionMajor -eq 8) {
+                        $server.Query("
+                            SELECT name,
+                                CASE DATABASEPROPERTYEX(name,'status')
+                                    WHEN 'ONLINE'     THEN 0
+                                    WHEN 'RESTORING'  THEN 1
+                                    WHEN 'RECOVERING' THEN 2
+                                    WHEN 'SUSPECT'    THEN 4
+                                    WHEN 'EMERGENCY'  THEN 5
+                                    WHEN 'OFFLINE'    THEN 6
+                                END AS state,
+                                SUSER_SNAME(sid) AS [Owner]
+                            FROM master.dbo.sysdatabases
+                        ")
                     } else {
-                        $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner] FROM sys.databases")
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
@@ -280,16 +298,16 @@ function Get-DbaDatabase {
             }
             $inputobject = $inputObject |
                 Where-Object {
-                ($_.Name -in $Database -or !$Database) -and
-                ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                ($_.Owner -in $Owner -or !$Owner) -and
-                $_.ReadOnly -in $Readonly -and
-                $_.IsAccessible -in $AccessibleFilter -and
-                $_.IsSystemObject -in $DBType -and
-                ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
-                $_.EncryptionEnabled -in $Encrypt
-            }
+                    ($_.Name -in $Database -or !$Database) -and
+                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                    ($_.Owner -in $Owner -or !$Owner) -and
+                    $_.ReadOnly -in $Readonly -and
+                    $_.IsAccessible -in $AccessibleFilter -and
+                    $_.IsSystemObject -in $DBType -and
+                    ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
+                    ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                    $_.EncryptionEnabled -in $Encrypt
+                }
             if ($NoFullBackup -or $NoFullBackupSince) {
                 $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {

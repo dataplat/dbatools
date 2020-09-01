@@ -31,6 +31,9 @@ function ConvertTo-DbaXESession {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/ConvertTo-DbaXESession
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2017, sql2012 | Where-Object Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
 

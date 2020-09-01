@@ -12,7 +12,11 @@ function Get-DbaRegServer {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         Specifies one or more names to include. Name is the visible name in SSMS interface (labeled Registered Server Name)
@@ -115,7 +119,7 @@ function Get-DbaRegServer {
     }
     process {
         if (-not $PSBoundParameters.SqlInstance -and -not ($IsLinux -or $IsMacOs)) {
-            $null = Get-ChildItem -Recurse "$env:APPDATA\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $null = Get-ChildItem -Recurse "$(Get-DbatoolsPath -Name appdata)\Microsoft\*sql*" -Filter RegSrvr.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         }
 
         $servers = @()
@@ -167,7 +171,7 @@ function Get-DbaRegServer {
                             if (-not $connname) {
                                 $connname = $server.Options['server']
                             }
-                            $adsconn = $adsconnection | Where-Object server -eq $server.Options['server']
+                            $adsconn = $adsconnection | Where-Object { $_.server -eq $server.Options['server'] -and -not $_.database }
 
                             $tempserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer $tempgroup, $connname
                             $tempserver.Description = $server.Options['Description']
@@ -202,12 +206,6 @@ function Get-DbaRegServer {
             $servers = $servers | Where-Object Id -in $Id
         }
 
-        if ($ExcludeGroup) {
-            $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
-            Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
-            $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
-        }
-
         foreach ($server in $servers) {
             $az = $azureids | Where-Object Id -in $server.Id
             if ($az) {
@@ -228,6 +226,9 @@ function Get-DbaRegServer {
                 $groupname = $null
             }
 
+            if ($ExcludeGroup -and ($groupname -in $ExcludeGroup)) {
+                continue
+            }
 
             if ($server.ConnectionStringWithEncryptedPassword) {
                 $encodedconnstring = $connstring = $server.ConnectionStringWithEncryptedPassword

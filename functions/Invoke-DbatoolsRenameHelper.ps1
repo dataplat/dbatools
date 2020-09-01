@@ -55,7 +55,6 @@ function Invoke-DbatoolsRenameHelper {
 
         Shows what would happen if the command would run. If the command would run and there were matches,
         the resulting changes would be written to disk as Ascii encoded.
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -84,6 +83,7 @@ function Invoke-DbatoolsRenameHelper {
             UseLastBackups     = 'UseLastBackup'
             PasswordExpiration = 'PasswordExpirationEnabled'
             PasswordPolicy     = 'PasswordPolicyEnforced'
+            ServerInstance     = 'SqlInstance'
         }
 
         $commandrenames = @{
@@ -257,6 +257,7 @@ function Invoke-DbatoolsRenameHelper {
             'Test-DbaDatabaseCollation'         = 'Test-DbaDbCollation'
             'Test-DbaDatabaseCompatibility'     = 'Test-DbaDbCompatibility'
             'Test-DbaDatabaseOwner'             = 'Test-DbaDbOwner'
+            'Test-DbaDbVirtualLogFile'          = 'Measure-DbaDbVirtualLogFile'
             'Test-DbaFullRecoveryModel'         = 'Test-DbaDbRecoveryModel'
             'Test-DbaJobOwner'                  = 'Test-DbaAgentJobOwner'
             'Test-DbaLogShippingStatus'         = 'Test-DbaDbLogShipStatus'

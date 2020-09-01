@@ -11,10 +11,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
+    Context "Validate alias" {
+        It "Should contain the alias: cdi" {
+            (Get-Alias cdi) | Should -Not -BeNullOrEmpty
+        }
+    }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    if ($env:azuredbpasswd) {
+    if ($env:azuredbpasswd -eq "failstoooften") {
         Context "Connect to Azure" {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)

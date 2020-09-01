@@ -10,7 +10,11 @@ function Get-DbaAgReplica {
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AvailabilityGroup
         Specify the availability groups to query.
@@ -27,7 +31,7 @@ function Get-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, AG, HA, Replica
+        Tags: AvailabilityGroup, HA, AG
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
@@ -51,7 +55,6 @@ function Get-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
 
         Returns full object properties on all availability group replicas found on sql2017a
-
     #>
     [CmdletBinding()]
     param (
@@ -64,6 +67,11 @@ function Get-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }

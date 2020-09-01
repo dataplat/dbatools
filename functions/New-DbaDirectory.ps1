@@ -14,7 +14,11 @@ function New-DbaDirectory {
         The Path to tests. Can be a file or directory.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -65,34 +69,34 @@ function New-DbaDirectory {
 
     foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         $Path = $Path.Replace("'", "''")
 
-        $exists = Test-DbaPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
+        $exists = Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $Path
 
         if ($exists) {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
         }
 
-        $sql = "EXEC master.dbo.xp_create_subdir'$path'"
+        $sql = "EXEC master.dbo.xp_create_subdir '$path'"
         Write-Message -Level Debug -Message $sql
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
                 $null = $server.Query($sql)
-                $Created = $true
+                $created = $true
             } catch {
-                $Created = $false
+                $created = $false
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
 
             [pscustomobject]@{
                 Server  = $SqlInstance
                 Path    = $Path
-                Created = $Created
+                Created = $created
             }
         }
     }

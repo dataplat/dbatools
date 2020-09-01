@@ -82,6 +82,10 @@ function Update-DbaInstance {
         Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
         Default: 50
 
+    .PARAMETER ArgumentList
+        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
+        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -95,6 +99,9 @@ function Update-DbaInstance {
 
     .PARAMETER ExtractPath
         Lets you specify a location to extract the update file to on the system requiring the update. e.g. C:\temp
+
+    .LINK
+        https://dbatools.io/Update-DbaInstance
 
     .NOTES
         Tags: Install, Patching, SP, CU, Instance
@@ -150,6 +157,13 @@ function Update-DbaInstance {
         Does not prompt for confirmation.
         Extracts the files in local driver on Server1 C:\temp.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ArgumentList "/SkipRules=RebootRequiredCheck"
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch.
+        Additional command line parameters would be passed to the executable.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -174,8 +188,9 @@ function Update-DbaInstance {
         [ValidateNotNull()]
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
-        [string]$Authentication = 'Credssp',
+        [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -202,7 +217,7 @@ function Update-DbaInstance {
             }
         }
         $actions = @()
-        $actionTemplate = @{}
+        $actionTemplate = @{ }
         if ($InstanceName) { $actionTemplate.InstanceName = $InstanceName }
         if ($Continue) { $actionTemplate.Continue = $Continue }
         #Putting together list of actions based on current ParameterSet
@@ -280,14 +295,14 @@ function Update-DbaInstance {
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $pathIsNetwork = $Path | Foreach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
+        $pathIsNetwork = $Path | ForEach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
                 Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
-            if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName) {
+            if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential) {
                 $resolvedComputers += $resolvedComputer.FullComputerName
             }
         }
@@ -307,7 +322,7 @@ function Update-DbaInstance {
             if (!$components) {
                 Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
             }
-            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | Foreach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
+            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | ForEach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
             # Filter for specific instance name
             if ($InstanceName) {
                 $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
@@ -322,7 +337,9 @@ function Update-DbaInstance {
                 Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
             }
             $upgrades = @()
-            :actions foreach ($currentAction in $actions) {
+            :actions foreach ($actionItem in $actions) {
+                # Clone action to use as a splat
+                $currentAction = $actionItem.Clone()
                 # Attempt to configure CredSSP for the remote host when credentials are defined
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
@@ -403,7 +420,6 @@ function Update-DbaInstance {
             }
             Write-Progress -Activity $activity -Completed
         }
-        $explicitAuth = Test-Bound -Parameter Authentication
         # Declare the installation script
         $installScript = {
             $updateSplat = @{
@@ -413,8 +429,9 @@ function Update-DbaInstance {
                 Credential      = $Credential
                 EnableException = $EnableException
                 ExtractPath     = $ExtractPath
+                Authentication  = $Authentication
+                ArgumentList    = $ArgumentList
             }
-            if ($explicitAuth) { $updateSplat.Authentication = $Authentication }
             Invoke-DbaAdvancedUpdate @updateSplat
         }
         # check how many computers we are looking at and decide upon parallelism

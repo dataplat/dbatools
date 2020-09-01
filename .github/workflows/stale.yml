@@ -1,0 +1,29 @@
+name: Mark stale issues
+
+on:
+  schedule:
+  - cron: "0 6 * * *"
+
+jobs:
+  stale:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/stale@v3.0.9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-issue-message: >
+          🚧🚨
+          This issue is being marked as stale due to 90 days of inactivity.
+          If you would like this issue to remain open:
+            * Verify the issue/bug is reproduced in the latest version of the module
+            * Verify the environmental info provided is still accurate
+            * Add any additional steps you followed to reproduce if necessary
+          🚨🚧
+          
+          ⌛️ This issue will be closed in 30 days ⌛️
+        stale-issue-label: stale
+        exempt-issue-labels: 'Feature,Documentation,Question,Confirmed,solution-provided'
+        days-before-stale: 90
+        days-before-close: -1

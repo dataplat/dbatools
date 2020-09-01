@@ -10,7 +10,11 @@ function Set-DbaAgentJobStep {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job. Can be null if the the job id is being used.
@@ -174,7 +178,7 @@ function Set-DbaAgentJobStep {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
@@ -194,16 +198,16 @@ function Set-DbaAgentJobStep {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Job)) {
-            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
         if ((-not $InputObject) -and (-not $StepName)) {
-            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -238,7 +242,7 @@ function Set-DbaAgentJobStep {
             $InputObject = $InputObject | Where-Object Name -in $StepName
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             # Try connecting to the instance
             try {

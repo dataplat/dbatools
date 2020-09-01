@@ -78,7 +78,7 @@ function Stop-Function {
         Helpful when trying to continue on an upper level named loop.
 
     .EXAMPLE
-        Stop-Function -Message "Foo failed bar!" -EnableException $EnableException -ErrorRecord $_
+        Stop-Function -Message "Foo failed bar." -EnableException $EnableException -ErrorRecord $_
         return
 
         Depending on whether $EnableException is true or false it will:
@@ -86,7 +86,7 @@ function Stop-Function {
         - Write a nice warning about how Foo failed bar, then terminate the function. The return on the next line will then end the calling function.
 
     .EXAMPLE
-        Stop-Function -Message "Foo failed bar!" -EnableException $EnableException -Category InvalidOperation -Target $foo -Continue
+        Stop-Function -Message "Foo failed bar." -EnableException $EnableException -Category InvalidOperation -Target $foo -Continue
 
         Depending on whether $silent is true or false it will:
         - Throw a bloody terminating error. Game over.

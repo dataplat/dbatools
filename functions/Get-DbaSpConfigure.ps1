@@ -11,7 +11,11 @@ function Get-DbaSpConfigure {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         Return only specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
@@ -80,19 +84,29 @@ function Get-DbaSpConfigure {
     )
     begin {
         $smoName = [pscustomobject]@{
+            "access check cache bucket count"    = "AccessCheckCacheBucketCount"
+            "access check cache quota"           = "AccessCheckCacheQuota"
             "Ad Hoc Distributed Queries"         = "AdHocDistributedQueriesEnabled"
+            "ADR cleaner retry timeout (min)"    = "AdrCleanerRetryTimeout"
+            "ADR Preallocation Factor"           = "AdrPreallcationFactor"
             "affinity I/O mask"                  = "AffinityIOMask"
             "affinity mask"                      = "AffinityMask"
             "affinity64 I/O mask"                = "Affinity64IOMask"
             "affinity64 mask"                    = "Affinity64Mask"
             "Agent XPs"                          = "AgentXPsEnabled"
+            "allow filesystem enumeration"       = "AllowFilesystemEnumeration"
+            "allow polybase export"              = "AllowPolybaseExport"
             "allow updates"                      = "AllowUpdates"
+            "automatic soft-NUMA disabled"       = "AutomaticSoftnumaDisabled"
             "awe enabled"                        = "AweEnabled"
+            "backup checksum default"            = "BackupChecksumDefault"
             "backup compression default"         = "DefaultBackupCompression"
-            "blocked process threshold"          = "BlockedProcessThreshold"
             "blocked process threshold (s)"      = "BlockedProcessThreshold"
+            "blocked process threshold"          = "BlockedProcessThreshold"
             "c2 audit mode"                      = "C2AuditMode"
             "clr enabled"                        = "IsSqlClrEnabled"
+            "clr strict security"                = "ClrStrictSecurity"
+            "column encryption enclave type"     = "ColumnEncryptionEnclaveType"
             "common criteria compliance enabled" = "CommonCriteriaComplianceEnabled"
             "contained database authentication"  = "ContainmentEnabled"
             "cost threshold for parallelism"     = "CostThresholdForParallelism"
@@ -104,12 +118,14 @@ function Get-DbaSpConfigure {
             "default trace enabled"              = "DefaultTraceEnabled"
             "disallow results from triggers"     = "DisallowResultsFromTriggers"
             "EKM provider enabled"               = "ExtensibleKeyManagementEnabled"
+            "external scripts enabled"           = "ExternalScriptsEnabled"
             "filestream access level"            = "FilestreamAccessLevel"
             "fill factor (%)"                    = "FillFactor"
             "ft crawl bandwidth (max)"           = "FullTextCrawlBandwidthMax"
             "ft crawl bandwidth (min)"           = "FullTextCrawlBandwidthMin"
             "ft notify bandwidth (max)"          = "FullTextNotifyBandwidthMax"
             "ft notify bandwidth (min)"          = "FullTextNotifyBandwidthMin"
+            "hadoop connectivity"                = "HadoopConnectivity"
             "index create memory (KB)"           = "IndexCreateMemory"
             "in-doubt xact resolution"           = "InDoubtTransactionResolution"
             "lightweight pooling"                = "LightweightPooling"
@@ -128,6 +144,8 @@ function Get-DbaSpConfigure {
             "open objects"                       = "OpenObjects"
             "optimize for ad hoc workloads"      = "OptimizeAdhocWorkloads"
             "PH timeout (s)"                     = "ProtocolHandlerTimeout"
+            "polybase enabled"                   = "PolybaseEnabled"
+            "polybase network encryption"        = "PolybaseNetworkEncryption"
             "precompute rank"                    = "PrecomputeRank"
             "priority boost"                     = "PriorityBoost"
             "query governor cost limit"          = "QueryGovernorCostLimit"
@@ -146,24 +164,15 @@ function Get-DbaSpConfigure {
             "show advanced options"              = "ShowAdvancedOptions"
             "SMO and DMO XPs"                    = "SmoAndDmoXPsEnabled"
             "SQL Mail XPs"                       = "SqlMailXPsEnabled"
+            "tempdb metadata memory-optimized"   = "TempdbMetadataMemoryOptimized"
             "transform noise words"              = "TransformNoiseWords"
             "two digit year cutoff"              = "TwoDigitYearCutoff"
             "user connections"                   = "UserConnections"
+            "User Instance Timeout"              = "UserInstanceTimeout"
+            "user instances enabled"             = "UserInstancesEnabled"
             "user options"                       = "UserOptions"
             "Web Assistant Procedures"           = "WebXPsEnabled"
             "xp_cmdshell"                        = "XPCmdShellEnabled"
-            # Configurations without defined names - Created dummy entries
-            "access check cache bucket count"    = "AccessCheckCacheBucketCount"
-            "access check cache quota"           = "AccessCheckCacheQuota"
-            "allow polybase export"              = "AllowPolybaseExport"
-            "automatic soft-NUMA disabled"       = "AutomaticSoftnumaDisabled"
-            "backup checksum default"            = "BackupChecksumDefault"
-            "clr strict security"                = "ClrStrictSecurity"
-            "external scripts enabled"           = "ExternalScriptsEnabled"
-            "hadoop connectivity"                = "HadoopConnectivity"
-            "polybase network encryption"        = "PolybaseNetworkEncryption"
-            "User Instance Timeout"              = "UserInstanceTimeout"
-            "user instances enabled"             = "UserInstancesEnabled"
         }
     }
     process {

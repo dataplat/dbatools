@@ -13,10 +13,18 @@ function Import-DbaSpConfigure {
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
     .PARAMETER SourceSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SqlInstance
         Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
@@ -24,7 +32,11 @@ function Import-DbaSpConfigure {
     .PARAMETER SqlCredential
         Use this SQL credential if you are setting up sp_configure values from a SQL file.
 
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
         Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
@@ -144,7 +156,7 @@ function Import-DbaSpConfigure {
             }
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         if ($Path.length -eq 0) {
@@ -168,7 +180,7 @@ function Import-DbaSpConfigure {
                 foreach ($sourceprop in $sourceserver.Configuration.Properties) {
                     $displayname = $sourceprop.DisplayName
 
-                    $destprop = $destprops | where-object { $_.Displayname -eq $displayname }
+                    $destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
                     if ($null -ne $destprop) {
                         try {
                             $destprop.configvalue = $sourceprop.configvalue

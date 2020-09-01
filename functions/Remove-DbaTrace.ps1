@@ -10,7 +10,11 @@ function Remove-DbaTrace {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Id
         A list of trace ids.
@@ -36,6 +40,9 @@ function Remove-DbaTrace {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaTrace
 
     .EXAMPLE
         PS C:\> Remove-DbaTrace -SqlInstance sql2008

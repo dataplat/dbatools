@@ -57,7 +57,7 @@ function Stop-DbaRunspace {
                     Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }
             } else {
-                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
+                Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant()) | No runspace registered under this name." -EnableException $EnableException -Category InvalidArgument -Target $item.ToLowerInvariant() -Continue
             }
         }
 

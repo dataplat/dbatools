@@ -9,7 +9,7 @@ function Write-HostColor {
         Color tags should be designed to look like this:
         <c="<console color>">Text</c>
         For example this would be a valid string:
-        "This message should <c="red">partially be painted in red</c>!"
+        "This message should <c="red">partially be painted in red</c>."
 
         This allows specifying color within strings and avoids having to piece together colored text in multiple calls to Write-Host.
         Only colors that are part of the ConsoleColor enumeration can be used. Bad colors will be ignored in favor of the default color.

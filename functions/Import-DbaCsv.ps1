@@ -32,7 +32,11 @@ function Import-DbaCsv {
         The SQL Server Instance to import data into.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
@@ -91,7 +95,7 @@ function Import-DbaCsv {
         This behaviour will be overridden if the -Schema parameter is specified.
 
     .PARAMETER TableLock
-        If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
+        If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used.
 
         Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not
         specified, row locks are used."
@@ -121,14 +125,17 @@ function Import-DbaCsv {
 
     .PARAMETER Quote
         Defines the default quote character wrapping every field.
+        Default: double-quotes
 
     .PARAMETER Escape
         Defines the default escape character letting insert quotation characters inside a quoted field.
 
         The escape character can be the same as the quote character.
+        Default: double-quotes
 
     .PARAMETER Comment
-        Defines the default comment character indicating that a line is commented out. Default is #.
+        Defines the default comment character indicating that a line is commented out.
+        Default: hashtag
 
     .PARAMETER TrimmingOption
         Determines which values should be trimmed. Default is "None". Options are All, None, UnquotedOnly and QuotedOnly.
@@ -369,34 +376,6 @@ function Import-DbaCsv {
         }
 
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
-
-        # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
-        # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
-
-        $sourcecode = 'namespace System.Data.SqlClient
-        {
-            using Reflection;
-
-            public static class SqlBulkCopyExtension
-            {
-                const String _rowsCopiedFieldName = "_rowsCopied";
-                static FieldInfo _rowsCopiedField = null;
-
-                public static int RowsCopiedCount(this SqlBulkCopy bulkCopy)
-                {
-                    if (_rowsCopiedField == null) _rowsCopiedField = typeof(SqlBulkCopy).GetField(_rowsCopiedFieldName, BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
-                    return (int)_rowsCopiedField.GetValue(bulkCopy);
-                }
-            }
-        }
-    '
-        if (-not $script:core) {
-            try {
-                Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction Stop
-            } catch {
-                $null = 1
-            }
-        }
     }
     process {
         foreach ($filename in $Path) {
@@ -413,12 +392,12 @@ function Import-DbaCsv {
 
             # Does the second line contain the specified delimiter?
             try {
-                $firstline = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
+                $firstlines = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
             } catch {
                 Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
             }
             if (-not $SingleColumn) {
-                if ($firstline -notmatch $Delimiter) {
+                if ($firstlines -notmatch $Delimiter) {
                     Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
                     return
                 }
@@ -462,7 +441,9 @@ function Import-DbaCsv {
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -StatementTimeout 0 -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
-                    $sqlconn.Open()
+                    if ($sqlconn.State -ne 'Open') {
+                        $sqlconn.Open()
+                    }
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -485,7 +466,7 @@ function Import-DbaCsv {
                 $sqlconn.ChangeDatabase($Database)
 
                 # Ensure Schema exists
-                $sql = "select count(*) from $Database.sys.schemas where name='$schema'"
+                $sql = "select count(*) from [$Database].sys.schemas where name='$schema'"
                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
                 # If Schema doesn't exist create it
@@ -506,10 +487,10 @@ function Import-DbaCsv {
                 }
 
                 # Ensure table or view exists
-                $sql = "select count(*) from $Database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
+                $sql = "select count(*) from [$Database].sys.tables where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
-                $sql2 = "select count(*) from $Database.sys.views where name = '$table' and schema_id=schema_id('$schema')"
+                $sql2 = "select count(*) from [$Database].sys.views where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd2 = New-Object System.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
@@ -577,9 +558,12 @@ function Import-DbaCsv {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
                                 try {
-                                    $firstline -split $Delimiter | ForEach-Object {
-                                        $ColumnMap.Add($PSItem, $PSItem)
+                                    $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
+                                    $ColumnMapping = @{ }
+                                    $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
+                                        $ColumnMapping.Add($_, $_)
                                     }
+                                    $ColumnMap += $ColumnMapping
                                 } catch {
                                     # oh well, we tried
                                     $ColumnMap = $null
@@ -667,13 +651,8 @@ function Import-DbaCsv {
                         if (-not $NoTransaction) {
                             $null = $transaction.Commit()
                         }
-                        if ($script:core) {
-                            $rowscopied = "Unsupported in Core"
-                            $rps = $null
-                        } else {
-                            $rowscopied = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
-                            $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
-                        }
+                        $rowscopied = Get-BulkRowsCopiedCount $bulkcopy
+                        $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
 
                         Write-Message -Level Verbose -Message "$rowscopied total rows copied"
 

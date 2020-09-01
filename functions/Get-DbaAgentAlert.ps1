@@ -1,7 +1,7 @@
 function Get-DbaAgentAlert {
     <#
     .SYNOPSIS
-        Returns all SQL Agent alerts on a SQL Server Agent.
+        Returns SQL Agent alerts on a SQL Server Agent.
 
     .DESCRIPTION
         This function returns SQL Agent alerts.
@@ -10,7 +10,17 @@ function Get-DbaAgentAlert {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Alert
+        The name of the alerts to return. If null, will get all alerts from the server. Note - this parameter accepts wildcards.
+
+    .PARAMETER ExcludeAlert
+        The name of the alerts to exclude. If not provided, no alerts will be excluded. Note - this parameter accepts wildcards.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -34,6 +44,11 @@ function Get-DbaAgentAlert {
         Returns all SQL Agent alerts on serverA and serverB\instanceB
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Alert MyAlert*
+
+        Returns SQL Agent alert on serverA and serverB\instanceB whose names match 'MyAlert*'
+
+    .EXAMPLE
         PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
 
         Returns all SQL Agent alerts  on serverA and serverB\instanceB
@@ -45,6 +60,8 @@ function Get-DbaAgentAlert {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
         [switch]$EnableException
     )
 
@@ -67,16 +84,32 @@ function Get-DbaAgentAlert {
 
             $alerts = $server.Jobserver.Alerts
 
-            foreach ($alert in $alerts) {
-                $lastraised = [dbadatetime]$alert.LastOccurrenceDate
+            if (Test-Bound 'Alert') {
+                $tempAlerts = @();
 
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-                Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
 
-                Select-DefaultView -InputObject $alert -Property $defaults
+                $alerts = $tempAlerts;
+            }
+
+            if (Test-Bound 'ExcludeAlert') {
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
+            }
+
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
             }
         }
     }

@@ -67,8 +67,8 @@ function Get-DbaMsdtc {
         $dtcSecurity = {
             Get-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security |
                 Select-Object PSPath, PSComputerName, AccountName, networkDTCAccess,
-            networkDTCAccessAdmin, networkDTCAccessClients, networkDTCAccessInbound,
-            networkDTCAccessOutBound, networkDTCAccessTip, networkDTCAccessTransactions, XATransactions
+                networkDTCAccessAdmin, networkDTCAccessClients, networkDTCAccessInbound,
+                networkDTCAccessOutBound, networkDTCAccessTip, networkDTCAccessTransactions, XATransactions
         }
         $dtcCids = {
             New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
@@ -80,7 +80,7 @@ function Get-DbaMsdtc {
     process {
         foreach ($computer in $ComputerName.ComputerName) {
             $reg = $cids = $null
-            $cidHash = @{}
+            $cidHash = @{ }
             if ($Credential) {
                 $result = Test-PSRemoting -ComputerName $computer -Credential $Credential
             } else {
@@ -89,7 +89,7 @@ function Get-DbaMsdtc {
             if ($result) {
                 $dtcservice = $null
                 Write-Message -Level Verbose -Message "Getting DTC on $computer via WSMan"
-                $dtcservice = Get-Ciminstance -ComputerName $computer -Query $query
+                $dtcservice = Get-CimInstance -ComputerName $computer -Query $query
                 if ( $null -eq $dtcservice ) {
                     Write-Message -Level Warning -Message "Can't connect to CIM on $computer via WSMan"
                 }
@@ -124,7 +124,7 @@ function Get-DbaMsdtc {
                     $SessionParams.ComputerName = $Computer
                     $SessionParams.SessionOption = (New-CimSessionOption -Protocol Dcom)
                     $Session = New-CimSession @SessionParams
-                    $dtcservice = Get-Ciminstance -CimSession $Session -Query $query
+                    $dtcservice = Get-CimInstance -CimSession $Session -Query $query
                 } catch {
                     Stop-Function -Message "Can't connect to CIM on $computer via DCom" -Target $computer -ErrorRecord $_ -Continue
                 }

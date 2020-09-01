@@ -12,7 +12,11 @@ function Find-DbaDatabase {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Property
         What you would like to search on. Either Database Name, Owner, or Service Broker GUID. Database name is the default.
@@ -84,7 +88,7 @@ function Find-DbaDatabase {
                     # they probably put asterisks thinking it's a like
                     $Pattern = $Pattern -replace '\*', ''
                     $Pattern = $Pattern -replace '\%', ''
-                    $dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+                    $dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property.ToString() -match $pattern }
                 }
             }
 
@@ -100,6 +104,13 @@ function Find-DbaDatabase {
 
                 if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
 
+                $res = $db.Query("
+                SELECT 'proc' AS t, COUNT(*) AS numFound FROM sys.procedures WHERE is_ms_shipped = 0
+                UNION ALL
+                SELECT 'tables' AS t, COUNT(*) AS numFound FROM sys.tables WHERE is_ms_shipped = 0
+                UNION ALL
+                SELECT 'views' AS t, COUNT(*) AS numFound FROM sys.views WHERE is_ms_shipped = 0")
+
                 [PSCustomObject]@{
                     ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
@@ -109,9 +120,9 @@ function Find-DbaDatabase {
                     Owner              = $db.Owner
                     CreateDate         = $db.CreateDate
                     ServiceBrokerGuid  = $db.ServiceBrokerGuid
-                    Tables             = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
-                    StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
-                    Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
+                    Tables             = ($res | Where-Object t -eq 'tables').numFound
+                    StoredProcedures   = ($res | Where-Object t -eq 'proc').numFound
+                    Views              = ($res | Where-Object t -eq 'views').numFound
                     ExtendedProperties = $extendedproperties
                 }
             }

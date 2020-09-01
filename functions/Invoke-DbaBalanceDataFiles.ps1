@@ -22,7 +22,11 @@ function Invoke-DbaBalanceDataFiles {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process.
@@ -61,6 +65,9 @@ function Invoke-DbaBalanceDataFiles {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Invoke-DbaBalanceDataFiles
+
     .EXAMPLE
         PS C:\> Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1
 
@@ -97,7 +104,7 @@ function Invoke-DbaBalanceDataFiles {
         [switch]$Force
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
@@ -106,7 +113,7 @@ function Invoke-DbaBalanceDataFiles {
         # Set the initial success flag
         [bool]$success = $true
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -218,9 +225,9 @@ function Invoke-DbaBalanceDataFiles {
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
                     } else {
-                        $TableCollection = $db.Tables
+                        $tableCollection = $db.Tables
                     }
 
                     # Get the database file groups and check the aount of data files
@@ -243,7 +250,7 @@ function Invoke-DbaBalanceDataFiles {
                     $unsuccessfulTables = @()
 
                     # Loop through each of the tables
-                    foreach ($tbl in $TableCollection) {
+                    foreach ($tbl in $tableCollection) {
 
                         # Chck if the table balanceable
                         if ($tbl.Name -in $balanceableTables.Name) {
@@ -251,7 +258,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($TableCollection.Indexes.Count -lt 1) {
+                            if ($tableCollection.Indexes.Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -259,7 +266,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag

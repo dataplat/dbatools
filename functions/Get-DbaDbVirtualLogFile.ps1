@@ -1,3 +1,4 @@
+
 function Get-DbaDbVirtualLogFile {
     <#
     .SYNOPSIS
@@ -12,13 +13,17 @@ function Get-DbaDbVirtualLogFile {
         http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
         http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
 
-        If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
+        If you've got a high number of VLFs, you can use Expand-DbaDbLogFile to reduce the number.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.

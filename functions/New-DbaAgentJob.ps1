@@ -11,7 +11,11 @@ function New-DbaAgentJob {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Job
         The name of the job. The name must be unique and cannot contain the percent (%) character.
@@ -166,7 +170,7 @@ function New-DbaAgentJob {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the event log level is of type string and set the integer value
         if ($EventLogLevel -notin 1, 2, 3) {
@@ -210,19 +214,19 @@ function New-DbaAgentJob {
 
         # Check the e-mail operator name
         if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
-            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
-            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $SqlInstance
             return
         }
 
         # Check the e-mail operator name
         if (($PageLevel -ge 1) -and (-not $PageOperator)) {
-            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $SqlInstance
             return
         }
     }
@@ -231,7 +235,7 @@ function New-DbaAgentJob {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -391,11 +395,11 @@ function New-DbaAgentJob {
 
                     # If a schedule needs to be attached
                     if ($Schedule) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
                     }
 
                     if ($ScheduleId) {
-                        Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
                     }
                 } catch {
                     Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
@@ -403,7 +407,7 @@ function New-DbaAgentJob {
             }
 
             # Return the job
-            return $currentjob
+            $currentjob
         }
     }
 

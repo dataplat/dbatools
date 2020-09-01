@@ -16,7 +16,11 @@ function Repair-DbaInstanceName {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER AutoFix
         If this switch is enabled, the repair will be performed automatically.
@@ -73,7 +77,7 @@ function Repair-DbaInstanceName {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
 
     process {
@@ -151,17 +155,17 @@ function Repair-DbaInstanceName {
 
                                     foreach ($database in $server.Databases) {
                                         if ($database.IsMirroringEnabled) {
-                                            $dbname = $database.name
+                                            $dbName = $database.name
 
                                             try {
-                                                Write-Message -Level Verbose -Message "Breaking mirror for $dbname."
+                                                Write-Message -Level Verbose -Message "Breaking mirror for $dbName."
                                                 $database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                                                 $database.Alter()
                                                 $database.Refresh()
                                             } catch {
                                                 Stop-Function -Message "Failure" -Target $server -ErrorRecord $_
                                                 return
-                                                #throw "Could not break mirror for $dbname. Skipping."
+                                                #throw "Could not break mirror for $dbName. Skipping."
                                             }
                                         }
                                     }
@@ -173,20 +177,20 @@ function Repair-DbaInstanceName {
             }
             # ^ That's embarrassing
 
-            $instancename = $server.InstanceName
+            $instanceName = $server.InstanceName
 
-            if (-not $instancename) {
-                $instancename = "MSSQLSERVER"
+            if (-not $instanceName) {
+                $instanceName = "MSSQLSERVER"
             }
 
             try {
-                $allsqlservices = Get-Service -ComputerName $instance.ComputerName -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instancename*" -and $_.Status -eq "Running" }
+                $allsqlservices = Get-Service -ComputerName $instance.ComputerName -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instanceName*" -and $_.Status -eq "Running" }
             } catch {
                 Write-Message -Level Warning -Message "Can't contact $instance using Get-Service. This means the script will not be able to automatically restart SQL services."
             }
 
             if ($nametest.Warnings.length -gt 0) {
-                $reportingservice = Get-Service -ComputerName $instance.ComputerName -DisplayName "SQL Server Reporting Services ($instancename)" -ErrorAction SilentlyContinue
+                $reportingservice = Get-Service -ComputerName $instance.ComputerName -DisplayName "SQL Server Reporting Services ($instanceName)" -ErrorAction SilentlyContinue
 
                 if ($reportingservice.Status -eq "Running") {
                     if ($Pscmdlet.ShouldProcess($server.name, "Reporting Services is running for this instance. Would you like to automatically stop this service?")) {
@@ -222,11 +226,11 @@ function Repair-DbaInstanceName {
                 Write-Message -Level Warning -Message "Could not contact $($instance.ComputerName) using Get-Service. You must manually restart the SQL Server instance."
                 $needsrestart = $true
             } else {
-                if ($Pscmdlet.ShouldProcess($instance.ComputerName, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instancename instance now?")) {
+                if ($Pscmdlet.ShouldProcess($instance.ComputerName, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instanceName instance now?")) {
                     try {
-                        Write-Message -Level Verbose -Message "Stopping SQL Services for the $instancename instance"
+                        Write-Message -Level Verbose -Message "Stopping SQL Services for the $instanceName instance"
                         $allsqlservices | Stop-Service -Force -WarningAction SilentlyContinue # because it reports the wrong name
-                        Write-Message -Level Verbose -Message "Starting SQL Services for the $instancename instance."
+                        Write-Message -Level Verbose -Message "Starting SQL Services for the $instanceName instance."
                         $allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service -WarningAction SilentlyContinue # because it reports the wrong name
                     } catch {
                         Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue

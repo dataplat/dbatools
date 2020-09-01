@@ -2,24 +2,24 @@ function Start-DbccCheck {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [object]$server,
-        [string]$dbname,
+        [string]$DbName,
         [switch]$table
     )
 
     $servername = $server.name
 
-    if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $dbname on $servername")) {
+    if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $DbName on $servername")) {
         if ($server.ConnectionContext.StatementTimeout = 0 -ne 0) {
             $server.ConnectionContext.StatementTimeout = 0
         }
 
         try {
             if ($table) {
-                $null = $server.databases[$dbname].CheckTables('None')
-                Write-Verbose "Dbcc CheckTables finished successfully for $dbname on $servername"
+                $null = $server.databases[$DbName].CheckTables('None')
+                Write-Verbose "Dbcc CheckTables finished successfully for $DbName on $servername"
             } else {
-                $null = $server.Query("DBCC CHECKDB ([$dbname])")
-                Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
+                $null = $server.Query("DBCC CHECKDB ([$DbName])")
+                Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
             }
             return "Success"
         } catch {

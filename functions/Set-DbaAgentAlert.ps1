@@ -10,7 +10,11 @@ function Set-DbaAgentAlert {
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Alert
         The name of the alert.
@@ -87,18 +91,18 @@ function Set-DbaAgentAlert {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
 
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Alert)) {
-            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -123,24 +127,24 @@ function Set-DbaAgentAlert {
             }
         }
 
-        foreach ($currentalert in $InputObject) {
-            $server = $currentalert.Parent.Parent
+        foreach ($currentAlert in $InputObject) {
+            $server = $currentAlert.Parent.Parent
 
             #region alert options
             # Settings the options for the alert
             if ($NewName) {
                 Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                $currentalert.Rename($NewName)
+                $currentAlert.Rename($NewName)
             }
 
             if ($Enabled) {
                 Write-Message -Message "Setting alert to enabled" -Level Verbose
-                $currentalert.IsEnabled = $true
+                $currentAlert.IsEnabled = $true
             }
 
             if ($Disabled) {
                 Write-Message -Message "Setting alert to disabled" -Level Verbose
-                $currentalert.IsEnabled = $false
+                $currentAlert.IsEnabled = $false
             }
 
             #endregion alert options
@@ -151,11 +155,11 @@ function Set-DbaAgentAlert {
                     Write-Message -Message "Changing the alert" -Level Verbose
 
                     # Change the alert
-                    $currentalert.Alter()
+                    $currentAlert.Alter()
                 } catch {
                     Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
                 }
-                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
+                Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentAlert.name
             }
         }
     }

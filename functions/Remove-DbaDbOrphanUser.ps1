@@ -19,7 +19,11 @@ function Remove-DbaDbOrphanUser {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -102,7 +106,7 @@ function Remove-DbaDbOrphanUser {
         [switch]$EnableException
     )
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         foreach ($Instance in $SqlInstance) {
@@ -147,14 +151,16 @@ function Remove-DbaDbOrphanUser {
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
+                            $users = @()
                             if ($User.Count -eq 0) {
                                 #the third validation will remove from list sql users without login  or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                             } else {
-
                                 Write-Message -Level Verbose -Message "Validating users on database $db."
                                 #the fourth validation will remove from list sql users without login or mapped to certificate. The rule here is Sid with length higher than 16
-                                $users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin, [Microsoft.SqlServer.Management.Smo.LoginType]::Certificate)) -eq $false) }
+                                $users += $db.Users | Where-Object { ($_.Name -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in @([Microsoft.SqlServer.Management.Smo.LoginType]::WindowsUser, [Microsoft.SqlServer.Management.Smo.LoginType]::WindowsGroup)) }
                             }
                         }
 
@@ -244,7 +250,7 @@ function Remove-DbaDbOrphanUser {
                                                         }
                                                     }
                                                 } else {
-                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema!"
+                                                    Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema."
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
@@ -280,7 +286,7 @@ function Remove-DbaDbOrphanUser {
                                         if ($Force) {
                                             if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
                                                 $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
+                                                Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used."
                                             }
                                         } else {
                                             Write-Message -Level Warning -Message "Orphan user $($dbuser.Name) has a matching login. The user will not be dropped. If you want to drop anyway, use -Force parameter."

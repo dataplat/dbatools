@@ -17,7 +17,8 @@ function Test-PendingReboot {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
-        [pscredential]$Credential
+        [pscredential]$Credential,
+        [switch]$PendingRename
     )
     process {
         $icmParams = @{
@@ -29,7 +30,7 @@ function Test-PendingReboot {
             $icmParams.Credential = $Credential
         }
 
-        $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName -ClassName Win32_OperatingSystem -EnableException
+        $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName  -Credential $Credential -ClassName Win32_OperatingSystem -EnableException
 
         # If Vista/2008 & Above query the CBS Reg Key
         If ($OperatingSystem.BuildNumber -ge 6001) {
@@ -48,10 +49,12 @@ function Test-PendingReboot {
         }
 
         # Query PendingFileRenameOperations from the registry
-        $PendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations' -ErrorAction SilentlyContinue }
-        if ($PendingReboot -and $PendingReboot.PendingFileRenameOperations) {
-            Write-Message -Level Verbose -Message 'Reboot pending in the PendingFileRenameOperations registry value'
-            return $true
+        if ($PendingRename) {
+            $PendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations' -ErrorAction SilentlyContinue }
+            if ($PendingReboot -and $PendingReboot.PendingFileRenameOperations) {
+                Write-Message -Level Verbose -Message 'Reboot pending in the PendingFileRenameOperations registry value'
+                return $true
+            }
         }
         return $false
     }

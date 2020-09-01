@@ -17,7 +17,7 @@ function Get-DbaCmObject {
         The name of the class to retrieve.
 
     .PARAMETER Query
-        The Wmi/Cim query tu run against the server.
+        The Wmi/Cim query to run against the server.
 
     .PARAMETER ComputerName
         The computer(s) to connect to. Defaults to localhost.
@@ -66,39 +66,24 @@ function Get-DbaCmObject {
 
         Retrieves the common operating system information from the server sql2014.
         It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for gathering information")]
     param (
-        [Parameter(Mandatory, ParameterSetName = "Class")]
+        [Parameter(Mandatory, ParameterSetName = "Class", Position = 0)]
         [Alias('Class')]
-        [string]
-        $ClassName,
-
+        [string]$ClassName,
         [Parameter(Mandatory, ParameterSetName = "Query")]
-        [string]
-        $Query,
-
+        [string]$Query,
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
-
-        [System.Management.Automation.PSCredential]
-        $Credential,
-
-        [string]
-        $Namespace = "root\cimv2",
-
+        [System.Management.Automation.PSCredential]$Credential,
+        [string]$Namespace = "root\cimv2",
         [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
         $DoNotUse = "None",
-
-        [switch]
-        $Force,
-
-        [switch]
-        $SilentlyContinue,
-
+        [switch]$Force,
+        [switch]$SilentlyContinue,
         [switch]$EnableException
     )
 
@@ -126,7 +111,7 @@ function Get-DbaCmObject {
             # Ensure using the right credentials
             try { $cred = $connection.GetCredential($Credential) }
             catch {
-                $message = "Bad credentials! "
+                $message = "Bad credentials. "
                 if ($Credential) { $message += "The credentials for $($Credential.UserName) are known to not work. " }
                 else { $message += "The windows credentials are known to not work. " }
                 if ($connection.EnableCredentialFailover -or $connection.OverrideExplicitCredential) { $message += "The connection is configured to use credentials that are known to be good, but none have been registered yet. " }
@@ -207,10 +192,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -231,10 +216,10 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Please check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
-                                15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                15 { Stop-Function -Message "[$computer] Invalid query string. Please check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 15 = Invalid Query
                                 #region 16 = Method not available
                                 16 { Stop-Function -Message "[$computer] The specified method on $ClassName is not available." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -249,11 +234,11 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -263,7 +248,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }
@@ -319,10 +304,10 @@ function Get-DbaCmObject {
                                 5 { Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 5 = Invalid Class
                                 #region 6 = Object not Found
-                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                6 { Stop-Function -Message "[$computer] The requested object of class $ClassName could not be found." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 6 = Object not Found
                                 #region 7 = Operation not Supported
-                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported! This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                7 { Stop-Function -Message "[$computer] The operation against class $ClassName was not supported. This generally is a serverside WMI Provider issue (That is: It is specific to the application being managed via WMI)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 7 = Operation not Supported
                                 #region 8 = Class has children
                                 8 { Stop-Function -Message "[$computer] The operation against class $ClassName is refused as long as it contains instances (data)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -343,7 +328,7 @@ function Get-DbaCmObject {
                                 13 { Stop-Function -Message "[$computer] The input type is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 13 = Type Mismatch
                                 #region 14 = Query Language not supported
-                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                14 { Stop-Function -Message "[$computer] Invalid query language. Check your query string." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 14 = Query Language not supported
                                 #region 15 = Invalid Query
                                 15 { Stop-Function -Message "[$computer] Invalid query string, check your syntax." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
@@ -361,11 +346,11 @@ function Get-DbaCmObject {
                                 19 { Stop-Function -Message "[$computer] The specified destination for this request is invalid." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 19 = Invalid Response Destination
                                 #region 20 = Namespace not empty
-                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
+                                20 { Stop-Function -Message "[$computer] The specified namespace $Namespace is not empty." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage }
                                 #endregion 20 = Namespace not empty
 
-                                #region 0 = Non-CIM Issue not covered by the framework
-                                0 {
+                                #region Default | 0 = Non-CIM Issue not covered by the framework
+                                default {
                                     # 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
                                     if ($errorItem.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus") {
                                         Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue
@@ -375,7 +360,7 @@ function Get-DbaCmObject {
                                         continue sub
                                     }
                                 }
-                                #endregion 0 = Non-CIM Issue not covered by the framework
+                                #endregion Default | 0 = Non-CIM Issue not covered by the framework
                             }
                         }
                     }

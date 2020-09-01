@@ -10,7 +10,11 @@ function Get-DbaLogin {
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Login
         The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
@@ -169,14 +173,14 @@ function Get-DbaLogin {
 
         $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
         $loginProperty = "SELECT
-                            LOGINPROPERTY ('<#LoginName#>' , 'BadPasswordCount') as BadPasswordCount ,
-                            LOGINPROPERTY ('<#LoginName#>' , 'BadPasswordTime') as BadPasswordTime,
-                            LOGINPROPERTY ('<#LoginName#>' , 'DaysUntilExpiration') as DaysUntilExpiration,
-                            LOGINPROPERTY ('<#LoginName#>' , 'HistoryLength') as HistoryLength,
-                            LOGINPROPERTY ('<#LoginName#>' , 'IsMustChange') as IsMustChange,
-                            LOGINPROPERTY ('<#LoginName#>' , 'LockoutTime') as LockoutTime,
-                            CONVERT (varchar(514),  (LOGINPROPERTY('<#LoginName#>', 'PasswordHash')),1) as PasswordHash,
-                            LOGINPROPERTY ('<#LoginName#>' , 'PasswordLastSetTime') as PasswordLastSetTime"
+                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordCount') as BadPasswordCount ,
+                            LOGINPROPERTY ('/*LoginName*/' , 'BadPasswordTime') as BadPasswordTime,
+                            LOGINPROPERTY ('/*LoginName*/' , 'DaysUntilExpiration') as DaysUntilExpiration,
+                            LOGINPROPERTY ('/*LoginName*/' , 'HistoryLength') as HistoryLength,
+                            LOGINPROPERTY ('/*LoginName*/' , 'IsMustChange') as IsMustChange,
+                            LOGINPROPERTY ('/*LoginName*/' , 'LockoutTime') as LockoutTime,
+                            CONVERT (varchar(514),  (LOGINPROPERTY('/*LoginName*/', 'PasswordHash')),1) as PasswordHash,
+                            LOGINPROPERTY ('/*LoginName*/' , 'PasswordLastSetTime') as PasswordLastSetTime"
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -256,7 +260,7 @@ function Get-DbaLogin {
 
                 if ($Detailed) {
                     $loginName = $serverLogin.name
-                    $query = $loginProperty.Replace('<#LoginName#>', "$loginName")
+                    $query = $loginProperty.Replace('/*LoginName*/', "$loginName")
                     $loginProperties = $server.ConnectionContext.ExecuteWithResults($query).Tables[0]
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordCount -Value $loginProperties.BadPasswordCount
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name BadPasswordTime -Value $loginProperties.BadPasswordTime

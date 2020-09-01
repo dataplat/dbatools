@@ -12,7 +12,11 @@ function Get-DbaWaitResource {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER WaitResource
         The wait resource value as supplied in sys.dm_exec_requests
@@ -69,57 +73,57 @@ function Get-DbaWaitResource {
         }
 
         try {
-            $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
             Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
         }
 
         $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):*'
-        $ResourceType = $matches.Type
-        $DbId = $matches.DbId
-        $DbName = ($server.Databases | Where-Object ID -eq $dbid).Name
-        if ($null -eq $DbName) {
-            stop-function -Message "Database with id $dbid does not exist on $server"
+        $resourceType = $matches.Type
+        $dbId = $matches.DbId
+        $dbName = ($server.Databases | Where-Object ID -eq $dbId).Name
+        if ($null -eq $dbName) {
+            stop-function -Message "Database with id $dbId does not exist on $server"
             return
         }
-        if ($ResourceType -eq 'PAGE') {
+        if ($resourceType -eq 'PAGE') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<FileID>[0-9]*):(?<PageID>[0-9]*)$'
-            $DataFileSql = "select name, physical_name from sys.master_files where database_id=$DbID and file_ID=$($matches.FileID);"
-            $DataFile = $server.query($DataFileSql)
-            if ($null -eq $DataFile) {
-                Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbname not found"
+            $dataFileSql = "select name, physical_name from sys.master_files where database_id=$dbId and file_ID=$($matches.FileID);"
+            $dataFile = $server.query($dataFileSql)
+            if ($null -eq $dataFile) {
+                Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbName not found"
                 return
             }
-            $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
+            $objectIdSql = "dbcc traceon (3604); dbcc page ($dbId,$($matches.fileID),$($matches.PageID),2) with tableresults;"
             try {
-                $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
+                $objectId = ($server.databases[$dbName].Query($objectIdSql) | Where-Object Field -eq 'Metadata: ObjectId').Value
             } catch {
                 Stop-Function -Message "You've requested a page beyond the end of the database, exiting"
                 return
             }
-            if ($null -eq $ObjectID) {
+            if ($null -eq $objectId) {
                 Write-Message -Level Warning -Message "Object not found, could have been delete, or a transcription error when copying the Wait_resource to PowerShell"
                 return
             }
-            $ObjectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectID;"
-            $Object = $server.databases[$dbname].query($ObjectSql)
-            if ($null -eq $Object) {
+            $objectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectId;"
+            $object = $server.databases[$dbName].query($objectSql)
+            if ($null -eq $object) {
                 Write-Message -Warning "Object could not be found. Could have been removed, or could be a transcription error copying the Wait_resource to sowerShell"
             }
             [PsCustomObject]@{
-                DatabaseID   = $DbId
-                DatabaseName = $DbName
-                DataFileName = $Datafile.name
-                DataFilePath = $DataFile.physical_name
-                ObjectID     = $ObjectID
-                ObjectName   = $Object.Name
-                ObjectSchema = $Object.SchemaName
-                ObjectType   = $Object.type_desc
+                DatabaseID   = $dbId
+                DatabaseName = $dbName
+                DataFileName = $dataFile.name
+                DataFilePath = $dataFile.physical_name
+                ObjectID     = $objectId
+                ObjectName   = $object.Name
+                ObjectSchema = $object.SchemaName
+                ObjectType   = $object.type_desc
             }
         }
-        if ($ResourceType -eq 'KEY') {
+        if ($resourceType -eq 'KEY') {
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) (?<physloc>\(.*\))$'
-            $IndexSql = "select
+            $indexSql = "select
                             sp.object_id as ObjectID,
                             OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName,
                             sao.name as ObjectName,
@@ -130,27 +134,27 @@ function Get-DbaWaitResource {
                         where
                             hobt_id = $($matches.frodo);
                 "
-            $Index = $server.databases[$dbname].Query($IndexSql)
-            if ($null -eq $Index) {
-                Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbname on $server"
+            $index = $server.databases[$dbName].Query($indexSql)
+            if ($null -eq $index) {
+                Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbName on $server"
                 return
             }
             $output = [PsCustomObject]@{
-                DatabaseID   = $DbId
-                DatabaseName = $DbName
-                SchemaName   = $Index.SchemaName
-                IndexName    = $Index.IndexName
+                DatabaseID   = $dbId
+                DatabaseName = $dbName
+                SchemaName   = $index.SchemaName
+                IndexName    = $index.IndexName
                 ObjectID     = $index.ObjectID
                 Objectname   = $index.ObjectName
                 HobtID       = $matches.frodo
             }
             if ($row -eq $True) {
-                $DataSql = "select * from $($Index.SchemaName).$($Index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
-                $Data = $server.databases[$dbname].query($DataSql)
+                $dataSql = "select * from $($index.SchemaName).$($index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
+                $data = $server.databases[$dbName].query($dataSql)
                 if ($null -eq $data) {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
                 } else {
-                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $data
                     $output | Select-Object * -ExpandProperty ObjectData
                 }
             } else {

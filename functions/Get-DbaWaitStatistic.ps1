@@ -25,7 +25,11 @@ function Get-DbaWaitStatistic {
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Threshold
         Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.

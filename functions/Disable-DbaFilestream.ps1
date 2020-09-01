@@ -12,7 +12,11 @@ function Disable-DbaFilestream {
         The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Login to the target server using alternative credentials.
@@ -37,6 +41,9 @@ function Disable-DbaFilestream {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Disable-DbaFilestream
 
     .EXAMPLE
         PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2
@@ -75,7 +82,7 @@ function Disable-DbaFilestream {
             3 = 'FileStream enabled for T-Sql, IO streaming, and remote clients'
         }
 
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
         foreach ($instance in $SqlInstance) {

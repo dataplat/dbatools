@@ -10,7 +10,11 @@ function Stop-DbaEndpoint {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
         Only stop specific endpoints.
@@ -57,7 +61,6 @@ function Stop-DbaEndpoint {
         PS C:\> Get-Endpoint -SqlInstance sql2017a -Endpoint endpoint1 | Stop-DbaEndpoint
 
         Stops the endpoints returned from the Get-Endpoint command.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -69,7 +72,6 @@ function Stop-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."

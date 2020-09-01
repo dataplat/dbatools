@@ -12,7 +12,11 @@ function Test-DbaEndpoint {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Endpoint
         Test only specific endpoint or endpoints.
@@ -28,6 +32,7 @@ function Test-DbaEndpoint {
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -62,7 +67,6 @@ function Test-DbaEndpoint {
         Tests all endpoints on the local default SQL Server instance.
 
         See all endpoints that were skipped due to not having a tcp listener port.
-
     #>
     [CmdletBinding()]
     param (

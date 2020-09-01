@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException', 'EncryptionAlgorithm', 'EncryptionCertificate', 'IncrementPrefix'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -46,6 +46,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
         It "Should not return object" {
             $results | Should -Be $null
+        }
+    }
+
+    Context "No database found to backup should raise warning and null output" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar
+        It "Should not return object" {
+            $results | Should -Be $null
+        }
+        It "Should return a warning" {
+            $warnvar | Should -BeLike "*No databases match the request for backups*"
         }
     }
 
@@ -181,6 +191,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Should prefix the filenames when IncrementPrefix set" {
+        $fileCount = 3
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -FileCount $fileCount -IncrementPrefix
+        It "Should have created 3 backups" {
+            $results.BackupFilesCount | Should -Be 3
+        }
+        It "Should prefix them correctly" {
+            for ($i = 1; $i -le $fileCount; $i++) {
+                $results.BackupFile[$i - 1] | Should -BeLike "$i-*"
+            }
+        }
+    }
+
     Context "Should Backup to default path if none specified" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
         $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
@@ -193,12 +216,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test backup  verification" {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "CREATE DATABASE [backuptest]"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "ALTER DATABASE [backuptest] SET RECOVERY FULL WITH NO_WAIT"
-        It -Skip "Should perform a full backup and verify it" {
-            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type full -Verify
+        It "Should perform a full backup and verify it" {
+            $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -Type full -Verify
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
+            $b.count | Should -Be 1
         }
         It -Skip "Should perform a diff backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $script:instance1 -Database backuptest -Type diff -Verify
@@ -210,7 +232,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $b.BackupComplete | Should -Be $True
             $b.Verified | Should -Be $True
         }
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query "DROP DATABASE [backuptest]"
     }
 
     Context "Backup can pipe to restore" {
@@ -293,7 +314,7 @@ go
         # Test relies on DateFormat bobob returning bobob as the values aren't interpreted, check here in case .Net rules change
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -TimeStampFormat bobob
         It "Should apply the corect custom Timestamp" {
-            ($results | Where-Object {$_.BackupPath -like '*bobob*'}).count | Should -Be $results.count
+            ($results | Where-Object { $_.BackupPath -like '*bobob*' }).count | Should -Be $results.count
         }
     }
 
@@ -304,6 +325,28 @@ go
         }
     }
 
+    Context "Test Backup Encryption with Certificate" {
+        $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
+        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
+        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak'
+        It "Should encrypt the backup" {
+            $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
+            $encBackupResults.KeyAlgorithm | Should Be "aes_128"
+        }
+        Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
+        Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -confirm:$false
+    }
+
+    # Context "Test Backup Encryption with Asymmetric Key" {
+    #     $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master -Name BackupKey
+    #     $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionKey BackupKey
+    #     It "Should encrypt the backup" {
+    #         $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
+    #         $encBackupResults.KeyAlgorithm | Should Be "aes_128"
+    #     }
+    #     remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
+    # }
 
     if ($env:azurepasswd) {
         Context "Azure works" {

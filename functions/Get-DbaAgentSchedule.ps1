@@ -10,10 +10,17 @@ function Get-DbaAgentSchedule {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Schedule
         Parameter to filter the schedules returned
+
+    .PARAMETER ScheduleUid
+        The unique identifier of the schedule
 
     .PARAMETER Id
         Parameter to filter the schedules returned
@@ -50,6 +57,11 @@ function Get-DbaAgentSchedule {
         Returns the SQL Agent Shared Schedules with the Id of 3
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance localhost, sql2016 -ScheduleUid 'bf57fa7e-7720-4936-85a0-87d279db7eb7'
+
+        Returns the SQL Agent Shared Schedules with the UID
+
+    .EXAMPLE
         PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
 
         Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
@@ -60,6 +72,7 @@ function Get-DbaAgentSchedule {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Schedule,
+        [string[]]$ScheduleUid,
         [int[]]$Id,
         [switch]$EnableException
     )
@@ -74,7 +87,7 @@ function Get-DbaAgentSchedule {
             )
 
             # Get the culture to make sure the right date and time format is displayed
-            $datetimeFormat = (Get-culture).DateTimeFormat
+            $datetimeFormat = (Get-Culture).DateTimeFormat
 
             # Set the intial description
             $description = ""
@@ -245,28 +258,36 @@ function Get-DbaAgentSchedule {
                 Stop-Function -Message "$($server.Edition) does not support SQL Server Agent. Skipping $server." -Continue
             }
 
-            if ($Schedule) {
-                $scheduleCollection = $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+            $scheduleCollection = @()
+
+            if ($Schedule -or $ScheduleUid -or $Id) {
+                if ($Schedule) {
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+                }
+
+                if ($ScheduleUid) {
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.ScheduleUid -in $ScheduleUid }
+                }
+
+                if ($Id) {
+                    $scheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Id -in $Id }
+                }
             } else {
                 $scheduleCollection = $server.JobServer.SharedSchedules
             }
 
-            if ($Id) {
-                $scheduleCollection = $scheduleCollection | Where-Object { $_.Id -in $Id }
+            $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description", "ScheduleUid"
+
+            foreach ($currentschedule in $scheduleCollection) {
+                $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
+
+                $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
+                $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
+                $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
+
+                Select-DefaultView -InputObject $currentschedule -Property $defaults
             }
-        }
-
-        $defaults = "ComputerName", "InstanceName", "SqlInstance", "Name as ScheduleName", "ActiveEndDate", "ActiveEndTimeOfDay", "ActiveStartDate", "ActiveStartTimeOfDay", "DateCreated", "FrequencyInterval", "FrequencyRecurrenceFactor", "FrequencyRelativeIntervals", "FrequencySubDayInterval", "FrequencySubDayTypes", "FrequencyTypes", "IsEnabled", "JobCount", "Description"
-
-        foreach ($currentschedule in $scheduleCollection) {
-            $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
-
-            $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
-            $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
-            $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-            $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
-
-            Select-DefaultView -InputObject $currentschedule -Property $defaults
         }
     }
 }

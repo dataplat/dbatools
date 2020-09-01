@@ -14,13 +14,17 @@ function Install-DbaWhoIsActive {
         The target SQL Server instance or instances. Server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database to install sp_WhoisActive into. This parameter is mandatory when executing this command unattended.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
+        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -37,12 +41,14 @@ function Install-DbaWhoIsActive {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AdamMechanic, WhoIsActive, SpWhoIsActive
+        Tags: Community, WhoIsActive
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        http://whoisactive.com
 
     .LINK
         https://dbatools.io/Install-DbaWhoIsActive
@@ -82,15 +88,15 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
-        if ($Force) {$ConfirmPreference = 'none'}
+        if ($Force) { $ConfirmPreference = 'none' }
 
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\spwhoisactive.zip"
+        $temp = ([System.IO.Path]::GetTempPath())
+        $zipfile = Join-Path -Path $temp -ChildPath "spwhoisactive.zip"
 
         if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
-            $baseUrl = "http://whoisactive.com/downloads"
-            $latest = ((Invoke-TlsWebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
+            $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
+            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | Where-Object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
             $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
             if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -132,8 +138,9 @@ function Install-DbaWhoIsActive {
             # Unpack
             # Unblock if there's a block
             if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-
-                Unblock-File $zipfile -ErrorAction SilentlyContinue
+                if (Test-Windows -NoWarn) {
+                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                }
                 try {
                     Expand-Archive -Path $zipfile -DestinationPath $temp -Force
                 } catch {
@@ -142,7 +149,7 @@ function Install-DbaWhoIsActive {
                 }
                 Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+            $sqlfile = (Get-ChildItem "$($temp)who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
         } else {
             $sqlfile = $LocalFile
         }
@@ -229,11 +236,6 @@ function Install-DbaWhoIsActive {
                 }
 
             }
-        }
-    }
-    end {
-        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
-            Get-Item $sqlfile | Remove-Item
         }
     }
 }

@@ -10,7 +10,11 @@ function New-DbaDbCertificate {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database where the certificate will be created. Defaults to master.
@@ -54,6 +58,9 @@ function New-DbaDbCertificate {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/New-DbaDbCertificate
 
     .EXAMPLE
         PS C:\> New-DbaDbCertificate -SqlInstance Server1

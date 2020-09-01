@@ -8,11 +8,15 @@ function Add-DbaAgReplica {
 
         Automatically creates a database mirroring endpoint if required.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
         The name of the replica. Defaults to the SQL Server instance name.
@@ -114,6 +118,11 @@ function Add-DbaAgReplica {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
@@ -162,32 +171,31 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
-                        if ($SeedingMode -eq "Automatic") {
-                            $serviceaccount = $server.ServiceAccount.Trim()
-                            $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+                    }
 
-                            if ($serviceaccount) {
-                                if ($serviceaccount.StartsWith("NT ")) {
-                                    $serviceaccount = "$saname`$"
-                                }
-                                if ($serviceaccount.StartsWith("$saname")) {
-                                    $serviceaccount = "$saname`$"
-                                }
-                                if ($serviceaccount.StartsWith(".")) {
-                                    $serviceaccount = "$saname`$"
-                                }
-                            }
+                    $serviceAccount = $server.ServiceAccount.Trim()
+                    $saName = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
 
-                            if (-not $serviceaccount) {
-                                $serviceaccount = "$saname`$"
-                            }
+                    if ($serviceAccount) {
+                        if ($serviceAccount.StartsWith("NT ")) {
+                            $serviceAccount = "$saName`$"
+                        }
+                        if ($serviceAccount.StartsWith("$saName")) {
+                            $serviceAccount = "$saName`$"
+                        }
+                        if ($serviceAccount.StartsWith(".")) {
+                            $serviceAccount = "$saName`$"
+                        }
+                    }
 
-                            if ($server.HostPlatform -ne "Linux") {
-                                if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceaccount -Permission CreateAnyDatabase
-                                    $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceaccount -Type Endpoint -Permission Connect
-                                }
-                            }
+                    if (-not $serviceAccount) {
+                        $serviceAccount = "$saName`$"
+                    }
+
+                    if ($server.HostPlatform -ne "Linux") {
+                        if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission to service account: $serviceAccount")) {
+                            $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
+                            $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
                         }
                     }
 

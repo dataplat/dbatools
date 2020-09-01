@@ -10,7 +10,11 @@ function Test-DbaLinkedServerConnection {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -51,6 +55,7 @@ function Test-DbaLinkedServerConnection {
         Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
 
     .EXAMPLE
+        PS C:\> $servers = "sql2016","sql2014","sql2012"
         PS C:\> $servers | Get-DbaLinkedServer | Test-DbaLinkedServerConnection
 
         Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
@@ -74,9 +79,8 @@ function Test-DbaLinkedServerConnection {
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
+                $linkedServerCollection = $server.LinkedServers
             }
-
-            $linkedServerCollection = $server.LinkedServers
 
             foreach ($ls in $linkedServerCollection) {
                 Write-Message -Level Verbose -Message "Testing linked server $($ls.name) on server $($ls.parent.name)"

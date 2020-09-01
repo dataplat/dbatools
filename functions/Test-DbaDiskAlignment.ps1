@@ -25,7 +25,11 @@ function Test-DbaDiskAlignment {
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
     .PARAMETER SQLCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER NoSqlCheck
         If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
@@ -125,181 +129,181 @@ function Test-DbaDiskAlignment {
                             Add-Member -Force -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
                             Add-Member -Force -MemberType noteproperty -Name Type -Value $_.Type -PassThru
                     } |
-                        Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
-                )
-                Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
-            } catch {
-                Stop-Function -Message "Can't connect to CIM on $ComputerName." -FunctionName $FunctionName -InnerErrorRecord $_
-                return
+                    Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
+            )
+            Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
+        } catch {
+            Stop-Function -Message "Can't connect to CIM on $ComputerName." -FunctionName $FunctionName -InnerErrorRecord $_
+            return
+        }
+        #endregion Retrieving partition Information
+
+        #region Retrieving Instances
+        if (-not $NoSqlCheck) {
+            Write-Message -Level Verbose -Message "Checking for SQL Services." -FunctionName $FunctionName
+            $sqlservices = Get-CimInstance -ClassName Win32_Service -CimSession $CimSession | Where-Object DisplayName -like 'SQL Server (*'
+            foreach ($service in $sqlservices) {
+                $instance = $service.DisplayName.Replace('SQL Server (', '')
+                $instance = $instance.TrimEnd(')')
+
+                $instanceName = $instance.Replace("MSSQLSERVER", "Default")
+                Write-Message -Level Verbose -Message "Found instance $instanceName" -FunctionName $FunctionName
+                if ($instance -eq 'MSSQLSERVER') {
+                    $SqlInstances += $ComputerName
+                } else {
+                    $SqlInstances += "$ComputerName\$instance"
+                }
             }
-            #endregion Retrieving partition Information
+            $sqlcount = $SqlInstances.Count
+            Write-Message -Level Verbose -Message "$sqlcount instance(s) found." -FunctionName $FunctionName
+        }
+        #endregion Retrieving Instances
 
-            #region Retrieving Instances
-            if (-not $NoSqlCheck) {
-                Write-Message -Level Verbose -Message "Checking for SQL Services." -FunctionName $FunctionName
-                $sqlservices = Get-CimInstance -ClassName Win32_Service -CimSession $CimSession | Where-Object DisplayName -like 'SQL Server (*'
-                foreach ($service in $sqlservices) {
-                    $instance = $service.DisplayName.Replace('SQL Server (', '')
-                    $instance = $instance.TrimEnd(')')
+        #region Offsets
+        foreach ($disk in $disks) {
+            if (!$disk.name.StartsWith("\\")) {
+                $diskname = $disk.Name
+                if ($NoSqlCheck -eq $false) {
+                    $sqldisk = $false
 
-                    $instancename = $instance.Replace("MSSQLSERVER", "Default")
-                    Write-Message -Level Verbose -Message "Found instance $instancename" -FunctionName $FunctionName
-                    if ($instance -eq 'MSSQLSERVER') {
-                        $SqlInstances += $ComputerName
-                    } else {
-                        $SqlInstances += "$ComputerName\$instance"
+                    foreach ($SqlInstance in $SqlInstances) {
+                        try {
+                            if ($null -ne $SqlCredential) {
+                                $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                            } else {
+                                $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance # win auth
+                            }
+                            $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+                            Write-Message -Level Verbose -Message "Query is: $sql" -FunctionName $FunctionName
+                            Write-Message -Level Verbose -Message "SQL Server is: $SqlInstance." -FunctionName $FunctionName
+                            $sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
+                            if ($sqlcount -gt 0) {
+                                $sqldisk = $true
+                                break
+                            }
+                        } catch {
+                            Stop-Function -Message "Can't connect to $ComputerName ($SqlInstance)." -FunctionName $FunctionName -InnerErrorRecord $_
+                            return
+                        }
                     }
                 }
-                $sqlcount = $SqlInstances.Count
-                Write-Message -Level Verbose -Message "$sqlcount instance(s) found." -FunctionName $FunctionName
-            }
-            #endregion Retrieving Instances
 
-            #region Offsets
-            foreach ($disk in $disks) {
-                if (!$disk.name.StartsWith("\\")) {
-                    $diskname = $disk.Name
-                    if ($NoSqlCheck -eq $false) {
-                        $sqldisk = $false
-
-                        foreach ($SqlInstance in $SqlInstances) {
-                            try {
-                                if ($null -ne $SqlCredential) {
-                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-                                } else {
-                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance # win auth
-                                }
-                                $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-                                Write-Message -Level Verbose -Message "Query is: $sql" -FunctionName $FunctionName
-                                Write-Message -Level Verbose -Message "SQL Server is: $SqlInstance." -FunctionName $FunctionName
-                                $sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-                                if ($sqlcount -gt 0) {
-                                    $sqldisk = $true
-                                    break
-                                }
-                            } catch {
-                                Stop-Function -Message "Can't connect to $ComputerName ($SqlInstance)." -FunctionName $FunctionName -InnerErrorRecord $_
-                                return
-                            }
-                        }
-                    }
-
-                    if ($NoSqlCheck -eq $false) {
-                        if ($sqldisk -eq $true) {
-                            $offsets += $disk
-                        }
-                    } else {
+                if ($NoSqlCheck -eq $false) {
+                    if ($sqldisk -eq $true) {
                         $offsets += $disk
                     }
-                }
-            }
-            #endregion Offsets
-
-            #region Processing results
-            Write-Message -Level Verbose -Message "Checking $($offsets.count) partitions." -FunctionName $FunctionName
-            foreach ($partition in $offsets) {
-                # Unfortunately "Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator."
-                # And this is the #1 most impactful issue with disk alignment :D
-                # What we can do is test common stripe unit Sizes against the Offset we have and give advice if the Offset they chose would work in those scenarios
-                $offset = $partition.StartingOffset / 1kb
-                $type = $partition.Type
-                $stripe_units = @(64, 128, 256, 512, 1024) # still wish I had a better way to verify this or someone to pat my back and say its alright.
-
-                # testing dynamic disks, everyone states that info from dynamic disks is not to be trusted, so throw a warning.
-                Write-Message -Level Verbose -Message "Testing for dynamic disks." -FunctionName $FunctionName
-                if ($type -eq "Logical Disk Manager") {
-                    $IsDynamicDisk = $true
-                    Write-Message -Level Warning -Message "Disk is dynamic, all Offset calculations should be suspect, please refer to your vendor to determine actual Offset calculations." -FunctionName $FunctionName
                 } else {
-                    $IsDynamicDisk = $false
-                }
-
-                Write-Message -Level Verbose -Message "Checking for best practices offsets." -FunctionName $FunctionName
-
-                if ($offset -ne 64 -and $offset -ne 128 -and $offset -ne 256 -and $offset -ne 512 -and $offset -ne 1024) {
-                    $IsOffsetBestPractice = $false
-                } else {
-                    $IsOffsetBestPractice = $true
-                }
-
-                # as we can't tell the actual size of the file strip unit, just check all the sizes I know about
-                foreach ($size in $stripe_units) {
-                    if ($offset % $size -eq 0) {
-                        # for proper alignment we really only need to know that your offset divided by your stripe unit size has a remainder of 0
-                        $OffsetModuloKB = "$($offset % $size)"
-                        $isBestPractice = $true
-                    } else {
-                        $OffsetModuloKB = "$($offset % $size)"
-                        $isBestPractice = $false
-                    }
-
-                    [PSCustomObject]@{
-                        ComputerName            = $ogcomputer
-                        Name                    = "$($partition.Name)"
-                        PartitonSize            = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
-                        PartitionType           = $partition.Type
-                        TestingStripeSize       = [dbasize]($size * 1024)
-                        OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
-                        StartingOffset          = [dbasize]($offset * 1024)
-                        IsOffsetBestPractice    = $IsOffsetBestPractice
-                        IsBestPractice          = $isBestPractice
-                        NumberOfBlocks          = $partition.NumberOfBlocks
-                        BootPartition           = $partition.BootPartition
-                        PartitionBlockSize      = $partition.BlockSize
-                        IsDynamicDisk           = $IsDynamicDisk
-                    }
+                    $offsets += $disk
                 }
             }
         }
-    }
+        #endregion Offsets
 
-    process {
-        # uses cim commands
+        #region Processing results
+        Write-Message -Level Verbose -Message "Checking $($offsets.count) partitions." -FunctionName $FunctionName
+        foreach ($partition in $offsets) {
+            # Unfortunately "Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator."
+            # And this is the #1 most impactful issue with disk alignment :D
+            # What we can do is test common stripe unit Sizes against the Offset we have and give advice if the Offset they chose would work in those scenarios
+            $offset = $partition.StartingOffset / 1kb
+            $type = $partition.Type
+            $stripe_units = @(64, 128, 256, 512, 1024) # still wish I had a better way to verify this or someone to pat my back and say its alright.
 
-
-        foreach ($computer in $ComputerName) {
-            $computer = $ogcomputer = $computer.ComputerName
-            Write-Message -Level VeryVerbose -Message "Processing: $computer."
-
-            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            $Computer = $computer.FullComputerName
-
-            if (-not $Computer) {
-                Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
-            }
-
-            #region Connecting to server via Cim
-            Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
-
-            if (-not $Credential) {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
+            # testing dynamic disks, everyone states that info from dynamic disks is not to be trusted, so throw a warning.
+            Write-Message -Level Verbose -Message "Testing for dynamic disks." -FunctionName $FunctionName
+            if ($type -eq "Logical Disk Manager") {
+                $IsDynamicDisk = $true
+                Write-Message -Level Warning -Message "Disk is dynamic, all Offset calculations should be suspect, please refer to your vendor to determine actual Offset calculations." -FunctionName $FunctionName
             } else {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
+                $IsDynamicDisk = $false
             }
 
-            if ($null -eq $cimsession.id) {
-                Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
+            Write-Message -Level Verbose -Message "Checking for best practices offsets." -FunctionName $FunctionName
 
-                if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
+            if ($offset -ne 64 -and $offset -ne 128 -and $offset -ne 256 -and $offset -ne 512 -and $offset -ne 1024) {
+                $IsOffsetBestPractice = $false
+            } else {
+                $IsOffsetBestPractice = $true
+            }
+
+            # as we can't tell the actual size of the file strip unit, just check all the sizes I know about
+            foreach ($size in $stripe_units) {
+                if ($offset % $size -eq 0) {
+                    # for proper alignment we really only need to know that your offset divided by your stripe unit size has a remainder of 0
+                    $OffsetModuloKB = "$($offset % $size)"
+                    $isBestPractice = $true
                 } else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
+                    $OffsetModuloKB = "$($offset % $size)"
+                    $isBestPractice = $false
                 }
-            }
 
-            if ($null -eq $cimsession.id) {
-                Stop-Function -Message "Can't create CimSession on $computer." -Target $Computer -Continue
-            }
-            #endregion Connecting to server via Cim
-
-            Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer."
-
-
-            try {
-                Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
-            } catch {
-                Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
+                [PSCustomObject]@{
+                    ComputerName            = $ogcomputer
+                    Name                    = "$($partition.Name)"
+                    PartitonSize            = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
+                    PartitionType           = $partition.Type
+                    TestingStripeSize       = [dbasize]($size * 1024)
+                    OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
+                    StartingOffset          = [dbasize]($offset * 1024)
+                    IsOffsetBestPractice    = $IsOffsetBestPractice
+                    IsBestPractice          = $isBestPractice
+                    NumberOfBlocks          = $partition.NumberOfBlocks
+                    BootPartition           = $partition.BootPartition
+                    PartitionBlockSize      = $partition.BlockSize
+                    IsDynamicDisk           = $IsDynamicDisk
+                }
             }
         }
     }
+}
+
+process {
+    # uses cim commands
+
+
+    foreach ($computer in $ComputerName) {
+        $computer = $ogcomputer = $computer.ComputerName
+        Write-Message -Level VeryVerbose -Message "Processing: $computer."
+
+        $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+        $Computer = $computer.FullComputerName
+
+        if (-not $Computer) {
+            Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
+        }
+
+        #region Connecting to server via Cim
+        Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
+
+        if (-not $Credential) {
+            $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
+        } else {
+            $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
+        }
+
+        if ($null -eq $cimsession.id) {
+            Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
+
+            if (!$Credential) {
+                $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
+            } else {
+                $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
+            }
+        }
+
+        if ($null -eq $cimsession.id) {
+            Stop-Function -Message "Can't create CimSession on $computer." -Target $Computer -Continue
+        }
+        #endregion Connecting to server via Cim
+
+        Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer."
+
+
+        try {
+            Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
+        } catch {
+            Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
+        }
+    }
+}
 }

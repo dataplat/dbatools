@@ -12,7 +12,11 @@ function Get-DbaProcess {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Spid
         Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
@@ -90,12 +94,12 @@ function Get-DbaProcess {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $sql = "SELECT DATEDIFF(MINUTE, s.last_request_end_time, GETDATE()) AS MinutesAsleep,
@@ -122,43 +126,43 @@ function Get-DbaProcess {
                 $results = $null
             }
 
-            $allsessions = @()
+            $allSessions = @()
 
             $processes = $server.EnumProcesses()
 
             if ($Login) {
-                $allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Spid) {
-                $allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Hostname) {
-                $allsessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Program) {
-                $allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allSessions.Spid }
             }
 
             if ($Database) {
-                $allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
+                $allSessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allSessions.Spid }
             }
 
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
-                $allsessions = $processes
+                $allSessions = $processes
             }
 
             if ($ExcludeSystemSpids -eq $true) {
-                $allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
+                $allSessions = $allSessions | Where-Object { $_.Spid -gt 50 }
             }
 
             if ($Exclude) {
-                $allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
+                $allSessions = $allSessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allSessions.Spid }
             }
 
-            foreach ($session in $allsessions) {
+            foreach ($session in $allSessions) {
 
                 if ($session.Status -eq "") {
                     $status = "sleeping"

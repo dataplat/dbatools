@@ -10,7 +10,11 @@ function Get-DbaDbRole {
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -104,6 +108,9 @@ function Get-DbaDbRole {
         }
 
         foreach ($db in $InputObject) {
+            if ($db.IsAccessible -eq $false) {
+                continue
+            }
             $server = $db.Parent
             Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $server"
 

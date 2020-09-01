@@ -12,7 +12,11 @@ function Export-DbaCredential {
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
@@ -48,6 +52,9 @@ function Export-DbaCredential {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Export-DbaCredential
+
     .EXAMPLE
         PS C:\> Export-DbaCredential -SqlInstance sql2017 -Path C:\temp\cred.sql
 
@@ -72,7 +79,7 @@ function Export-DbaCredential {
     begin {
         $null = Test-ExportDirectory -Path $Path
         $serverArray = @()
-        $credentialArray = @{}
+        $credentialArray = @{ }
         $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {
