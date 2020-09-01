@@ -560,7 +560,7 @@ function Import-DbaCsv {
                                 try {
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
                                     $ColumnMapping = @{ }
-                                    $firstline -split $Delimiter | ForEach-Object {
+                                    $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
                                         $ColumnMapping.Add($_, $_)
                                     }
                                     $ColumnMap += $ColumnMapping
