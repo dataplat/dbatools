@@ -88,7 +88,7 @@ function New-DbaAvailabilityGroup {
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
 
     .PARAMETER UseLastBackup
-        Use the last full backup of database.
+        Use the last full and log backup of database. A log backup must be the last backup.
 
     .PARAMETER Force
         Drop and recreate the database on remote servers using fresh backup.
@@ -636,14 +636,14 @@ function New-DbaAvailabilityGroup {
                     }
                 }
                 if ($Database) {
-                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
+                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -UseLastBackup:$UseLastBackup -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
                 }
             }
 
             if (-not $Database -or (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database)) {
                 $dbdone = $true
             } else {
-                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
+                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -UseLastBackup:$UseLastBackup -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
                 $dbwait++
                 Start-Sleep -Seconds 1
             }
