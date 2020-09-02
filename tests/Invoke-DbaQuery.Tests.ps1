@@ -29,6 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         } catch {
             $null = 1
         }
+        Remove-Item ".\hellorelative.sql" -ErrorAction SilentlyContinue
     }
     It "supports pipable instances" {
         $results = $script:instance2, $script:instance3 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
@@ -132,14 +133,14 @@ SELECT @@servername as dbname
         PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SELECT 'hello' AS TestColumn
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
         $results = @()
@@ -163,14 +164,14 @@ SELECT @@servername as dbname
         PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
         SELECT 'hello' AS TestColumn
-        WAITFOR DELAY '00:00:03'
+        WAITFOR DELAY '00:00:01'
         PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
         $results = @()
@@ -186,5 +187,14 @@ SELECT @@servername as dbname
     It "Executes stored procedures with parameters" {
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{p1 = 1 } -CommandType StoredProcedure
         $results.TestColumn | Should Be 1
+    }
+    It "Executes script file with a relative path (see #6184)" {
+        Set-Content -Path ".\hellorelative.sql" -Value "Select 'hello' as TestColumn, DB_NAME() as dbname"
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File ".\hellorelative.sql"
+        foreach ($result in $results) {
+            $result.TestColumn | Should -Be 'hello'
+        }
+        'tempdb' | Should -Bein $results.dbname
+
     }
 }
