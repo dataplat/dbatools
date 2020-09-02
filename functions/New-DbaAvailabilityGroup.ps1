@@ -339,7 +339,7 @@ function New-DbaAvailabilityGroup {
         }
 
         if ($requirementsFailed) {
-            Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
+            Stop-Function -Message "Requirements are not completly met, so stopping here. See warning messages for details."
             return
         }
 
