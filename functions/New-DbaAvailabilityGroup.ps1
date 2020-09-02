@@ -547,7 +547,11 @@ function New-DbaAvailabilityGroup {
                     # join replicas to ag
                     Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+                    $msg = $_.Exception.InnerException.InnerException.Message
+                    if (-not $msg) {
+                        $msg = $_
+                    }
+                    Stop-Function -Message $msg -ErrorRecord $_ -Target $second -Continue
                 }
             }
         }
