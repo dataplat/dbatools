@@ -496,7 +496,11 @@ function New-DbaAvailabilityGroup {
                     # Add replicas
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+                    $msg = $_.Exception.InnerException.InnerException.Message
+                    if (-not $msg) {
+                        $msg = $_
+                    }
+                    Stop-Function -Message $msg -ErrorRecord $_ -Target $second -Continue
                 }
             }
         }
