@@ -258,7 +258,7 @@ function Get-DbaAgBackupHistory {
                     }
                     $null = $PSBoundParameters.Remove('SqlInstance')
                     $null = $PSBoundParameters.Remove('Database')
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupListener -Database $adb.Name @PSBoundParameters
+                    $AgLoopResults = Get-DbaAgBackupHistory -SqlInstance $AvailabilityGroupListener -Database $adb.Name @PSBoundParameters
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     Foreach ($agr in $AgLoopResults) {
                         $agr.AvailabilityGroupName = $AvailabilityGroupName
