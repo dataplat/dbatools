@@ -269,6 +269,9 @@ function Get-DbaAgBackupHistory {
                     $databases = $databases | Where-Object Name -NE $adb.name
                 }
             }
+
+            $null = $PSBoundParameters.Remove('SqlInstance')
+            Get-DbaDbBackupHistory -SqlInstance $server @PSBoundParameters -AgCheck
         }
     }
 }
