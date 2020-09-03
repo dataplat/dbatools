@@ -34,17 +34,19 @@ function Copy-DbaDbViewData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER View
-        Specify a view to use as a source. You can specify a two-part name or a three-part name such as db.sch.vw.
-        If the object has special characters please wrap them in square brackets [ ].
-        Example: [SampleDB].[First].[View] will try to find the view named 'View' in the schema 'First' and the database 'SampleDB'.
+        Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
+
+        If the object has special characters please wrap them in square brackets.
 
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of View
 
     .PARAMETER Query
-        Define a query to use as a source. Note: 3 or 4 part object names may be used as described in https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transact-sql-syntax-conventions-transact-sql
-        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
-        Note: Even when the -Query param is used a valid -Table or -View must be specified. This is due to the workflow used in the command.
+        Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)
+        Ensure to select all required columns.
+        Calculated Columns or columns with default values may be excluded.
+
+        Note: The workflow in the command requires that a valid -Table or -View parameter value be specified.
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
@@ -112,12 +114,12 @@ function Copy-DbaDbViewData {
     .EXAMPLE
         PS C:\> Copy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View dbo.test_view
 
-        Copies all the data from view dbo.test_view in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.
+        Copies all the data from view dbo.test_view (2-part name) in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.
 
     .EXAMPLE
         PS C:\> Copy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -DestinationTable [Schema].[test table]
 
-        Copies all the data from view [Schema].[test view] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2
+        Copies all the data from view [Schema].[test view] (2-part name) in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2
 
     .EXAMPLE
         PS C:\> Get-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -DestinationTable tb3
@@ -169,8 +171,8 @@ function Copy-DbaDbViewData {
         PS C:\> Copy-DbaDbViewData @params
 
         Copies data returned from the query on server1 into the AdventureWorks2017 on server1.
+        This query uses a 3-part name to reference the object in the query value, it will try to find the view named "Person" in the schema "Person" and database "OtherDb".
         Copy is processed in BatchSize of 10000 rows. See the -Query param documentation for more details.
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
