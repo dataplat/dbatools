@@ -217,7 +217,7 @@ function Get-DbaUserPermission {
 
                 $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
                 $sql = [System.IO.File]::ReadAllText("$sqlFile")
-                $sql = $sql.Replace("<TARGETDB>", ('[' + $db.Name + ']'))
+                $sql = $sql.Replace("<TARGETDB>", $db.Name)
 
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
