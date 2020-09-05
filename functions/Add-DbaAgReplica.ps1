@@ -35,6 +35,13 @@ function Add-DbaAgReplica {
 
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
+    .PARAMETER EndpointUrl
+        By default, the property Fqdn of the database mirroring endpoint is used as EndpointUrl.
+
+        Use EndpointUrl if a different URL is required due to special network configurations.
+        EndpointUrl has to be in format 'TCP://system-address:port'.
+        See details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
+
     .PARAMETER Passthru
         Don't create the replica, just pass thru an object that can be further customized before creation.
 
@@ -92,6 +99,11 @@ function Add-DbaAgReplica {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
 
         Adds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -EndpointUrl 'TCP://sql2017b.specialnet.local:5022'
+
+        Adds sql2017b to the SharePoint availability group on sql2017a with a custom endpoint URL.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -110,6 +122,7 @@ function Add-DbaAgReplica {
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
         [string]$Endpoint,
+        [string]$EndpointUrl,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
@@ -120,6 +133,11 @@ function Add-DbaAgReplica {
     process {
         if (Test-Bound -Not SqlInstance, InputObject) {
             Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
+        if ($EndpointUrl -and ($EndpointUrl -notmatch 'TCP://.+:\d+')) {
+            Stop-Function -Message "EndpointUrl not in correct format 'TCP://system-address:port'"
             return
         }
 
@@ -156,7 +174,11 @@ function Add-DbaAgReplica {
             if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $Name
-                    $replica.EndpointUrl = $ep.Fqdn
+                    if ($EndpointUrl) {
+                        $replica.EndpointUrl = $EndpointUrl
+                    } else {
+                        $replica.EndpointUrl = $ep.Fqdn
+                    }
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
                     if ($server.EngineEdition -ne "Standard") {
