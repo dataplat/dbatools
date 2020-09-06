@@ -192,7 +192,7 @@ function Get-DbaAgBackupHistory {
             }
             $AgResults = @()
             $ProcessedAgDatabases = @()
-            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+            if ($server.AvailabilityGroups.Count -gt 0) {
                 $agShortInstance = $instance.FullName.split('.')[0]
                 if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
                     # We have a listener passed in, just query the dbs specified or all in the AG
@@ -200,7 +200,7 @@ function Get-DbaAgBackupHistory {
                     $null = $PSBoundParameters.Remove('IncludeCopyOnly')
                     Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
                     $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -AgCheck -IncludeCopyOnly
+                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -IncludeCopyOnly
                     $AvailabilityGroupName = $AvailabilityGroupBase.name
                     Foreach ($agr in $AgLoopResults) {
                         $agr.AvailabilityGroupName = $AvailabilityGroupName
@@ -242,7 +242,7 @@ function Get-DbaAgBackupHistory {
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            if (($server.AvailabilityGroups.count -gt 0) -and ($agCheck -ne $True)) {
+            if ($server.AvailabilityGroups.Count -gt 0) {
                 $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
                 $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
                 ForEach ($adb in $adbs) {
@@ -271,7 +271,7 @@ function Get-DbaAgBackupHistory {
             }
 
             $null = $PSBoundParameters.Remove('SqlInstance')
-            Get-DbaDbBackupHistory -SqlInstance $server @PSBoundParameters -AgCheck
+            Get-DbaDbBackupHistory -SqlInstance $server @PSBoundParameters
         }
     }
 }

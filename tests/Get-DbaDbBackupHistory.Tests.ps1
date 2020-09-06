@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeCopyOnly', 'Force', 'Since', 'RecoveryFork', 'Last', 'LastFull', 'LastDiff', 'LastLog', 'DeviceType', 'Raw', 'LastLsn', 'Type', 'EnableException', 'IncludeMirror', 'AgCheck'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeCopyOnly', 'Force', 'Since', 'RecoveryFork', 'Last', 'LastFull', 'LastDiff', 'LastLog', 'DeviceType', 'Raw', 'LastLsn', 'Type', 'EnableException', 'IncludeMirror'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -22,10 +22,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
         $dbnameForked = "dbatoolsci_history_forked_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname,$dbnameForked | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
         $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked")
+        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname,$dbnameForked | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Get last history for single database" {
