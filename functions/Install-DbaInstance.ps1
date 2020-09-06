@@ -53,6 +53,7 @@ function Install-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'
         If the protocol fails to establish a connection
 
         Defaults:
@@ -62,12 +63,36 @@ function Install-DbaInstance {
 
     .PARAMETER Version
         SQL Server version you wish to install.
+        This is the year version (e.g. "2008R2", "2017", "2019")
 
     .PARAMETER InstanceName
         Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
 
     .PARAMETER Feature
-        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components.
+        Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components. Full list of features:
+
+        Default
+        All
+        Engine
+        Tools
+        Replication
+        FullText
+        DataQuality
+        PolyBase
+        MachineLearning
+        AnalysisServices
+        ReportingServices
+        ReportingForSharepoint
+        SharepointAddin
+        IntegrationServices
+        MasterDataServices
+        PythonPackages
+        RPackages
+        ReplayController
+        ReplayClient
+        SDK
+        BIDS
+        SSMS
 
     .PARAMETER InstancePath
         Root folder for instance components. Includes SQL Server logs, system databases, etc.
@@ -138,7 +163,7 @@ function Install-DbaInstance {
         Restart computer automatically if a restart is required before or after the installation.
 
     .PARAMETER AuthenticationMode
-        Chooses between Mixed and Windows authentication.
+        Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -584,13 +609,19 @@ function Install-DbaInstance {
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($canonicVersion -ge '13.0') {
+            if ($canonicVersion -ge '13.0' -and (-Not $configNode.SQLTEMPDBFILECOUNT)) {
                 # configure the number of cores
-                [int]$cores = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
+                # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
+                try {
+                    [int]$cores = $cpuInfo | Measure-Object NumberOfLogicalProcessors -Sum -ErrorAction Stop | Select-Object -ExpandProperty sum
+                } catch {
+                    [int]$cores = $cpuInfo | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                }
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                if ($cores) {
+                if ($cores -and $configNode.ACTION -ne "AddNode") {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
             }

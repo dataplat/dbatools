@@ -100,17 +100,17 @@ function Get-DbaDbRestoreHistory {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $computername = $server.ComputerName
-                $instancename = $server.ServiceName
+                $instanceName = $server.ServiceName
                 $servername = $server.DomainInstanceName
 
                 if ($force -eq $true) {
                     $select = "SELECT '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance], * "
                 } else {
                     $select = "SELECT
                     '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance],
                      rsh.destination_database_name AS [Database],
                      --rsh.restore_history_id as RestoreHistoryID,

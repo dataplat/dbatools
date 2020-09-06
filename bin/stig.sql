@@ -66,9 +66,9 @@ USE tempdb;
                 R.name  AS [Role],
                 M.name  AS [Member]
             FROM
-                <TARGETDB>.sys.database_role_members X
-                INNER JOIN <TARGETDB>.sys.database_principals R ON R.principal_id = X.role_principal_id
-                INNER JOIN <TARGETDB>.sys.database_principals M ON M.principal_id = X.member_principal_id
+                [<TARGETDB>].sys.database_role_members X
+                INNER JOIN [<TARGETDB>].sys.database_principals R ON R.principal_id = X.role_principal_id
+                INNER JOIN [<TARGETDB>].sys.database_principals M ON M.principal_id = X.member_principal_id
             ;
             GO
 
@@ -315,103 +315,103 @@ USE tempdb;
                     ELSE '<QUOTETARGETDB>.sys.database_permissions'
                 END                 AS [Source View]
             FROM
-                <TARGETDB>.sys.database_permissions DP
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P1
+                [<TARGETDB>].sys.database_permissions DP
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P1
                     ON  P1.principal_id = DP.grantee_principal_id
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P2
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P2
                     ON  P2.principal_id = DP.grantor_principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.databases DB
+                FULL OUTER JOIN [<TARGETDB>].sys.databases DB
                     ON  DB.database_id = db_id(db_name(DP.major_id))
                     AND DP.class_desc = 'DATABASE'
-                LEFT OUTER JOIN <TARGETDB>.sys.server_principals PS
+                LEFT OUTER JOIN [<TARGETDB>].sys.server_principals PS
                     ON  PS.sid = DB.owner_sid
 
-                FULL OUTER JOIN <TARGETDB>.sys.all_objects OB
+                FULL OUTER JOIN [<TARGETDB>].sys.all_objects OB
                     ON  DP.major_id   = OB.[object_id]
                     AND DP.class_desc = 'OBJECT_OR_COLUMN'
-                LEFT OUTER JOIN <TARGETDB>.sys.all_columns CM
+                LEFT OUTER JOIN [<TARGETDB>].sys.all_columns CM
                     ON  CM.[object_id] = DP.major_id
                     AND CM.[column_id] = DP.minor_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.schemas SC
+                FULL OUTER JOIN [<TARGETDB>].sys.schemas SC
                     ON  DP.major_id   = SC.[schema_id]
                     AND DP.class_desc = 'SCHEMA'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P3
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P3
                     ON  P3.principal_id = SC.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.database_principals PR
+                FULL OUTER JOIN [<TARGETDB>].sys.database_principals PR
                     ON  DP.major_id   = PR.principal_id
                     AND DP.class_desc = 'DATABASE_PRINCIPAL'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals PE
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals PE
                     ON  PE.principal_id = PR.owning_principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.assemblies AY
+                FULL OUTER JOIN [<TARGETDB>].sys.assemblies AY
                     ON  DP.major_id   = AY.assembly_id
                     AND DP.class_desc = 'ASSEMBLY'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P4
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P4
                     ON  P4.principal_id = AY.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.types TP
+                FULL OUTER JOIN [<TARGETDB>].sys.types TP
                     ON  DP.major_id   = TP.user_type_id
                     AND DP.class_desc = 'TYPE'
 
-                FULL OUTER JOIN <TARGETDB>.sys.xml_schema_collections XS
+                FULL OUTER JOIN [<TARGETDB>].sys.xml_schema_collections XS
                     ON  DP.major_id   = XS.xml_collection_id
                     AND DP.class_desc = 'XML_SCHEMA_COLLECTION'
 
-                FULL OUTER JOIN <TARGETDB>.sys.service_message_types MT
+                FULL OUTER JOIN [<TARGETDB>].sys.service_message_types MT
                     ON  DP.major_id   = MT.message_type_id
                     AND DP.class_desc = 'MESSAGE_TYPE'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P5
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P5
                     ON  P5.principal_id = MT.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.service_contracts VC
+                FULL OUTER JOIN [<TARGETDB>].sys.service_contracts VC
                     ON  DP.major_id   = VC.service_contract_id
                     AND DP.class_desc = 'SERVICE_CONTRACT'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P6
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P6
                     ON  P6.principal_id = VC.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.services SV
+                FULL OUTER JOIN [<TARGETDB>].sys.services SV
                     ON  DP.major_id   = SV.service_id
                     AND DP.class_desc = 'SERVICE'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P7
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P7
                     ON  P7.principal_id = SV.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.remote_service_bindings RS
+                FULL OUTER JOIN [<TARGETDB>].sys.remote_service_bindings RS
                     ON  DP.major_id   = RS.remote_service_binding_id
                     AND DP.class_desc = 'REMOTE_SERVICE_BINDING'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P8
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P8
                     ON  P8.principal_id = RS.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.routes RT
+                FULL OUTER JOIN [<TARGETDB>].sys.routes RT
                     ON  DP.major_id   = RT.route_id
                     AND DP.class_desc = 'ROUTE'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals P9
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals P9
                     ON  P9.principal_id = RT.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.fulltext_catalogs FT
+                FULL OUTER JOIN [<TARGETDB>].sys.fulltext_catalogs FT
                     ON  DP.major_id   = FT.fulltext_catalog_id
                     AND DP.class_desc = 'FULLTEXT_CATALOG'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals PA
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals PA
                     ON  PA.principal_id = FT.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.symmetric_keys SK
+                FULL OUTER JOIN [<TARGETDB>].sys.symmetric_keys SK
                     ON  DP.major_id   = SK.symmetric_key_id
                     AND DP.class_desc = 'SYMMETRIC_KEY'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals PB
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals PB
                     ON  PB.principal_id = SK.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.asymmetric_keys AK
+                FULL OUTER JOIN [<TARGETDB>].sys.asymmetric_keys AK
                     ON  DP.major_id   = AK.asymmetric_key_id
                     AND DP.class_desc = 'ASYMMETRIC_KEY'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals PC
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals PC
                     ON  PC.principal_id = AK.principal_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.certificates CT
+                FULL OUTER JOIN [<TARGETDB>].sys.certificates CT
                     ON  DP.major_id   = CT.certificate_id
                     AND DP.class_desc = 'CERTIFICATE'
-                LEFT OUTER JOIN <TARGETDB>.sys.database_principals PD
+                LEFT OUTER JOIN [<TARGETDB>].sys.database_principals PD
                     ON  PD.principal_id = CT.principal_id
             ;
             GO
@@ -549,9 +549,9 @@ USE tempdb;
                 R.name    AS [Role],
                 M.name    AS [Member]
             FROM
-                <TARGETDB>.sys.server_role_members X
-                INNER JOIN <TARGETDB>.sys.server_principals R ON R.principal_id = X.role_principal_id
-                INNER JOIN <TARGETDB>.sys.server_principals M ON M.principal_id = X.member_principal_id
+                [<TARGETDB>].sys.server_role_members X
+                INNER JOIN [<TARGETDB>].sys.server_principals R ON R.principal_id = X.role_principal_id
+                INNER JOIN [<TARGETDB>].sys.server_principals M ON M.principal_id = X.member_principal_id
             ;
             GO
 
@@ -697,21 +697,21 @@ USE tempdb;
                     ELSE 'sys.server_permissions'
                 END                 AS [Source View]
             FROM
-                <TARGETDB>.sys.server_permissions SP
-                INNER JOIN <TARGETDB>.sys.server_principals P1
+                [<TARGETDB>].sys.server_permissions SP
+                INNER JOIN [<TARGETDB>].sys.server_principals P1
                     ON P1.principal_id = SP.grantee_principal_id
-                INNER JOIN <TARGETDB>.sys.server_principals P2
+                INNER JOIN [<TARGETDB>].sys.server_principals P2
                     ON P2.principal_id = SP.grantor_principal_id
 
                 FULL OUTER JOIN sys.servers S
                     ON  SP.class_desc = 'SERVER'
                     AND S.server_id = SP.major_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.endpoints E
+                FULL OUTER JOIN [<TARGETDB>].sys.endpoints E
                     ON  SP.class_desc = 'ENDPOINT'
                     AND E.endpoint_id = SP.major_id
 
-                FULL OUTER JOIN <TARGETDB>.sys.server_principals P
+                FULL OUTER JOIN [<TARGETDB>].sys.server_principals P
                     ON  SP.class_desc = 'SERVER_PRINCIPAL'
                     AND P.principal_id = SP.major_id
             ;

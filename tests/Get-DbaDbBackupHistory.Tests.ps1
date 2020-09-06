@@ -21,19 +21,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $dbnameForked = "dbatoolsci_history_forked_$random"
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Get last history for single database" {
@@ -103,6 +106,37 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $cast = $server.Query('select cast(1000000000000000 as numeric(20,0)) AS TotalSize')
             $historyObject.TotalSize = $cast.TotalSize
             ($historyObject.TotalSize.Byte) | Should -Be 1000000000000000
+        }
+    }
+
+    Context "Testing LastFull regression test for #6730" {
+        It "gathers the last full even in a forked scenario" {
+            $dbname = $dbnameForked
+            $database = $server.Databases[$dbname]
+
+            $database.ExecuteNonQuery("CREATE TABLE dbo.test (x char(1000) default 'x')")
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+            1 .. 100 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+            1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+            1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+            1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+
+            $interResults = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End
+            # create a fork restoring from the second backup sorted by date
+            $null = $interResults[1] | Restore-DbaDatabase -SqlInstance $server -WithReplace
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
+
+            $allHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End -Descending
+            $lastFull = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname -LastFull
+
+            $allHistory[0].End | Should -Be $lastFull.End
+            $allHistory[0].LastRecoveryForkGUID | Should -Be $lastFull.LastRecoveryForkGUID
+            $allHistory[0].FirstLsn | Should -Be $lastFull.FirstLsn
+
         }
     }
 }

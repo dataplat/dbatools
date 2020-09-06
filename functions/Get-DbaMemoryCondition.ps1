@@ -53,44 +53,59 @@ function Get-DbaMemoryCondition {
     )
 
     begin {
-        $sql = "SELECT CONVERT (varchar(30), GETDATE(), 121) as Runtime,
-    DATEADD (ms, -1 * (sys.ms_ticks - a.[RecordTime]), GETDATE()) AS NotificationTime,
-    [NotificationType],
-    [MemoryUtilizationPercent],
-    [TotalPhysicalMemoryKB],
-    [AvailablePhysicalMemoryKB],
-    [TotalPageFileKB],
-    [AvailablePageFileKB],
-    [TotalVirtualAddressSpaceKB],
-    [AvailableVirtualAddressSpaceKB],
-    [NodeId],
-    [SQLReservedMemoryKB],
-    [SQLCommittedMemoryKB],
-    [RecordId],
-    [Type],
-    [Indicators],
-    [RecordTime],
-    sys.ms_ticks AS [CurrentTime]
+        $sql = "
+    SELECT
+        CONVERT (varchar(30), GETDATE(), 121) as Runtime,
+        DATEADD (MILLISECOND, -1 * Convert(INT, (sys.ms_ticks - sys.s_ticks*1000) - (a.[RecordTime] - a.[RecordTime_S]*1000)), DATEADD (SECOND, -1 * (sys.s_ticks - a.[RecordTime_S]), GETDATE())) AS NotificationTime,
+        [NotificationType],
+        [MemoryUtilizationPercent],
+        [TotalPhysicalMemoryKB],
+        [AvailablePhysicalMemoryKB],
+        [TotalPageFileKB],
+        [AvailablePageFileKB],
+        [TotalVirtualAddressSpaceKB],
+        [AvailableVirtualAddressSpaceKB],
+        [NodeId],
+        [SQLReservedMemoryKB],
+        [SQLCommittedMemoryKB],
+        [RecordId],
+        [Type],
+        [Indicators],
+        [RecordTime],
+        sys.ms_ticks AS [CurrentTime]
     FROM
-    (SELECT x.value('(//Record/ResourceMonitor/Notification)[1]', 'varchar(30)') AS [NotificationType],
-    x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'bigint') AS [MemoryUtilizationPercent],
-    x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'bigint') AS [TotalPhysicalMemoryKB],
-    x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'bigint') AS [AvailablePhysicalMemoryKB],
-    x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'bigint') AS [TotalPageFileKB],
-    x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'bigint') AS [AvailablePageFileKB],
-    x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'bigint') AS [TotalVirtualAddressSpaceKB],
-    x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'bigint') AS [AvailableVirtualAddressSpaceKB],
-    x.value('(//Record/MemoryNode/@id)[1]', 'bigint') AS [NodeId],
-    x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'bigint') AS [SQLReservedMemoryKB],
-    x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'bigint') AS [SQLCommittedMemoryKB],
-    x.value('(//Record/@id)[1]', 'bigint') AS [RecordId],
-    x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type],
-    x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators],
-    x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime]
-    FROM (SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers
-    WHERE ring_buffer_type = 'RING_BUFFER_RESOURCE_MONITOR') AS R(x)) a
-CROSS JOIN sys.dm_os_sys_info sys
-ORDER BY a.[RecordTime] ASC"
+    (
+        SELECT
+            x.value('(//Record/ResourceMonitor/Notification)[1]', 'varchar(30)') AS [NotificationType],
+            x.value('(//Record/MemoryRecord/MemoryUtilization)[1]', 'bigint') AS [MemoryUtilizationPercent],
+            x.value('(//Record/MemoryRecord/TotalPhysicalMemory)[1]', 'bigint') AS [TotalPhysicalMemoryKB],
+            x.value('(//Record/MemoryRecord/AvailablePhysicalMemory)[1]', 'bigint') AS [AvailablePhysicalMemoryKB],
+            x.value('(//Record/MemoryRecord/TotalPageFile)[1]', 'bigint') AS [TotalPageFileKB],
+            x.value('(//Record/MemoryRecord/AvailablePageFile)[1]', 'bigint') AS [AvailablePageFileKB],
+            x.value('(//Record/MemoryRecord/TotalVirtualAddressSpace)[1]', 'bigint') AS [TotalVirtualAddressSpaceKB],
+            x.value('(//Record/MemoryRecord/AvailableVirtualAddressSpace)[1]', 'bigint') AS [AvailableVirtualAddressSpaceKB],
+            x.value('(//Record/MemoryNode/@id)[1]', 'bigint') AS [NodeId],
+            x.value('(//Record/MemoryNode/ReservedMemory)[1]', 'bigint') AS [SQLReservedMemoryKB],
+            x.value('(//Record/MemoryNode/CommittedMemory)[1]', 'bigint') AS [SQLCommittedMemoryKB],
+            x.value('(//Record/@id)[1]', 'bigint') AS [RecordId],
+            x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type],
+            x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators],
+            x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime],
+            Convert(int, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
+        FROM
+        (
+            SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers
+            WHERE ring_buffer_type = 'RING_BUFFER_RESOURCE_MONITOR'
+        ) AS R(x)
+    ) a
+    CROSS JOIN
+    (
+        SELECT
+            ms_ticks,
+            convert(bigint, ms_ticks/1000) as s_ticks
+        FROM sys.dm_os_sys_info
+    ) sys
+    ORDER BY a.[RecordTime] ASC"
     }
     process {
         foreach ($instance in $SqlInstance) {

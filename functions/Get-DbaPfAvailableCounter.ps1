@@ -70,7 +70,7 @@ function Get-DbaPfAvailableCounter {
         [switch]$EnableException
     )
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
             Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
 
@@ -93,10 +93,10 @@ process {
 
         try {
             if ($pattern) {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $credential -ErrorAction Stop |
                     Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
             } else {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $credential -ErrorAction Stop |
                     Select-DefaultView -ExcludeProperty Credential
             }
         } catch {

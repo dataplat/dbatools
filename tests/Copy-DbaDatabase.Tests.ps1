@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'SharedPath', 'AzureCredential', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'SharedPath', 'AzureCredential', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException', 'KeepCDC', 'KeepReplication'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -20,6 +20,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
+        $supportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
 
         $server = Connect-DbaInstance -SqlInstance $script:instance3
@@ -29,10 +30,23 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        foreach ($db in $supportDbs) {
+            $server.Query("CREATE DATABASE [$db]; ALTER DATABASE [$db] SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE;")
+        }
         $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $supportDbs
+    }
+
+    Context "Support databases are excluded when AllDatabase selected" {
+        $SupportDbs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
+        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -AllDatabase -BackupRestore -UseLastBackup
+
+        It "Support databases should not be migrated" {
+            $SupportDbs | Should -Not -BeIn $results.Name
+        }
     }
 
     # if failed Disable-NetFirewallRule -DisplayName 'Core Networking - Group Policy (TCP-Out)'
@@ -238,16 +252,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             }
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
             It "Should Copy $backuprestoredb via Azure legacy credentials" {
-                $results[0].Name  | Should -Be $backuprestoredb
-                $results[0].Status  | Should -BeLike 'Successful*'
+                $results[0].Name | Should -Be $backuprestoredb
+                $results[0].Status | Should -BeLike 'Successful*'
             }
             # Because I think the backup are tripping over each other with the names
             Start-Sleep -Seconds 60
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob
             It "Should Copy $backuprestoredb via Azure new credentials" {
-                $results[0].Name  | Should -Be $backuprestoredb
+                $results[0].Name | Should -Be $backuprestoredb
                 $results[0].DestinationDatabase | Should -Be 'djkhgfkjghfdjgd'
-                $results[0].Status  | Should -BeLike 'Successful*'
+                $results[0].Status | Should -BeLike 'Successful*'
             }
         }
     }

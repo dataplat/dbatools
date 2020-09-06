@@ -95,7 +95,7 @@ function Get-DbaPermission {
                         , [PermState] = state_desc
                         , [PermissionName] = permission_name
                         , [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
-                        , [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
+                        , [Securable] = CASE    WHEN class = 100 THEN @@SERVERNAME
                                                 WHEN class = 105 THEN OBJECT_NAME(major_id)
                                                 ELSE OBJECT_NAME(major_id)
                                                 END
@@ -103,6 +103,7 @@ function Get-DbaPermission {
                         , [GranteeType] = pr.type_desc
                         , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
                         , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
+                            + CASE WHEN sp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.server_permissions sp
                         JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
                         LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
@@ -110,7 +111,7 @@ function Get-DbaPermission {
                     $ExcludeSystemObjectssql
 
                     UNION ALL
-                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                    SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                             , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                             , SERVERPROPERTY('ServerName') AS SqlInstance
                             , [database] = ''
@@ -149,7 +150,7 @@ function Get-DbaPermission {
                     , [PermState] = state_desc
                     , [PermissionName] = permission_name
                     , [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
-                    , [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
+                    , [Securable] = CASE    WHEN class = 0 THEN DB_NAME()
                                             WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
                                             WHEN class = 3 THEN SCHEMA_NAME(major_id)
                                             WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
@@ -158,6 +159,7 @@ function Get-DbaPermission {
                     , [GranteeType] = pr.type_desc
                     , [RevokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
                     , [GrantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                        + CASE WHEN dp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.database_permissions dp
                     JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
                     LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
@@ -167,7 +169,7 @@ function Get-DbaPermission {
                 $ExcludeSystemObjectssql
 
                 UNION ALL
-                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                         , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                         , SERVERPROPERTY('ServerName') AS SqlInstance
                         , [database] = DB_NAME()

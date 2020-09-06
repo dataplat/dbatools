@@ -59,6 +59,16 @@ function Invoke-DbatoolsFormatter {
             }
 
             $content = Get-Content -Path $realPath -Raw -Encoding UTF8
+            if ($OSEOL -eq "`r`n") {
+                # See #5830, we are in Windows territory here
+                # Is the file containing at least one `r ?
+                $containsCR = ($content -split "`r").Length -gt 1
+                if (-not($containsCR)) {
+                    # If not, maybe even on Windows the user is using Unix-style endings, which are supported
+                    $OSEOL = "`n"
+                }
+            }
+
             #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
             try {

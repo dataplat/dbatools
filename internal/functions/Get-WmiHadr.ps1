@@ -19,15 +19,15 @@ function Get-WmiHadr {
             }
 
             if ($null -eq $currentState.IsHadrEnabled) {
-                $isenabled = $false
+                $isEnabled = $false
             } else {
-                $isenabled = $currentState.IsHadrEnabled
+                $isEnabled = $currentState.IsHadrEnabled
             }
             [PSCustomObject]@{
                 ComputerName  = $computer
                 InstanceName  = $instanceName
                 SqlInstance   = $instance.FullName
-                IsHadrEnabled = $isenabled
+                IsHadrEnabled = $isEnabled
             }
         }
     }

@@ -46,6 +46,9 @@ function Export-DbaUser {
     .PARAMETER Passthru
         Output script to console, useful with | clip
 
+    .PARAMETER Template
+        Script user as a templated string that contains tokens {templateUser} and {templateLogin} instead of username and login
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -76,27 +79,32 @@ function Export-DbaUser {
         https://dbatools.io/Export-DbaUser
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sql2005 -Path C:\temp\sql2005-users.sql
+        PS C:\> Export-DbaUser -SqlInstance sql2005 -FilePath C:\temp\sql2005-users.sql
 
         Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\temp\users.sql -Append
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\temp\users.sql -Append
 
         Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
-        Exports ONLY users User1 and User2 from sqlserver2014a to the file  C:\temp\users.sql
+        Exports ONLY users User1 and User2 from sqlserver2014a to the file C:\temp\users.sql
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp
+
+        Exports ONLY users User1 and User2 from sqlserver2014a to the folder C:\temp. One file per user will be generated
+
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
         Exports user User1 from sqlserver2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
 
@@ -104,15 +112,20 @@ function Export-DbaUser {
         PS C:\> $options = New-DbaScriptingOption
         PS C:\> $options.ScriptDrops = $false
         PS C:\> $options.WithDependencies = $true
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ScriptingOptionsObject $options
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ScriptingOptionsObject $options
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
         It will not script drops but will script dependencies.
 
     .EXAMPLE
-        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ExcludeGoBatchSeparator
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ExcludeGoBatchSeparator
 
         Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
+
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1 -User user1 -Template -PassThru
+
+        Exports user1 from database db1, replacing loginname and username with {templateLogin} and {templateUser} correspondingly.
 
 
     #>
@@ -127,7 +140,7 @@ function Export-DbaUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$User,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019')]
         [string]$DestinationVersion,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -136,6 +149,7 @@ function Export-DbaUser {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$Passthru,
+        [switch]$Template,
         [switch]$EnableException,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
         [switch]$ExcludeGoBatchSeparator
@@ -145,6 +159,7 @@ function Export-DbaUser {
         $null = Test-ExportDirectory -Path $Path
 
         $outsql = $script:pathcollection = @()
+        $GenerateFilePerUser = $false
 
         $versions = @{
             'SQLServer2000'        = 'Version80'
@@ -154,6 +169,7 @@ function Export-DbaUser {
             'SQLServer2014'        = 'Version120'
             'SQLServer2016'        = 'Version130'
             'SQLServer2017'        = 'Version140'
+            'SQLServer2019'        = 'Version150'
         }
 
         $versionName = @{
@@ -164,6 +180,7 @@ function Export-DbaUser {
             'Version120' = 'SQLServer2014'
             'Version130' = 'SQLServer2016'
             'Version140' = 'SQLServer2017'
+            'Version150' = 'SQLServer2019'
         }
     }
     process {
@@ -173,8 +190,10 @@ function Export-DbaUser {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
+        # To keep the filenames generated and re-use (append) if needed
+        $usersProcessed = @{ }
+
         foreach ($db in $InputObject) {
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
 
             if ([string]::IsNullOrEmpty($destinationVersion)) {
                 #Get compatibility level for scripting the objects
@@ -203,15 +222,37 @@ function Export-DbaUser {
                 $users = $db.Users
             }
 
+            # Generate the file path
+            if (Test-Bound -ParameterName FilePath -Not) {
+                $GenerateFilePerUser = $true
+            } else {
+                # Generate a new file name with passed/default path
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
+                # Force append to have everything on same file
+                $Append = $true
+            }
+
             # Store roles between users so if we hit the same one we don't create it again
             $roles = @()
             $stepCounter = 0
             foreach ($dbuser in $users) {
-                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script for user $dbuser"
+
+                if ($GenerateFilePerUser) {
+                    if ($null -eq $usersProcessed[$dbuser.Name]) {
+                        # If user and not specific output file, create file name without database name.
+                        $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $("$($db.Parent.Name)-$($dbuser.Name)") -Unique
+                        $usersProcessed[$dbuser.Name] = $FilePath
+                    } else {
+                        $Append = $true
+                        $FilePath = $usersProcessed[$dbuser.Name]
+                    }
+                }
+
+                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script ($FilePath) for user $dbuser"
 
                 #setting database
                 if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
-                    $outsql += "USE [" + $db.Name + "]"
+                    $useDatabase = "USE [" + $db.Name + "]"
                 }
 
                 try {
@@ -233,7 +274,19 @@ function Export-DbaUser {
                         } else {
                             $execute = ""
                         }
-                        $outsql += "$execute$($dbUserPermissionScript.ToString())"
+                        $permissionScript = $dbUserPermissionScript.ToString()
+                        if ($Template) {
+                            $escapedUsername = [regex]::Escape($dbuser.Name)
+                            $permissionScript = $permissionScript -replace "\`[$escapedUsername\`]", '[{templateUser}]'
+                            $permissionScript = $permissionScript -replace "'$escapedUsername'", "'{templateUser}'"
+                            if ($dbuser.Login) {
+                                $escapedLogin = [regex]::Escape($dbuser.Login)
+                                $permissionScript = $permissionScript -replace "\`[$escapedLogin\`]", '[{templateLogin}]'
+                                $permissionScript = $permissionScript -replace "'$escapedLogin'", "'{templateLogin}'"
+                            }
+
+                        }
+                        $outsql += "$execute$($permissionScript)"
                     }
 
                     #Database Permissions
@@ -245,8 +298,13 @@ function Export-DbaUser {
                             $withGrant = " "
                             $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                         }
+                        if ($Template) {
+                            $grantee = "{templateUser}"
+                        } else {
+                            $grantee = $databasePermission.Grantee
+                        }
 
-                        $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$($databasePermission.Grantee)]$withGrant AS [$($databasePermission.Grantor)];"
+                        $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$grantee]$withGrant AS [$($databasePermission.Grantor)];"
                     }
 
                     #Database Object Permissions
@@ -400,29 +458,54 @@ function Export-DbaUser {
                             $withGrant = " "
                             $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                         }
+                        if ($Template) {
+                            $grantee = "{templateUser}"
+                        } else {
+                            $grantee = $databasePermission.Grantee
+                        }
 
-                        $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$($objectPermission.Grantee)]$withGrant AS [$($objectPermission.Grantor)];"
+                        $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
                     }
 
                 } catch {
                     Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                 }
-            }
 
-            if ($ExcludeGoBatchSeparator) {
-                $sql = $outsql
-            } else {
-                $sql = $outsql -join "`r`nGO`r`n"
-                #add the final GO
-                $sql += "`r`nGO"
-            }
-            if (-not $Passthru) {
-                $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                Get-ChildItem -Path $FilePath
-            } else {
-                $sql
+                if (@($outsql.Count) -gt 0) {
+                    if ($ExcludeGoBatchSeparator) {
+                        $sql = "$useDatabase $outsql"
+                    } else {
+                        if ($useDatabase) {
+                            $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                        } else {
+                            $sql = $outsql -join "`r`nGO`r`n"
+                        }
+                        #add the final GO
+                        $sql += "`r`nGO"
+                    }
+                }
+
+                if (-not $Passthru) {
+                    # If generate a file per user, clean the collection to populate with next one
+                    if ($GenerateFilePerUser) {
+                        if (-not [string]::IsNullOrEmpty($sql)) {
+                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            Get-ChildItem -Path $FilePath
+                        }
+                    } else {
+                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                    }
+                    # Clear variables for next user
+                    $outsql = @()
+                    $sql = ""
+                } else {
+                    $sql
+                }
             }
         }
-
+        # Just a single file, output path once here
+        if (-Not $GenerateFilePerUser -and $FilePath) {
+            Get-ChildItem -Path $FilePath
+        }
     }
 }

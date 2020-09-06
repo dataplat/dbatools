@@ -113,7 +113,7 @@ function Invoke-DbaBalanceDataFiles {
         # Set the initial success flag
         [bool]$success = $true
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -225,9 +225,9 @@ function Invoke-DbaBalanceDataFiles {
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
                     } else {
-                        $TableCollection = $db.Tables
+                        $tableCollection = $db.Tables
                     }
 
                     # Get the database file groups and check the aount of data files
@@ -250,7 +250,7 @@ function Invoke-DbaBalanceDataFiles {
                     $unsuccessfulTables = @()
 
                     # Loop through each of the tables
-                    foreach ($tbl in $TableCollection) {
+                    foreach ($tbl in $tableCollection) {
 
                         # Chck if the table balanceable
                         if ($tbl.Name -in $balanceableTables.Name) {
@@ -258,7 +258,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($TableCollection.Indexes.Count -lt 1) {
+                            if ($tableCollection.Indexes.Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -266,7 +266,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag

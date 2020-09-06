@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'AutoCreateTable', 'BatchSize', 'NotifyAfter', 'DestinationTable', 'NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+            [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Table', 'Truncate', 'View'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -57,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "copies the table data to another instance" {
-        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example3
+        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_example3")
         $table1count.Count | Should -Be $table2count.Count
@@ -73,6 +74,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "supports piping more than one table" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
+        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
@@ -93,16 +95,33 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     It "Should return nothing if Source and Destination are same" {
         $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
-        $result | Should Be $null
+        $result | Should -Be $null
     }
 
     It "Should warn if the destinaton table doesn't exist" {
         $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+        $result | Should -Be $null
         $tablewarning | Should -match Auto
     }
 
     It "automatically creates the table" {
         $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
         $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
+    }
+    
+    It "Should warn if the source database doesn't exist" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+        $result | Should -Be $null
+        $tablewarning | Should -match "cannot open database"
+    }
+    
+    It "Copy data using a query that relies on the default source database" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+        $result.RowsCopied | Should -Be 1
+    }
+    
+    It "Copy data using a query that uses a 3 part query" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+        $result.RowsCopied | Should -Be 1
     }
 }

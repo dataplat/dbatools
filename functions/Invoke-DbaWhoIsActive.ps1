@@ -227,14 +227,14 @@ function Invoke-DbaWhoIsActive {
         [switch]$EnableException
     )
     begin {
-        $passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
-        $localparams = $psboundparameters
+        $passedParams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
+        $localParams = $psboundparameters
     }
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -243,7 +243,7 @@ function Invoke-DbaWhoIsActive {
                 throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
             }
 
-            $paramdictionary = @{
+            $paramDictionary = @{
                 Filter             = '@filter'
                 FilterType         = '@filter_type'
                 NotFilter          = 'not_filter'
@@ -272,44 +272,44 @@ function Invoke-DbaWhoIsActive {
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
             try {
-                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlconnection.Open()
+                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
+                $sqlConnection.ConnectionString = $server.ConnectionContext.ConnectionString
+                $sqlConnection.Open()
 
                 if ($Database) {
                     # database is being returned as something weird. change it to string without using a method then trim.
                     $Database = "$Database"
                     $Database = $Database.Trim()
-                    $sqlconnection.ChangeDatabase($Database)
+                    $sqlConnection.ChangeDatabase($Database)
                 }
 
-                $sqlcommand = New-Object System.Data.SqlClient.SqlCommand
-                $sqlcommand.CommandType = "StoredProcedure"
-                $sqlcommand.CommandText = "dbo.sp_WhoIsActive"
-                $sqlcommand.Connection = $sqlconnection
+                $sqlCommand = New-Object System.Data.SqlClient.SqlCommand
+                $sqlCommand.CommandType = "StoredProcedure"
+                $sqlCommand.CommandText = "dbo.sp_WhoIsActive"
+                $sqlCommand.Connection = $sqlConnection
 
-                foreach ($param in $passedparams) {
+                foreach ($param in $passedParams) {
                     Write-Message -Level Verbose -Message "Check parameter '$param'"
 
-                    $sqlparam = $paramdictionary[$param]
+                    $sqlParam = $paramDictionary[$param]
 
-                    if ($sqlparam) {
+                    if ($sqlParam) {
 
-                        $value = $localparams[$param]
+                        $value = $localParams[$param]
 
                         switch ($value) {
                             $true { $value = 1 }
                             $false { $value = 0 }
                         }
-                        Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
-                        [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
+                        Write-Message -Level Verbose -Message "Adding parameter '$sqlParam' with value '$value'"
+                        [Void]$sqlCommand.Parameters.AddWithValue($sqlParam, $value)
                     }
                 }
 
-                $datatable = New-Object system.Data.DataSet
-                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
-                $dataadapter.fill($datatable) | Out-Null
-                $datatable.Tables.Rows
+                $dataTable = New-Object system.Data.DataSet
+                $dataAdapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlCommand)
+                $dataAdapter.fill($dataTable) | Out-Null
+                $dataTable.Tables.Rows
             } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue

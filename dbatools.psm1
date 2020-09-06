@@ -405,6 +405,8 @@ $script:xplat = @(
     'Get-DbaDbAsymmetricKey',
     'New-DbaDbAsymmetricKey',
     'Remove-DbaDbAsymmetricKey',
+    'Invoke-DbaDbTransfer',
+    'New-DbaDbTransfer',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
     'Write-DbaDbTableData',
@@ -562,6 +564,7 @@ $script:xplat = @(
     'Select-DbaBackupInformation',
     'Publish-DbaDacPackage',
     'Copy-DbaDbTableData',
+    'Copy-DbaDbViewData',
     'Invoke-DbaQuery',
     'Remove-DbaLogin',
     'Get-DbaAgentJobCategory',
@@ -811,6 +814,8 @@ $script:windowsonly = @(
     'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
+    'Get-DbaExtendedProtection',
+    'Set-DbaExtendedProtection',
     'Install-DbaInstance',
     'Invoke-DbaAdvancedInstall',
     'Update-DbaInstance',
@@ -881,6 +886,7 @@ $script:windowsonly = @(
     'Backup-DbaComputerCertificate',
     'Get-DbaNetworkCertificate',
     'Set-DbaNetworkCertificate',
+    'Remove-DbaDbLogshipping',
     'Invoke-DbaDbLogShipping',
     'New-DbaCmConnection',
     'Get-DbaCmConnection',

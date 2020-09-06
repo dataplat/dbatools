@@ -101,7 +101,7 @@ function Get-DbaDbLogShipError {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {

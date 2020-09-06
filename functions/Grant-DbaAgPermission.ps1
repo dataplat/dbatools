@@ -121,13 +121,12 @@ function Grant-DbaAgPermission {
         }
 
         foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
             if ($perm -contains "CreateAnyDatabase") {
-                try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
                 foreach ($ag in $AvailabilityGroup) {
                     try {
                         $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
@@ -136,8 +135,9 @@ function Grant-DbaAgPermission {
                         return
                     }
                 }
-            } elseif ($Login) {
-                $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+            }
+            if ($Login) {
+                $InputObject += Get-DbaLogin -SqlInstance $server -SqlCredential $SqlCredential -Login $Login
                 foreach ($account in $Login) {
                     if ($account -notin $InputObject.Name) {
                         try {
@@ -186,7 +186,7 @@ function Grant-DbaAgPermission {
             }
 
             if ($Type -contains "AvailabilityGroup") {
-                $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
+                $ags = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
                         if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {

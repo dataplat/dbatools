@@ -74,7 +74,7 @@ function Get-DbaComputerCertificate {
 
     begin {
         #region Scriptblock for remoting
-        $scriptblock = {
+        $scriptBlock = {
             param (
                 $Thumbprint,
                 $Store,
@@ -190,7 +190,7 @@ function Get-DbaComputerCertificate {
             foreach ($currentStore in $Store) {
                 foreach ($currentFolder in $Folder) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
                     } catch {
                         Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
                     }

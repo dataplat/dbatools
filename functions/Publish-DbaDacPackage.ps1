@@ -12,9 +12,7 @@ function Publish-DbaDacPackage {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Only SQL authentication is supported. When not specified, uses Trusted Authentication.
 
     .PARAMETER Path
         Specifies the filesystem path to the DACPAC
@@ -140,16 +138,16 @@ function Publish-DbaDacPackage {
         }
         if ($Type -eq 'Dacpac') {
             if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
-                $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
+                $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
             } else {
-                $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
+                $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
             }
         } elseif ($Type -eq 'Bacpac') {
             if ($ScriptOnly -or $GenerateDeploymentReport -or $GenerateDeploymentScript) {
                 Stop-Function -Message "ScriptOnly, GenerateDeploymentScript, and GenerateDeploymentReport cannot be used in a Bacpac scenario." -ErrorRecord $_
                 return
             }
-            $defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Bacpac', 'Result', 'DeployOptions'
+            $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Bacpac', 'Result', 'DeployOptions'
         }
 
         if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
@@ -157,9 +155,9 @@ function Publish-DbaDacPackage {
             return
         }
 
-        function Get-ServerName ($connstring) {
+        function Get-ServerName ($connString) {
             $builder = New-Object System.Data.Common.DbConnectionStringBuilder
-            $builder.set_ConnectionString($connstring)
+            $builder.set_ConnectionString($connString)
             $instance = $builder['data source']
 
             if (-not $instance) {
@@ -216,9 +214,9 @@ function Publish-DbaDacPackage {
             }
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -263,11 +261,11 @@ function Publish-DbaDacPackage {
             Get-SqlCmdVars -SqlCommandVariableValues $options.DeployOptions.SqlCommandVariableValues
         }
 
-        foreach ($connstring in $ConnectionString) {
-            $cleaninstance = Get-ServerName $connstring
+        foreach ($connString in $ConnectionString) {
+            $cleaninstance = Get-ServerName $connString
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
-            foreach ($dbname in $database) {
+            foreach ($dbName in $Database) {
                 #Set deployment properties when specified
                 if (Test-Bound -ParameterName GenerateDeploymentScript) {
                     $options.GenerateDeploymentScript = $GenerateDeploymentScript
@@ -278,16 +276,16 @@ function Publish-DbaDacPackage {
                 #Set output file paths when needed
                 $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
                 if ($GenerateDeploymentScript) {
-                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
-                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
+                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
+                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
                 }
-                if ($connstring -notmatch 'Database=') {
-                    $connstring = "$connstring;Database=$dbname"
+                if ($connString -notmatch 'Database=') {
+                    $connString = "$connString;Database=$dbName"
                 }
 
                 #Create services object
                 try {
-                    $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
+                    $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
@@ -306,16 +304,16 @@ function Publish-DbaDacPackage {
                                 Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
                             }
                             if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
-                                $result = $dacServices.Script($dacPackage, $dbname, $options)
+                                $result = $dacServices.Script($dacPackage, $dbName, $options)
                             }
                         } else {
                             if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
-                                $result = $dacServices.Publish($dacPackage, $dbname, $options)
+                                $result = $dacServices.Publish($dacPackage, $dbName, $options)
                             }
                         }
                     } elseif ($Type -eq 'Bacpac') {
                         if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
-                            $dacServices.ImportBacpac($bacPackage, $dbname, $options, $null)
+                            $dacServices.ImportBacpac($bacPackage, $dbName, $options, $null)
                         }
                     }
                 } catch [Microsoft.SqlServer.Dac.DacServicesException] {
@@ -324,7 +322,7 @@ function Publish-DbaDacPackage {
                     Unregister-Event -SourceIdentifier "msg"
                     if ($Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
                         if ($options.GenerateDeploymentReport) {
-                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
+                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbName`_Result.DeploymentReport_$timeStamp.xml"
                             $result.DeploymentReport | Out-File $deploymentReport
                             Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
                         }
@@ -334,8 +332,8 @@ function Publish-DbaDacPackage {
                                 Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                             }
                         }
-                        $resultoutput = ($output.output -join "`r`n" | Out-String).Trim()
-                        if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
+                        $resultOutput = ($output.output -join "`r`n" | Out-String).Trim()
+                        if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                             Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }
                         $server = [dbainstance]$instance
@@ -344,11 +342,11 @@ function Publish-DbaDacPackage {
                                 ComputerName         = $server.ComputerName
                                 InstanceName         = $server.InstanceName
                                 SqlInstance          = $server.FullName
-                                Database             = $dbname
-                                Result               = $resultoutput
+                                Database             = $dbName
+                                Result               = $resultOutput
                                 Dacpac               = $Path
                                 PublishXml           = $PublishXml
-                                ConnectionString     = $connstring
+                                ConnectionString     = $connString
                                 DatabaseScriptPath   = $options.DatabaseScriptPath
                                 MasterDbScriptPath   = $options.MasterDbScriptPath
                                 DeploymentReport     = $DeploymentReport
@@ -360,14 +358,14 @@ function Publish-DbaDacPackage {
                                 ComputerName     = $server.ComputerName
                                 InstanceName     = $server.InstanceName
                                 SqlInstance      = $server.FullName
-                                Database         = $dbname
-                                Result           = $resultoutput
+                                Database         = $dbName
+                                Result           = $resultOutput
                                 Bacpac           = $Path
-                                ConnectionString = $connstring
+                                ConnectionString = $connString
                                 DeployOptions    = $options
                             }
                         }
-                        $output | Select-DefaultView -Property $defaultcolumns
+                        $output | Select-DefaultView -Property $defaultColumns
                     }
                 }
             }

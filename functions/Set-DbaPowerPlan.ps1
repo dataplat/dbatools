@@ -19,7 +19,9 @@ function Set-DbaPowerPlan {
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
     .PARAMETER PowerPlan
-        Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
+        Specifies the Power Plan that you wish to use.
+
+        We use the English phrase "High Performance" by default. To specify Power Plans in another language, use this parameter (-PowerPlan Höchstleistung).
 
     .PARAMETER CustomPowerPlan
         Specifies the name of a custom Power Plan to use.
@@ -55,6 +57,13 @@ function Set-DbaPowerPlan {
         PS C:\> Set-DbaPowerPlan -ComputerName sql2017
 
         Sets the Power Plan to High Performance. Skips it if its already set.
+
+    .EXAMPLE
+        PS C:\> Set-DbaPowerPlan -ComputerName sql2017 -PowerPlan Höchstleistung
+
+        Sets the PowerPlan on a German system to Höchstleistung.
+
+        We use the English phrase "High Performance" by default. To specify Power Plans in another language, use the -PowerPlan parameter.
 
     .EXAMPLE
         PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -PowerPlan Balanced
@@ -166,9 +175,21 @@ function Set-DbaPowerPlan {
 
                             $cimInstance = Get-CimInstance -Namespace root\cimv2\power -ClassName win32_PowerPlan -Filter "ElementName = '$powerPlanRequested'" -CimSession $CIMSession
                             if ($cimInstance) {
-                                $cimResult = Invoke-CimMethod -InputObject $cimInstance[0] -MethodName Activate -CimSession $cimSession
-                                if (!$cimResult) {
-                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer." -Category ConnectionError -Target $computer
+                                # Because the activate method for powerplans is broken on windows server 2019, we use the powrprof.dll instead
+                                [System.Guid]$powerPlanGuid = $cimInstance.InstanceID -replace '.*{(.*)}', '$1'
+                                $scriptBlock = {
+                                    Param ($Guid)
+                                    $powerSetActiveSchemeDefinition = '[DllImport("powrprof.dll", CharSet = CharSet.Auto)] public static extern uint PowerSetActiveScheme(IntPtr RootPowerKey, Guid SchemeGuid);'
+                                    $powrprof = Add-Type -MemberDefinition $powerSetActiveSchemeDefinition -Name 'Win32PowerSetActiveScheme' -Namespace 'Win32Functions' -PassThru
+                                    $powrprof::PowerSetActiveScheme([System.IntPtr]::Zero, $Guid)
+                                }
+                                if ($IncludeCred) {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw -Credential $Credential
+                                } else {
+                                    $returnCode = Invoke-CommandWithFallback -ComputerName $computer -ScriptBlock $scriptBlock -ArgumentList $powerPlanGuid -Raw
+                                }
+                                if ($returnCode -ne 0) {
+                                    Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer (ReturnCode: $returnCode)." -Category ConnectionError -Target $computer
                                     return
                                 }
                             } else {
