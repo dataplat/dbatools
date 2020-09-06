@@ -1,9 +1,10 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 25, 2020
+-- Last Modified: August 2, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
+-- YouTube: https://bit.ly/2PkoAM1 
 -- Twitter: GlennAlanBerry
 
 -- Please listen to my Pluralsight courses

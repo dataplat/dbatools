@@ -286,25 +286,27 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $soFileName
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
-                                foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                     } else {
                                         $scriptpart = "$scriptpart`r`n"
                                     }
-                                    $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                    $scriptpart
                                 }
+                                $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                                 $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                            $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
                                 } else {
                                     $scriptpart = "$scriptpart`r`n"
                                 }
-                                $scriptpart | Out-File -FilePath $scriptPath -Encoding $encoding -Append
+                                $scriptpart
                             }
+                            $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                         }
                     }
 

@@ -151,11 +151,13 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
                     $b.MatchType | Should Be "Exact"
                     $b.KBLevel | Should BeIn $r.KBLevel
                 }
-                $kbMatch = Get-DbaBuildReference -KB ($r.KBLevel | Select-Object -First 1)
-                $kbMatch | Should -Not -BeNullOrEmpty
-                foreach ($m in $kbMatch) {
-                    $m.MatchType | Should Be "Exact"
-                    $m.KBLevel | Should BeIn $r.KBLevel
+                if ($r.KBLevel) { #can be a RTM which has no corresponding KB
+                    $kbMatch = Get-DbaBuildReference -KB ($r.KBLevel | Select-Object -First 1)
+                    $kbMatch | Should -Not -BeNullOrEmpty
+                    foreach ($m in $kbMatch) {
+                        $m.MatchType | Should Be "Exact"
+                        $m.KBLevel | Should BeIn $r.KBLevel
+                    }
                 }
                 $spLevel = $r.SPLevel | Where-Object { $_ -ne 'LATEST' }
                 $versionMatch = Get-DbaBuildReference -MajorVersion $r.NameLevel -ServicePack $spLevel -CumulativeUpdate $r.CULevel
