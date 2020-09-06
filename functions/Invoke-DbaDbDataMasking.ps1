@@ -600,10 +600,13 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         foreach ($columnobject in $tablecolumns) {
+                            $batchCounter = 1
+
                             # Check if column is does not contain an action
                             if ($columnobject.Name -notin $columnsWithActions.Name) {
                                 foreach ($row in $data) {
-                                    if ((($batchCounter++) % 100) -eq 0) {
+                                    if ((($batchRowCounter++) % 100) -eq 0) {
+
                                         $progressParams = @{
                                             StepNumber = $batchCounter
                                             TotalSteps = $totalBatches
@@ -799,10 +802,10 @@ function Invoke-DbaDbDataMasking {
                                     $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
                                 }
 
-                                $batchRowCounter++
-
                                 if ($batchRowCounter -eq $BatchSize) {
-                                    $batchCounter++
+                                    if ($batchCounter -ne $totalBatches) {
+                                        $batchCounter++
+                                    }
 
                                     $progressParams = @{
                                         StepNumber = $batchCounter
@@ -830,6 +833,9 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             if ($stringBuilder.Length -ge 1) {
+                                if ($batchCounter -ne $totalBatches) {
+                                    $batchCounter++
+                                }
 
                                 $progressParams = @{
                                     StepNumber = $batchCounter
@@ -838,15 +844,13 @@ function Invoke-DbaDbDataMasking {
                                     Message    = "Executing Batch $batchCounter/$totalBatches"
                                 }
 
-                                #Write-ProgressHelper @progressParams
+                                Write-ProgressHelper @progressParams
 
                                 try {
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 } catch {
                                     Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                 }
-
-                                $batchCounter++
                             }
                         }
 
