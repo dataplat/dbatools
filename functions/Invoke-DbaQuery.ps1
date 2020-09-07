@@ -201,13 +201,18 @@ function Invoke-DbaQuery {
                         $files += $item.FullName
                     }
                     "System.String" {
-                        if (Test-PsVersion -Is 3) {
-                            $uri = [uri]$item
-                        } else {
-                            $uri = [uri]::New($item)
+                        try {
+                            if (Test-PsVersion -Is 3) {
+                                $uri = [uri]$item
+                            } else {
+                                $uri = [uri]::New($item)
+                            }
+                            $uriScheme = $uri.Scheme
+                        } catch {
+                            $uriScheme = $null
                         }
 
-                        switch -regex ($uri.Scheme) {
+                        switch -regex ($uriScheme) {
                             "http" {
                                 $tempfile = "$(Get-DbatoolsPath -Name temp)\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                                 try {

@@ -5,11 +5,8 @@ function Copy-DbaDbTableData {
 
     .DESCRIPTION
         Copies data between SQL Server tables using SQL Bulk Copy.
-        The same can be achieved also doing
-        $sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable
-        Write-DbaDbTableData -SqlInstance ... -InputObject $sourcetable
-        but it will force buffering the contents on the table in memory (high RAM usage for large tables).
-        With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
+        The same can be achieved also using Invoke-DbaQuery and Write-DbaDbTableData but it will buffer the contents of that table in memory of the machine running the commands.
+        This function prevents that by streaming a copy of the data in the most speedy and least resource-intensive way.
 
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -38,23 +35,26 @@ function Copy-DbaDbTableData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER Table
-        Specify a table to use as a source. You can specify a two-part name or a three-part name such as db.sch.tbl.
-        If the object has special characters please wrap them in square brackets [ ].
-        Example: [SampleDB].[First].[Table] will try to find the table named 'Table' in the schema 'First' and the database 'SampleDB'.
+        Specify a table to use as a source. You can specify a 2 or 3 part name.
+        If the object has special characters please wrap them in square brackets.
+        
+        Note: Cannot specify a view if a table value is provided
 
     .PARAMETER View
-        Specify a view to use as a source. You can specify a two-part name or a three-part name such as db.sch.vw.
-        Note: Only one of -View or -Table may be specified during command invocation.
-        If the object has special characters please wrap them in square brackets [ ].
-        Example: [SampleDB].[First].[View] will try to find the view named 'View' in the schema 'First' and the database 'SampleDB'.
+        Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
+        If the object has special characters please wrap them in square brackets.
+        
+        Note: Cannot specify a table if a view value is provided
 
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
 
     .PARAMETER Query
-        Define a query to use as a source. Note: 3 or 4 part object names may be used as described in https://docs.microsoft.com/en-us/sql/t-sql/language-elements/transact-sql-syntax-conventions-transact-sql
-        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
-        Note: Even when the -Query param is used a valid -Table or -View must be specified. This is due to the workflow used in the command.
+        Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)
+        Ensure to select all required columns.
+        Calculated Columns or columns with default values may be excluded.
+
+        Note: The workflow in the command requires that a valid -Table or -View parameter value be specified.
 
     .PARAMETER AutoCreateTable
         Creates the destination table if it does not already exist, based off of the "Export..." script of the source table.
@@ -122,12 +122,12 @@ function Copy-DbaDbTableData {
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table
 
-        Copies all the data from table dbo.test_table in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.
+        Copies all the data from table dbo.test_table (2-part name) in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.
 
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]
 
-        Copies all the data from table [Schema].[test table] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2
+        Copies all the data from table [Schema].[test table] (2-part name) in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3
@@ -137,9 +137,7 @@ function Copy-DbaDbTableData {
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2
 
-        Copies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2
-        then
-        Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
+        Copies data from tb1 and tb2 in tempdb on sql1 to the same table in tempdb on sql2
 
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
@@ -162,7 +160,7 @@ function Copy-DbaDbTableData {
         >>
         PS C:\> Copy-DbaDbTableData @params
 
-        Copies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
+        Copies all the data from table [Schema].[Table] (2-part name) in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2
         Keeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.
 
     .EXAMPLE
@@ -178,15 +176,14 @@ function Copy-DbaDbTableData {
         >>
         PS C:\> Copy-DbaDbTableData @params
 
-        Copies data returned from the query on server1 into the AdventureWorks2017 on server1. Note that 3 or 4 part names can be used.
+        Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the -Table parameter.
         See the -Query param documentation for more details.
         Copy is processed in BatchSize of 10000 rows.
     
     .EXAMPLE
        Copy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable
        
-       Copies all data from [tempdb].[dbo].[vw1] on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
-
+       Copies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
