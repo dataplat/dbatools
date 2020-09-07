@@ -255,6 +255,21 @@ function Set-DbaAgentSchedule {
                 }
             }
 
+            # If the FrequencyInterval is set for the monthly FrequencyInterval
+            if ($FrequencyType -in 16, 'Monthly') {
+                # Create the interval to hold the value(s)
+                [int]$interval = 0
+
+                # Loop through the array
+                foreach ($item in $FrequencyInterval) {
+                    switch ($item) {
+                        { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
+                    }
+                }
+
+
+            }
+
             # If the FrequencyInterval is set for the relative monthly FrequencyInterval
             if ($FrequencyType -in 32, 'MonthlyRelative') {
                 # Loop through the array
