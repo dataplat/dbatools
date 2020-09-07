@@ -9,7 +9,7 @@ function Add-DbaAgReplica {
         Automatically creates a database mirroring endpoint if required.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+        The target SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -36,7 +36,7 @@ function Add-DbaAgReplica {
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
     .PARAMETER EndpointUrl
-        By default, the property Fqdn of the database mirroring endpoint is used as EndpointUrl.
+        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
 
         Use EndpointUrl if a different URL is required due to special network configurations.
         EndpointUrl has to be in format 'TCP://system-address:port'.
@@ -107,7 +107,8 @@ function Add-DbaAgReplica {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(Mandatory)]
+        [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
@@ -131,11 +132,6 @@ function Add-DbaAgReplica {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -Not SqlInstance, InputObject) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
-            return
-        }
-
         if ($EndpointUrl -and ($EndpointUrl -notmatch 'TCP://.+:\d+')) {
             Stop-Function -Message "EndpointUrl not in correct format 'TCP://system-address:port'"
             return
@@ -233,11 +229,11 @@ function Add-DbaAgReplica {
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                         $agreplica.Alter()
                     }
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -Value $agreplica.Parent.ComputerName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -Value $agreplica.Parent.InstanceName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -Value $agreplica.Parent.SqlInstance
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -Value $agreplica.Parent.Name
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -Value $agreplica.Name # backwards compat
 
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
