@@ -1,7 +1,7 @@
 function Backup-DbaDatabase {
     <#
     .SYNOPSIS
-        Backup one or more SQL Sever databases from a single SQL Server SqlInstance.
+        Backup one or more SQL Server databases from a single SQL Server SqlInstance.
 
     .DESCRIPTION
         Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.
