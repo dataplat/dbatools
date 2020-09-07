@@ -108,7 +108,7 @@ function New-DbaAvailabilityGroup {
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
     .PARAMETER EndpointUrl
-        By default, the property Fqdn of the database mirroring endpoints is used as EndpointUrl.
+        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
 
         Use EndpointUrl if different URLs are required due to special network configurations.
         EndpointUrl has to an array of strings in format 'TCP://system-address:port', one entry for every instance.
