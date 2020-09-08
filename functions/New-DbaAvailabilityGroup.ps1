@@ -111,7 +111,7 @@ function New-DbaAvailabilityGroup {
         By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
 
         Use EndpointUrl if different URLs are required due to special network configurations.
-        EndpointUrl has to an array of strings in format 'TCP://system-address:port', one entry for every instance.
+        EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
         First entry for the primary instance, following entries for secondary instances in the order they show up in Secondary.
         See details regarding the format at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
 
