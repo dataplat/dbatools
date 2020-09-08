@@ -4,7 +4,7 @@ function Convert-DbaTimelineStatusColor {
             Converts literal string status to a html color
 
         .DESCRIPTION
-            This function acceptes Agnet Job status as literal string input and covnerts to html color.
+            This function acceptes Agent Job status as literal string input and covnerts to html color.
             This is internal function, part of ConvertTo-DbaTimeline
 
         .PARAMETER Status
