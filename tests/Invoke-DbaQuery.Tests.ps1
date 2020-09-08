@@ -1,14 +1,18 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+BeforeAll {
+    $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
+    Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+    $PesterV5Throw = ''
+    if ((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version -ge '5.0.0') {
+        $PesterV5Throw = '*'
+    }
+}
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameters', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameters', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType'
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate alias" {
@@ -20,6 +24,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
         $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
         $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT TestColumn = @p1; END")
     }
@@ -60,11 +65,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
+        'tempdb' | Should -BeIn $results.dbname
     }
     It "stops when piped databases and -Database" {
         $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3
-        { $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname" -Database tempdb -EnableException } | Should Throw "You can't"
+        { $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname" -Database tempdb -EnableException } | Should -Throw "You can't$PesterV5Throw"
     }
     It "supports reading files" {
         $testPath = "TestDrive:\dbasqlquerytest.txt"
@@ -73,7 +78,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
+        'tempdb' | Should -BeIn $results.dbname
     }
     It "supports reading entire directories, just *.sql" {
         $testPath = "TestDrive:\"
@@ -82,10 +87,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Set-Content "$testPath\dbasqlquerytest2.txt" -value "Select 'hello3' as TestColumn, DB_NAME() as dbname"
         $pathinfo = Get-Item $testpath
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $pathinfo
-        'hello' | Should -Bein $results.TestColumn
-        'hello2' | Should -Bein $results.TestColumn
-        'hello3' | Should -Not -Bein $results.TestColumn
-        'tempdb' | Should -Bein $results.dbname
+        'hello' | Should -BeIn $results.TestColumn
+        'hello2' | Should -BeIn $results.TestColumn
+        'hello3' | Should -Not -BeIn $results.TestColumn
+        'tempdb' | Should -BeIn $results.dbname
 
     }
     It "supports http files" {
@@ -107,7 +112,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query $check
-        $results.Name | Should Be 'CommandLog'
+        $results.Name | Should -Be 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database tempdb -Query $cleanup
     }
     <#
@@ -186,7 +191,7 @@ SELECT @@servername as dbname
     }
     It "Executes stored procedures with parameters" {
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{p1 = 1 } -CommandType StoredProcedure
-        $results.TestColumn | Should Be 1
+        $results.TestColumn | Should -Be 1
     }
     It "Executes script file with a relative path (see #6184)" {
         Set-Content -Path ".\hellorelative.sql" -Value "Select 'hello' as TestColumn, DB_NAME() as dbname"
@@ -194,7 +199,7 @@ SELECT @@servername as dbname
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
+        'tempdb' | Should -BeIn $results.dbname
 
     }
 }
