@@ -9,7 +9,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousPassword', 'SecurePassword', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -137,7 +137,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $results = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
         It "Service restart should return something" {
-            $results | Should Not -Be $null
+            $results | Should -Not -Be $null
         }
         It "Service restart should be successful" {
             foreach ($result in $results) {
