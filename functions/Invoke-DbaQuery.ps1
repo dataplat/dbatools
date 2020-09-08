@@ -344,7 +344,7 @@ function Invoke-DbaQuery {
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $conncontext = $server.ConnectionContext
             try {
