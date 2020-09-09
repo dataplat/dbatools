@@ -28,11 +28,13 @@ function New-DbaEndpoint {
     .PARAMETER Role
         The type of role. Defaults to All. Options: All, None, Partner, Witness
 
+    .PARAMETER IPAddress
+        Specifies the IP address that the endpoint will listen on. The default is ALL. This means that the listener will accept a connection on any valid IP address.
+
+        Currently only IPv4 is supported by this command.
+
     .PARAMETER Port
         Port for TCP. If one is not provided, it will be auto-generated.
-
-    .PARAMETER SslPort
-        Port for SSL
 
     .PARAMETER Certificate
         Database certificate used for authentication.
@@ -87,7 +89,12 @@ function New-DbaEndpoint {
         PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring -Port 5055
 
         Creates a database mirroring endpoint on localhost\sql2017 which uses alternative port 5055
-    #>
+
+    .EXAMPLE
+        PS C:\> New-DbaEndpoint -SqlInstance localhost\sql2017 -Type DatabaseMirroring -IPAddress 192.168.0.15 -Port 5055
+
+        Creates a database mirroring endpoint on localhost\sql2017 which binds only on ipaddress 192.168.0.15 and port 5055
+        #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -105,8 +112,8 @@ function New-DbaEndpoint {
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
         [string]$EncryptionAlgorithm = 'Aes',
         [string]$Certificate,
+        [System.Net.IPAddress]$IPAddress = '0.0.0.0',
         [int]$Port,
-        [int]$SslPort,
         [string]$Owner,
         [switch]$EnableException
     )
@@ -153,22 +160,18 @@ function New-DbaEndpoint {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($server.Name, "Creating endpoint $Name of type $Type using protocol $Protocol and if TCP then using Port $tcpPort")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Creating endpoint $Name of type $Type using protocol $Protocol and if TCP then using IPAddress $IPAddress and Port $tcpPort")) {
                 try {
                     $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
                     $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
                     $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
                     $endpoint.Owner = $Owner
                     if ($Protocol -eq "TCP") {
+                        $endpoint.Protocol.Tcp.ListenerIPAddress = $IPAddress
                         $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
                         $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
-                        if (Test-Bound -ParameterName SslPort) {
-                            $endpoint.Protocol.Tcp.SslPort = $SslPort
-                        }
-
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
-
                     }
                     if ($Certificate) {
                         $outscript = $endpoint.Script()
