@@ -36,6 +36,9 @@ function New-DbaEndpoint {
     .PARAMETER Port
         Port for TCP. If one is not provided, it will be auto-generated.
 
+    .PARAMETER SslPort
+        Port for SSL.
+
     .PARAMETER Certificate
         Database certificate used for authentication.
 
@@ -114,6 +117,7 @@ function New-DbaEndpoint {
         [string]$Certificate,
         [System.Net.IPAddress]$IPAddress = '0.0.0.0',
         [int]$Port,
+        [int]$SslPort,
         [string]$Owner,
         [switch]$EnableException
     )
@@ -170,6 +174,9 @@ function New-DbaEndpoint {
                         $endpoint.Protocol.Tcp.ListenerIPAddress = $IPAddress
                         $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
                         $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
+                        if (Test-Bound -ParameterName SslPort) {
+                            $endpoint.Protocol.Http.SslPort = $SslPort
+                        }
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
                     }
