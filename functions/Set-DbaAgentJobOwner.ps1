@@ -7,7 +7,7 @@ function Set-DbaAgentJobOwner {
         This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa',
         but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
 
-        Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
+        Best practice reference: https://www.itprotoday.com/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
         If the 'sa' account was renamed, the new name will be used.
 
