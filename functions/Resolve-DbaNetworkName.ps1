@@ -70,7 +70,7 @@ function Resolve-DbaNetworkName {
         PS C:\> Resolve-DbaNetworkName -ComputerName sql2014
 
         Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2014
-        
+
     .EXAMPLE
         PS C:\> Resolve-DbaNetworkName -ComputerName sql2016, sql2014
 
@@ -185,7 +185,8 @@ function Resolve-DbaNetworkName {
             }
             if ($Turbo) {
                 # that's a finish line for a Turbo mode
-                return $result
+                $result
+                continue
             }
 
             # finding out which IP to use by pinging all of them. The first to respond is the one.
