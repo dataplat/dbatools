@@ -13,7 +13,7 @@ function Invoke-DbaDbShrink {
         Many awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:
 
         http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files
-        http://sqlmag.com/sql-server/shrinking-data-files
+        https://www.itprotoday.com/sql-server/shrinking-data-files
 
         However, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:
 
