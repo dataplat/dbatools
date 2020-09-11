@@ -5,10 +5,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
             [object[]]$knownParameters = 'Database', 'EnableException', 'EncodingType', 'ExportDestination', 'ObjectName', 'SqlCredential', 'SqlInstance'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -73,9 +73,9 @@ CREATE FUNCTION dbo.DummyEncryptedInlineTVF
 (
     @Id INTEGER
 )
-RETURNS TABLE 
-WITH ENCRYPTION 
-AS 
+RETURNS TABLE
+WITH ENCRYPTION
+AS
     RETURN SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version, @Id AS Id;
         "
         # Create the encrypted inline TVF
@@ -88,11 +88,11 @@ CREATE FUNCTION dbo.DummyEncryptedTableValuedFunction
     @Id INTEGER
 )
 RETURNS @r TABLE(i INTEGER)
-WITH ENCRYPTION 
-AS 
-BEGIN 
+WITH ENCRYPTION
+AS
+BEGIN
     INSERT INTO @r (i) VALUES (@Id)
-    RETURN 
+    RETURN
 END;
         "
         # Create the encrypted table valued function
@@ -125,11 +125,11 @@ END
         $setupView = "
 CREATE VIEW dbo.dbatoolsci_test_vw
 WITH ENCRYPTION
-AS 
+AS
 SELECT 1 AS Id;"
         # Create the encrypted view
         $db.Query($setupView)
-        
+
         # Create a schema to test with
         $db.Query("CREATE SCHEMA dbatools")
 
@@ -142,7 +142,7 @@ CREATE TABLE dbatools.dbatoolsci_tab1
         $db.Query($setupTable)
 
         $setupTrigger = "
-CREATE TRIGGER dbatools.dbatoolsci_test_trigger 
+CREATE TRIGGER dbatools.dbatoolsci_test_trigger
 ON dbatools.dbatoolsci_tab1
 WITH ENCRYPTION
 INSTEAD OF DELETE
@@ -156,8 +156,8 @@ END;"
         # Setup the code for an encrypted view in a schema other than dbo
         $setupViewInSchema = "
 CREATE VIEW dbatools.dbatoolsci_test_schema_vw
-WITH ENCRYPTION 
-AS 
+WITH ENCRYPTION
+AS
 SELECT 'dbatools' as SchemaName;"
         # Create the encrypted view
         $db.Query($setupViewInSchema)
@@ -168,8 +168,8 @@ SELECT 'dbatools' as SchemaName;"
         # Setup the code for an encrypted view in another schema other than dbo
         $setupAnotherViewInSchema = "
 CREATE VIEW dbatools2.dbatoolsci_test_schema_vw
-WITH ENCRYPTION 
-AS 
+WITH ENCRYPTION
+AS
 SELECT 'dbatools2' as SchemaName;"
         # Create the encrypted view
         $db.Query($setupAnotherViewInSchema)
@@ -242,7 +242,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             $result.Script | Should -Be $queryStoredProcedure
         }
     }
-    
+
     Context "Decrypt view" {
         It -Skip "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_vw
@@ -290,7 +290,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
     }
 
     Context "Connect to an instance (ideally a remote instance) using a SqlCredential and decrypt an object" {
-        It -Skip "Should be successful" {   
+        It -Skip "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination .
             (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
             Remove-Item $result.OutputFile

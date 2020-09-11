@@ -196,12 +196,12 @@ function Invoke-DbaDbDecryptObject {
             $databaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
 
             # Use the table's schema for the trigger's schema. The schema name is not returned as a property for triggers (except in the URN).
-            $triggerSchema = @{label="Schema";expression={$_.Parent.Schema}}
+            $triggerSchema = @{label = "Schema"; expression = { $_.Parent.Schema } }
 
             # Loop through each of databases
             foreach ($db in $databaseCollection) {
 
-                $triggers = @($db.Tables | Where-Object { $_.IsSystemObject -eq $false } | ForEach-Object {$_.Triggers})
+                $triggers = @($db.Tables | Where-Object { $_.IsSystemObject -eq $false } | ForEach-Object { $_.Triggers })
 
                 # Get the objects
                 if ($ObjectName) {
