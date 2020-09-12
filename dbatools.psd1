@@ -135,6 +135,7 @@
         'Get-DbaLastBackup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',
+        'Get-DbaAgBackupHistory',
         'Read-DbaBackupHeader',
         'Test-DbaLastBackup',
         'Get-DbaMaxMemory',
