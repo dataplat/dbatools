@@ -64,7 +64,7 @@ function Get-DbaDbBackupHistory {
         By default mirrors of backups are not returned, this switch will cause them to be returned.
 
     .PARAMETER AgCheck
-        Deprecated. Please use Get-DbaAgBackupHistory instead.
+        Deprecated. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -212,7 +212,7 @@ function Get-DbaDbBackupHistory {
 
     process {
         if ($AgCheck) {
-            Stop-Function -Message "Parameter AGCheck is deprecated. Please use Get-DbaAgBackupHistory instead."
+            Stop-Function -Message "Parameter AGCheck is deprecated. This command does not check for history from replicas even if this paramater is not provided. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory."
             return
         }
 
