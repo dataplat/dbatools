@@ -232,7 +232,7 @@ function Install-DbaMaintenanceSolution {
 
         function Get-DbaOlaWithParameters($listOfFiles) {
 
-            $fileContents = [ordered]@{ }
+            $fileContents = @{ }
             foreach ($file in $listOfFiles) {
                 $fileContents[$file] = Get-Content -Path $file -Raw
             }
@@ -297,8 +297,8 @@ function Install-DbaMaintenanceSolution {
             }
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
-                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -In 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table @('CommandLog', 'Queue', 'QueueDatabase') -IncludeSystemDBs | Where-Object Database -EQ $Database
+                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table @('CommandLog', 'Queue', 'QueueDatabase') -IncludeSystemDBs | Where-Object Database -eq $Database
 
                 if ($null -ne $procs -or $null -ne $table) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
@@ -313,26 +313,31 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
+            # start fresh
+            $required = @()
+
             if ($Solution -notcontains 'All') {
-                $required = @('CommandLog.sql', 'Queue.sql', 'QueueDatabase.sql', 'CommandExecute.sql') # Make all support procedures / tables required.
+                $required = @('CommandExecute.sql')
             }
 
             if ($Solution -contains 'Backup') {
-                $required += @('DatabaseBackup.sql')
+                $required += 'DatabaseBackup.sql'
             }
 
             if ($Solution -contains 'IntegrityCheck') {
-                $required += @('DatabaseIntegrityCheck.sql')
+                $required += 'DatabaseIntegrityCheck.sql'
             }
 
             if ($Solution -contains 'IndexOptimize') {
-                $required += @('IndexOptimize.sql')
+                $required += 'IndexOptimize.sql'
             }
 
             if ($Solution -contains 'All') {
-                # Added Queue.sql and QueueDatabase.sql here as well since they are not included in the MaintenanceSolution.sql
-                # CommandLog.sql not necessary since it is embedded within MaintenanceSolution.sql
-                $required += @('Queue.sql', 'QueueDatabase.sql', 'MaintenanceSolution.sql')
+                $required += 'MaintenanceSolution.sql'
+            }
+
+            if ($LogToTable) {
+                $required += 'CommandLog.sql', 'Queue.sql', 'QueueDatabase.sql'
             }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -369,7 +374,7 @@ function Install-DbaMaintenanceSolution {
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
                     Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
-                    $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -Match "hallengren"
+                    $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
