@@ -107,6 +107,14 @@ function New-DbaAvailabilityGroup {
 
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
+    .PARAMETER EndpointUrl
+        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
+
+        Use EndpointUrl if different URLs are required due to special network configurations.
+        EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
+        First entry for the primary instance, following entries for secondary instances in the order they show up in Secondary.
+        See details regarding the format at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
+
     .PARAMETER ConnectionModeInPrimaryRole
         Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
 
@@ -193,6 +201,11 @@ function New-DbaAvailabilityGroup {
         Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
 
     .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -EndpointUrl 'TCP://sql1.specialnet.local:5022', 'TCP://sql2.specialnet.local:5022'
+
+        Creates a new availability group with a primary replica on sql1 and a secondary on sql2 with custom endpoint urls. Automatically adds the database pubs.
+
+    .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> $params = @{
         >> Primary = "sql1"
@@ -252,6 +265,7 @@ function New-DbaAvailabilityGroup {
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
         [string]$Endpoint,
+        [string[]]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         # network
@@ -271,6 +285,19 @@ function New-DbaAvailabilityGroup {
         if ($Force -and $Secondary -and (-not $SharedPath -and -not $UseLastBackup) -and ($SeedingMode -ne 'Automatic')) {
             Stop-Function -Message "SharedPath or UseLastBackup is required when Force is used"
             return
+        }
+
+        if ($EndpointUrl) {
+            if ($EndpointUrl.Count -ne (1 + $Secondary.Count)) {
+                Stop-Function -Message "The number of elements in EndpointUrl is not correct"
+                return
+            }
+            foreach ($epUrl in $EndpointUrl) {
+                if ($epUrl -notmatch 'TCP://.+:\d+') {
+                    Stop-Function -Message "EndpointUrl '$epUrl' not in correct format 'TCP://system-address:port'"
+                    return
+                }
+            }
         }
 
         if ($ConnectionModeInSecondaryRole) {
@@ -450,6 +477,11 @@ function New-DbaAvailabilityGroup {
                     Certificate                   = $Certificate
                 }
 
+                if ($EndpointUrl) {
+                    $epUrl, $EndpointUrl = $EndpointUrl
+                    $replicaparams += @{EndpointUrl = $epUrl }
+                }
+
                 if ($server.VersionMajor -ge 13) {
                     $replicaparams += @{SeedingMode = $SeedingMode }
                 }
@@ -494,6 +526,11 @@ function New-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
                 try {
                     # Add replicas
+                    if ($EndpointUrl) {
+                        $epUrl, $EndpointUrl = $EndpointUrl
+                        $replicaparams['EndpointUrl'] = $epUrl
+                    }
+
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
