@@ -74,7 +74,7 @@ function Get-DbaAgBackupHistory {
 
     .NOTES
         Tags: DisasterRecovery, Backup
-        Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram)
+        Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram), Andreas Jordan
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
