@@ -110,7 +110,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Testing LastFull regression test for #6730" {
-        It "gathers the last full even in a forked scenario" {
+        # skipping until niph addresses this
+        It -Skip "gathers the last full even in a forked scenario" {
             $dbname = $dbnameForked
             $database = $server.Databases[$dbname]
 
