@@ -140,11 +140,11 @@ function Add-DbaAgReplica {
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
 
             if (-not $ep) {
+                if (-not $Endpoint) {
+                    $Endpoint = "hadr_endpoint"
+                }
                 if ($Pscmdlet.ShouldProcess($server.Name, "Adding endpoint named $Endpoint to $instance")) {
-                    if (-not $Endpoint) {
-                        $Endpoint = "hadr_endpoint"
-                    }
-                    $ep = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+                    $ep = New-DbaEndpoint -SqlInstance $server -Name $Endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
                     $null = $ep | Start-DbaEndpoint
                 }
             }
@@ -211,11 +211,11 @@ function Add-DbaAgReplica {
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                         $agreplica.Alter()
                     }
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -Value $agreplica.Parent.ComputerName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -Value $agreplica.Parent.InstanceName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -Value $agreplica.Parent.SqlInstance
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -Value $agreplica.Parent.Name
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -Value $agreplica.Name # backwards compat
 
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
