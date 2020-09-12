@@ -6,6 +6,8 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:dbatoolsci_computer = "localhost"
     $script:instance1 = "localhost\sql2008r2sp2"
     $script:instance2 = "localhost\sql2016"
+    $script:instance2SQLUserName = $null # placeholders for -SqlCredential testing
+    $script:instance2SQLPassword = $null
     $script:instance3 = "localhost\sql2017"
     $script:instance2_detailed = "localhost,14333\sql2016" #Just to make sure things parse a port properly
     $script:appveyorlabrepo = "C:\github\appveyor-lab"
