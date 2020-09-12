@@ -20,7 +20,7 @@ function New-DbaEndpoint {
         The name of the endpoint. If a name is not specified, one will be auto-generated.
 
     .PARAMETER Type
-        The type of endpoint. Defaults to DatabaseMirroring. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
+        The type of endpoint. Defaults to DatabaseMirroring. Options: DatabaseMirroring, ServiceBroker, TSql
 
     .PARAMETER Protocol
         The type of protocol. Defaults to tcp. Options: Tcp, NamedPipes, Via, SharedMemory
@@ -101,7 +101,7 @@ function New-DbaEndpoint {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
-        [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
+        [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'TSql')]
         [string]$Type = 'DatabaseMirroring',
         [ValidateSet('Tcp', 'NamedPipes', 'Via', 'SharedMemory')]
         [string]$Protocol = 'Tcp',
