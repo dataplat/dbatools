@@ -63,6 +63,9 @@ function Get-DbaDbBackupHistory {
     .PARAMETER IncludeMirror
         By default mirrors of backups are not returned, this switch will cause them to be returned.
 
+    .PARAMETER AgCheck
+        Deprecated. Please use Get-DbaAgBackupHistory instead.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -165,6 +168,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
+        [switch]$AgCheck,
         [switch]$EnableException
     )
 
@@ -207,6 +211,11 @@ function Get-DbaDbBackupHistory {
     }
 
     process {
+        if ($AgCheck) {
+            Stop-Function -Message "Parameter AGCheck is deprecated. Please use Get-DbaAgBackupHistory instead."
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
