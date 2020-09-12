@@ -23,7 +23,7 @@ function New-DbaEndpoint {
         The type of endpoint. Defaults to DatabaseMirroring. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
 
     .PARAMETER Protocol
-        The type of protocol. Defaults to tcp. Options: Tcp, NamedPipes, Http, Via, SharedMemory
+        The type of protocol. Defaults to tcp. Options: Tcp, NamedPipes, Via, SharedMemory
 
     .PARAMETER Role
         The type of role. Defaults to All. Options: All, None, Partner, Witness
@@ -35,9 +35,6 @@ function New-DbaEndpoint {
 
     .PARAMETER Port
         Port for TCP. If one is not provided, it will be auto-generated.
-
-    .PARAMETER SslPort
-        Port for SSL.
 
     .PARAMETER Certificate
         Database certificate used for authentication.
@@ -106,7 +103,7 @@ function New-DbaEndpoint {
         [string]$Name,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
         [string]$Type = 'DatabaseMirroring',
-        [ValidateSet('Tcp', 'NamedPipes', 'Http', 'Via', 'SharedMemory')]
+        [ValidateSet('Tcp', 'NamedPipes', 'Via', 'SharedMemory')]
         [string]$Protocol = 'Tcp',
         [ValidateSet('All', 'None', 'Partner', 'Witness')]
         [string]$Role = 'All',
@@ -117,7 +114,6 @@ function New-DbaEndpoint {
         [string]$Certificate,
         [System.Net.IPAddress]$IPAddress = '0.0.0.0',
         [int]$Port,
-        [int]$SslPort,
         [string]$Owner,
         [switch]$EnableException
     )
@@ -174,9 +170,6 @@ function New-DbaEndpoint {
                         $endpoint.Protocol.Tcp.ListenerIPAddress = $IPAddress
                         $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
                         $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
-                        if (Test-Bound -ParameterName SslPort) {
-                            $endpoint.Protocol.Http.SslPort = $SslPort
-                        }
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
                     }
