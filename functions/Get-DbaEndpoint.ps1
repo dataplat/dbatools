@@ -66,6 +66,12 @@ function Get-DbaEndpoint {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # the next block is the best we can do for docker machines that don't usually resolve in DNS
+            # if this code block is placed after Get-DbaEndpoint, everything fails. Not sure why, yet.
+            if ($server.NetName -and $server.HostPlatform -eq "Linux" -and $instance.ComputerName -notmatch '\.') {
+                Add-Member -InputObject $instance -NotePropertyName ComputerName -NotePropertyValue $server.NetName -Force
+            }
+
             # Not sure why minimumversion isnt working
             if ($server.VersionMajor -lt 9) {
                 Stop-Function -Message "SQL Server version 9 required - $instance not supported." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -85,7 +91,7 @@ function Get-DbaEndpoint {
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($end.Protocol.Tcp.ListenerIPAddress -ne [System.Net.IPAddress]'0.0.0.0') {
                         $dns = $end.Protocol.Tcp.ListenerIPAddress
-                    } elseif ($instance.ComputerName -match '\.') {
+                    } elseif ($instance.ComputerName -match '\.' -or $server.HostPlatform -eq "Linux" ) {
                         $dns = $instance.ComputerName
                     } else {
                         try {
