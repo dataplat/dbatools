@@ -174,6 +174,12 @@ function Add-DbaAgReplica {
                 }
             }
 
+            # the next block is the best we can do for docker machines that don't usually resolve in DNS
+            # if this code block is placed after Get-DbaEndpoint, everything fails. Not sure why, yet.
+            if ($server.NetName -and $server.HostPlatform -eq "Linux" -and $instance.ComputerName -notmatch '\.') {
+                Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $server.NetName -Force
+            }
+
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
 
             if (-not $ep) {
