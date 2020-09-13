@@ -18,7 +18,7 @@
             "source": [
                 "# **SQL Server 2019 Diagnostic Information Queries**\r\n",
                 "- Glenn Berry \r\n",
-                "- Last Modified: August 20, 2020\r\n",
+                "- Last Modified: September 8, 2020\r\n",
                 "- Twitter: GlennAlanBerry\r\n",
                 "- Blog: https://glennsqlperformance.com/\r\n",
                 "- YouTube: https://bit.ly/2PkoAM1 \r\n",

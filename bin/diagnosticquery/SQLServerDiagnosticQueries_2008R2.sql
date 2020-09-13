@@ -1,14 +1,14 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 20, 2020
+-- Last Modified: September 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
 -- Twitter: GlennAlanBerry
 
--- Please listen to my Pluralsight courses
--- https://www.pluralsight.com/author/glenn-berry
+-- Diagnostic Queries are available here
+-- https://glennsqlperformance.com/resources/
 
 -- Many of these queries will not work if you have databases in 80 compatibility mode
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
