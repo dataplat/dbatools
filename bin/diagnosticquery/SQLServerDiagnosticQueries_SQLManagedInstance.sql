@@ -1,14 +1,14 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 2, 2020
+-- Last Modified: September 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
 -- Twitter: GlennAlanBerry
 
--- Please listen to my Pluralsight courses
--- https://www.pluralsight.com/author/glenn-berry
+-- Diagnostic Queries are available here
+-- https://glennsqlperformance.com/resources/
 
 
 -- If you like PowerShell, there is a very useful community solution for running these queries in an automated fashion

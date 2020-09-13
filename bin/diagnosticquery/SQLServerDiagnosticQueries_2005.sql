@@ -1,14 +1,14 @@
 
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 2, 2020
+-- Last Modified: September 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
 -- Twitter: GlennAlanBerry
 
--- Please listen to my Pluralsight courses
--- https://www.pluralsight.com/author/glenn-berry
+-- Diagnostic Queries are available here
+-- https://glennsqlperformance.com/resources/
 
 -- Many of these queries will not work if you have databases in 80 compatibility mode
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
@@ -1147,28 +1147,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Are you using backup checksums?
 -- Are you doing copy_only backups?
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
-
-
-
--- These six Pluralsight Courses go into more detail about how to run these queries and interpret the results
-
--- Azure SQL Database: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2meDRCN
-
--- SQL Server 2017: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2FqCeti
-
--- SQL Server 2017: Diagnosing Configuration Issues with DMVs
--- https://bit.ly/2MSUDUL
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 1 
--- https://bit.ly/2plxCer
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 2
--- https://bit.ly/2IuJpzI
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 3
--- https://bit.ly/2FIlCPb
 
 
 
