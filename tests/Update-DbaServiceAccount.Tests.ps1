@@ -5,83 +5,91 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousPassword', 'SecurePassword', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
-    $login = 'winLogin'
-    $password = 'MyV3ry$ecur3P@ssw0rd'
-    $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-    $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
-    $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
-    $server = Connect-SqlInstance -SqlInstance $script:instance2
-    $computerName = $server.NetName
-    $instanceName = $server.ServiceName
-    $winLogin = "$computerName\$login"
+    BeforeAll {
+        $login = 'winLogin'
+        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+        $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
+        $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
+        $server = Connect-SqlInstance -SqlInstance $script:instance2
+        $computerName = $server.NetName
+        $instanceName = $server.ServiceName
+        $winLogin = "$computerName\$login"
 
-    #cleanup
-    $computer = [ADSI]"WinNT://$computerName"
-    try {
-        $user = [ADSI]"WinNT://$computerName/$login,user"
-        if ($user.Name -eq $login) {
-            $computer.Delete('User', $login)
-        }
-    } catch {<#User does not exist#>}
+        #cleanup
+        $computer = [ADSI]"WinNT://$computerName"
+        try {
+            $user = [ADSI]"WinNT://$computerName/$login,user"
+            if ($user.Name -eq $login) {
+                $computer.Delete('User', $login)
+            }
+        } catch { <#User does not exist#> }
 
-    if ($l = Get-DbaLogin -SqlInstance $script:instance2 -Login $winLogin) {
-        $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
-        foreach ($spid in $results.spid) {
-            $null = $server.Query("kill $spid")
+        if ($l = Get-DbaLogin -SqlInstance $script:instance2 -Login $winLogin) {
+            $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
+            foreach ($spid in $results.spid) {
+                $null = $server.Query("kill $spid")
+            }
+            if ($c = $l.EnumCredentials()) {
+                $l.DropCredential($c)
+            }
+            $l.Drop()
         }
-        if ($c = $l.EnumCredentials()) {
-            $l.DropCredential($c)
+        #create Windows login
+        $user = $computer.Create("user", $login)
+        $user.SetPassword($password)
+        $user.SetInfo()
+
+        #Get current service users
+        $services = Get-DbaService -ComputerName $script:instance2 -Type Engine, Agent -Instance $instanceName
+        $currentAgentUser = ($services | Where-Object { $_.ServiceType -eq 'Agent' }).StartName
+        $currentEngineUser = ($services | Where-Object { $_.ServiceType -eq 'Engine' }).StartName
+
+        #Create a new sysadmin login on SQL Server
+        $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $winLogin)
+        $newLogin.LoginType = "WindowsUser"
+        $newLogin.Create()
+        $server.Roles['sysadmin'].AddMember($winLogin)
+
+        $isRevertable = $true
+        ForEach ($svcaccount in $currentAgentUser, $currentEngineUser) {
+            if (! ($svcaccount.EndsWith('$') -or $svcaccount.StartsWith('NT AUTHORITY\') -or $svcaccount.StartsWith('NT Service\'))) {
+                $isRevertable = $false
+            }
         }
-        $l.Drop()
+        #Do not continue with the test if current configuration cannot be rolled back
+        if (!$isRevertable) {
+            Throw 'Current configuration cannot be rolled back - the test will not continue.'
+        }
     }
 
-    #create Windows login
-    $user = $computer.Create("user", $login)
-    $user.SetPassword($password)
-    $user.SetInfo()
-
-    #Get current service users
-    $services = Get-DbaService -ComputerName $script:instance2 -Type Engine, Agent -Instance $instanceName
-    $currentAgentUser = ($services | Where-Object { $_.ServiceType -eq 'Agent' }).StartName
-    $currentEngineUser = ($services | Where-Object { $_.ServiceType -eq 'Engine' }).StartName
-
-    #Create a new sysadmin login on SQL Server
-    $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $winLogin)
-    $newLogin.LoginType = "WindowsUser"
-    $newLogin.Create()
-    $server.Roles['sysadmin'].AddMember($winLogin)
-
-    $isRevertable = $true
-    ForEach ($svcaccount in $currentAgentUser, $currentEngineUser) {
-        if (! ($svcaccount.EndsWith('$') -or $svcaccount.StartsWith('NT AUTHORITY\') -or $svcaccount.StartsWith('NT Service\'))) {
-            $isRevertable = $false
-        }
+    AfterAll {
+        #Cleanup
+        $server.Logins[$winLogin].Drop()
+        $computer.Delete('User', $login)
     }
 
     Context "Current configuration to be able to roll back" {
         It "Both agent and engine services must exist" {
-            ($services | Measure-Object).Count | Should Be 2
+            ($services | Measure-Object).Count | Should -Be 2
         }
         It "Current service accounts should be localsystem-like or MSA to allow for a rollback" {
-            $isRevertable | Should be $true
+            $isRevertable | Should -Be $true
         }
     }
 
-    #Do not continue with the test if current configuration cannot be rolled back
-    if (!$isRevertable) {
-        Throw 'Current configuration cannot be rolled back - the test will not continue.'
-    }
+
 
     Context "Set new service account for SQL Services" {
 
@@ -91,17 +99,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Should have no errors or warnings" {
-            $errVar | Should Be $null
-            $warnVar | Should Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
-                $result.StartName | Should Be ".\$login"
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
+                $result.StartName | Should -Be ".\$login"
             }
         }
     }
@@ -114,27 +122,27 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Password change should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Should have no errors or warnings" {
-            $errVar | Should Be $null
-            $warnVar | Should Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
             }
         }
 
         $results = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
         It "Service restart should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Service restart should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
             }
         }
     }
@@ -144,17 +152,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Should have no errors or warnings" {
-            $errVar | Should Be $null
-            $warnVar | Should Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
-                $result.StartName | Should Be 'LocalSystem'
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
+                $result.StartName | Should -Be 'LocalSystem'
             }
         }
     }
@@ -163,17 +171,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Should have no errors or warnings" {
-            $errVar | Should Be $null
-            $warnVar | Should Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
-                $result.StartName | Should Be $currentAgentUser
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
+                $result.StartName | Should -Be $currentAgentUser
             }
         }
     }
@@ -182,22 +190,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
 
         It "Should return something" {
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
         It "Should have no errors or warnings" {
-            $errVar | Should Be $null
-            $warnVar | Should Be $null
+            $errVar | Should -Be $null
+            $warnVar | Should -Be $null
         }
         It "Should be successful" {
             foreach ($result in $results) {
-                $result.Status | Should Be 'Successful'
-                $result.State | Should Be 'Running'
-                $result.StartName | Should Be $currentEngineUser
+                $result.Status | Should -Be 'Successful'
+                $result.State | Should -Be 'Running'
+                $result.StartName | Should -Be $currentEngineUser
             }
         }
 
     }
-    #Cleanup
-    $server.Logins[$winLogin].Drop()
-    $computer.Delete('User', $login)
+
 }
