@@ -175,7 +175,6 @@ function Add-DbaAgReplica {
             }
 
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
-
             if (-not $ep) {
                 if (-not $Endpoint) {
                     $Endpoint = "hadr_endpoint"
