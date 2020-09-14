@@ -19,7 +19,9 @@ function New-DbaAvailabilityGroup {
         * Grants CreateAnyDatabase permissions if seeding mode is automatic
         * Returns Availability Group object from primary
 
-        NOTE: If a backup / restore is performed, the backups will be left intact on the network share.
+        NOTES:
+        - If a backup / restore is performed, the backups will be left intact on the network share.
+        - If you're using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint
 
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
