@@ -304,7 +304,6 @@ function Connect-DbaInstance {
         [switch]$VeryVerbose
     )
     begin {
-        if ($VeryVerbose) { Write-Message -Level Verbose -Message "Starting begin block" }
         $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
         #region Utility functions
         if ($Tenant -or $AuthenticationType -in 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated' -and ($null -eq $azurevm)) {
@@ -410,7 +409,7 @@ function Connect-DbaInstance {
 
         if ($VeryVerbose) { Write-Message -Level Verbose -Message "Starting process block" }
         foreach ($instance in $SqlInstance) {
-            if ($VeryVerbose) { Write-Message -Level Verbose -Message "Starting loop for $instance" }
+            if ($VeryVerbose) { Write-Message -Level Verbose -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'" }
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
                 $isConnectionString = $true
@@ -545,14 +544,15 @@ function Connect-DbaInstance {
             #>
             if ($VeryVerbose) { Write-Message -Level Verbose -Message "We have this input type: $($instance.GetType().FullName)" }
             if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "We have a DbaInstanceParameter" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "GetType() -eq DbaInstanceParameter" }
                 [DbaInstanceParameter]$instance = $instance
                 if ($instance.Type -like "SqlConnection") {
-                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We have a SqlConnection - we build instance as DbaInstanceParameter with Smo.Server" }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message ".Type -like SqlConnection" }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We build instance as DbaInstanceParameter from Smo.Server with instance.InputObject" }
                     [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 }
             } else {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "We have no DbaInstanceParameter - and we should not be here" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "GetType() -new DbaInstanceParameter - and we should not be here" }
                 [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
 
                 if ($instance.Count -gt 1) {
@@ -561,9 +561,11 @@ function Connect-DbaInstance {
             }
             #endregion Safely convert input into instance parameters
 
+            if ($VeryVerbose) { Write-Message -Level Verbose -Message "Now we have this type in instance: '$($instance.Type)'" }
+
             #region Input Object was a server object
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "We have a server object in instance" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "instance.Type -like Server (or Azure) - so we have already the full smo" }
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
                     if ($VeryVerbose) { Write-Message -Level Verbose -Message "We connect to the instance" }
                     $instance.InputObject.ConnectionContext.Connect()
@@ -586,9 +588,9 @@ function Connect-DbaInstance {
             #endregion Input Object was a server object
 
             #region Input Object was anything else
-            if ($VeryVerbose) { Write-Message -Level Verbose -Message "Input Object was anything else" }
+            if ($VeryVerbose) { Write-Message -Level Verbose -Message "Input Object was anything else, so not full smo and we have to go on and build one" }
             if ($instance.Type -like "SqlConnection") {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "Input Object was SqlConnection so we build server with Smo.Server" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "instance.Type -like SqlConnection - so we build server with Smo.Server" }
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
@@ -613,7 +615,7 @@ function Connect-DbaInstance {
                 } else {
                     if ($VeryVerbose) { Write-Message -Level Verbose -Message "We don't have SqlConnectionOnly" }
                     if (-not $server.ComputerName) {
-                        if ($VeryVerbose) { Write-Message -Level Verbose -Message "We don't have ComputerName yet, so adding IsAzure, ComputerName, DbaInstanceName, NetPort, ConnectedAs" }
+                        if ($VeryVerbose) { Write-Message -Level Verbose -Message "We don't have ComputerName, so adding IsAzure = '$false', ComputerName = instance.ComputerName = '$($instance.ComputerName)', DbaInstanceName = instance.InstanceName = '$($instance.InstanceName)', NetPort = instance.Port = '$($instance.Port)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectionContext.TrueLogin)'" }
                         Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                         Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
                         Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
@@ -636,14 +638,14 @@ function Connect-DbaInstance {
                     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
                         [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                     }
-                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We return server" }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We return server (from around line 641)" }
                     $server
                     continue
                 }
             }
 
             if ($isConnectionString) {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "Input Object was ConnectionString" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "isConnectionString is true" }
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
@@ -651,7 +653,7 @@ function Connect-DbaInstance {
                 $null = $serverconn.Connect()
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
             } elseif (-not $isAzure) {
-                if ($VeryVerbose) { Write-Message -Level Verbose -Message "Input Object was no ConnectionString" }
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "isConnectionString is false" }
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
             }
 
@@ -729,6 +731,7 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.ConnectionString = $connstring
                 }
 
+                if ($VeryVerbose) { Write-Message -Level Verbose -Message "We try to connect" }
                 try {
                     # parse out sql credential to figure out if it's Windows or SQL Login
                     if ($null -ne $SqlCredential.UserName -and -not $isAzure) {
@@ -764,6 +767,7 @@ function Connect-DbaInstance {
                         # When the Connect method is called, the connection is not automatically released.
                         # The Disconnect method must be called explicitly to release the connection to the connection pool.
                         # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
+                        if ($VeryVerbose) { Write-Message -Level Verbose -Message "We try nonpooled connection" }
                         $server.ConnectionContext.Connect()
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
                         # Make it connect in a natural way, hard to explain.
@@ -772,6 +776,7 @@ function Connect-DbaInstance {
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             # Sometimes, however, the above may not connect as promised. Force it.
                             # See https://github.com/sqlcollaborative/dbatools/pull/4426
+                            if ($VeryVerbose) { Write-Message -Level Verbose -Message "We try connection - authtype -eq Windows Authentication with Credential" }
                             $server.ConnectionContext.Connect()
                         }
                     } else {
@@ -779,10 +784,13 @@ function Connect-DbaInstance {
                             # SqlConnectionObject.Open() enables connection pooling does not support
                             # alternative Windows Credentials and passes default credentials
                             # See https://github.com/sqlcollaborative/dbatools/pull/3809
+                            if ($VeryVerbose) { Write-Message -Level Verbose -Message "We try connection - the else path" }
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
                     }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "Connect was successful" }
                 } catch {
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "Connect was not successful" }
                     $originalException = $_.Exception
                     try {
                         $message = $originalException.InnerException.InnerException.ToString()
@@ -855,6 +863,7 @@ function Connect-DbaInstance {
                 if ($VeryVerbose) { Write-Message -Level Verbose -Message "no SqlConnectionOnly, so we go on" }
                 if (-not $server.ComputerName) {
                     if ($VeryVerbose) { Write-Message -Level Verbose -Message "we don't have server.ComputerName" }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "but we would have instance.ComputerName = '$($instance.ComputerName)'" }
                     # Not every environment supports .NetName
                     if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
                         try {
@@ -864,7 +873,7 @@ function Connect-DbaInstance {
                             if ($VeryVerbose) { Write-Message -Level Verbose -Message "Ups, failed so we use instance.ComputerName" }
                             $computername = $instance.ComputerName
                         }
-                        if ($VeryVerbose) { Write-Message -Level Verbose -Message "Ok, computername is now '$computername'" }
+                        if ($VeryVerbose) { Write-Message -Level Verbose -Message "Ok, computername = server.NetName = '$computername'" }
                     }
                     # SQL on Linux is often on docker and the internal name is not useful
                     if (-not $computername -or $server.HostPlatform -eq "Linux") {
@@ -872,7 +881,7 @@ function Connect-DbaInstance {
                         $computername = $instance.ComputerName
                         if ($VeryVerbose) { Write-Message -Level Verbose -Message "Ok, computername is now '$computername'" }
                     }
-                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We add IsAzure, ComputerName, DbaInstanceName (instance.InstanceName), NetPort (instance.Port) and ConnectedAs (server.ConnectionContext.TrueLogin)" }
+                    if ($VeryVerbose) { Write-Message -Level Verbose -Message "We add IsAzure = '$false', ComputerName = computername = '$computername', DbaInstanceName = instance.InstanceName = '$($instance.InstanceName)', NetPort = instance.Port = '$($instance.Port)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectionContext.TrueLogin)'" }
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computername -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
