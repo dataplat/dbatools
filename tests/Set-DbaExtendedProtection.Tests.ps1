@@ -19,28 +19,28 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -EnableException *>$null
             $results.ExtendedProtection -eq "0 - Off"
         }
-	}
-	Context "Command works when passed different values" {
-		BeforeAll {
-			Mock Test-ShouldProcess { $false } -ModuleName dbatools
+    }
+    Context "Command works when passed different values" {
+        BeforeAll {
+            Mock Test-ShouldProcess { $false } -ModuleName dbatools
             Mock Invoke-ManagedComputerCommand -MockWith {
-				param (
-				$ComputerName,
-				$Credential,
-				$ScriptBlock,
-				$EnableException
-			)
-			   $server = [DbaInstanceParameter[]]$script:instance1
-			   @{
-					DisplayName = "SQL Server ($($instance.InstanceName))"
-					AdvancedProperties = @(
-							@{
-								Name = 'REGROOT'
-								Value = 'Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2'
-							}
-						)
-				}
-			} -ModuleName dbatools
+                param (
+                $ComputerName,
+                $Credential,
+                $ScriptBlock,
+                $EnableException
+            )
+               $server = [DbaInstanceParameter[]]$script:instance1
+               @{
+                    DisplayName = "SQL Server ($($instance.InstanceName))"
+                    AdvancedProperties = @(
+                            @{
+                                Name = 'REGROOT'
+                                Value = 'Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2'
+                            }
+                        )
+                }
+            } -ModuleName dbatools
         }
         It "Set explicitly to '0 - Off' using text" {
             $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value Off -EnableException -Verbose 4>&1
