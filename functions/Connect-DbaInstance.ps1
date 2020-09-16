@@ -575,7 +575,7 @@ function Connect-DbaInstance {
                     $instance.InputObject.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
-                    Write-Message -Level Debug -Message "Let's return the instance object"
+                    Write-Message -Level Debug -Message "We return the instance object with: ComputerName = '$($instance.InputObject.ComputerName)', NetName = '$($instance.InputObject.NetName)', Name = '$($instance.InputObject.Name)'"
                     $instance.InputObject
                     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $instance.InputObject.ConnectionContext.Copy(), ($instance.InputObject.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
