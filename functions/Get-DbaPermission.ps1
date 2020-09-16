@@ -157,8 +157,8 @@ function Get-DbaPermission {
                                             END
                     , [Grantee] = USER_NAME(grantee_principal_id)
                     , [GranteeType] = pr.type_desc
-                    , [RevokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
-                    , [GrantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                    , [RevokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
+                    , [GrantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
                         + CASE WHEN dp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.database_permissions dp
                     JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
